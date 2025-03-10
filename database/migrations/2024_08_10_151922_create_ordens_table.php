@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ordens', function (Blueprint $table) {
+       /*  Schema::create('ordens', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('asesor_id');
             $table->unsignedBigInteger('cliente_id');
@@ -62,7 +62,7 @@ return new class extends Migration
             $table->foreign('confirmo_id')->references('id')->on('users');
             $table->foreign('piloto_id')->references('id')->on('users');
             $table->foreign('liquido_id')->references('id')->on('users');
-        });
+        }); */
     }
 
     /**

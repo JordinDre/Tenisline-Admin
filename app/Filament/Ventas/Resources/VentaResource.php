@@ -60,8 +60,8 @@ class VentaResource extends Resource implements HasShieldPermissions
         return [
             'view_any',
             'view',
-            /* 'create',
-            'update',*/
+            'create',
+            /* 'update', */
             'liquidate',
             'factura',
             'annular',
@@ -267,14 +267,14 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('cliente.razon_social')
+                Tables\Columns\TextColumn::make('cliente.name')
                     ->searchable()
                     ->numeric()
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('asesor.name')
                     ->searchable()
-                    ->label('Asesor')
+                    ->label('Vendedor')
                     ->numeric()
                     ->copyable()
                     ->sortable(),
@@ -295,7 +295,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->bulleted()
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('detalles.producto.codigo')
+                Tables\Columns\TextColumn::make('detalles.producto.nombre')
                     ->label('Cod Producto')
                     ->searchable()
                     ->listWithLineBreaks()
@@ -316,13 +316,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->bulleted()
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('detalles.producto.presentacion.presentacion')
+                /* Tables\Columns\TextColumn::make('detalles.producto.presentacion.presentacion')
                     ->label('Presentación')
                     ->searchable()
                     ->listWithLineBreaks()
                     ->bulleted()
                     ->copyable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true), */
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime('d/m/Y H:i:s')
@@ -337,12 +337,12 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('tipo_pago_id')
+                /* SelectFilter::make('tipo_pago_id')
                     ->label('Tipo de Pago')
                     ->multiple()
                     ->options(
                         TipoPago::CLIENTE_PAGOS_ARRAY
-                    ),
+                    ), */
                 SelectFilter::make('estado')
                     ->label('Estado')
                     ->multiple()
@@ -382,7 +382,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
-                    Action::make('nota_credito')
+                    /* Action::make('nota_credito')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => auth()->user()->can('credit_note', $record))
                         ->modalContent(fn (Venta $record): View => view(
@@ -397,7 +397,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalWidth(MaxWidth::FiveExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
-                        ->modalSubmitAction(false),
+                        ->modalSubmitAction(false), */
                     Action::make('facturar')
                         ->label('Facturar')
                         ->requiresConfirmation()
@@ -468,12 +468,12 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('producto_id')
                                         ->label('Producto')
-                                        ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca', 'presentacion', 'escalas']))
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, null, 1))
+                                        ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca']))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', 1))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search): array {
-                                            return ProductoController::searchProductos($search, null, 1);
+                                            return ProductoController::searchProductos($search, 'venta', 1);
                                         })
                                         ->optionsLimit(12)
                                         ->required(),
@@ -506,7 +506,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->link()
                     ->label('Acciones'),
             ], position: ActionsPosition::BeforeColumns)
-            ->poll('10s');
+            ->poll('60s');
     }
 
     public static function getRelations(): array
@@ -526,7 +526,7 @@ class VentaResource extends Resource implements HasShieldPermissions
         ];
     }
 
-    public static function getEloquentQuery(): Builder
+    /* public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
         $user = auth()->user();
@@ -547,5 +547,5 @@ class VentaResource extends Resource implements HasShieldPermissions
 
             return $query;
         }
-    }
+    } */
 }

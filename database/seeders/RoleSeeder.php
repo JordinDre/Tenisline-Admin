@@ -161,7 +161,13 @@ class RoleSeeder extends Seeder
         // ROLES
         $super_admin = Role::create(['name' => 'super_admin']);
         $administrador = Role::create(['name' => 'administrador']);
-        $facturador = Role::create(['name' => 'facturador']);
+        $administrador = Role::create(['name' => 'proveedor']);
+        $administrador = Role::create(['name' => 'cliente']);
+        $administrador = Role::create(['name' => 'vendedor']);
+        $administrador = Role::create(['name' => 'mayorista']);
+
+
+        /* $facturador = Role::create(['name' => 'facturador']);
         $proveedor = Role::create(['name' => 'proveedor']);
         $cliente = Role::create(['name' => 'cliente']);
         $supervisor_preventa = Role::create(['name' => 'supervisor preventa']);
@@ -177,7 +183,7 @@ class RoleSeeder extends Seeder
         $bodeguero = Role::create(['name' => 'bodeguero']);
         $piloto = Role::create(['name' => 'piloto']);
         $rrhh = Role::create(['name' => 'rrhh']);
-        $gerente = Role::create(['name' => 'gerente']);
+        $gerente = Role::create(['name' => 'gerente']); */
 
         // ASIGNAR PERMISOS A ROLES
         $super_admin->givePermissionTo(Permission::all());
@@ -188,7 +194,7 @@ class RoleSeeder extends Seeder
             'password' => bcrypt('administrador'),
         ]);
         $user->assignRole('super_admin');
-        $user->assignRole('asesor preventa');
+        $user->assignRole('vendedor');
 
         // assign created permissions
         // this can be done as separate widgetements

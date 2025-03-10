@@ -45,30 +45,30 @@ class Producto extends Model
         return $this->belongsTo(Marca::class);
     }
 
-    public function presentacion(): BelongsTo
+   /*  public function presentacion(): BelongsTo
     {
         return $this->belongsTo(Presentacion::class);
-    }
+    } */
 
     public function escalas(): HasMany
     {
         return $this->hasMany(Escala::class);
     }
 
-    public function enlinea(): HasOne
+   /*  public function enlinea(): HasOne
     {
         return $this->hasOne(Escala::class)->where('escala', 'ENLINEA');
-    }
+    } */
 
     public function inventario(): HasMany
     {
         return $this->hasMany(Inventario::class);
     }
 
-    public function comercios(): BelongsToMany
+   /*  public function comercios(): BelongsToMany
     {
         return $this->belongsToMany(Comercio::class)->using(ComercioProducto::class);
-    }
+    } */
 
     public function observaciones(): MorphMany
     {

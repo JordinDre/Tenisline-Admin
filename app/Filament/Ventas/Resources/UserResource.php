@@ -86,11 +86,11 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->label('DPI')
                             ->maxLength(13)
                             ->minLength(13),
-                        TextInput::make('razon_social')
+                        /* TextInput::make('razon_social')
                             ->required()
                             ->readOnly()
                             ->default('CF')
-                            ->label('Razón Social'),
+                            ->label('Razón Social'), */
                         TextInput::make('name')
                             ->required()
                             ->label('Nombre/Nombre Comercial'),
@@ -134,7 +134,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                 }
                             })
                             ->searchable(),
-                        Select::make('comercios')
+                        /* Select::make('comercios')
                             ->label('Tipos de Comercio')
                             ->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles')))
                             ->relationship('comercios', 'comercio')
@@ -183,7 +183,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ])
                             ->disabled(fn (Get $get) => ! in_array(5, $get('roles')))
                             ->relationship('asesores', 'name', fn (Builder $query) => $query->role(User::ASESOR_ROLES))
-                            ->searchable(),
+                            ->searchable(), */
                         /* Select::make('supervisores')
                             ->multiple()
                             ->disabled(fn(Get $get) => ! array_intersect([9, 10, 11], $get('roles')))
@@ -235,7 +235,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     )
                     ->preload()
                     ->searchable(),
-                FileUpload::make('imagenes')
+                /* FileUpload::make('imagenes')
                     ->label('Imágenes')
                     ->image()
                     ->downloadable()
@@ -246,8 +246,8 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->appendFiles()
                     ->maxSize(1024)
                     ->openable()
-                    ->optimize('webp'),
-                Repeater::make('direcciones')
+                    ->optimize('webp'), */
+                /* Repeater::make('direcciones')
                     ->relationship()
                     ->schema([
                         Select::make('pais_id')
@@ -298,15 +298,15 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->tel()
                             ->minLength(8)
                             ->maxLength(8),
-                    ])->columnSpanFull()->columns(4)->defaultItems(0)->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles'))),
-                Repeater::make('observaciones')
+                    ])->columnSpanFull()->columns(4)->defaultItems(0)->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles'))), */
+                /* Repeater::make('observaciones')
                     ->relationship()
                     ->defaultItems(0)
                     ->schema([
                         Textarea::make('observacion')->label('Observación'),
                         Hidden::make('user_id')
                             ->default(auth()->user()->id),
-                    ])->columnSpanFull(),
+                    ])->columnSpanFull(), */
             ]);
     }
 

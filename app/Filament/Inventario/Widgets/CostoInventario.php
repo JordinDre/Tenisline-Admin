@@ -2,10 +2,11 @@
 
 namespace App\Filament\Inventario\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Inventario;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\Utils\Functions;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class CostoInventario extends BaseWidget
 {
@@ -17,6 +18,10 @@ class CostoInventario extends BaseWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('labors')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+             
         return auth()->user()->can('widget_CostoInventario');
     }
 

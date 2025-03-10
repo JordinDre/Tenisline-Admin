@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('comercio_user', function (Blueprint $table) {
+        /* Schema::create('comercio_user', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('comercio_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('comercio_id')->references('id')->on('comercios');
             $table->timestamps();
-        });
+        }); */
     }
 
     /**

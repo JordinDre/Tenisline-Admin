@@ -15,7 +15,12 @@ class UserSeeder extends Seeder
     {
         $roles = [
             'administrador',
-            'facturador',
+            'proveedor',
+            'cliente',
+            'vendedor',
+
+
+            /* 'facturador',
             'supervisor preventa',
             'supervisor venta directa',
             'supervisor telemarketing',
@@ -29,7 +34,7 @@ class UserSeeder extends Seeder
             'piloto',
             'cliente',
             'proveedor',
-            'recolector',
+            'recolector', */
         ];
 
         User::factory(100)->create()->each(function ($user) use ($roles) {

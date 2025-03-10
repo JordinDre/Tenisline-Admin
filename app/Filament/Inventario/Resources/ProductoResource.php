@@ -2,31 +2,33 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\ProductoResource\Pages;
-use App\Models\Observacion;
-use App\Models\Producto;
 use App\Models\User;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Tables;
+use App\Models\Escala;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Filters\SelectFilter;
+use App\Models\Producto;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Models\Observacion;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Inventario\Resources\ProductoResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class ProductoResource extends Resource implements HasShieldPermissions
 {
@@ -70,18 +72,32 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     'lg' => 3,
                 ])
                     ->schema([
-                        TextInput::make('codigo')
+                        TextInput::make('nombre')
                             ->required()
                             ->maxLength(100),
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250),
-                        Select::make('comercios')
-                            ->label('Tipos de Comercio')
+                            TextInput::make('modelo')
+                            ->label('Linea/Modelo')
                             ->required()
-                            ->relationship('comercios', 'comercio')
-                            ->multiple()
-                            ->searchable(),
+                            ->maxLength(250),
+                            TextInput::make('talla')
+                                ->required()
+                                ->maxLength(250),
+                            Select::make('genero')
+                                ->options([
+                                    'Hombre' => 'Hombre',
+                                    'Mujer' => 'Mujer',
+                                    'Niño' => 'Niño',
+                                    'Niña' => 'Niña',
+                                    'Bebés' => 'Bebés',
+                                    'Unisex' => 'Unisex',
+                                ])
+                                ->native(false)
+                                ->required(),
+                            TextInput::make('color')
+                                ->maxLength(255),
                     ]),
                 Grid::make([
                     'default' => 1,
@@ -90,7 +106,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 ])
                     ->schema([
                         Select::make('proveedor_id')
-                            ->required()
                             ->searchable()
                             ->visible(auth()->user()->can('view_supplier_producto'))
                             ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
@@ -99,10 +114,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->optionsLimit(12)
                             ->searchable()
                             ->relationship('marca', 'marca'),
-                        Select::make('presentacion_id')
+                        /* Select::make('presentacion_id')
                             ->required()
                             ->searchable()
-                            ->relationship('presentacion', 'presentacion'),
+                            ->relationship('presentacion', 'presentacion'), */
                         DatePicker::make('fecha_ingreso')
                             ->label('Fecha de Ingreso'),
                     ]),
@@ -112,72 +127,65 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     'lg' => 5,
                 ])
                     ->schema([
-                        TextInput::make('precio_compra')
+                        TextInput::make('precio_venta')
                             ->required()
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $precio_compra = floatval($get('precio_compra'));
-                                $envio = floatval($get('envio'));
-                                $envase = floatval($get('envase'));
-                                $precio_costo = $precio_compra + $envio + $envase;
-                                $set('precio_costo', $precio_costo);
-                            })
                             ->inputMode('decimal')
                             ->rule('numeric'),
-                        TextInput::make('envio')
-                            ->inputMode('decimal')
-                            ->rule('numeric')
+                        TextInput::make('precio_vendedores')
+                            ->required()
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $precio_compra = floatval($get('precio_compra'));
-                                $envio = floatval($get('envio'));
-                                $envase = floatval($get('envase'));
-                                $precio_costo = $precio_compra + $envio + $envase;
-                                $set('precio_costo', $precio_costo);
-                            }),
-                        TextInput::make('envase')
                             ->inputMode('decimal')
-                            ->rule('numeric')
+                            ->rule('numeric'),
+                        TextInput::make('precio_mayorista')
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $precio_compra = floatval($get('precio_compra'));
-                                $envio = floatval($get('envio'));
-                                $envase = floatval($get('envase'));
-                                $precio_costo = $precio_compra + $envio + $envase;
-                                $set('precio_costo', $precio_costo);
-                            }),
-                        TextInput::make('precio_costo')
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->readOnly(),
-                        TextInput::make('uni_empaque')
-                            ->label('Unidades por Empaque')
                             ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->default(0),
+                            ->rule('numeric'),
                     ]),
                 Repeater::make('escalas')
                     ->relationship()
                     ->visible(auth()->user()->can('view_costs_producto'))
                     ->schema([
-                        TextInput::make('escala')
-                            ->label('Escala')
-                            ->required(),
-                        TextInput::make('desde')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('hasta')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
+                        Select::make('dia')
+                        ->label('Día')
+                        ->options(function (callable $get) {
+                            $productoId = $get('producto_id');
+                    
+                            if (!$productoId) {
+                                return [
+                                    'lunes' => 'Lunes',
+                                    'martes' => 'Martes',
+                                    'miercoles' => 'Miércoles',
+                                    'jueves' => 'Jueves',
+                                    'viernes' => 'Viernes',
+                                    'sabado' => 'Sábado',
+                                    'domingo' => 'Domingo',
+                                ]; 
+                            }
+                    
+                            $diasOcupados = Escala::whereIn('producto_id', (array) $productoId)->pluck('dia')->toArray();
+                    
+                            $diasDisponibles = [
+                                'lunes' => 'Lunes',
+                                'martes' => 'Martes',
+                                'miercoles' => 'Miércoles',
+                                'jueves' => 'Jueves',
+                                'viernes' => 'Viernes',
+                                'sabado' => 'Sábado',
+                                'domingo' => 'Domingo',
+                            ];
+                    
+                            return array_diff_key($diasDisponibles, array_flip($diasOcupados));
+                        })
+                        ->reactive()
+                        ->native(false)
+                        ->required(),
                         TextInput::make('porcentaje')
                             ->required()
                             ->minValue(0)
@@ -185,47 +193,72 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->rule('numeric')
                             ->prefix('%')
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $precioCosto = floatval($get('../../precio_costo') ?? 0);
-                                $porcentaje = floatval($get('porcentaje') ?? 0);
-                                $precio = $precioCosto / (1 - ($porcentaje / 100));
-                                $set('precio', round($precio, 2));
-                            })
                             ->inputMode('decimal')
                             ->rule('numeric'),
-                        TextInput::make('precio')
-                            ->required()
-                            ->readOnly(),
-                        TextInput::make('aumento')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->default(0)
-                            ->prefix('%'),
-                        TextInput::make('descuento')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->default(0)
-                            ->prefix('%'),
-                        TextInput::make('comision')
-                            ->required()
-                            ->minValue(0)
-                            ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->prefix('%'),
-                        Select::make('role_id')
-                            ->required()
-                            ->relationship('role', 'name', fn (Builder $query) => $query->whereIn('name', User::ASESOR_ROLES))
-                            ->preload()
-                            ->searchable(),
+                        Hidden::make('producto_id')
+                            ->default(function (Get $get, ?Producto $record) {
+                                if ($record) {
+                                    return $record->id;
+                                }
+                                return null;
+                            }),
                     ])->columnSpanFull()->columns([
                         'default' => 1,
                         'md' => 3,
                         'lg' => 5,
-                    ]),
+                    ])->afterStateHydrated(function (Repeater $component, ?Producto $record) {
+                        if (!$record) {
+                            $component->schema([
+                                Select::make('dia')
+                                    ->label('Día')
+                                    ->options(function (callable $get) {
+                                        $productoId = $get('producto_id');
+
+                                        if (!$productoId) {
+                                            return [
+                                                'lunes' => 'Lunes',
+                                                'martes' => 'Martes',
+                                                'miercoles' => 'Miércoles',
+                                                'jueves' => 'Jueves',
+                                                'viernes' => 'Viernes',
+                                                'sabado' => 'Sábado',
+                                                'domingo' => 'Domingo',
+                                            ];
+                                        }
+
+                                        $diasOcupados = Escala::whereIn('producto_id', (array) $productoId)->pluck('dia')->toArray();
+
+                                        $diasDisponibles = [
+                                            'lunes' => 'Lunes',
+                                            'martes' => 'Martes',
+                                            'miercoles' => 'Miércoles',
+                                            'jueves' => 'Jueves',
+                                            'viernes' => 'Viernes',
+                                            'sabado' => 'Sábado',
+                                            'domingo' => 'Domingo',
+                                        ];
+
+                                        return array_diff_key($diasDisponibles, array_flip($diasOcupados));
+                                    })
+                                    ->reactive()
+                                    ->native(false)
+                                    ->required(),
+                                TextInput::make('porcentaje')
+                                    ->required()
+                                    ->minValue(0)
+                                    ->inputMode('decimal')
+                                    ->rule('numeric')
+                                    ->prefix('%')
+                                    ->live(onBlur: true)
+                                    ->inputMode('decimal')
+                                    ->rule('numeric'),
+                                Hidden::make('producto_id')
+                                    ->default(function (Get $get, Producto $record) {
+                                        return $record->id;
+                                    }),
+                            ]);
+                        }
+                    }),
                 FileUpload::make('imagenes')
                     ->image()
                     ->downloadable()
@@ -242,7 +275,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->openable()
                     ->optimize('webp')
                     ->columnSpanFull(),
-                Grid::make(2)
+                /* Grid::make(2)
                     ->schema([
                         FileUpload::make('videos')
                             ->label('Videos')
@@ -251,16 +284,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->directory(config('filesystems.default'))
                             ->visibility('public')
                             ->panelLayout('grid'),
-                        FileUpload::make('documentos')
-                            ->label('Documentos')
-                            ->multiple()
-                            ->disk(config('filesystems.disks.s3.driver'))
-                            ->directory(config('filesystems.default'))
-                            ->visibility('public')
-                            ->panelLayout('grid'),
-                    ]),
-                RichEditor::make('detalle')
-                    ->columnSpanFull(),
+                    ]), */
             ]);
     }
 
@@ -281,7 +305,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('codigo')
+                Tables\Columns\TextColumn::make('nombre')
                     ->copyable()
                     ->searchable()
                     ->sortable(),
@@ -289,10 +313,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('presentacion.presentacion')
+                /* Tables\Columns\TextColumn::make('presentacion.presentacion')
                     ->copyable()
                     ->searchable()
-                    ->sortable(),
+                    ->sortable(), */
                 Tables\Columns\TextColumn::make('marca.marca')
                     ->copyable()
                     ->searchable()
@@ -332,11 +356,11 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->multiple()
                     ->searchable()
                     ->label('Marca'),
-                SelectFilter::make('presentacion_id')
+                /* SelectFilter::make('presentacion_id')
                     ->relationship('presentacion', 'presentacion')
                     ->multiple()
                     ->searchable()
-                    ->label('Presentación'),
+                    ->label('Presentación'), */
                 SelectFilter::make('proveedor_id')
                     ->relationship('proveedor', 'name')
                     ->multiple()

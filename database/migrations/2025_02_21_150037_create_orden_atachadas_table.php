@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orden_atachadas', function (Blueprint $table) {
+        /* Schema::create('orden_atachadas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('orden_madre_id');
             $table->foreign('orden_madre_id')->references('id')->on('ordens');
             $table->unsignedBigInteger('orden_hija_id');
             $table->foreign('orden_hija_id')->references('id')->on('ordens');
             $table->timestamps();
-        });
+        }); */
     }
 
     /**

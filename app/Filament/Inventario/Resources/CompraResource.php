@@ -100,20 +100,13 @@ class CompraResource extends Resource implements HasShieldPermissions
                             Grid::make(2)
                                 ->schema([
                                     Select::make('bodega_id')
-                                        ->relationship(
-                                            'bodega',
-                                            'bodega',
-                                            fn (Builder $query) => $query->whereHas('user', function ($query) {
-                                                $query->where('user_id', auth()->user()->id);
-                                            })
-                                        )
+                                        ->relationship('bodega', 'bodega')
                                         ->preload()
                                         ->searchable()
                                         ->required(),
                                     Select::make('proveedor_id')
                                         ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor'))
-                                        ->searchable()
-                                        ->required(),
+                                        ->searchable(),
                                 ]),
                         ]),
                     Wizard\Step::make('Productos')
@@ -133,11 +126,11 @@ class CompraResource extends Resource implements HasShieldPermissions
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductos($record, null, null))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductos($record, 'compra', null))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                            return ProductoController::searchProductos($search, null, null);
+                                            return ProductoController::searchProductos($search, 'compra', null);
                                         })
                                         ->optionsLimit(20)
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -150,14 +143,6 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->inputMode('decimal')
                                         ->rule('numeric')
                                         ->live(onBlur: true)
-                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                            $precio = floatval($get('precio'));
-                                            $envio = floatval($get('envio'));
-                                            $envase = floatval($get('envase'));
-                                            $cantidad = floatval($get('cantidad'));
-                                            $subtotal = ($precio + $envio + $envase) * $cantidad;
-                                            $set('subtotal', $subtotal);
-                                        })
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->required(),
                                     TextInput::make('precio')
@@ -166,18 +151,10 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->minValue(0)
                                         ->default(0)
                                         ->visible(auth()->user()->can('view_costs_producto'))
-                                        ->afterStateUpdated(function (Get $get, Set $set) {
-                                            $precio = floatval($get('precio'));
-                                            $envio = floatval($get('envio'));
-                                            $envase = floatval($get('envase'));
-                                            $cantidad = floatval($get('cantidad'));
-                                            $subtotal = ($precio + $envio + $envase) * $cantidad;
-                                            $set('subtotal', $subtotal);
-                                        })
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->inputMode('decimal')
                                         ->rule('numeric'),
-                                    TextInput::make('envio')
+                                    /* TextInput::make('envio')
                                         ->label('Envío')
                                         ->inputMode('decimal')
                                         ->default(0)
@@ -209,7 +186,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                             $cantidad = floatval($get('cantidad'));
                                             $subtotal = ($precio + $envio + $envase) * $cantidad;
                                             $set('subtotal', $subtotal);
-                                        }),
+                                        }), */
                                     TextInput::make('subtotal')
                                         ->default(0)
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
@@ -221,10 +198,8 @@ class CompraResource extends Resource implements HasShieldPermissions
                                     $subtotal = collect($detalles)->sum(function ($detalle) {
                                         $precio = (float) $detalle['precio'];
                                         $cantidad = (float) $detalle['cantidad'];
-                                        $envio = (float) $detalle['envio'];
-                                        $envase = (float) $detalle['envase'];
 
-                                        return ($precio + $envio + $envase) * $cantidad;
+                                        return $precio  * $cantidad;
                                     });
                                     $set('subtotal', round($subtotal, 2));
                                 }),
@@ -237,7 +212,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Tipo de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::COMPRAS_PAGOS))
+                                        ->relationship('tipoPago', 'tipo_pago')
                                         ->preload()
                                         ->placeholder('Seleccione')
                                         ->live()
@@ -337,8 +312,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->maxSize(1024)
                                         ->openable()
                                         ->columnSpan(['sm' => 1, 'md' => 3])
-                                        ->optimize('webp')
-                                        ->required(),
+                                        ->optimize('webp'),
                                 ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                         ]),
                 ])->skippable()->columnSpanFull(),

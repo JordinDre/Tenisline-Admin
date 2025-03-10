@@ -2,11 +2,12 @@
 
 namespace App\Filament\Ventas\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
+use App\Models\User;
 use App\Models\Labor;
 use App\Models\Orden;
-use App\Models\User;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\Utils\Functions;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class OrdenesPreVenta extends ChartWidget
@@ -21,11 +22,23 @@ class OrdenesPreVenta extends ChartWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+             
         return auth()->user()->can('widget_OrdenesPreVenta');
     }
 
     protected function getData(): array
     {
+        if (!Schema::hasTable('labors') && !Schema::hasTable('ordens')) { 
+            return [
+             'labels' => [], // Labels vacíos para el gráfico
+              'datasets' => [], // Datasets vacíos para el gráfico
+              ];
+              }
+
+              
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

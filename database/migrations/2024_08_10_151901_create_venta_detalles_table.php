@@ -16,12 +16,12 @@ return new class extends Migration
             $table->integer('cantidad');
             $table->decimal('precio', 10, 2);
             $table->decimal('precio_comp', 10, 2)->nullable();
-            $table->decimal('ganancia', 10, 2)->nullable();
+            /* $table->decimal('ganancia', 10, 2)->nullable(); */
             $table->decimal('subtotal', 10, 2)->nullable();
-            $table->decimal('comision', 10, 2)->nullable();
-            $table->integer('bonificacion')->nullable()->default(0);
-            $table->integer('devuelto')->nullable()->default(0);
-            $table->integer('devuelto_mal')->nullable()->default(0);
+            /* $table->decimal('comision', 10, 2)->nullable();
+            $table->integer('bonificacion')->nullable()->default(0); */
+            /* $table->integer('devuelto')->nullable()->default(0);
+            $table->integer('devuelto_mal')->nullable()->default(0); */
             $table->unsignedBigInteger('producto_id');
             $table->unsignedBigInteger('venta_id');
             $table->unsignedBigInteger('escala_id')->nullable();

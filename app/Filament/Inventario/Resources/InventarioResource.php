@@ -77,8 +77,8 @@ class InventarioResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('producto.codigo')
-                    ->label('Código')
+                Tables\Columns\TextColumn::make('producto.nombre')
+                    ->label('Nombre')
                     ->searchable()
                     ->copyable()
                     ->sortable(),
@@ -90,10 +90,10 @@ class InventarioResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('producto.presentacion.presentacion')
+                /* Tables\Columns\TextColumn::make('producto.presentacion.presentacion')
                     ->searchable()
                     ->copyable()
-                    ->sortable(),
+                    ->sortable(), */
             ])
             ->filters([
                 SelectFilter::make('bodega_id')

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('promocions', function (Blueprint $table) {
+       /*  Schema::create('promocions', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
             $table->text('descripcion')->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->foreign('escala_id')->references('id')->on('escalas');
             $table->boolean('estado')->default(true);
             $table->timestamps();
-        });
+        }); */
     }
 
     /**

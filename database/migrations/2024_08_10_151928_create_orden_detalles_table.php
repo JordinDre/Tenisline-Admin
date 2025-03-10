@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orden_detalles', function (Blueprint $table) {
+       /*  Schema::create('orden_detalles', function (Blueprint $table) {
             $table->id();
             $table->integer('cantidad');
             $table->decimal('precio', 10, 2);
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->foreign('producto_id')->references('id')->on('productos');
             $table->foreign('orden_id')->references('id')->on('ordens');
             $table->foreign('escala_id')->references('id')->on('escalas');
-        });
+        }); */
     }
 
     /**

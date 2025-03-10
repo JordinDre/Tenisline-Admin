@@ -2,10 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Labor;
 use App\Models\Venta;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\Utils\Functions;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class VentasGeneral extends ChartWidget
@@ -22,11 +23,22 @@ class VentasGeneral extends ChartWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('labors')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+
         return auth()->user()->can('widget_VentasGeneral');
     }
 
     protected function getData(): array
     {
+        if (!Schema::hasTable('labors')) {
+            return [
+            'labels' => [], // Labels vacíos para el gráfico
+            'datasets' => [], // Datasets vacíos para el gráfico
+            ];
+            }
+            
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;
