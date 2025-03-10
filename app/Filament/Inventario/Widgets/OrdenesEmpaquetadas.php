@@ -2,11 +2,13 @@
 
 namespace App\Filament\Inventario\Widgets;
 
-use App\Models\Orden;
+use App\Models\Guia;
 use Filament\Tables;
+use App\Models\Orden;
 use Filament\Tables\Table;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Schema;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class OrdenesEmpaquetadas extends BaseWidget
 {
@@ -22,25 +24,32 @@ class OrdenesEmpaquetadas extends BaseWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+
         return auth()->user()->can('widget_OrdenesEmpaquetadas');
     }
 
     public function table(Table $table): Table
     {
+
+        $query = Schema::hasTable('ordens')
+        ? Orden::query() // Si la tabla 'ordens' EXISTE, usar la consulta normal
+        ->when(
+       Schema::hasTable('ordenes'), // Condición (redundante aquí, pero se deja por claridad, podrías simplificar)
+        fn ($q) => $q
+        ->whereRaw('1=1') //  <- PLACEHOLDER, REEMPLAZA CON LA CONSULTA REAL DE ORDENESTADOS!!!
+        )
+        : Guia::query()->whereRaw('1=0'); 
+
+        
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;
 
         return $table
-            ->query(
-                Orden::query()
-                    ->selectRaw('empaquetador_id as id, users.name, COUNT(*) as cantidad, SUM(total) as total')
-                    ->join('users', 'ordens.empaquetador_id', '=', 'users.id')
-                    ->whereNotNull('empaquetador_id')
-                    ->whereYear('fecha_preparada', $year)
-                    ->whereMonth('fecha_preparada', $month)
-                    ->when($day, fn ($query) => $query->whereDay('fecha_preparada', $day))
-                    ->groupBy('empaquetador_id', 'users.name')
+            ->query($query
             )
             ->columns([
                 Tables\Columns\TextColumn::make('id')

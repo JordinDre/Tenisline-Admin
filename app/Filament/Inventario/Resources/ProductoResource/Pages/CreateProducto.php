@@ -19,8 +19,8 @@ class CreateProducto extends CreateRecord
             ($record->id ?? '').'-'.
                 ($record->codigo ?? '').'-'.
                 ($record->descripcion ?? '').'-'.
-                (Marca::find($record->marca_id)->marca ?? '').'-'.
-                (Presentacion::find($record->presentacion_id)->presentacion ?? '')
+                (Marca::find($record->marca_id)->marca ?? '')/* .'-'.
+                (Presentacion::find($record->presentacion_id)->presentacion ?? '') */
         );
         $record->update(['slug' => $slug]);
     }

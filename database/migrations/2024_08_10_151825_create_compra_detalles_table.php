@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->integer('cantidad')->default(0);
             $table->decimal('precio', 10, 2)->default(0);
-            $table->decimal('envio', 10, 2)->default(0);
-            $table->decimal('envase', 10, 2)->default(0);
+            /* $table->decimal('envio', 10, 2)->default(0);
+            $table->decimal('envase', 10, 2)->default(0); */
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->unsignedBigInteger('producto_id');
             $table->unsignedBigInteger('compra_id');

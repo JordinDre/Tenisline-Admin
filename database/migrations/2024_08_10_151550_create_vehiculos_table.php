@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vehiculos', function (Blueprint $table) {
+        /* Schema::create('vehiculos', function (Blueprint $table) {
             $table->id();
             $table->string('placa', 25)->unique();
             $table->string('color', 25)->nullable();
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->json('imagenes')->nullable();
             $table->softDeletes();
             $table->timestamps();
-        });
+        }); */
     }
 
     /**

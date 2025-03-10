@@ -14,14 +14,14 @@ class ProductoController extends Controller
         $userRoles = auth()->user()->roles->pluck('name');
         $escalasFiltradas = collect();
 
-        if ($tipo) {
+        /* if ($tipo) {
             $rolesValidos = $tipo === 'venta' ? User::VENTA_ROLES : User::ORDEN_ROLES;
             $roleIds = Role::whereIn('name', $rolesValidos)->pluck('id')->toArray();
 
             $escalasFiltradas = $producto->escalas->filter(
                 fn ($escala) => in_array($escala->role_id, $roleIds) && $userRoles->contains($escala->role->name)
             );
-        }
+        } */
 
         $existencia = $tipo === 'orden'
             ? $producto->inventario->whereIn('bodega_id', Bodega::EXISTENCIA_ORDENES)->sum('existencia')
@@ -31,12 +31,12 @@ class ProductoController extends Controller
             ? config('filesystems.disks.s3.url').$producto->imagenes[0]
             : asset('images/icono.png');
 
-        $escalasHtml = $escalasFiltradas->isNotEmpty()
+        /* $escalasHtml = $escalasFiltradas->isNotEmpty()
             ? $escalasFiltradas->map(fn ($escala) => "<div style='margin-right: 10px;'><strong>{$escala->escala}:</strong> Q{$escala->precio}</div>")
                 ->implode('')
-            : '';
+            : ''; */
 
-        return "
+        /* return "
         <div style='display: flex; align-items: flex-start;'> 
             <img src='{$imagenUrl}' alt='Imagen del producto' 
                  style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
@@ -57,19 +57,39 @@ class ProductoController extends Controller
                     <div style='display: flex; flex-wrap: wrap; margin-top: 5px;'>{$escalasHtml}</div>
                 </div>
             </div>
+        </div>"; */
+
+        return "
+        <div style='display: flex; align-items: flex-start;'> 
+            <img src='{$imagenUrl}' alt='Imagen del producto' 
+                 style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
+            <div>
+                <div style='font-weight: bold; color: black;'> 
+                    ID: {$producto->id} - <span style='color: black;'>{$producto->nombre}</span>
+                </div>
+                <div style='color: black;'> 
+                    <span style='color: black;'>Descripción: </span>{$producto->descripcion}
+                </div>
+                <div style='color: black;'>
+                    Marca: {$producto->marca->marca} 
+                </div>
+                <div style='color: black; font-weight: bold; margin-top: 5px;'>
+                    Existencia: {$existencia}
+                </div>
+            </div>
         </div>";
     }
 
     public static function searchProductos(string $search, $tipo = null, $bodega = 1): array
     {
         $productos = Producto::query()
-            ->with(['marca', 'presentacion'])
+            ->with(['marca'/* , 'presentacion' */])
             ->where(function ($query) use ($search) {
-                $query->where('codigo', 'LIKE', "%{$search}%")
+                $query->where('nombre', 'LIKE', "%{$search}%")
                     ->orWhere('id', 'LIKE', "%{$search}%")
                     ->orWhere('descripcion', 'LIKE', "%{$search}%")
                     ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"))
-                    ->orWhereHas('presentacion', fn ($q) => $q->where('presentacion', 'LIKE', "%{$search}%"));
+                    /* ->orWhereHas('presentacion', fn ($q) => $q->where('presentacion', 'LIKE', "%{$search}%")) */;
             })
             ->limit(5)
             ->get();

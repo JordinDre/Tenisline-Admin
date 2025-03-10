@@ -87,11 +87,11 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->label('DPI')
                             ->maxLength(13)
                             ->minLength(13),
-                        TextInput::make('razon_social')
+                        /* TextInput::make('razon_social')
                             ->required()
                             ->readOnly()
                             ->default('CF')
-                            ->label('Razón Social'),
+                            ->label('Razón Social'), */
                         TextInput::make('name')
                             ->required()
                             ->label('Nombre/Nombre Comercial'),
@@ -135,20 +135,20 @@ class UserResource extends Resource implements HasShieldPermissions
                                 }
                             })
                             ->searchable(),
-                        Select::make('comercios')
+                        /* Select::make('comercios')
                             ->label('Tipos de Comercio')
                             ->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles')))
                             ->relationship('comercios', 'comercio')
                             ->multiple()
                             ->live()
-                            ->searchable(),
-                        Select::make('asesores')
+                            ->searchable(), */
+                        /* Select::make('asesores')
                             ->multiple()
                             ->rules(['max:1'])
                             ->disabled(fn (Get $get) => ! in_array(5, $get('roles')))
                             ->relationship('asesores', 'name', fn (Builder $query) => $query->role(User::ASESOR_ROLES))
-                            ->searchable(),
-                        Select::make('supervisores')
+                            ->searchable(), */
+                        /* Select::make('supervisores')
                             ->multiple()
                             ->disabled(fn (Get $get) => ! array_intersect([9, 10, 11], $get('roles')))
                             ->relationship('supervisores', 'name', fn (Builder $query) => $query->role(User::SUPERVISOR_ROLES))
@@ -173,8 +173,8 @@ class UserResource extends Resource implements HasShieldPermissions
                             ])
                             ->multiple()
                             ->preload()
-                            ->searchable(),
-                        TextInput::make('credito')
+                            ->searchable(), */
+                        /* TextInput::make('credito')
                             ->required(fn (Get $get) => in_array(2, $get('tipo_pagos')))
                             ->disabled(fn (Get $get) => ! in_array(2, $get('tipo_pagos')))
                             ->minValue(0)
@@ -187,7 +187,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->minValue(0)
                             ->inputMode('decimal')
                             ->rule('numeric')
-                            ->label('Días de Crédito'),
+                            ->label('Días de Crédito'), */
                     ]),
                 Select::make('bodegas')
                     ->multiple()
@@ -211,7 +211,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->maxSize(1024)
                     ->openable()
                     ->optimize('webp'),
-                Repeater::make('direcciones')
+                /* Repeater::make('direcciones')
                     ->relationship()
                     ->schema([
                         Select::make('pais_id')
@@ -262,7 +262,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->tel()
                             ->minLength(8)
                             ->maxLength(8),
-                    ])->columnSpanFull()->columns(4)->defaultItems(0)->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles'))),
+                    ])->columnSpanFull()->columns(4)->defaultItems(0)->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles'))), */
                 Repeater::make('observaciones')
                     ->relationship()
                     ->defaultItems(0)
@@ -287,10 +287,10 @@ class UserResource extends Resource implements HasShieldPermissions
                 TextColumn::make('roles.name')
                     ->listWithLineBreaks()
                     ->bulleted(),
-                TextColumn::make('razon_social')
+                /* TextColumn::make('razon_social')
                     ->searchable()
                     ->copyable()
-                    ->sortable(),
+                    ->sortable(), */
                 TextColumn::make('name')
                     ->label('Nombre/Nombre Comercial')
                     ->searchable()
@@ -299,12 +299,12 @@ class UserResource extends Resource implements HasShieldPermissions
                 TextColumn::make('roles.name')
                     ->listWithLineBreaks()
                     ->bulleted(),
-                TextColumn::make('asesores.name')
+                /* TextColumn::make('asesores.name')
                     ->listWithLineBreaks()
                     ->bulleted(),
                 TextColumn::make('supervisores.name')
                     ->copyable()
-                    ->sortable(),
+                    ->sortable(), */
                 TextColumn::make('telefono')
                     ->label('Teléfono')
                     ->copyable()
@@ -313,7 +313,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->label('Whatsapp')
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('saldo')
+                /* Tables\Columns\TextColumn::make('saldo')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('credito')
@@ -321,7 +321,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 Tables\Columns\TextColumn::make('credito_dias')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable(), */
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime('d/m/Y H:i:s')

@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Factura;
-use App\Models\Inventario;
-use App\Models\Kardex;
-use App\Models\Producto;
-use App\Models\Venta;
 use Exception;
-use Filament\Notifications\Notification;
+use App\Models\User;
+use App\Models\Venta;
+use App\Models\Bodega;
+use App\Models\Kardex;
+use App\Models\Factura;
+use App\Models\Producto;
+use App\Models\Inventario;
 use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 
 class VentaController extends Controller
 {
@@ -255,6 +256,36 @@ class VentaController extends Controller
             Notification::make()
                 ->color('danger')
                 ->title('Error al devolver la Venta')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public static function cotizacionOrden(Venta $orden)
+    {
+        try {
+            DB::transaction(function () use ($orden) {
+                $user = User::find($orden->cliente_id);
+                if ($orden->tipo_pago_id == 2 && $orden->total > ($user->credito - $user->saldo)) {
+                    throw new Exception('El cliente no tiene suficiente crédito para realizar la compra');
+                }
+                $orden->estado = 'creada';
+                $orden->save();
+                if ($orden->tipo_pago_id == 2) {
+                    UserController::sumarSaldo($orden->cliente_id, $orden->total);
+                }
+            });
+            activity()->performedOn($orden)->causedBy(auth()->user())->withProperties($orden)->event('conversion')->log('Cotización a Orden');
+            Notification::make()
+                ->color('success')
+                ->title('Se ha convertido la cotización a Orden #'.$orden->id)
+                ->success()
+                ->send();
+        } catch (Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al completar la Orden')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();

@@ -17,11 +17,11 @@ return new class extends Migration
             $table->unsignedBigInteger('anulo_id')->nullable();
             $table->decimal('total', 10, 2);
             $table->decimal('subtotal', 10, 2);
-            $table->integer('dias_credito')->nullable();
+            //$table->integer('dias_credito')->nullable();
             $table->unsignedBigInteger('tipo_pago_id');
             $table->enum('estado', ['creada', 'completada', 'confirmada', 'anulada'])->default('creada');
             $table->unsignedBigInteger('bodega_id');
-            $table->unsignedBigInteger('proveedor_id');
+            $table->unsignedBigInteger('proveedor_id')->nullable();
             $table->text('observaciones')->nullable();
             $table->dateTime('fecha_completada')->nullable();
             $table->dateTime('fecha_confirmada')->nullable();

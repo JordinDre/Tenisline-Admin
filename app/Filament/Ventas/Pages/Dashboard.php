@@ -44,7 +44,7 @@ class Dashboard extends \Filament\Pages\Dashboard
             ]);
     }
 
-    protected static ?string $title = 'Ventas y Ordenes';
+    protected static ?string $title = 'Ventas';
 
     protected static ?string $navigationLabel = 'Dashboard';
 

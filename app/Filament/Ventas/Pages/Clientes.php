@@ -2,8 +2,9 @@
 
 namespace App\Filament\Ventas\Pages;
 
-use App\Filament\Ventas\Resources\ClientesPageResource\Widgets\Cartera;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Schema;
+use App\Filament\Ventas\Resources\ClientesPageResource\Widgets\Cartera;
 
 class Clientes extends Page
 {
@@ -20,6 +21,10 @@ class Clientes extends Page
 
     public static function canAccess(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO permitir el acceso a la página
+           }
+           
         return auth()->user()->can('view_any_clients');
     }
 

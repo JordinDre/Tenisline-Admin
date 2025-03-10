@@ -3,6 +3,7 @@
 namespace App\Filament\Ventas\Pages;
 
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Schema;
 
 class Caidos extends Page
 {
@@ -16,6 +17,10 @@ class Caidos extends Page
 
     public static function canAccess(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+             return false; // Si la tabla 'ordens' NO existe, NO permitir el acceso a la página
+            }
+
         return auth()->user()->can('view_any_caidos');
     }
 }

@@ -60,8 +60,8 @@ class VentaResource extends Resource implements HasShieldPermissions
         return [
             'view_any',
             'view',
-            /* 'create',
-            'update',*/
+            'create',
+           /*  'update', */
             'liquidate',
             'factura',
             'annular',
@@ -267,7 +267,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('cliente.razon_social')
+                Tables\Columns\TextColumn::make('cliente.name')
                     ->searchable()
                     ->numeric()
                     ->copyable()
@@ -295,7 +295,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->bulleted()
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('detalles.producto.codigo')
+                Tables\Columns\TextColumn::make('detalles.producto.nombre')
                     ->label('Cod Producto')
                     ->searchable()
                     ->listWithLineBreaks()
@@ -316,13 +316,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->bulleted()
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('detalles.producto.presentacion.presentacion')
+                /* Tables\Columns\TextColumn::make('detalles.producto.presentacion.presentacion')
                     ->label('Presentación')
                     ->searchable()
                     ->listWithLineBreaks()
                     ->bulleted()
                     ->copyable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true), */
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime('d/m/Y H:i:s')
@@ -337,12 +337,12 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('tipo_pago_id')
+                /* SelectFilter::make('tipo_pago_id')
                     ->label('Tipo de Pago')
                     ->multiple()
                     ->options(
                         TipoPago::CLIENTE_PAGOS_ARRAY
-                    ),
+                    ), */
                 SelectFilter::make('estado')
                     ->label('Estado')
                     ->multiple()
@@ -382,7 +382,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
-                    Action::make('nota_credito')
+                    /* Action::make('nota_credito')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => auth()->user()->can('credit_note', $record))
                         ->modalContent(fn (Venta $record): View => view(
@@ -397,7 +397,11 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalWidth(MaxWidth::FiveExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
-                        ->modalSubmitAction(false),
+                        ->modalSubmitAction(false), */
+                    Action::make('Crear Venta')
+                        ->icon('tabler-transform')
+                        ->visible(fn ($record) => $record->estado->value == 'creada')
+                        ->action(fn (Venta $record, array $data) => VentaController::cotizacionOrden($record)),
                     Action::make('facturar')
                         ->label('Facturar')
                         ->requiresConfirmation()

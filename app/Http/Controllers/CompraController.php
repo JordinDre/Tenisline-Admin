@@ -53,7 +53,7 @@ class CompraController extends Controller
                 $compra->fecha_confirmada = now();
                 $compra->confirmo_id = auth()->user()->id;
                 $compra->save();
-                OrdenController::actualizarBackorder();
+                /* OrdenController::actualizarBackorder(); */
                 activity()->performedOn($compra)->causedBy(auth()->user())->withProperties($compra)->event('confirmación')->log('Compra confirmada');
             });
             Notification::make()

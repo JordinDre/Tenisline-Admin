@@ -2,12 +2,13 @@
 
 namespace App\Filament\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Guia;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Schema;
+use Filament\Tables\Columns\TextColumn;
+use App\Http\Controllers\Utils\Functions;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class InformacionEnvios extends BaseWidget
 {
@@ -23,11 +24,24 @@ class InformacionEnvios extends BaseWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+             
         return auth()->user()->can('widget_InformacionEnvios');
     }
 
     public function table(Table $table): Table
     {
+
+        if (!Schema::hasTable('ordens')) {
+            // Si la tabla 'ordens' NO existe, retorna un Table VACÍO PERO VÁLIDO
+            return $table
+                ->query(Guia::query()->whereRaw('1=0')) // Query que NO retorna NADA (siempre falso)
+                ->columns([]); // Sin columnas (tabla vacía visualmente);
+        }
+
+
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

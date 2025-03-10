@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('traslados', function (Blueprint $table) {
+       /*  Schema::create('traslados', function (Blueprint $table) {
             $table->id();
             $table->enum('estado', ['creado', 'preparado', 'en tránsito', 'recibido', 'confirmado', 'anulado'])->default('creado');
             $table->unsignedBigInteger('salida_id');
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->foreign('piloto_id')->references('id')->on('users');
             $table->foreign('vehiculo_id')->references('id')->on('vehiculos');
             $table->foreign('anulo_id')->references('id')->on('users');
-        });
+        }); */
     }
 
     /**

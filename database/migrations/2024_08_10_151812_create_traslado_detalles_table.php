@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('traslado_detalles', function (Blueprint $table) {
+        /* Schema::create('traslado_detalles', function (Blueprint $table) {
             $table->id();
             $table->integer('cantidad_enviada');
             $table->integer('cantidad_recibida')->nullable();
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
             $table->foreign('producto_id')->references('id')->on('productos');
             $table->foreign('traslado_id')->references('id')->on('traslados');
-        });
+        }); */
     }
 
     /**

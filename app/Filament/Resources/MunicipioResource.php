@@ -154,4 +154,12 @@ class MunicipioResource extends Resource implements HasShieldPermissions
                 SoftDeletingScope::class,
             ]);
     }
+
+    public static function getNavigationItems(): array //  AÑADE ESTE MÉTODO
+    {
+        return [
+            parent::getNavigationItems()[0] // Obtiene el elemento de navegación por defecto
+                ->visible(false), //  Aplica ->visible(false) para ocultarlo SIEMPRE
+        ];
+    }
 }

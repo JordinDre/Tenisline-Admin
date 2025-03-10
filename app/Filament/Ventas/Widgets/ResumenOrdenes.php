@@ -2,12 +2,13 @@
 
 namespace App\Filament\Ventas\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Meta;
 use App\Models\Orden;
+use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\Utils\Functions;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ResumenOrdenes extends BaseWidget
 {
@@ -23,11 +24,22 @@ class ResumenOrdenes extends BaseWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+
         return auth()->user()->can('widget_ResumenOrdenes');
     }
 
     protected function getStats(): array
     {
+        if (!Schema::hasTable('ordens')) { 
+            return [
+             'labels' => [], // Labels vacíos para el gráfico
+              'datasets' => [], // Datasets vacíos para el gráfico
+              ];
+              }
+              
         $user = auth()->user();
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;

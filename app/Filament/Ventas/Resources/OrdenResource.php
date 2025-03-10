@@ -672,4 +672,12 @@ class OrdenResource extends Resource implements HasShieldPermissions
 
         return $query;
     }
+
+    public static function getNavigationItems(): array 
+    {
+        return [
+            parent::getNavigationItems()[0] 
+                ->visible(false), 
+        ];
+    }
 }

@@ -31,6 +31,7 @@ class ComercioResource extends Resource implements HasShieldPermissions
 
     protected static ?int $navigationSort = 3;
 
+
     public static function getPermissionPrefixes(): array
     {
         return [
@@ -118,5 +119,13 @@ class ComercioResource extends Resource implements HasShieldPermissions
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getNavigationItems(): array //  AÑADE ESTE MÉTODO
+    {
+        return [
+            parent::getNavigationItems()[0] // Obtiene el elemento de navegación por defecto
+                ->visible(false), //  Aplica ->visible(false) para ocultarlo SIEMPRE
+        ];
     }
 }
