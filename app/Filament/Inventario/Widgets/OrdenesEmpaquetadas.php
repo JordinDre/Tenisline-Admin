@@ -27,7 +27,7 @@ class OrdenesEmpaquetadas extends BaseWidget
         if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
-
+             
         return auth()->user()->can('widget_OrdenesEmpaquetadas');
     }
 
@@ -42,7 +42,6 @@ class OrdenesEmpaquetadas extends BaseWidget
         ->whereRaw('1=1') //  <- PLACEHOLDER, REEMPLAZA CON LA CONSULTA REAL DE ORDENESTADOS!!!
         )
         : Guia::query()->whereRaw('1=0'); 
-
         
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;

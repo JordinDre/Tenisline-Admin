@@ -73,7 +73,9 @@ class User extends Authenticatable implements FilamentUser
     ];
 
     public const VENTA_ROLES = [
-        'asesor venta directa',
+        'super_admin',
+        'administrador',
+        'vendedor',
     ];
 
     public const ROLES_ADMIN = ['super_admin', 'administrador', 'gerente'];

@@ -37,8 +37,6 @@ class OrdenesTelemarketing extends ChartWidget
               'datasets' => [], // Datasets vacíos para el gráfico
               ];
               }
-              
-        
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

@@ -50,13 +50,7 @@ class CreateVenta extends CreateRecord
                 Grid::make(['default' => 3])
                     ->schema([
                         Select::make('bodega_id')
-                            ->relationship(
-                                'bodega',
-                                'bodega',
-                                fn (Builder $query) => $query->whereHas('user', function ($query) {
-                                    $query->where('user_id', auth()->user()->id);
-                                })
-                            )
+                            ->relationship('bodega', 'bodega')
                             ->preload()
                             ->live()
                             ->afterStateUpdated(function (Set $set) {
@@ -71,7 +65,7 @@ class CreateVenta extends CreateRecord
                         TextInput::make('total')
                             ->readOnly()
                             ->prefix('Q')
-                            ->rules([
+                            /* ->rules([
                                 fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                     $user = User::find($get('cliente_id'));
                                     if ($get('tipo_pago_id') == 2 && $value > ($user->credito - $user->saldo)) {
@@ -81,7 +75,7 @@ class CreateVenta extends CreateRecord
                                         $fail('El Cliente no cuenta con NIT registrado para el valor de la Orden.');
                                     }
                                 },
-                            ])
+                            ]) */
                             ->label('Total'),
                     ]),
                 Wizard::make([
@@ -104,7 +98,7 @@ class CreateVenta extends CreateRecord
                                         ->relationship('producto', 'descripcion')
                                         ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id')))
                                         ->allowHtml()
-                                        ->searchable(['id'])
+                                        ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'nombre', 'modelo']) // Añadir 'nombre' y 'modelo' para búsqueda
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
                                             return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'));
                                         })
@@ -113,32 +107,45 @@ class CreateVenta extends CreateRecord
                                         ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
                                         ->live()
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                            if ($state) {
-                                                $userRoles = auth()->user()->roles->pluck('name');
-                                                $role = collect(User::VENTA_ROLES)->first(fn ($r) => $userRoles->contains($r));
-                                                $escala = Escala::where('producto_id', $state)
-                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
-                                                    ->orderByDesc('precio')
-                                                    ->first();
+                                            if ($state && $get('../../bodega_id')) { 
+                                                $bodegaId = $get('../../bodega_id');
+                                                $productoId = $state;
+                                    
+                                                $escala = ProductoController::getEscalaPrecio(
+                                                    productoId: $productoId,
+                                                );
+                                    
+                                                $producto = Producto::find($productoId); 
+                                                $precioBase = $producto->precio_venta;
+                                                $precioConDescuento = $precioBase; // Precio por defecto (sin descuento)
+                                                $porcentajeDescuento = 0; // Porcentaje de descuento por defecto
+                                    
                                                 if ($escala) {
-                                                    $set('escala_id', $escala->id);
-                                                    $set('precio', $escala->precio);
-                                                    $set('comision', $escala->comision);
-                                                    $set('precio_comp', Producto::find($state)->precio_costo);
-                                                    $set('subtotal', round((float) $escala->precio * (float) $get('cantidad'), 2));
-                                                    $set('ganancia', round((float) $escala->precio * (float) $get('cantidad') * ($escala->comision / 100), 2));
-
-                                                    return;
+                                                    $porcentajeDescuento = $escala->porcentaje;
+                                                    $precioConDescuento = round($precioBase * (1 - ($escala->porcentaje / 100)), 2); // Calcular precio con descuento
                                                 }
+                                    
+                                                $set('escala_id', $escala ? $escala->id : null); // Guarda el ID de la escala o null si no hay
+                                                $set('precio', $precioConDescuento); // Establecer el precio con descuento (o base si no hay descuento)
+                                                $set('precio_comp', $producto->precio_costo);
+                                                $set('descuento_porcentaje', $porcentajeDescuento); // Guarda el porcentaje de descuento para mostrarlo o usarlo después
+                                    
+                                    
+                                                // Recalcular subtotal al cambiar producto
+                                                $cantidad = $get('cantidad') ?? 1; // Usar 1 como default si no hay cantidad aún
+                                                $set('subtotal', round((float) $precioConDescuento * (float) $cantidad, 2));
+                                                return;
+                                    
+                                    
                                             }
+                                            // Limpiar campos si no se encuentra escala o se deselecciona producto
                                             $set('escala_id', null);
                                             $set('precio', 0);
-                                            $set('comision', 0);
                                             $set('precio_comp', null);
                                             $set('subtotal', 0);
-                                            $set('ganancia', 0);
+                                            $set('descuento_porcentaje', 0); // Limpiar porcentaje de descuento también
                                         })
-                                        ->suffixAction(
+                                        /* ->suffixAction(
                                             Action::make('ver')
                                                 ->icon('heroicon-s-eye')
                                                 ->modalContent(fn ($state): View => view(
@@ -152,7 +159,7 @@ class CreateVenta extends CreateRecord
                                                 ))
                                                 ->modalSubmitAction(false)
                                                 ->modalWidth(MaxWidth::Screen)
-                                        )
+                                        ) */
                                         ->required(),
                                     TextInput::make('cantidad')
                                         ->label('Cantidad')
@@ -171,14 +178,14 @@ class CreateVenta extends CreateRecord
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             $set('subtotal', round((float) $state * (float) $get('precio'), 2));
-                                            $set('ganancia', round((float) $state * (float) $get('precio') * ($get('comision') / 100), 2));
+                                            /* $set('ganancia', round((float) $state * (float) $get('precio') * ($get('comision') / 100), 2)); */
                                         })
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->required(),
                                     TextInput::make('precio')
                                         ->label('Precio')
                                         ->live(onBlur: true)
-                                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                        /* ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
                                                 $userRoles = auth()->user()->roles->pluck('name');
                                                 $role = collect(User::VENTA_ROLES)->first(fn ($r) => $userRoles->contains($r));
@@ -196,13 +203,13 @@ class CreateVenta extends CreateRecord
                                                     return;
                                                 }
                                             }
-                                        })
+                                        }) */
                                         ->default(0)
                                         ->required()
                                         ->prefix('Q')
                                         ->inputMode('decimal')
                                         ->rule('numeric')
-                                        ->minValue(function (Get $get) {
+                                        /* ->minValue(function (Get $get) {
                                             $userRoles = auth()->user()->roles->pluck('name');
                                             $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
 
@@ -210,15 +217,15 @@ class CreateVenta extends CreateRecord
                                                 ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                 ->orderBy('precio')
                                                 ->first()->precio;
-                                        })
+                                        }) */
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                    TextInput::make('comision')
+                                    /* TextInput::make('comision')
                                         ->label('Comisión (%)')
                                         ->readOnly()
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
+                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]), */
                                     Hidden::make('escala_id'),
-                                    Hidden::make('precio_comp'),
-                                    Hidden::make('ganancia'),
+                                    /* Hidden::make('precio_comp'), */
+                                    /* Hidden::make('ganancia'), */
                                     TextInput::make('subtotal')
                                         ->label('SubTotal')
                                         ->prefix('Q')
@@ -230,13 +237,10 @@ class CreateVenta extends CreateRecord
                                 ->afterStateUpdated(function (Set $set, Get $get) {
                                     $detalles = $get('detalles');
                                     $subtotal = collect($detalles)->sum(function ($detalle) {
-                                        $escala = Escala::find($detalle['escala_id']);
-                                        if ($escala) {
-                                            $precio = is_numeric($detalle['precio']) ? (float) $detalle['precio'] : (float) $escala->precio;
-                                            $cantidad = is_numeric($detalle['cantidad']) ? (float) $detalle['cantidad'] : 0;
+                                        $precio = is_numeric($detalle['precio']) ? (float) $detalle['precio'] : 0; 
+                                        $cantidad = is_numeric($detalle['cantidad']) ? (float) $detalle['cantidad'] : 0; 
 
-                                            return $precio * $cantidad;
-                                        }
+                                        return $precio * $cantidad;
                                     });
                                     $set('subtotal', round($subtotal, 2));
                                     $get('subtotal') >= Factura::CF || $set('facturar_cf', false);
@@ -250,22 +254,6 @@ class CreateVenta extends CreateRecord
                                 ->label('Cliente')
                                 ->relationship('cliente', 'name', fn (Builder $query) => $query->role('cliente'))
                                 ->optionsLimit(20)
-                                ->getOptionLabelFromRecordUsing(
-                                    fn (User $record) => collect([
-                                        $record->id,
-                                        $record->nit ? $record->nit : 'CF',
-                                        $record->name,
-                                        $record->razon_social,
-                                        ($record->creditosOrdenesAtrasados->count() > 0 || $record->creditosVentasAtrasados->count() > 0)
-                                            ? '(Créditos Atrasados, Mínimo a Cancelar: Q'.$record->creditosOrdenesAtrasados->sum(fn ($orden) => $orden->total - $orden->pagos->sum('monto')) +
-                                            $record->creditosVentasAtrasados->sum(fn ($venta) => $venta->total - $venta->pagos->sum('monto')).')'
-                                            : '',
-                                    ])->filter()->join(' - ')
-                                )
-                                ->disableOptionWhen(function (string $value): bool {
-                                    return User::find($value)->creditosOrdenesAtrasados()->count() > 0
-                                        || User::find($value)->creditosVentasAtrasados()->count() > 0;
-                                })
                                 ->required()
                                 ->live()
                                 ->afterStateUpdated(function (Set $set) {
@@ -286,9 +274,7 @@ class CreateVenta extends CreateRecord
                                         ->label('Tipo de Pago')
                                         ->required()
                                         ->columnSpan(['sm' => 1, 'md' => 8])
-                                        ->options(
-                                            fn (Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
-                                        )
+                                        ->relationship('tipo_pago', 'tipo_pago')
                                         ->live()
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             $set('pagos', []);
@@ -405,8 +391,7 @@ class CreateVenta extends CreateRecord
                                         ->maxSize(1024)
                                         ->openable()
                                         ->columnSpan(['sm' => 1, 'md' => 3])
-                                        ->optimize('webp')
-                                        ->required(),
+                                        ->optimize('webp'),
                                 ])
                                 ->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                         ]),
@@ -416,7 +401,7 @@ class CreateVenta extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['asesor_id'] = auth()->user()->id;
+        $data['user_id'] = auth()->user()->id;
         $data['estado'] = 'creada';
 
         return $data;
@@ -426,12 +411,12 @@ class CreateVenta extends CreateRecord
     {
         try {
             foreach ($this->data['detalles'] as $key => $detalle) {
-                $escala = Escala::find($detalle['escala_id']);
+               /*  $escala = Escala::find($detalle['escala_id']);
                 if ($escala->desde > $this->data['total'] || $escala->hasta < $this->data['total']) {
                     $producto = Producto::find($detalle['producto_id']);
-                    $productoDetalles = "{$producto->id} - {$producto->codigo} - {$producto->descripcion} - {$producto->marca->marca} - {$producto->presentacion->presentacion}";
+                    $productoDetalles = "{$producto->id} - {$producto->nombre} - {$producto->descripcion} - {$producto->marca->marca}}";
                     throw new \Exception("El producto {$productoDetalles} no tiene una escala válida.");
-                }
+                } */
             }
         } catch (\Exception $e) {
             Notification::make()

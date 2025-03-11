@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
 
 class VentaController extends Controller
-{
+{   
     public static function sumarInventario(Venta $venta, string $descripcion)
     {
         $venta->detalles->each(function ($detalle) use ($venta, $descripcion) {
@@ -54,7 +54,7 @@ class VentaController extends Controller
             $cantidadTotal = $detalle->cantidad;
             if ($existenciaInicial < $cantidadTotal) {
                 $producto = Producto::withTrashed()->find($detalle->producto_id);
-                throw new Exception("No hay suficiente existencia para el producto {$producto->id} - {$producto->codigo} - {$producto->descripcion} - {$producto->marca->marca} - {$producto->presentacion->presentacion}.");
+                throw new Exception("No hay suficiente existencia para el producto {$producto->id} - {$producto->nombre} - {$producto->descripcion} - {$producto->marca->marca}- {$producto->modelo}- {$producto->talla}- {$producto->genero}");
             }
             $inventario->existencia -= $cantidadTotal;
             $inventario->save();

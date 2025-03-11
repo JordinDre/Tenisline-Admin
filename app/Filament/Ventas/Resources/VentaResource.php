@@ -61,7 +61,7 @@ class VentaResource extends Resource implements HasShieldPermissions
             'view_any',
             'view',
             'create',
-           /*  'update', */
+            /* 'update', */
             'liquidate',
             'factura',
             'annular',
@@ -274,7 +274,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 Tables\Columns\TextColumn::make('asesor.name')
                     ->searchable()
-                    ->label('Asesor')
+                    ->label('Vendedor')
                     ->numeric()
                     ->copyable()
                     ->sortable(),
@@ -398,10 +398,6 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false), */
-                    Action::make('Crear Venta')
-                        ->icon('tabler-transform')
-                        ->visible(fn ($record) => $record->estado->value == 'creada')
-                        ->action(fn (Venta $record, array $data) => VentaController::cotizacionOrden($record)),
                     Action::make('facturar')
                         ->label('Facturar')
                         ->requiresConfirmation()
@@ -472,12 +468,12 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('producto_id')
                                         ->label('Producto')
-                                        ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca', 'presentacion', 'escalas']))
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, null, 1))
+                                        ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca']))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', 1))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search): array {
-                                            return ProductoController::searchProductos($search, null, 1);
+                                            return ProductoController::searchProductos($search, 'venta', 1);
                                         })
                                         ->optionsLimit(12)
                                         ->required(),
@@ -510,7 +506,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->link()
                     ->label('Acciones'),
             ], position: ActionsPosition::BeforeColumns)
-            ->poll('10s');
+            ->poll('60s');
     }
 
     public static function getRelations(): array
@@ -530,7 +526,7 @@ class VentaResource extends Resource implements HasShieldPermissions
         ];
     }
 
-    public static function getEloquentQuery(): Builder
+    /* public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
         $user = auth()->user();
@@ -551,5 +547,5 @@ class VentaResource extends Resource implements HasShieldPermissions
 
             return $query;
         }
-    }
+    } */
 }

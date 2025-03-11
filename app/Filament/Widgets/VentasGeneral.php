@@ -32,15 +32,13 @@ class VentasGeneral extends ChartWidget
 
     protected function getData(): array
     {
-
         if (!Schema::hasTable('labors')) {
-             return [
-             'labels' => [], // Labels vacíos para el gráfico
-             'datasets' => [], // Datasets vacíos para el gráfico
-             ];
-             }
-
-
+            return [
+            'labels' => [], // Labels vacíos para el gráfico
+            'datasets' => [], // Datasets vacíos para el gráfico
+            ];
+            }
+            
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

@@ -28,7 +28,6 @@ class OrdenEstados extends BaseWidget
 
     public function table(Table $table): Table
     {
-
         $query = Schema::hasTable('ordens')
  ? Orden::query() // Si la tabla 'ordens' EXISTE, usar la consulta normal
  ->when(
@@ -37,9 +36,10 @@ Schema::hasTable('ordenes'), // Condición (redundante aquí, pero se deja por c
  ->whereRaw('1=1') //  <- PLACEHOLDER, REEMPLAZA CON LA CONSULTA REAL DE ORDENESTADOS!!!
  )
  : Guia::query()->whereRaw('1=0'); 
-
+ 
         return $table
-        ->query($query)
+            ->query($query
+            )
             ->columns([
                 TextColumn::make('estado')
                     ->label('Estado')

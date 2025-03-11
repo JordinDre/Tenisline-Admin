@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 255)->nullable();
             $table->string('nit', 25)->nullable();
             $table->string('dpi', 25)->nullable();
-            //$table->string('razon_social', 100)->nullable();
+            /* $table->string('razon_social', 100)->nullable(); */
             $table->string('telefono', 25)->nullable();
             $table->string('whatsapp', 25)->nullable();
             $table->string('email')->unique()->nullable();
@@ -24,8 +24,8 @@ return new class extends Migration
             $table->string('password')->nullable();
             /* $table->decimal('saldo', 10, 2)->nullable()->default(0);
             $table->decimal('credito', 10, 2)->nullable()->default(0);
-            $table->integer('credito_dias')->nullable()->default(0); */
-            //$table->integer('asignado_id')->nullable();
+            $table->integer('credito_dias')->nullable()->default(0);
+            $table->integer('asignado_id')->nullable(); */
             $table->json('imagenes')->nullable();
             $table->date('fecha_nacimiento')->nullable();
             $table->rememberToken();
