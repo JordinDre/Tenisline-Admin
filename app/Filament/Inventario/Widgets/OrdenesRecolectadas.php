@@ -27,14 +27,12 @@ class OrdenesRecolectadas extends BaseWidget
         if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
-
              
         return auth()->user()->can('widget_OrdenesRecolectadas');
     }
 
     public function table(Table $table): Table
     {
-
         $query = Schema::hasTable('ordens')
         ? Orden::query() // Si la tabla 'ordens' EXISTE, usar la consulta normal
         ->when(
@@ -43,7 +41,6 @@ class OrdenesRecolectadas extends BaseWidget
         ->whereRaw('1=1') //  <- PLACEHOLDER, REEMPLAZA CON LA CONSULTA REAL DE ORDENESTADOS!!!
         )
         : Guia::query()->whereRaw('1=0');
-
         
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;

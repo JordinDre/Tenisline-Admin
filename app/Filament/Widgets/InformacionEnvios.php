@@ -27,21 +27,18 @@ class InformacionEnvios extends BaseWidget
         if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
-             
         return auth()->user()->can('widget_InformacionEnvios');
     }
 
     public function table(Table $table): Table
     {
-
         if (!Schema::hasTable('ordens')) {
             // Si la tabla 'ordens' NO existe, retorna un Table VACÍO PERO VÁLIDO
             return $table
                 ->query(Guia::query()->whereRaw('1=0')) // Query que NO retorna NADA (siempre falso)
                 ->columns([]); // Sin columnas (tabla vacía visualmente);
         }
-
-
+        
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

@@ -108,7 +108,7 @@ class KardexResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('producto.nombre')
-                    ->label('Código')
+                    ->label('Nombre')
                     ->searchable()
                     ->copyable()
                     ->sortable(),
@@ -142,8 +142,8 @@ class KardexResource extends Resource implements HasShieldPermissions
                     ->options([
                         'App\Models\Compra' => 'Compra',
                         'App\Models\Inventario' => 'Inventario',
-                        /* 'App\Models\Orden' => 'Orden', */
-                        /* 'App\Models\Traslado' => 'Traslado', */
+                        /* 'App\Models\Orden' => 'Orden',
+                        'App\Models\Traslado' => 'Traslado', */
                         'App\Models\Venta' => 'Venta',
                     ]),
                 Filter::make('created_at')

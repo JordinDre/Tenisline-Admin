@@ -24,7 +24,6 @@ class ResumenVentas extends BaseWidget
 
     public static function canView(): bool
     {
-
         if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
@@ -40,7 +39,6 @@ class ResumenVentas extends BaseWidget
               'datasets' => [], // Datasets vacíos para el gráfico
               ];
               }
-
               
         $user = auth()->user();
         $year = $this->filters['year'] ?? now()->year;

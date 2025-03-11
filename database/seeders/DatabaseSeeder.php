@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
-       /*  Bodega::create([
+        /* Bodega::create([
             'bodega' => 'Abura',
             'direccion' => 'Capital',
             'municipio_id' => 8,

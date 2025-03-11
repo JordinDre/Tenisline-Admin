@@ -22,10 +22,9 @@ class OrdenesPreVenta extends ChartWidget
 
     public static function canView(): bool
     {
-        if (!Schema::hasTable('labors') && !Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
-
              
         return auth()->user()->can('widget_OrdenesPreVenta');
     }
@@ -39,6 +38,7 @@ class OrdenesPreVenta extends ChartWidget
               ];
               }
 
+              
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

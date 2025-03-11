@@ -45,7 +45,7 @@ class Producto extends Model
         return $this->belongsTo(Marca::class);
     }
 
-    /* public function presentacion(): BelongsTo
+   /*  public function presentacion(): BelongsTo
     {
         return $this->belongsTo(Presentacion::class);
     } */
@@ -65,7 +65,7 @@ class Producto extends Model
         return $this->hasMany(Inventario::class);
     }
 
-    /* public function comercios(): BelongsToMany
+   /*  public function comercios(): BelongsToMany
     {
         return $this->belongsToMany(Comercio::class)->using(ComercioProducto::class);
     } */

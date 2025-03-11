@@ -2,31 +2,33 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\ProductoResource\Pages;
-use App\Models\Observacion;
-use App\Models\Producto;
 use App\Models\User;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Tables;
+use App\Models\Escala;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Filters\SelectFilter;
+use App\Models\Producto;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Models\Observacion;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Inventario\Resources\ProductoResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class ProductoResource extends Resource implements HasShieldPermissions
 {
@@ -106,12 +108,16 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         Select::make('proveedor_id')
                             ->searchable()
                             ->visible(auth()->user()->can('view_supplier_producto'))
-                            ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
+                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
                         Select::make('marca_id')
                             ->required()
                             ->optionsLimit(12)
                             ->searchable()
                             ->relationship('marca', 'marca'),
+                        /* Select::make('presentacion_id')
+                            ->required()
+                            ->searchable()
+                            ->relationship('presentacion', 'presentacion'), */
                         DatePicker::make('fecha_ingreso')
                             ->label('Fecha de Ingreso'),
                     ]),
@@ -142,23 +148,44 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->inputMode('decimal')
                             ->rule('numeric'),
                     ]),
-                /* Repeater::make('escalas')
+                Repeater::make('escalas')
                     ->relationship()
                     ->visible(auth()->user()->can('view_costs_producto'))
                     ->schema([
-                        TextInput::make('escala')
-                            ->label('Escala')
+                        Select::make('dia')
+                            ->label('Día')
+                            ->options(function (callable $get) {
+                                $productoId = $get('producto_id');
+
+                                if (!$productoId) {
+                                    return [
+                                        'lunes' => 'Lunes',
+                                        'martes' => 'Martes',
+                                        'miercoles' => 'Miércoles',
+                                        'jueves' => 'Jueves',
+                                        'viernes' => 'Viernes',
+                                        'sabado' => 'Sábado',
+                                        'domingo' => 'Domingo',
+                                    ];
+                                }
+
+                                $diasOcupados = Escala::whereIn('producto_id', (array) $productoId)->pluck('dia')->toArray();
+
+                                $diasDisponibles = [
+                                    'lunes' => 'Lunes',
+                                    'martes' => 'Martes',
+                                    'miercoles' => 'Miércoles',
+                                    'jueves' => 'Jueves',
+                                    'viernes' => 'Viernes',
+                                    'sabado' => 'Sábado',
+                                    'domingo' => 'Domingo',
+                                ];
+
+                                return array_diff_key($diasDisponibles, array_flip($diasOcupados));
+                            })
+                            ->reactive()
+                            ->native(false)
                             ->required(),
-                        TextInput::make('desde')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('hasta')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
                         TextInput::make('porcentaje')
                             ->required()
                             ->minValue(0)
@@ -166,47 +193,72 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->rule('numeric')
                             ->prefix('%')
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $precioCosto = floatval($get('../../precio_costo') ?? 0);
-                                $porcentaje = floatval($get('porcentaje') ?? 0);
-                                $precio = $precioCosto / (1 - ($porcentaje / 100));
-                                $set('precio', round($precio, 2));
-                            })
                             ->inputMode('decimal')
                             ->rule('numeric'),
-                        TextInput::make('precio')
-                            ->required()
-                            ->readOnly(),
-                        TextInput::make('aumento')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->default(0)
-                            ->prefix('%'),
-                        TextInput::make('descuento')
-                            ->minValue(0)
-                            ->required()
-                            ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->default(0)
-                            ->prefix('%'),
-                        TextInput::make('comision')
-                            ->required()
-                            ->minValue(0)
-                            ->inputMode('decimal')
-                            ->rule('numeric')
-                            ->prefix('%'),
-                        Select::make('role_id')
-                            ->required()
-                            ->relationship('role', 'name', fn (Builder $query) => $query->whereIn('name', User::ASESOR_ROLES))
-                            ->preload()
-                            ->searchable(),
+                        Hidden::make('producto_id')
+                            ->default(function (Get $get, ?Producto $record) {
+                                if ($record) {
+                                    return $record->id;
+                                }
+                                return null;
+                            }),
                     ])->columnSpanFull()->columns([
                         'default' => 1,
                         'md' => 3,
                         'lg' => 5,
-                    ]), */
+                    ])->afterStateHydrated(function (Repeater $component, ?Producto $record) {
+                        if (!$record) {
+                            $component->schema([
+                                Select::make('dia')
+                                    ->label('Día')
+                                    ->options(function (callable $get) {
+                                        $productoId = $get('producto_id');
+
+                                        if (!$productoId) {
+                                            return [
+                                                'lunes' => 'Lunes',
+                                                'martes' => 'Martes',
+                                                'miercoles' => 'Miércoles',
+                                                'jueves' => 'Jueves',
+                                                'viernes' => 'Viernes',
+                                                'sabado' => 'Sábado',
+                                                'domingo' => 'Domingo',
+                                            ];
+                                        }
+
+                                        $diasOcupados = Escala::whereIn('producto_id', (array) $productoId)->pluck('dia')->toArray();
+
+                                        $diasDisponibles = [
+                                            'lunes' => 'Lunes',
+                                            'martes' => 'Martes',
+                                            'miercoles' => 'Miércoles',
+                                            'jueves' => 'Jueves',
+                                            'viernes' => 'Viernes',
+                                            'sabado' => 'Sábado',
+                                            'domingo' => 'Domingo',
+                                        ];
+
+                                        return array_diff_key($diasDisponibles, array_flip($diasOcupados));
+                                    })
+                                    ->reactive()
+                                    ->native(false)
+                                    ->required(),
+                                TextInput::make('porcentaje')
+                                    ->required()
+                                    ->minValue(0)
+                                    ->inputMode('decimal')
+                                    ->rule('numeric')
+                                    ->prefix('%')
+                                    ->live(onBlur: true)
+                                    ->inputMode('decimal')
+                                    ->rule('numeric'),
+                                Hidden::make('producto_id')
+                                    ->default(function (Get $get, Producto $record) {
+                                        return $record->id;
+                                    }),
+                            ]);
+                        }
+                    }),
                 FileUpload::make('imagenes')
                     ->image()
                     ->downloadable()
@@ -233,8 +285,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visibility('public')
                             ->panelLayout('grid'),
                     ]),
-                /* RichEditor::make('detalle')
-                    ->columnSpanFull(), */
             ]);
     }
 
@@ -247,7 +297,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -262,8 +312,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('descripcion')
                     ->copyable()
                     ->searchable()
-                    ->sortable(),/* 
-                Tables\Columns\TextColumn::make('presentacion.presentacion')
+                    ->sortable(),
+                /* Tables\Columns\TextColumn::make('presentacion.presentacion')
                     ->copyable()
                     ->searchable()
                     ->sortable(), */
@@ -321,7 +371,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -344,7 +394,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn (Producto $record): View => view(
+                    ->modalContent(fn(Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))

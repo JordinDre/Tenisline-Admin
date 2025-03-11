@@ -21,11 +21,10 @@ class CalendarioLaboral extends FullCalendarWidget
 
     public static function canView(): bool
     {
-        if (!Schema::hasTable('labors')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
-
-
+             
         return auth()->user()->can('widget_CalendarioLaboral');
     }
 

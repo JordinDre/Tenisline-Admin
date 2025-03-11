@@ -152,7 +152,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->multiple()
                             ->disabled(fn (Get $get) => ! array_intersect([9, 10, 11], $get('roles')))
                             ->relationship('supervisores', 'name', fn (Builder $query) => $query->role(User::SUPERVISOR_ROLES))
-                            ->searchable(),
+                            ->searchable(), */
                         Select::make('tipo_pagos')
                             ->label('Tipos de Pago')
                             ->required(fn (Get $get) => in_array(5, $get('roles')))
@@ -173,7 +173,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ])
                             ->multiple()
                             ->preload()
-                            ->searchable(), */
+                            ->searchable(),
                         /* TextInput::make('credito')
                             ->required(fn (Get $get) => in_array(2, $get('tipo_pagos')))
                             ->disabled(fn (Get $get) => ! in_array(2, $get('tipo_pagos')))

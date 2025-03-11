@@ -14,14 +14,16 @@ return new class extends Migration
         Schema::create('ventas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('bodega_id');
-            $table->unsignedBigInteger('asesor_id');
-            $table->unsignedBigInteger('cliente_id');
-            $table->unsignedBigInteger('anulo_id')->nullable();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('cliente_id')->nullable();
+            /* $table->unsignedBigInteger('anulo_id')->nullable();
             $table->unsignedBigInteger('devolvio_id')->nullable();
-            $table->unsignedBigInteger('liquido_id')->nullable();
-            $table->enum('estado', ['creada', 'liquidada', 'anulada', 'parcialmente devuelta', 'devuelta'])
+            $table->unsignedBigInteger('liquido_id')->nullable(); */
+            $table->enum('estado', ['creada', 'liquidada', 'anulada'])
                 ->default('creada');
             $table->unsignedBigInteger('tipo_pago_id');
+            $table->enum('tipo_envio', ['guatex', 'propio']);
+            $table->decimal('envio', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->nullable();
             $table->decimal('total', 10, 2)->nullable();
             $table->boolean('facturar_cf')->default(0);
@@ -35,7 +37,7 @@ return new class extends Migration
             $table->timestamps();
             $table->foreign('tipo_pago_id')->references('id')->on('tipo_pagos');
             $table->foreign('bodega_id')->references('id')->on('bodegas');
-            $table->foreign('asesor_id')->references('id')->on('users');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('cliente_id')->references('id')->on('users');
         });
     }

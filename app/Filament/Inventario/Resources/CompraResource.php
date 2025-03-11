@@ -100,13 +100,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                             Grid::make(2)
                                 ->schema([
                                     Select::make('bodega_id')
-                                        ->relationship(
-                                            'bodega',
-                                            'bodega',
-                                            fn (Builder $query) => $query->whereHas('user', function ($query) {
-                                                $query->where('user_id', auth()->user()->id);
-                                            })
-                                        )
+                                        ->relationship('bodega', 'bodega')
                                         ->preload()
                                         ->searchable()
                                         ->required(),
@@ -132,11 +126,11 @@ class CompraResource extends Resource implements HasShieldPermissions
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductos($record, null, null))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductos($record, 'compra', null))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                            return ProductoController::searchProductos($search, null, null);
+                                            return ProductoController::searchProductos($search, 'compra', null);
                                         })
                                         ->optionsLimit(20)
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -176,7 +170,15 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->live(onBlur: true)
                                         ->minValue(0)
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->visible(auth()->user()->can('view_costs_producto')), */
+                                        ->visible(auth()->user()->can('view_costs_producto'))
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            $precio = floatval($get('precio'));
+                                            $envio = floatval($get('envio'));
+                                            $envase = floatval($get('envase'));
+                                            $cantidad = floatval($get('cantidad'));
+                                            $subtotal = ($precio + $envio + $envase) * $cantidad;
+                                            $set('subtotal', $subtotal);
+                                        }), */
                                     TextInput::make('subtotal')
                                         ->default(0)
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
@@ -189,7 +191,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         $precio = (float) $detalle['precio'];
                                         $cantidad = (float) $detalle['cantidad'];
 
-                                        return $precio * $cantidad;
+                                        return $precio  * $cantidad;
                                     });
                                     $set('subtotal', round($subtotal, 2));
                                 }),
@@ -202,7 +204,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Tipo de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::COMPRAS_PAGOS))
+                                        ->relationship('tipoPago', 'tipo_pago')
                                         ->preload()
                                         ->placeholder('Seleccione')
                                         ->live()

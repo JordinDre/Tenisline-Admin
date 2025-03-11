@@ -36,6 +36,7 @@
         "meilisearch/meilisearch-php": "^1.12",
         "milon/barcode": "^11.0",
         "postare/blade-mdi": "^1.0",
+        "predis/predis": "^2.3",
         "psr/simple-cache": "^2.0",
         "pxlrbt/filament-excel": "^2.4",
         "rmsramos/activitylog": "^1.0",
