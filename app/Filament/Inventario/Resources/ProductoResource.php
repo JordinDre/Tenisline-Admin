@@ -78,26 +78,26 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250),
-                            TextInput::make('modelo')
+                        TextInput::make('modelo')
                             ->label('Linea/Modelo')
                             ->required()
                             ->maxLength(250),
-                            TextInput::make('talla')
-                                ->required()
-                                ->maxLength(250),
-                            Select::make('genero')
-                                ->options([
-                                    'Hombre' => 'Hombre',
-                                    'Mujer' => 'Mujer',
-                                    'Niño' => 'Niño',
-                                    'Niña' => 'Niña',
-                                    'Bebés' => 'Bebés',
-                                    'Unisex' => 'Unisex',
-                                ])
-                                ->native(false)
-                                ->required(),
-                            TextInput::make('color')
-                                ->maxLength(255),
+                        TextInput::make('talla')
+                            ->required()
+                            ->maxLength(250),
+                        Select::make('genero')
+                            ->options([
+                                'Hombre' => 'Hombre',
+                                'Mujer' => 'Mujer',
+                                'Niño' => 'Niño',
+                                'Niña' => 'Niña',
+                                'Bebés' => 'Bebés',
+                                'Unisex' => 'Unisex',
+                            ])
+                            ->native(false)
+                            ->required(),
+                        TextInput::make('color')
+                            ->maxLength(255),
                     ]),
                 Grid::make([
                     'default' => 1,
@@ -108,7 +108,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         Select::make('proveedor_id')
                             ->searchable()
                             ->visible(auth()->user()->can('view_supplier_producto'))
-                            ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
+                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
                         Select::make('marca_id')
                             ->required()
                             ->optionsLimit(12)
@@ -148,17 +148,30 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->inputMode('decimal')
                             ->rule('numeric'),
                     ]),
-                /* Repeater::make('escalas')
+                Repeater::make('escalas')
                     ->relationship()
                     ->visible(auth()->user()->can('view_costs_producto'))
                     ->schema([
                         Select::make('dia')
-                        ->label('Día')
-                        ->options(function (callable $get) {
-                            $productoId = $get('producto_id');
-                    
-                            if (!$productoId) {
-                                return [
+                            ->label('Día')
+                            ->options(function (callable $get) {
+                                $productoId = $get('producto_id');
+
+                                if (!$productoId) {
+                                    return [
+                                        'lunes' => 'Lunes',
+                                        'martes' => 'Martes',
+                                        'miercoles' => 'Miércoles',
+                                        'jueves' => 'Jueves',
+                                        'viernes' => 'Viernes',
+                                        'sabado' => 'Sábado',
+                                        'domingo' => 'Domingo',
+                                    ];
+                                }
+
+                                $diasOcupados = Escala::whereIn('producto_id', (array) $productoId)->pluck('dia')->toArray();
+
+                                $diasDisponibles = [
                                     'lunes' => 'Lunes',
                                     'martes' => 'Martes',
                                     'miercoles' => 'Miércoles',
@@ -166,26 +179,13 @@ class ProductoResource extends Resource implements HasShieldPermissions
                                     'viernes' => 'Viernes',
                                     'sabado' => 'Sábado',
                                     'domingo' => 'Domingo',
-                                ]; 
-                            }
-                    
-                            $diasOcupados = Escala::whereIn('producto_id', (array) $productoId)->pluck('dia')->toArray();
-                    
-                            $diasDisponibles = [
-                                'lunes' => 'Lunes',
-                                'martes' => 'Martes',
-                                'miercoles' => 'Miércoles',
-                                'jueves' => 'Jueves',
-                                'viernes' => 'Viernes',
-                                'sabado' => 'Sábado',
-                                'domingo' => 'Domingo',
-                            ];
-                    
-                            return array_diff_key($diasDisponibles, array_flip($diasOcupados));
-                        })
-                        ->reactive()
-                        ->native(false)
-                        ->required(),
+                                ];
+
+                                return array_diff_key($diasDisponibles, array_flip($diasOcupados));
+                            })
+                            ->reactive()
+                            ->native(false)
+                            ->required(),
                         TextInput::make('porcentaje')
                             ->required()
                             ->minValue(0)
@@ -275,7 +275,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->openable()
                     ->optimize('webp')
                     ->columnSpanFull(),
-                /* Grid::make(2)
+                Grid::make(2)
                     ->schema([
                         FileUpload::make('videos')
                             ->label('Videos')
@@ -284,7 +284,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->directory(config('filesystems.default'))
                             ->visibility('public')
                             ->panelLayout('grid'),
-                    ]), */
+                    ]),
             ]);
     }
 
@@ -297,7 +297,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -371,7 +371,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -394,7 +394,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn (Producto $record): View => view(
+                    ->modalContent(fn(Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))

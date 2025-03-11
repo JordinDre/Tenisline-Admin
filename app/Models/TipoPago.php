@@ -11,11 +11,11 @@ class TipoPago extends Model
 
     protected $guarded = [];
 
-   /*  public const CLIENTE_PAGOS = [
+    public const CLIENTE_PAGOS = [
         'PAGO CONTRA ENTREGA',
-        /* 'PRONTO PAGO',
+        'PRONTO PAGO',
         'CRÉDITO',
-        'AUTORIZACION', */
+        'AUTORIZACION',
     ];
 
     public const CLIENTE_PAGOS_SIN_CREDITO = [

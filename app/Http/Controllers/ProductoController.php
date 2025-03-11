@@ -68,9 +68,9 @@ class ProductoController extends Controller
        /*  $escalasHtml = $escalasFiltradas->isNotEmpty()
             ? $escalasFiltradas->map(fn ($escala) => "<div style='margin-right: 10px;'><strong>{$escala->escala}:</strong> Q{$escala->precio}</div>")
                 ->implode('')
-            : ''; */
+            : '';
 
-        /* return "
+        return "
         <div style='display: flex; align-items: flex-start;'> 
             <img src='{$imagenUrl}' alt='Imagen del producto' 
                  style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
@@ -161,7 +161,7 @@ class ProductoController extends Controller
                     ->orWhere('id', 'LIKE', "%{$search}%")
                     ->orWhere('descripcion', 'LIKE', "%{$search}%")
                     ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"))
-                    /* ->orWhereHas('presentacion', fn ($q) => $q->where('presentacion', 'LIKE', "%{$search}%")) */;
+                    ->orWhereHas('presentacion', fn ($q) => $q->where('presentacion', 'LIKE', "%{$search}%"));
             })
             ->limit(5)
             ->get();
