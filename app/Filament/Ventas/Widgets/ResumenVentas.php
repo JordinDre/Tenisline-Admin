@@ -39,10 +39,6 @@ class ResumenVentas extends BaseWidget
               'datasets' => [], // Datasets vacíos para el gráfico
               ];
               }
-<<<<<<< HEAD
-
-=======
->>>>>>> Persi
               
         $user = auth()->user();
         $year = $this->filters['year'] ?? now()->year;
