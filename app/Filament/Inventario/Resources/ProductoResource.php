@@ -147,6 +147,12 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
+                        TextInput::make('precio_compra')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
                     ]),
                 Repeater::make('escalas')
                     ->relationship()
@@ -321,6 +327,14 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('escalas.dia')
+                    ->label('Escalas Dias')
+                    ->copyable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('escalas.porcentaje')
+                    ->label('Escalas Procentajes')    
+                    ->copyable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('proveedor.name')
                     ->copyable()
                     ->searchable()
@@ -329,7 +343,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Fecha de Ingreso')
                     ->dateTime('d/m/Y')
                     ->copyable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime('d/m/Y H:i:s')

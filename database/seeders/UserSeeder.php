@@ -18,6 +18,7 @@ class UserSeeder extends Seeder
             'proveedor',
             'cliente',
             'vendedor',
+            'mayorista',
 
 
             /* 'facturador',

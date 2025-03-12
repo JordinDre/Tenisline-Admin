@@ -39,7 +39,7 @@ class ListPagos extends ListRecords
                 ->form([
                     Select::make('cliente_id')
                         ->label('Cliente')
-                        ->options(
+                       /*  ->options(
                             User::where(function ($query) {
                                 $query->whereHas('creditosOrdenesPendientes')
                                     ->orWhereHas('creditosVentasPendientes');
@@ -64,7 +64,7 @@ class ListPagos extends ListRecords
                                     return [$user->id => $label];
                                 })
                                 ->toArray()
-                        )
+                        ) */
                         ->optionsLimit(12)
                         ->required()
                         ->searchable(),

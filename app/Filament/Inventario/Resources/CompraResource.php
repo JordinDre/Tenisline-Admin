@@ -2,34 +2,35 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\CompraResource\Pages;
-use App\Http\Controllers\CompraController;
-use App\Http\Controllers\ProductoController;
-use App\Models\Compra;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
+use App\Models\Pago;
+use Filament\Tables;
+use App\Models\Compra;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\CompraController;
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Inventario\Resources\CompraResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class CompraResource extends Resource implements HasShieldPermissions
 {
@@ -187,10 +188,14 @@ class CompraResource extends Resource implements HasShieldPermissions
                                             $subtotal = ($precio + $envio + $envase) * $cantidad;
                                             $set('subtotal', $subtotal);
                                         }), */
-                                    TextInput::make('subtotal')
+                                    Placeholder::make('subtotal')
                                         ->default(0)
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->readOnly(),
+                                        ->content(function (Get $get) {
+                                            $subtotal = $get('cantidad') * $get('precio');
+
+                                            return $subtotal;
+                                        }),
                                 ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
                                 ->live()
                                 ->afterStateUpdated(function (Set $set, Get $get) {

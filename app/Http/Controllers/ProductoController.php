@@ -27,27 +27,72 @@ class ProductoController extends Controller
         return $escala; 
     }
     
-    public static function renderProductos(Producto $record, string $tipo, $bodega_id = null): string
+    public static function renderProductos(Producto $record, string $tipo, $bodega_id = null, $cliente_id = null): string
     {
-        Log::info('Renderizando Producto ID: ' . $record->id); // LOG #1: ID del producto que se está renderizando
-        Log::info('Relación Presentacion: ', [$record->presentacion]);
+
 
         $inventario = $bodega_id ? Inventario::where('producto_id', $record->id)->where('bodega_id', $bodega_id)->first() : null;
         $stock = $inventario ? $inventario->existencia : 0;
         $precioVenta = $record->precio_venta;
+        $precioMayorista = $record->precio_mayorista;
 
         $escala = self::getEscalaPrecio($record->id); // Usamos self:: para llamar a la función estática dentro de la misma clase
         $precioConDescuento = $precioVenta; // Precio por defecto (sin descuento)
         $diaDescuento = null; // Para almacenar el día del descuento si lo hay
+
+        $imagenUrl = isset($record->imagenes[0])
+            ? config('filesystems.disks.s3.url').$record->imagenes[0]
+            : asset('images/icono.png');
 
         if ($escala) {
             $precioConDescuento = round($precioVenta * (1 - ($escala->porcentaje / 100)), 2); // Calcular precio con descuento
             $diaDescuento = ucfirst($escala->dia); // Obtener el día de la escala y poner la primera letra en mayúscula
         }
         
-        $userRoles = auth()->user()->roles->pluck('name');
-        $escalasFiltradas = collect();
+        $precioMostrar = ''; // Inicializamos vacío
 
+        $clienteRol = null;
+        if ($cliente_id) {
+            $cliente = User::find($cliente_id);
+            $clienteRol = $cliente?->getRoleNames()->first(); // Asumiendo que el cliente tiene solo un rol principal
+        }
+
+
+        $preciosHTML = ''; // Inicializamos para acumular los precios a mostrar
+
+        if ($clienteRol === 'mayorista') {
+            $preciosHTML = "<div style='margin-top: 5px;'>
+                                <div style='font-weight: bold; color: blue;'>
+                                    Precio Mayorista: Q. " . number_format($precioMayorista, 2) . "
+                                </div>
+                                <div style='color: grey; text-decoration: line-through;'>
+                                    Precio Venta: Q. " . number_format($precioVenta, 2) . "
+                                </div>
+                            </div>";
+        } else {
+            if ($escala) {
+                $preciosHTML = "<div style='margin-top: 5px;'>
+                                    <div style='font-weight: bold; color: green;'>
+                                        Precio con Descuento ({$escala->porcentaje}% - {$diaDescuento}): Q. " . number_format($precioConDescuento, 2) . "
+                                    </div>
+                                    <div style='color: grey; text-decoration: line-through;'>
+                                        Precio Venta: Q. " . number_format($precioVenta, 2) . "
+                                    </div>
+                                    <div style='color: blue;'>
+                                        Precio Mayorista: Q. " . number_format($precioMayorista, 2) . "
+                                    </div>
+                                </div>";
+                } else {
+                    $preciosHTML = "<div style='margin-top: 5px;'>
+                                        <div style='font-weight: bold; color: black;'>
+                                            Precio Venta: Q. " . number_format($precioVenta, 2) . "
+                                        </div>
+                                        <div style='color: blue;'>
+                                            Precio Mayorista: Q. " . number_format($precioMayorista, 2) . "
+                                        </div>
+                                    </div>";
+                }
+        }
         /* if ($tipo) {
             $rolesValidos = $tipo === 'venta' ? User::VENTA_ROLES : User::ORDEN_ROLES;
             $roleIds = Role::whereIn('name', $rolesValidos)->pluck('id')->toArray();
@@ -112,19 +157,32 @@ class ProductoController extends Controller
             </div>
         </div>"; */
 
-        $precioMostrar = $escala ? "<s>Q. " . number_format($precioVenta, 2) . "</s>  <b>Q. " . number_format($precioConDescuento, 2) . "</b> <small style='color: green;'> (Descuento de {$escala->porcentaje}% - {$diaDescuento})</small>" : "<b>Q. " . number_format($precioVenta, 2) . "</b>";
+        return 
+            "
+        <div style='display: flex; align-items: flex-start;'> 
+            <img src='{$imagenUrl}' alt='Imagen del producto' 
+                 style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
+            <div>
+                <div style='font-weight: bold; color: black;'> 
+                    ID: {$record->id} - <span style='color: black;'>{$record->nombre}</span>
+                </div>
+                <div style='color: black;'> 
+                    <span style='color: black;'>Descripción: </span>{$record->descripcion}
+                </div>
+                <div style='color: black;'>
+                    Marca: {$record->marca->marca}
+                </div>
+                <div style='color: black; font-weight: bold; margin-top: 5px;'>
+                    Existencia: {$stock}
+                </div>
+                <div>
+                    <div style='display: flex; flex-wrap: wrap; margin-top: 5px;'>{$preciosHTML}</div>
+                </div>
+            </div>
+        </div>"
+        ;
 
-        return  nl2br(
-            "<b>{$record->descripcion}</b>\n".
-            "<b>{$record->marca->marca}</b> ".
-            "<b>{$record->talla}</b> ".
-            "<b>{$record->modelo}</b> ".
-            "<b>{$record->genero}</b> ".
-            "<b>{$record->color}</b> ".
-            "Precio: ". $precioMostrar . " ".
-            /* "<b>{$record->presentacion->presentacion}</b>\n". */
-            "Stock: <b>{$stock}</b>"
-        );
+        
     }
 
     public static function searchProductos(string $search, string $tipo, $bodega_id = null): array

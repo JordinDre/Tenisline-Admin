@@ -2,37 +2,38 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use App\Filament\Ventas\Resources\VentaResource;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\VentaController;
+use Closure;
+use App\Models\Pago;
+use App\Models\User;
 use App\Models\Escala;
 use App\Models\Factura;
-use App\Models\Inventario;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use App\Models\User;
-use Closure;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\Inventario;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Resources\Pages\CreateRecord;
+use App\Http\Controllers\ProductoController;
+use Filament\Forms\Components\Actions\Action;
+use App\Filament\Ventas\Resources\VentaResource;
 
 class CreateVenta extends CreateRecord
 {
@@ -79,6 +80,21 @@ class CreateVenta extends CreateRecord
                             ->label('Total'),
                     ]),
                 Wizard::make([
+                    Wizard\Step::make('Cliente')
+                        ->schema([
+                            Select::make('cliente_id')
+                                ->label('Cliente')
+                                ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'mayorista']))
+                                ->optionsLimit(20)
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function (Set $set) {
+                                    $set('tipo_pago_id', null);
+                                })
+                                ->searchable(),
+                            Textarea::make('observaciones')
+                                ->columnSpanFull(),
+                        ]),
                     Wizard\Step::make('Productos')
                         ->schema([
                             Repeater::make('detalles')
@@ -96,11 +112,11 @@ class CreateVenta extends CreateRecord
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id')))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
                                         ->allowHtml()
                                         ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'nombre', 'modelo']) // Añadir 'nombre' y 'modelo' para búsqueda
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                            return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'));
+                                            return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'), $get('../../cliente_id'));
                                         })
                                         ->optionsLimit(20)
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -116,24 +132,40 @@ class CreateVenta extends CreateRecord
                                                 );
                                     
                                                 $producto = Producto::find($productoId); 
-                                                $precioBase = $producto->precio_venta;
-                                                $precioConDescuento = $precioBase; // Precio por defecto (sin descuento)
-                                                $porcentajeDescuento = 0; // Porcentaje de descuento por defecto
-                                    
-                                                if ($escala) {
-                                                    $porcentajeDescuento = $escala->porcentaje;
-                                                    $precioConDescuento = round($precioBase * (1 - ($escala->porcentaje / 100)), 2); // Calcular precio con descuento
+                                                $precioBaseVenta = $producto->precio_venta;
+                                                $precioMayorista = $producto->precio_mayorista; // Obtener precio mayorista aquí también
+                                                $precioConDescuento = $precioBaseVenta; // Precio por defecto (precio venta)
+                                                $porcentajeDescuento = 0; 
+                                                
+                                                $cliente_id_en_formulario = $get('../../cliente_id'); // Obtener cliente_id del formulario
+                                                $clienteRol = null;  
+
+                                                if ($cliente_id_en_formulario) {
+                                                    $cliente = User::find($cliente_id_en_formulario);
+                                                    $clienteRol = $cliente?->getRoleNames()->first(); // **Obtener el rol del cliente**
                                                 }
+                                                
+                                                if ($clienteRol === 'mayorista') {
+                                                    $precioFinalParaSetear = $precioMayorista; // Usar precio mayorista
+                                                } else {
+                                                    $precioFinalParaSetear = $precioBaseVenta; // Usar precio venta normal
                                     
-                                                $set('escala_id', $escala ? $escala->id : null); // Guarda el ID de la escala o null si no hay
-                                                $set('precio', $precioConDescuento); // Establecer el precio con descuento (o base si no hay descuento)
+                                                    if ($escala) { // Aplicar escala solo si es cliente normal (o sin cliente mayorista)
+                                                        $porcentajeDescuento = $escala->porcentaje;
+                                                        $precioFinalParaSetear = round($precioBaseVenta * (1 - ($escala->porcentaje / 100)), 2);
+                                                    }
+                                                }// Porcentaje de descuento por defecto
+                                
+                                    
+                                                $set('escala_id', $escala ? $escala->id : null);
+                                                $set('precio', $precioFinalParaSetear); // **Usar $precioFinalParaSetear para setear el precio**
                                                 $set('precio_comp', $producto->precio_costo);
                                                 $set('descuento_porcentaje', $porcentajeDescuento); // Guarda el porcentaje de descuento para mostrarlo o usarlo después
                                     
                                     
                                                 // Recalcular subtotal al cambiar producto
                                                 $cantidad = $get('cantidad') ?? 1; // Usar 1 como default si no hay cantidad aún
-                                                $set('subtotal', round((float) $precioConDescuento * (float) $cantidad, 2));
+                                                $set('subtotal', round((float) $precioFinalParaSetear * (float) $cantidad, 2));
                                                 return;
                                     
                                     
@@ -163,15 +195,28 @@ class CreateVenta extends CreateRecord
                                         ->required(),
                                     TextInput::make('cantidad')
                                         ->label('Cantidad')
-                                        ->default(1)
+                                        ->default(0)
                                         ->minValue(1)
                                         ->inputMode('decimal')
                                         ->rule('numeric')
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                $invetario = Inventario::where('producto_id', $get('producto_id'))->where('bodega_id', $get('../../bodega_id'))->first();
+                                                Log::info('Validando Cantidad - Dentro de Regla - get(../../../cliente_id): ' . $get('../../../cliente_id')); // Log del intento de obtener cliente_id
+                                                Log::info('Validando Cantidad - Dentro de Regla - get(): ', $get()); 
+                                                $invetario = Inventario::where('producto_id', $get('producto_id'))->where('bodega_id', $get('../../../bodega_id'))->first();
                                                 if ($invetario && $value > $invetario->existencia) {
                                                     $fail('La cantidad de productos no puede ser mayor al inventario. Exist: '.$invetario->existencia);
+                                                }
+                                    
+                                                $cliente_id_en_formulario = $get('../../cliente_id'); // Ojo con los niveles de '..'
+                                                $clienteRol = null;
+                                                if ($cliente_id_en_formulario) {
+                                                    $cliente = User::find($cliente_id_en_formulario);
+                                                    $clienteRol = $cliente?->getRoleNames()->first();
+                                                }
+                                    
+                                                if ($clienteRol === 'mayorista' && $value < 10) {
+                                                    $fail('Para clientes mayoristas, la cantidad mínima por producto es 10.');
                                                 }
                                             },
                                         ])
@@ -246,22 +291,8 @@ class CreateVenta extends CreateRecord
                                     $get('subtotal') >= Factura::CF || $set('facturar_cf', false);
                                     $get('subtotal') >= Factura::CF || $set('comp', false);
                                     $set('total', round($subtotal, 2));
-                                }),
-                        ]),
-                    Wizard\Step::make('Cliente')
-                        ->schema([
-                            Select::make('cliente_id')
-                                ->label('Cliente')
-                                ->relationship('cliente', 'name', fn (Builder $query) => $query->role('cliente'))
-                                ->optionsLimit(20)
-                                ->required()
-                                ->live()
-                                ->afterStateUpdated(function (Set $set) {
-                                    $set('tipo_pago_id', null);
-                                })
-                                ->searchable(),
-                            Textarea::make('observaciones')
-                                ->columnSpanFull(),
+                                })->visible(fn (Get $get): bool => !empty($get('bodega_id'))),
+                                
                         ]),
                     Wizard\Step::make('Pagos')
                         ->schema([

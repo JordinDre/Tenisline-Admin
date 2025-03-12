@@ -106,7 +106,6 @@ class VentaResource extends Resource implements HasShieldPermissions
                                                 $record->id,
                                                 $record->nit ? $record->nit : 'CF',
                                                 $record->name,
-                                                $record->razon_social,
                                             ])->filter()->join(' - ')
                                         ),
                                 ]),
@@ -272,7 +271,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->numeric()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('asesor.name')
+                Tables\Columns\TextColumn::make('vendedor.name')
                     ->searchable()
                     ->label('Vendedor')
                     ->numeric()

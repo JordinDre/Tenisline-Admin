@@ -49,11 +49,11 @@ class ListInventarios extends ListRecords
                     Select::make('producto_id')
                         ->label('Producto')
                         ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca', 'presentacion', 'escalas']))
-                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, null, $get('bodega_id')))
+                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'ajustar', $get('bodega_id')))
                         ->allowHtml()
                         ->searchable(['id'])
                         ->getSearchResultsUsing(function (string $search, Get $get): array {
-                            return ProductoController::searchProductos($search, null, $get('bodega_id'));
+                            return ProductoController::searchProductos($search, 'ajustar', $get('bodega_id'));
                         })
                         ->optionsLimit(20)
                         ->required(),
@@ -100,7 +100,7 @@ class ListInventarios extends ListRecords
                                 $descripcion
                             );
                         });
-                        OrdenController::actualizarBackorder();
+                        /* OrdenController::actualizarBackorder(); */
                         Notification::make()
                             ->title('Ajuste Realizado')
                             ->color('success')

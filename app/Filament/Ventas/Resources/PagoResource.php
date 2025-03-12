@@ -64,12 +64,12 @@ class PagoResource extends Resource implements HasShieldPermissions
                     ->schema([
                         MorphToSelect::make('pagable')
                             ->types([
-                                MorphToSelect\Type::make(Orden::class)
+                                /* MorphToSelect\Type::make(Orden::class)
                                     ->titleAttribute('id')
                                     ->getOptionLabelFromRecordUsing(fn (Orden $record): string => "{$record->id} - {$record->estado->value}")
                                     ->modifyOptionsQueryUsing(
                                         fn (Builder $query) => $query->whereIn('estado', ['creada', 'backorder', 'completada', 'confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada'])
-                                    ),
+                                    ), */
                                 MorphToSelect\Type::make(Venta::class)
                                     ->titleAttribute('id')
                                     ->getOptionLabelFromRecordUsing(fn (Venta $record): string => "{$record->id} - {$record->estado->value}")
@@ -101,12 +101,12 @@ class PagoResource extends Resource implements HasShieldPermissions
                             })
                             ->rules([
                                 fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                    if ($get('pagable_type') == 'App\Models\Orden') {
+                                    /* if ($get('pagable_type') == 'App\Models\Orden') {
                                         $orden = Orden::find($get('pagable_id'));
                                         if ($orden->pagos->sum('total') + $value > $orden->total) {
                                             $fail('El monto no puede ser mayor al total de la orden. Q'.$orden->total.'  Pagado: Q'.$orden->pagos->sum('total'));
                                         }
-                                    }
+                                    } */
                                     if ($get('pagable_type') == 'App\Models\Venta') {
                                         $venta = Venta::find($get('pagable_id'));
                                         if ($venta->pagos->sum('total') + $value > $venta->total) {
@@ -272,12 +272,12 @@ class PagoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->after(function ($record) {
-                        if ($record->pagable_type == 'App\Models\Orden') {
+                        /* if ($record->pagable_type == 'App\Models\Orden') {
                             $orden = Orden::find($record->pagable_id);
                             if ($orden->tipo_pago_id == 2) {
                                 UserController::sumarSaldo(User::find($orden->cliente_id), $record->monto);
                             }
-                        }
+                        } */
                         if ($record->pagable_type == 'App\Models\Venta') {
                             $venta = Venta::find($record->pagable_id);
                             if ($venta->tipo_pago_id == 2) {
