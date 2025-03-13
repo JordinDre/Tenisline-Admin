@@ -88,17 +88,17 @@
 
 <body>
     <header style="text-align: center;">
-        <img src="{{ public_path('/img/logo-negro.png') }}" alt="Logo"
+        <img src="{{ public_path('/img/logo.png') }}" alt="Logo"
             style="max-width: 80%; filter: grayscale(100%) brightness(0);">
         <br><br>
         <div>
-            <div>CALIDADES HARMISH, SOCIEDAD ANONIMA</div>
-            <div>26 AVENIDA 6-91 A ZONA 4</div>
+            <div>ENCONTRADOS, SOCIEDAD ANONIMA</div>
+            {{-- <div>26 AVENIDA 6-91 A ZONA 4</div>
             <div>COLONIA EL NARANJO</div>
             <div>MIXCO, GUATEMALA</div>
             <div>NIT: 107761475</div>
             <div>PBX: +502 23158519</div>
-            <div>Whatsapp: +502 5493 4520</div>
+            <div>Whatsapp: +502 5493 4520</div> --}}
         </div>
         <br>
         <div>

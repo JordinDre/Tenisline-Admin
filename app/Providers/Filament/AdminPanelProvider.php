@@ -36,7 +36,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             /* ->registration() */
             ->profile()
-            ->brandName('Harmish')
+            ->brandName('TenisLine')
             ->brandLogo(asset('images/logo.png'))
             ->darkModeBrandLogo(asset('images/logoBlanco.png'))
             ->brandLogoHeight('3rem')

@@ -32,7 +32,7 @@ class VentasPanelProvider extends PanelProvider
             ->path('ventas')
             ->profile()
             ->login()
-            ->brandName('Harmish')
+            ->brandName('TenisLine')
             ->brandLogo(asset('images/logo.png'))
             ->darkModeBrandLogo(asset('images/logoBlanco.png'))
             ->brandLogoHeight('3rem')
