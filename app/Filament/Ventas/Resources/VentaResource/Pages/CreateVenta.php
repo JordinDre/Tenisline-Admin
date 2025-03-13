@@ -364,8 +364,6 @@ class CreateVenta extends CreateRecord
                                         ->minValue(1)
                                         ->required(),
                                     Hidden::make('total'),
-                                    Hidden::make('user_id')
-                                        ->default(auth()->user()->id),
                                     TextInput::make('no_documento')
                                         ->label('No. Documento')
                                         ->rules([
@@ -432,35 +430,12 @@ class CreateVenta extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['user_id'] = auth()->user()->id;
+        $data['asesor_id'] = auth()->user()->id;
         $data['estado'] = 'creada';
 
         return $data;
     }
-
-    protected function afterValidate(): void
-    {
-        try {
-            foreach ($this->data['detalles'] as $key => $detalle) {
-               /*  $escala = Escala::find($detalle['escala_id']);
-                if ($escala->desde > $this->data['total'] || $escala->hasta < $this->data['total']) {
-                    $producto = Producto::find($detalle['producto_id']);
-                    $productoDetalles = "{$producto->id} - {$producto->nombre} - {$producto->descripcion} - {$producto->marca->marca}}";
-                    throw new \Exception("El producto {$productoDetalles} no tiene una escala válida.");
-                } */
-            }
-        } catch (\Exception $e) {
-            Notification::make()
-                ->warning()
-                ->color('warning')
-                ->title('Advertencia')
-                ->body($e->getMessage())
-                ->persistent()
-                ->send();
-            $this->halt();
-        }
-    }
-
+    
     protected function afterCreate(): void
     {
         try {

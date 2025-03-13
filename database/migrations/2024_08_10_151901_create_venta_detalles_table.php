@@ -20,8 +20,8 @@ return new class extends Migration
             $table->decimal('subtotal', 10, 2)->nullable();
             /* $table->decimal('comision', 10, 2)->nullable();
             $table->integer('bonificacion')->nullable()->default(0); */
-            /* $table->integer('devuelto')->nullable()->default(0);
-            $table->integer('devuelto_mal')->nullable()->default(0); */
+            $table->integer('devuelto')->nullable()->default(0);
+            $table->integer('devuelto_mal')->nullable()->default(0);
             $table->unsignedBigInteger('producto_id');
             $table->unsignedBigInteger('venta_id');
             $table->unsignedBigInteger('escala_id')->nullable();

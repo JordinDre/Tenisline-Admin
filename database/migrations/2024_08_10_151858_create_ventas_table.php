@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('ventas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('bodega_id');
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('asesor_id');
             $table->unsignedBigInteger('cliente_id')->nullable();
-            /* $table->unsignedBigInteger('anulo_id')->nullable();
+            $table->unsignedBigInteger('anulo_id')->nullable();
             $table->unsignedBigInteger('devolvio_id')->nullable();
-            $table->unsignedBigInteger('liquido_id')->nullable(); */
+            $table->unsignedBigInteger('liquido_id')->nullable();
             $table->enum('estado', ['creada', 'liquidada', 'anulada'])
                 ->default('creada');
             $table->unsignedBigInteger('tipo_pago_id');

@@ -6,9 +6,13 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TiendaController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [TiendaController::class, 'index'])->name('inicio');
+/* Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
-Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto');
+Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto'); */
+
+Route::get('/', function () {
+    return redirect('/admin');
+});
 
 Route::middleware('auth')->group(function () {
     /* Route::get('/crear-orden', [TiendaController::class, 'orden'])->name('crear.orden');

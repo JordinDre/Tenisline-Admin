@@ -77,16 +77,16 @@ class VentaController extends Controller
             DB::transaction(function () use ($venta) {
                 self::restarInventario($venta, 'Venta facturada');
                 $venta->fecha_vencimiento = $venta->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                $res = FELController::facturaVenta($venta);
+                /* $res = FELController::facturaVenta($venta);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
-                }
+                } */
                 $factura = new Factura;
                 $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-                $factura->fel_uuid = $res['uuid'];
-                $factura->fel_serie = $res['serie'];
-                $factura->fel_numero = $res['numero'];
-                $factura->fel_fecha = $res['fecha'];
+                $factura->fel_uuid = /* $res['uuid'] */ '324234242432';
+                $factura->fel_serie = /* $res['serie'] */'3242424';
+                $factura->fel_numero = /* $res['numero'] */'23434534';
+                $factura->fel_fecha = /* $res['fecha'] */now();
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
                 $venta->factura()->save($factura);

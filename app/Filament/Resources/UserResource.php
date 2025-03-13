@@ -87,11 +87,11 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->label('DPI')
                             ->maxLength(13)
                             ->minLength(13),
-                        /* TextInput::make('razon_social')
+                        TextInput::make('razon_social')
                             ->required()
                             ->readOnly()
                             ->default('CF')
-                            ->label('Razón Social'), */
+                            ->label('Razón Social'),
                         TextInput::make('name')
                             ->required()
                             ->label('Nombre/Nombre Comercial'),

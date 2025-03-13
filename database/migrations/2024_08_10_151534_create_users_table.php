@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 255)->nullable();
             $table->string('nit', 25)->nullable();
             $table->string('dpi', 25)->nullable();
-            /* $table->string('razon_social', 100)->nullable(); */
+            $table->string('razon_social', 100)->nullable();
             $table->string('telefono', 25)->nullable();
             $table->string('whatsapp', 25)->nullable();
             $table->string('email')->unique()->nullable();

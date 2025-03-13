@@ -153,6 +153,18 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
+                        TextInput::make('envio')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
+                        TextInput::make('precio_costo')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
                     ]),
                 Repeater::make('escalas')
                     ->relationship()
