@@ -157,11 +157,15 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
+                            ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                $set('precio_costo', round((float) $state + (float) $get('precio_compra'), 2));
+                            })
                             ->inputMode('decimal')
                             ->rule('numeric'),
                         TextInput::make('precio_costo')
                             ->live(onBlur: true)
                             ->minValue(0)
+                            ->readOnly()
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
