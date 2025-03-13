@@ -115,7 +115,7 @@ class VentaPolicy
 
     public function factura(User $user, Venta $venta): bool
     {
-        $estadosPermitidos = ['creada'];
+        $estadosPermitidos = ['creada', 'liquidada'];
 
         return $user->can('factura_venta') && in_array($venta->estado->value, $estadosPermitidos) && $venta->factura()->exists() && ! $venta->comp;
     }

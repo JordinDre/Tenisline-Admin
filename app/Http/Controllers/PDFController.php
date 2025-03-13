@@ -25,7 +25,7 @@ class PDFController extends Controller
     {
         $oventaden = Venta::find($id);
         $html = view('pdf.venta', compact('venta'))->render();
-        $pdf = Pdf::loadHTML($html);
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
         return $pdf->stream("Venta #{$id}.pdf");
     }
@@ -52,7 +52,7 @@ class PDFController extends Controller
     {
         $venta = Venta::find($id);
         $html = view('pdf.facturaVenta', compact('venta'))->render();
-        $pdf = Pdf::loadHTML($html);
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
         return $pdf->stream("Factura Venta #{$id}.pdf");
     }

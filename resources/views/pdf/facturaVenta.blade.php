@@ -1,208 +1,272 @@
-<?php $total = 0; ?>
 <!DOCTYPE html>
 <html>
 
 <head>
     <title>
-        @if ($venta->factura->fel_tipo == 'FCAM')
-            Factura Cambiaria Venta #{{ $venta->id }}
+        @if ($orden->comp)
+            Orden {{ $orden->id }}
         @else
-            Factura Venta #{{ $venta->id }}
+            @if ($orden->fel_tipo == 'FCAM')
+                Factura Cambiaria {{ $orden->id }}
+            @else
+                Factura {{ $orden->id }}
+            @endif
         @endif
     </title>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta http-equiv="content-type" content="text-html; charset=utf-8">
+    <meta charset="utf-8">
     <style>
         @page {
-            margin: 0.8cm 0.6cm;
+            size: 3in auto;
+            margin: 0 5px 0 5px;
+        }
+
+        body {
+            margin: 0;
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11.5px;
+            padding: 12px;
+            font-weight: bold;
         }
 
-        .icono {
-            margin-right: 5px;
-            height: 13px;
+        .header,
+        .footer {
+            text-align: center;
+            margin-bottom: 8px;
         }
 
-        .salto {
-            margin-top: 14px
-        }
-
-        table {
+        .table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
 
-        th,
-        td {
-            padding: 6px;
-            border: 0.5px solid black;
+        .descripcion {
+            width: auto;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
         }
 
-        th {
+        .table th,
+        .table td {
+            padding: 2px 0;
+            border-bottom: 0.5px solid black;
+            text-align: left;
+        }
+
+        .table th {
+            border-bottom: 1px solid black;
+        }
+
+        /* La columna de descripción se adapta al contenido */
+        .table .descripcion {
+            width: auto;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        /* Las columnas de cantidad, precio y subtotal tienen ancho fijo */
+        .table .cantidad,
+        .table .precio,
+        .table .subtotal {
             text-align: center;
+            width: 20%;
+            white-space: nowrap;
         }
 
-        td {
-            text-align: center;
+        footer {
+            border-top: 2px solid black;
+            padding-top: 10px;
         }
 
-        tr:last-child td {
-            font-weight: bold;
+        footer div {
+            margin-bottom: 5px;
         }
     </style>
 </head>
 
 <body>
-    <header style="display: table; width: 100%;">
-        <div style="display: table-cell; width: 50%; ">
-            <img src="{{ public_path('/images/logo.png') }}" alt="Logo" style="max-width: 50%;">
-
-            <div class="salto">
-                <div>{{ env('RAZON_SOCIAL') }}</div>
-                <div>{{ env('NOMBRE_COMERCIAL') }}</div>
-                <div>{{ env('DIRECCION') }}</div>
-                <div>{{ env('MUNICIPIO') }}, {{ env('DEPARTAMENTO') }}</div>
-                <div>PBX: {{ env('PBX') }}</div>
-                <div>Whatsapp: {{ env('WHATSAPP') }}</div>
-                <div>NIT: {{ env('NIT') }}</div>
-
-                <div class="salto">
-                    <div>
-                        @if ($venta->facturar_cf)
-                            Nit Cliente: CF
-                        @else
-                            Nit Cliente: {{ @$venta->cliente->nit }}
-                        @endif
-                    </div>
-                    <div>
-                        @if ($venta->facturar_cf)
-                            Nombre Comercial: {{ @$venta->cliente->name }}
-                        @else
-                            Razon Social: {{ @$venta->cliente->razon_social }}
-                            <br />
-                            Nombre Comercial: {{ @$venta->cliente->name }}
-                        @endif
-                    </div>
-                </div>
-            </div>
+    <header style="text-align: center;">
+        <img src="{{ public_path('/img/logo-negro.png') }}" alt="Logo"
+            style="max-width: 80%; filter: grayscale(100%) brightness(0);">
+        <br><br>
+        <div>
+            <div>CALIDADES HARMISH, SOCIEDAD ANONIMA</div>
+            <div>26 AVENIDA 6-91 A ZONA 4</div>
+            <div>COLONIA EL NARANJO</div>
+            <div>MIXCO, GUATEMALA</div>
+            <div>NIT: 107761475</div>
+            <div>PBX: +502 23158519</div>
+            <div>Whatsapp: +502 5493 4520</div>
         </div>
-        <div style="display: table-cell; width: 50%; text-align: right;">
-            @if ($venta->fel_tipo == 'FCAM')
-                <div style="font-weight: bold; font-size:25px;">FACTURA CAMBIARIA VENTA #{{ $venta->id }}</div>
+        <br>
+        <div>
+            @if ($orden->comp)
+                <div>ORDEN #{{ $orden->id }}</div>
             @else
-                <div style="font-weight: bold; font-size:25px;">FACTURA VENTA #{{ $venta->id }}</div>
+                @if ($orden->fel_tipo == 'FCAM')
+                    <div style="font-size: 10px;">FACTURA CAMBIARIA</div>
+                @else
+                    <div style="font-size: 10px;">FACTURA</div>
+                @endif
+                <div style="font-size: 10px;">FEL, Documento Tributario Electronico</div>
+                <div style="font-size: 10px;">
+                    <div style="font-size: 10px;">AUT: {{ $venta->factura->fel_uuid }}</div>
+                    <div style="font-size: 10px;">Serie: {{ $orden->fel_serie }}</div>
+                    <div style="font-size: 10px;">DTE: {{ $orden->fel_numero }}</div>
+                    <div style="font-size: 10px;">Emisión: {{ $orden->fel_fecha }}</div>
+                    <div style="font-size: 10px;">Certificación: {{ $orden->fel_fecha }}</div>
+                    <div style="font-size: 10px;">Moneda: GTQ</div>
+                </div>
             @endif
-            <div class="salto"></div>
-            <div>FEL, Documento Tributario Electronico</div>
-            <div class="salto">
-                <div>No. Autorización: {{ $venta->factura->fel_uuid }}</div>
-                <div>No. Serie: {{ $venta->factura->fel_serie }} No. DTE: {{ $venta->factura->fel_numero }}</div>
-                <div>Fecha de Certificación: {{ $venta->factura->fel_fecha }}</div>
-                <div>Moneda: GTQ</div>
-            </div>
-            <div class="salto"></div>
-            <div class="salto">
-                <div>ASESOR</div>
-                <div>Nombre: {{ $venta->asesor->name }}</div>
-                <div>Teléfono: {{ $venta->asesor->telefono }}</div>
+            <br>
+            <div style="text-align: left;">
+                <div>
+                    @if ($orden->facturar_cf)
+                        Nit Cliente: CF
+                    @else
+                        @if ($orden->cliente->nit)
+                            Nit Cliente: {{ @$orden->cliente->nit }}
+                        @else
+                            DPI Cliente: {{ @$orden->cliente->dpi }}
+                        @endif
+                    @endif
+                </div>
+                <div class="descripcion">
+                    @if ($orden->facturar_cf)
+                        @if ($orden->direccion->nombre_comercial)
+                            Nombre Comercial: {{ @$orden->direccion->nombre_comercial }}
+                        @endif
+                    @else
+                        @if ($orden->cliente->nit)
+                            Razon Social: {{ @$orden->cliente->razon_social }}
+                        @else
+                            Nombre Comercial: {{ @$orden->direccion->nombre_comercial }}
+                        @endif
+                    @endif
+                </div>
             </div>
         </div>
     </header>
 
-    <section class="salto">
-        <table>
+    <section>
+        <br><br>
+        <table class="table">
             <tr>
-                <th>Cantidad</th>
-                <th>Código</th>
-                <th>Descripción</th>
-                <th>Precio</th>
-                <th>Sub-Total</th>
+                <th class="descripcion">DESCRIP</th>
+                <th class="cantidad">CANT</th>
+                <th class="precio">PRECIO</th>
+                <th class="subtotal">SUBT</th>
             </tr>
-            @foreach ($venta->detalles as $key => $dt)
+            @foreach ($orden->detalle as $dt)
                 <tr>
-                    <td>{{ $dt->cantidad }}</td>
-                    <td>{{ $dt->producto->codigo }}</td>
-                    <td style="text-align: left;">
-                        {{ $dt->producto->descripcion }},
-                        {{ $dt->producto->presentacion->presentacion }},
-                        {{ $dt->producto->marca->marca }}
+                    <td class="descripcion">
+                        {{ $dt->producto->codigo }} - {{ $dt->producto->descripcion }},
+                        {{ $dt->producto->presentacion->presentacion }}, {{ $dt->producto->marca->marca }}
                     </td>
-                    <td style="text-align: right;">{{ Number::currency($dt->precio, 'GTQ') }}</td>
-                    <td style="text-align: right;">{{ Number::currency($dt->cantidad * $dt->precio, 'GTQ') }}
-                    </td>
+                    <td class="cantidad">{{ $dt->cantidad }}</td>
+                    <td class="precio">{{ number_format($dt->precio, 2) }}</td>
+                    <td class="subtotal">{{ number_format($dt->cantidad * $dt->precio, 2) }}</td>
                 </tr>
             @endforeach
+            @if ($orden->envio > 0)
+                <tr>
+                    <td>SERVICIO DE ENVÍO</td>
+                    <td></td>
+                    <td class="precio">{{ number_format($orden->envio, 2) }}</td>
+                    <td class="subtotal">{{ number_format($orden->envio, 2) }}</td>
+                </tr>
+            @endif
             <tr>
                 <td></td>
                 <td></td>
-                <td></td>
-                <td style="text-align: right;">TOTAL</td>
-                <td style="text-align: right;">{{ Number::currency($venta->total, 'GTQ') }}</td>
+                <td class="precio">TOTAL</td>
+                <td class="subtotal">{{ number_format($orden->total, 2) }}</td>
             </tr>
         </table>
     </section>
-
-    <section style="display: table; width: 100%; margin: 30px 0px;">
-        <div style="display: table-cell; width: 50%; ">
-            <div>FRASES</div>
-            <div>Sujeto a pagos trimestrales ISR</div>
-            <div>Agente de Retención del IVA</div>
-
-        </div>
-        <div style="display: table-cell; width: 50%; text-align: right;">
-            <div class="salto">
-                CERTIFICADOR: INFILE, S.A. NIT: 12521337
+    <br>
+    <div>
+        <div>ORDEN #{{ $orden->id }}</div>
+        <div>ASESOR: {{ $orden->asesor->name }}</div>
+    </div>
+    <br>
+    @if ($orden->comp)
+        <div></div>
+    @else
+        <section style="text-align: center;">
+            <div>
+                <div>FRASES</div>
+                <div>Sujeto a pagos trimestrales ISR</div>
+                <div>Agente de Retención del IVA</div>
             </div>
-        </div>
-    </section>
-
-    <footer class="salto">
-        @if ($venta->fel_tipo == 'FCAM')
-            <div style="border: 2px solid black; padding-bottom: -40px;">
-                <div style="background:black; color:white; text-align:center; padding:3px; font-weight:700 !important">
-                    COMPLEMENTOS</div>
-                <div style="padding:3px" class="salto">ABONOS DE FACTURA CAMBIARIA</div>
-                <div style="display: table; width: 100%;" class="salto">
-                    <div style="display: table-cell; width: 50%;">
-                        <table>
-                            <tbody>
-                                <tr>
-                                    <th>Número de abono</th>
-                                    <th>Fecha de vencimiento</th>
-                                    <th>Monto de abono</th>
-                                </tr>
-                                <tr>
-                                    <td>1</td>
-                                    <td>{{ $venta->fecha_vencimiento }}
-                                    </td>
-                                    <td>{{ Number::currency($venta->total, 'GTQ') }}</td>
-                                </tr>
-                            </tbody>
-                            </tbody>
-                        </table>
-                    </div>
+            <div>
+                <div>
+                    CERTIFICADOR: INFILE, S.A. NIT: 12521337
                 </div>
             </div>
-            <p style="text-align: justify; margin-top:18px">
-                CONDICIONES GENERALES:
-            <div>1. La mercadería será de nuestra propiedad hasta su cancelación</div>
-            <div>2. Esta factura cambiaria no se considera cancelada sin el recibo de caja correspondiente.</div>
-            <div>3. El comprador acepta el valor de esta factura y se compromete a cancelarlo al vencimiento pactado
-                en
-                las oficinas del vendedor o de tercera persona autorizada y en caso de incumplimiento el comprador
-                renuncia expresamente al fuero de su domicilio y se somete a los tribunales de Guatemala o cualquier
-                otro que el vendedor elija.</div>
-            <div>4. La firma de cualquier empleado o dependiente del comprador al aceptar esta factura, obligará a
-                éste
-                a cumplir con todas las condiciones estipuladas en la misma.</div>
-            <div>5. El comprador acepta como buenos los intereses y gastos por mora estipulados por el vendedor.
+        </section>
+    @endif
+    <br>
+    <br>
+    <footer>
+        @if (!$orden->comp && $orden->fel_tipo == 'FCAM')
+            <div>
+                <div style="background: black; color: white; text-align: center; padding: 5px; font-weight: bold;">
+                    COMPLEMENTOS
+                </div>
+                <div style="padding: 5px; text-align: center; font-weight: bold;">
+                    ABONOS DE FACTURA CAMBIARIA
+                </div>
+                <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 10px;">
+                    <thead>
+                        <tr style="background: #f0f0f0;">
+                            <th style="border: 1px solid black; padding: 3px;">No. Abono</th>
+                            <th style="border: 1px solid black; padding: 3px;">Fecha de Vencimiento</th>
+                            <th style="border: 1px solid black; padding: 3px;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid black; padding: 3px;">1</td>
+                            <td style="border: 1px solid black; padding: 3px;">
+                                {{ Carbon\Carbon::parse($orden->created_at)->addMonths(1)->format('d-m-Y') }}
+                            </td>
+                            <td style="border: 1px solid black; padding: 3px;">
+                                {{ number_format($orden->total) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            </p>
-            <p style="margin-top: 60px; border-top: 1px solid black; display: inline-block;">Firma de Aceptación del
-                Comprador</p>
+            <br>
+
+            <div style="font-size: 10px;">
+                <strong>CONDICIONES GENERALES:</strong>
+                <div style="padding-left: 15px; margin-top: 5px;">
+                    <li>La mercadería será de nuestra propiedad hasta su cancelación.</li>
+                    <li>Esta factura cambiaria no se considera cancelada sin el recibo de caja correspondiente.</li>
+                    <li>El comprador acepta el valor de esta factura y se compromete a cancelarlo al vencimiento pactado
+                        en las oficinas del vendedor o de tercera persona autorizada. En caso de incumplimiento,
+                        renuncia expresamente al fuero de su domicilio y se somete a los tribunales de Guatemala o
+                        cualquier otro que el vendedor elija.</li>
+                    <li>La firma de cualquier empleado o dependiente del comprador al aceptar esta factura, obligará a
+                        éste a cumplir con todas las condiciones estipuladas.</li>
+                    <li>El comprador acepta como buenos los intereses y gastos por mora estipulados por el vendedor.
+                    </li>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center;">
+                <div
+                    style="border-top: 1px solid black; width: 70%; margin: 10px auto; padding-top: 5px; font-weight: bold;">
+                    Firma de Aceptación del Comprador
+                </div>
+            </div>
         @endif
     </footer>
+
 </body>
 
 </html>
