@@ -23,7 +23,6 @@ class OrdenEstados extends BaseWidget
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
 
-
         return auth()->user()->can('widget_OrdenEstados');
     }
 

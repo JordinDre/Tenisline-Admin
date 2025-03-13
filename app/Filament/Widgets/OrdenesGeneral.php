@@ -26,9 +26,9 @@ class OrdenesGeneral extends ChartWidget
         if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
              }
-
         return auth()->user()->can('widget_OrdenesGeneral');
     }
+    
 
     protected function getData(): array
     {

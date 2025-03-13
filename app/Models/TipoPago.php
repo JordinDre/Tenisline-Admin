@@ -14,8 +14,6 @@ class TipoPago extends Model
     public const CLIENTE_PAGOS = [
         'PAGO CONTRA ENTREGA',
         'PRONTO PAGO',
-        /* 'CRÉDITO',
-        'AUTORIZACION', */
     ];
 
     public const CLIENTE_PAGOS_SIN_CREDITO = [

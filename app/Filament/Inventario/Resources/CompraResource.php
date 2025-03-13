@@ -163,15 +163,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->live(onBlur: true)
                                         ->minValue(0)
                                         ->visible(auth()->user()->can('view_costs_producto'))
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->afterStateUpdated(function (Get $get, Set $set) {
-                                            $precio = floatval($get('precio'));
-                                            $envio = floatval($get('envio'));
-                                            $envase = floatval($get('envase'));
-                                            $cantidad = floatval($get('cantidad'));
-                                            $subtotal = ($precio + $envio + $envase) * $cantidad;
-                                            $set('subtotal', $subtotal);
-                                        }),
+                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
                                     TextInput::make('envase')
                                         ->default(0)
                                         ->inputMode('decimal')
@@ -221,15 +213,14 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->preload()
                                         ->placeholder('Seleccione')
                                         ->live()
-                                        ->searchable()
-                                        ->required(),
+                                        ->searchable(),/* 
                                     TextInput::make('dias_credito')
                                         ->label('Días de Crédito')
                                         ->minValue(1)
                                         ->visible(fn (Get $get) => $get('tipo_pago_id') == 2)
                                         ->required(fn (Get $get) => $get('tipo_pago_id') == 2)
                                         ->inputMode('decimal')
-                                        ->rule('numeric'),
+                                        ->rule('numeric'), */
                                 ]),
                             Repeater::make('pagos')
                                 ->label('')

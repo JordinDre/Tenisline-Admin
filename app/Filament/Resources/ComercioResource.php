@@ -31,6 +31,7 @@ class ComercioResource extends Resource implements HasShieldPermissions
 
     protected static ?int $navigationSort = 3;
 
+
     public static function getPermissionPrefixes(): array
     {
         return [

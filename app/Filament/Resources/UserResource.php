@@ -141,14 +141,14 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->relationship('comercios', 'comercio')
                             ->multiple()
                             ->live()
-                            ->searchable(),
-                        Select::make('asesores')
+                            ->searchable(), */
+                        /* Select::make('asesores')
                             ->multiple()
                             ->rules(['max:1'])
                             ->disabled(fn (Get $get) => ! in_array(5, $get('roles')))
                             ->relationship('asesores', 'name', fn (Builder $query) => $query->role(User::ASESOR_ROLES))
-                            ->searchable(),
-                        Select::make('supervisores')
+                            ->searchable(), */
+                        /* Select::make('supervisores')
                             ->multiple()
                             ->disabled(fn (Get $get) => ! array_intersect([9, 10, 11], $get('roles')))
                             ->relationship('supervisores', 'name', fn (Builder $query) => $query->role(User::SUPERVISOR_ROLES))
