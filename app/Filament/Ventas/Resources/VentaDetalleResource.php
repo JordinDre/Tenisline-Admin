@@ -70,7 +70,7 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(), */
-                Tables\Columns\TextColumn::make('venta.vendedor.name')
+                Tables\Columns\TextColumn::make('venta.asesor.name')
                     ->label('Vendedor')
                     ->searchable()
                     ->copyable()

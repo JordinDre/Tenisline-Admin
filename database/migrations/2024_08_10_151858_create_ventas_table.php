@@ -27,6 +27,7 @@ return new class extends Migration
             $table->decimal('subtotal', 10, 2)->nullable();
             $table->decimal('total', 10, 2)->nullable();
             $table->boolean('facturar_cf')->default(0);
+            $table->boolean('comp')->default(0);
             $table->text('observaciones')->nullable();
             $table->text('motivo')->nullable();
             $table->date('fecha_vencimiento')->nullable();

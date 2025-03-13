@@ -271,7 +271,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->numeric()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('vendedor.name')
+                Tables\Columns\TextColumn::make('asesor.name')
                     ->searchable()
                     ->label('Vendedor')
                     ->numeric()
@@ -397,13 +397,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false), */
-                    Action::make('facturar')
+                    /* Action::make('facturar')
                         ->label('Facturar')
                         ->requiresConfirmation()
                         ->icon('heroicon-o-document-text')
                         ->color('indigo')
                         ->action(fn (Venta $record) => VentaController::facturar($record))
-                        ->visible(fn ($record) => auth()->user()->can('facturar', $record)),
+                        ->visible(fn ($record) => auth()->user()->can('facturar', $record)), */
                     Action::make('liquidate')
                         ->label('Liquidar')
                         ->color('success')
