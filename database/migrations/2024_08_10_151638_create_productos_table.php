@@ -21,6 +21,8 @@ return new class extends Migration
             $table->decimal('precio_vendedores', 10, 2)->nullable()->default(0);
             $table->decimal('precio_mayorista', 10, 2)->nullable()->default(0);
             $table->decimal('precio_compra', 10, 2)->nullable()->default(0);
+            $table->decimal('envio', 10, 2)->nullable()->default(0);
+            $table->decimal('precio_costo', 10, 2)->nullable()->default(0);
             $table->string('modelo', 250)->nullable();
             $table->string('talla', 250)->nullable();
             $table->string('color')->nullable();

@@ -14,6 +14,8 @@ class TipoPago extends Model
     public const CLIENTE_PAGOS = [
         'PAGO CONTRA ENTREGA',
         'PRONTO PAGO',
+        'CRÉDITO',
+        'AUTORIZACION',
     ];
 
     public const CLIENTE_PAGOS_SIN_CREDITO = [
@@ -22,10 +24,10 @@ class TipoPago extends Model
     ];
 
     public const CLIENTE_PAGOS_ARRAY = [
-        /* 2 => 'CRÉDITO', */
+        2 => 'CRÉDITO',
         3 => 'PAGO CONTRA ENTREGA',
         4 => 'PRONTO PAGO',
-        /* 12 => 'AUTORIZACION', */
+        12 => 'AUTORIZACION',
     ];
 
     public const FORMAS_PAGO = [
