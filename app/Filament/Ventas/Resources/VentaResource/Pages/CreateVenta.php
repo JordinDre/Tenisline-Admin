@@ -124,7 +124,6 @@ class CreateVenta extends CreateRecord
                                         ->live()
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state && $get('../../bodega_id')) { 
-                                                $bodegaId = $get('../../bodega_id');
                                                 $productoId = $state;
                                     
                                                 $escala = ProductoController::getEscalaPrecio(
@@ -133,8 +132,7 @@ class CreateVenta extends CreateRecord
                                     
                                                 $producto = Producto::find($productoId); 
                                                 $precioBaseVenta = $producto->precio_venta;
-                                                $precioMayorista = $producto->precio_mayorista; // Obtener precio mayorista aquí también
-                                                $precioConDescuento = $precioBaseVenta; // Precio por defecto (precio venta)
+                                                $precioMayorista = $producto->precio_mayorista; 
                                                 $porcentajeDescuento = 0; 
                                                 
                                                 $cliente_id_en_formulario = $get('../../cliente_id'); // Obtener cliente_id del formulario
@@ -154,20 +152,14 @@ class CreateVenta extends CreateRecord
                                                         $porcentajeDescuento = $escala->porcentaje;
                                                         $precioFinalParaSetear = round($precioBaseVenta * (1 - ($escala->porcentaje / 100)), 2);
                                                     }
-                                                }// Porcentaje de descuento por defecto
-                                
-                                    
+                                                }
                                                 $set('escala_id', $escala ? $escala->id : null);
                                                 $set('precio', $precioFinalParaSetear); // **Usar $precioFinalParaSetear para setear el precio**
                                                 $set('precio_comp', $producto->precio_costo);
-                                                $set('descuento_porcentaje', $porcentajeDescuento); // Guarda el porcentaje de descuento para mostrarlo o usarlo después
-                                    
-                                    
-                                                // Recalcular subtotal al cambiar producto
-                                                $cantidad = $get('cantidad') ?? 1; // Usar 1 como default si no hay cantidad aún
+                                                $set('descuento_porcentaje', $porcentajeDescuento); 
+                                                $cantidad = $get('cantidad') ?? 1; 
                                                 $set('subtotal', round((float) $precioFinalParaSetear * (float) $cantidad, 2));
                                                 return;
-                                    
                                     
                                             }
                                             // Limpiar campos si no se encuentra escala o se deselecciona producto
@@ -250,6 +242,7 @@ class CreateVenta extends CreateRecord
                                             }
                                         }) */
                                         ->default(0)
+                                        ->readOnly()
                                         ->required()
                                         ->prefix('Q')
                                         ->inputMode('decimal')
@@ -269,7 +262,7 @@ class CreateVenta extends CreateRecord
                                         ->readOnly()
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]), */
                                     Hidden::make('escala_id'),
-                                    /* Hidden::make('precio_comp'), */
+                                    Hidden::make('precio_comp'),
                                     /* Hidden::make('ganancia'), */
                                     TextInput::make('subtotal')
                                         ->label('SubTotal')
@@ -435,7 +428,7 @@ class CreateVenta extends CreateRecord
 
         return $data;
     }
-    
+
     protected function afterCreate(): void
     {
         try {
