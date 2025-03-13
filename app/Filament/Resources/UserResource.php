@@ -155,10 +155,10 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->searchable(), */
                         Select::make('tipo_pagos')
                             ->label('Tipos de Pago')
-                            ->required(fn (Get $get) => in_array(5, $get('roles')))
+                            ->required(fn (Get $get) => in_array([4,6], $get('roles')))
                             ->relationship('tipo_pagos', 'tipo_pago', fn ($query) => $query->whereIn('tipo_pago', TipoPago::CLIENTE_PAGOS))
                             ->live()
-                            ->afterStateUpdated(function (Set $set, $state) {
+                            /* ->afterStateUpdated(function (Set $set, $state) {
                                 if (! in_array(2, $state)) {
                                     $set('credito', null);
                                     $set('credito_dias', null);
@@ -170,7 +170,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                         $fail('No se puede quitar el tipo de pago CREDITO porque tiene créditos pendientes');
                                     }
                                 },
-                            ])
+                            ]) */
                             ->multiple()
                             ->preload()
                             ->searchable(),
@@ -263,14 +263,14 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->minLength(8)
                             ->maxLength(8),
                     ])->columnSpanFull()->columns(4)->defaultItems(0)->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles'))), */
-                Repeater::make('observaciones')
+                /* Repeater::make('observaciones')
                     ->relationship()
                     ->defaultItems(0)
                     ->schema([
                         Textarea::make('observacion')->label('Observación'),
                         Hidden::make('user_id')
                             ->default(auth()->user()->id),
-                    ])->columnSpanFull(),
+                    ])->columnSpanFull(), */
             ]);
     }
 

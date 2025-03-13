@@ -65,17 +65,17 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                 ])->label('Exportar')->color('success'),
             ])
             ->columns([
-                Tables\Columns\TextColumn::make('orden.asesor.id')
+                /* Tables\Columns\TextColumn::make('orden.asesor.id')
                     ->label('ID')
                     ->searchable()
                     ->copyable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('venta.asesor.name')
-                    ->label('Asesor')
+                    ->sortable(), */
+                Tables\Columns\TextColumn::make('venta.vendedor.name')
+                    ->label('Vendedor')
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('comision')
+                /* Tables\Columns\TextColumn::make('comision')
                     ->numeric()
                     ->copyable()
                     ->suffix('%')
@@ -83,8 +83,13 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('ganancia')
                     ->summarize(Sum::make())
                     ->copyable()
+                    ->sortable(), */
+                Tables\Columns\TextColumn::make('escala.dia')
+                    ->label('Escala Dia')
+                    ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('escala.escala')
+                Tables\Columns\TextColumn::make('escala.porcentaje')
+                    ->label('Escala Porcentaje')    
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('precio')
@@ -118,11 +123,11 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                     ->label('Marca')
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('producto.presentacion.presentacion')
+                /* Tables\Columns\TextColumn::make('producto.presentacion.presentacion')
                     ->searchable()
                     ->label('Presentacion')
                     ->copyable()
-                    ->sortable(),
+                    ->sortable(), */
                 Tables\Columns\TextColumn::make('venta.id')
                     ->searchable()
                     ->copyable()
@@ -164,7 +169,7 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                             ? $query->whereHas('venta', fn (Builder $q) => $q->whereIn('estado', $data['estado']))
                             : $query
                     ),
-                Filter::make('escala')
+                /* Filter::make('escala')
                     ->form([
                         Select::make('escala')
                             ->multiple()
@@ -177,7 +182,7 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                         fn (Builder $query, array $data) => filled($data['escala'])
                             ? $query->whereHas('escala', fn (Builder $q) => $q->whereIn('escala', $data['escala']))
                             : $query
-                    ),
+                    ), */
                 Filter::make('created_at')
                     ->form([
                         DatePicker::make('fecha_inicial')
@@ -225,11 +230,11 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                     ->form([
                         Select::make('asesor')
                             ->multiple()
-                            ->placeholder('Seleccione un asesor')
+                            ->placeholder('Seleccione un vendedor')
                             ->searchable()
                             ->options(function () {
                                 $user = auth()->user();
-                                if ($user->hasAnyRole(['administrador', 'super_admin', 'facturador', 'creditos', 'rrhh', 'gerente'])) {
+                                if ($user->hasAnyRole(['administrador', 'super_admin', 'vendedor'])) {
                                     return User::role(User::VENTA_ROLES)->pluck('name', 'id');
                                 }
                                 if ($user->hasAnyRole(User::SUPERVISORES_VENTA)) {

@@ -48,9 +48,9 @@ class Venta extends Model
         return $this->belongsTo(User::class, 'cliente_id');
     }
 
-    public function asesor(): BelongsTo
+    public function vendedor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'asesor_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function tipo_pago(): BelongsTo
