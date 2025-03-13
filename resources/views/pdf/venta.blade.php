@@ -101,7 +101,7 @@
         <div>NIT: {{ $venta->cliente->nit }}</div>
         <div class="descripcion">Razón Social: {{ $venta->cliente->razon_social }}</div>
         <div class="descripcion">Nombre Comercial: {{ $venta->cliente->name }}</div>
-        <div>Contacto: {{ @$venta->cliente->encargado }}</div>
+        {{-- <div>Contacto: {{ @$venta->cliente->telefono }}</div> --}}
         <div>Teléfono: {{ @$venta->cliente->telefono }}</div>
     </section>
 
@@ -123,7 +123,7 @@
         @foreach ($venta->detalles as $dt)
             <tr>
                 <td class="descripcion">
-                    {{ $dt->producto->id }} - {{ $dt->producto->descripcion }}, {{ $dt->producto->marca->marca }}
+                    {{ $dt->producto->id }} - {{ $dt->producto->descripcion }} - {{ $dt->producto->talla }}'', {{ $dt->producto->marca->marca }}
                 </td>
                 <td class="cantidad">{{ $dt->cantidad }}</td>
                 <td class="precio">{{ number_format($dt->precio, 2) }}</td>

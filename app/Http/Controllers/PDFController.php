@@ -23,7 +23,7 @@ class PDFController extends Controller
 
     public function venta($id)
     {
-        $oventaden = Venta::find($id);
+        $venta = Venta::find($id);
         $html = view('pdf.venta', compact('venta'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 

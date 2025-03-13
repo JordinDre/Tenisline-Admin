@@ -3,13 +3,13 @@
 
 <head>
     <title>
-        @if ($orden->comp)
-            Orden {{ $orden->id }}
+        @if ($venta->comp)
+            Orden {{ $venta->id }}
         @else
-            @if ($orden->fel_tipo == 'FCAM')
-                Factura Cambiaria {{ $orden->id }}
+            @if ($venta->factura->fel_tipo == 'FCAM')
+                Factura Cambiaria {{ $venta->id }}
             @else
-                Factura {{ $orden->id }}
+                Factura {{ $venta->id }}
             @endif
         @endif
     </title>
@@ -102,10 +102,10 @@
         </div>
         <br>
         <div>
-            @if ($orden->comp)
-                <div>ORDEN #{{ $orden->id }}</div>
+            @if ($venta->comp)
+                <div>VENTA #{{ $venta->id }}</div>
             @else
-                @if ($orden->fel_tipo == 'FCAM')
+                @if ($venta->fel_tipo == 'FCAM')
                     <div style="font-size: 10px;">FACTURA CAMBIARIA</div>
                 @else
                     <div style="font-size: 10px;">FACTURA</div>
@@ -113,36 +113,36 @@
                 <div style="font-size: 10px;">FEL, Documento Tributario Electronico</div>
                 <div style="font-size: 10px;">
                     <div style="font-size: 10px;">AUT: {{ $venta->factura->fel_uuid }}</div>
-                    <div style="font-size: 10px;">Serie: {{ $orden->fel_serie }}</div>
-                    <div style="font-size: 10px;">DTE: {{ $orden->fel_numero }}</div>
-                    <div style="font-size: 10px;">Emisión: {{ $orden->fel_fecha }}</div>
-                    <div style="font-size: 10px;">Certificación: {{ $orden->fel_fecha }}</div>
+                    <div style="font-size: 10px;">Serie: {{ $venta->factura->fel_serie }}</div>
+                    <div style="font-size: 10px;">DTE: {{ $venta->factura->fel_numero }}</div>
+                    <div style="font-size: 10px;">Emisión: {{ $venta->factura->fel_fecha }}</div>
+                    <div style="font-size: 10px;">Certificación: {{ $venta->factura->fel_fecha }}</div>
                     <div style="font-size: 10px;">Moneda: GTQ</div>
                 </div>
             @endif
             <br>
             <div style="text-align: left;">
                 <div>
-                    @if ($orden->facturar_cf)
+                    @if ($venta->facturar_cf)
                         Nit Cliente: CF
                     @else
-                        @if ($orden->cliente->nit)
-                            Nit Cliente: {{ @$orden->cliente->nit }}
+                        @if ($venta->cliente->nit)
+                            Nit Cliente: {{ @$venta->cliente->nit }}
                         @else
-                            DPI Cliente: {{ @$orden->cliente->dpi }}
+                            DPI Cliente: {{ @$venta->cliente->dpi }}
                         @endif
                     @endif
                 </div>
                 <div class="descripcion">
-                    @if ($orden->facturar_cf)
-                        @if ($orden->direccion->nombre_comercial)
-                            Nombre Comercial: {{ @$orden->direccion->nombre_comercial }}
+                    @if ($venta->facturar_cf)
+                        @if ($venta->cliente->nombre_comercial)
+                            Nombre Comercial: {{ @$venta->cliente->nombre_comercial }}
                         @endif
                     @else
-                        @if ($orden->cliente->nit)
-                            Razon Social: {{ @$orden->cliente->razon_social }}
+                        @if ($venta->cliente->nit)
+                            Razon Social: {{ @$venta->cliente->razon_social }}
                         @else
-                            Nombre Comercial: {{ @$orden->direccion->nombre_comercial }}
+                            Nombre Comercial: {{ @$venta->cliente->nombre_comercial }}
                         @endif
                     @endif
                 </div>
@@ -159,40 +159,40 @@
                 <th class="precio">PRECIO</th>
                 <th class="subtotal">SUBT</th>
             </tr>
-            @foreach ($orden->detalle as $dt)
+            @foreach ($venta->detalles as $dt)
                 <tr>
                     <td class="descripcion">
-                        {{ $dt->producto->codigo }} - {{ $dt->producto->descripcion }},
-                        {{ $dt->producto->presentacion->presentacion }}, {{ $dt->producto->marca->marca }}
+                        {{ $dt->producto->id }} - {{ $dt->producto->descripcion }}- {{ $dt->producto->talla }}'',
+                        {{ $dt->producto->marca->marca }}
                     </td>
                     <td class="cantidad">{{ $dt->cantidad }}</td>
                     <td class="precio">{{ number_format($dt->precio, 2) }}</td>
                     <td class="subtotal">{{ number_format($dt->cantidad * $dt->precio, 2) }}</td>
                 </tr>
             @endforeach
-            @if ($orden->envio > 0)
+            {{-- @if ($venta->envio > 0)
                 <tr>
                     <td>SERVICIO DE ENVÍO</td>
                     <td></td>
-                    <td class="precio">{{ number_format($orden->envio, 2) }}</td>
-                    <td class="subtotal">{{ number_format($orden->envio, 2) }}</td>
+                    <td class="precio">{{ number_format($venta->envio, 2) }}</td>
+                    <td class="subtotal">{{ number_format($venta->envio, 2) }}</td>
                 </tr>
-            @endif
+            @endif --}}
             <tr>
                 <td></td>
                 <td></td>
                 <td class="precio">TOTAL</td>
-                <td class="subtotal">{{ number_format($orden->total, 2) }}</td>
+                <td class="subtotal">{{ number_format($venta->total, 2) }}</td>
             </tr>
         </table>
     </section>
     <br>
     <div>
-        <div>ORDEN #{{ $orden->id }}</div>
-        <div>ASESOR: {{ $orden->asesor->name }}</div>
+        <div>VENTA #{{ $venta->id }}</div>
+        <div>ASESOR: {{ $venta->asesor->name }}</div>
     </div>
     <br>
-    @if ($orden->comp)
+    @if ($venta->comp)
         <div></div>
     @else
         <section style="text-align: center;">
@@ -211,7 +211,7 @@
     <br>
     <br>
     <footer>
-        @if (!$orden->comp && $orden->fel_tipo == 'FCAM')
+        @if (!$venta->comp && $venta->fel_tipo == 'FCAM')
             <div>
                 <div style="background: black; color: white; text-align: center; padding: 5px; font-weight: bold;">
                     COMPLEMENTOS
@@ -231,10 +231,10 @@
                         <tr>
                             <td style="border: 1px solid black; padding: 3px;">1</td>
                             <td style="border: 1px solid black; padding: 3px;">
-                                {{ Carbon\Carbon::parse($orden->created_at)->addMonths(1)->format('d-m-Y') }}
+                                {{ Carbon\Carbon::parse($venta->created_at)->addMonths(1)->format('d-m-Y') }}
                             </td>
                             <td style="border: 1px solid black; padding: 3px;">
-                                {{ number_format($orden->total) }}
+                                {{ number_format($venta->total) }}
                             </td>
                         </tr>
                     </tbody>

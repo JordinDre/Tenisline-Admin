@@ -271,7 +271,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->numeric()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('vendedor.name')
+                Tables\Columns\TextColumn::make('asesor.name')
                     ->searchable()
                     ->label('Vendedor')
                     ->numeric()
