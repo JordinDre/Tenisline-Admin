@@ -3,7 +3,7 @@ export default function ApplicationLogo(props) {
         <img
             {...props}
             src="/images/logoBlanco.png"
-            alt="Application Logo Harmish"
+            alt="Application Logo TenisLine"
         />
     );
 }
