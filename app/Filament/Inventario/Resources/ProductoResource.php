@@ -72,7 +72,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     'lg' => 3,
                 ])
                     ->schema([
-                        TextInput::make('nombre')
+                        TextInput::make('codigo')
                             ->required()
                             ->maxLength(100),
                         TextInput::make('descripcion')
@@ -327,7 +327,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('nombre')
+                Tables\Columns\TextColumn::make('codigo')
                     ->copyable()
                     ->searchable()
                     ->sortable(),

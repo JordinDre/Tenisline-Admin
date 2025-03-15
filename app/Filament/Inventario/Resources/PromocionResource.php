@@ -29,7 +29,7 @@ class PromocionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('nombre')
+                Forms\Components\TextInput::make('codigo')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Select::make('tipo')

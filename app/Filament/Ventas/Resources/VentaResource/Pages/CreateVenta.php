@@ -51,7 +51,13 @@ class CreateVenta extends CreateRecord
                 Grid::make(['default' => 3])
                     ->schema([
                         Select::make('bodega_id')
-                            ->relationship('bodega', 'bodega')
+                        ->relationship(
+                            'bodega',
+                            'bodega',
+                            fn(Builder $query) => $query->whereHas('user', function ($query) {
+                                $query->where('user_id', auth()->user()->id);
+                            })
+                        )
                             ->preload()
                             ->live()
                             ->afterStateUpdated(function (Set $set) {
@@ -114,7 +120,7 @@ class CreateVenta extends CreateRecord
                                         ->relationship('producto', 'descripcion')
                                         ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
                                         ->allowHtml()
-                                        ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'nombre', 'modelo']) // Añadir 'nombre' y 'modelo' para búsqueda
+                                        ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'codigo', 'modelo']) 
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
                                             return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'), $get('../../cliente_id'));
                                         })
@@ -298,7 +304,9 @@ class CreateVenta extends CreateRecord
                                         ->label('Tipo de Pago')
                                         ->required()
                                         ->columnSpan(['sm' => 1, 'md' => 8])
-                                        ->relationship('tipo_pago', 'tipo_pago')
+                                        ->options(
+                                            fn(Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
+                                        )
                                         ->live()
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             $set('pagos', []);
