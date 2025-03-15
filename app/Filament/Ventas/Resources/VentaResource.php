@@ -294,7 +294,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->bulleted()
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('detalles.producto.nombre')
+                Tables\Columns\TextColumn::make('detalles.producto.codigo')
                     ->label('Cod Producto')
                     ->searchable()
                     ->listWithLineBreaks()
@@ -365,7 +365,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
-                    Action::make('factura')
+                    /* Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => auth()->user()->can('factura', $record))
                         ->modalContent(fn (Venta $record): View => view(
@@ -380,7 +380,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalWidth(MaxWidth::FiveExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
-                        ->modalSubmitAction(false),
+                        ->modalSubmitAction(false), */
                     /* Action::make('nota_credito')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => auth()->user()->can('credit_note', $record))

@@ -164,7 +164,7 @@ class ProductoController extends Controller
                  style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
             <div>
                 <div style='font-weight: bold; color: black;'> 
-                    ID: {$record->id} - <span style='color: black;'>{$record->nombre}</span>
+                    ID: {$record->id} - <span style='color: black;'>{$record->codigo}</span>
                 </div>
                 <div style='color: black;'> 
                     <span style='color: black;'>Descripción: </span>{$record->descripcion}
@@ -189,7 +189,7 @@ class ProductoController extends Controller
     {
         $query = Producto::query()
             ->where('descripcion', 'like', "%{$search}%")
-            ->orWhere('nombre', 'like', "%{$search}%") 
+            ->orWhere('codigo', 'like', "%{$search}%") 
             ->orWhere('modelo', 'like', "%{$search}%") 
             ->orWhereHas('marca', function ($query) use ($search) {
                 $query->where('marca', 'like', "%{$search}%");

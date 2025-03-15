@@ -77,8 +77,8 @@ class InventarioResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('producto.nombre')
-                    ->label('Nombre')
+                Tables\Columns\TextColumn::make('producto.codigo')
+                    ->label('Código')
                     ->searchable()
                     ->copyable()
                     ->sortable(),
