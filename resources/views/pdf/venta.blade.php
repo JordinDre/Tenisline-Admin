@@ -82,7 +82,7 @@
 <body>
     <header style="text-align: center;">
         <h3>Venta #{{ $venta->id }}</h3>
-        <img src="{{ public_path('/img/logo.png') }}" alt="Logo"
+        <img src="{{ public_path('/imges/logo.png') }}" alt="Logo"
             style="max-width: 80%; filter: grayscale(100%) brightness(0);">
         <br><br><b>
             Fecha:</b> {{ date_format($venta->created_at, 'd-m-Y') }}
