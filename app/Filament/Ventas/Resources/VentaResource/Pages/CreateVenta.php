@@ -2,38 +2,40 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use Closure;
-use App\Models\Pago;
-use App\Models\User;
+use App\Filament\Ventas\Resources\VentaResource;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VentaController;
+use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use App\Models\Inventario;
+use App\Models\Municipio;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
-use Filament\Forms\Form;
-use App\Models\Inventario;
-use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Log;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use App\Http\Controllers\UserController;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
-use App\Http\Controllers\VentaController;
+use App\Models\User;
+use Closure;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use App\Http\Controllers\ProductoController;
-use Filament\Forms\Components\Actions\Action;
-use App\Filament\Ventas\Resources\VentaResource;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class CreateVenta extends CreateRecord
 {
@@ -302,7 +304,7 @@ class CreateVenta extends CreateRecord
                                             } else {
                                                 $precioFinalParaSetear = $precioBaseVenta; // Usar precio venta normal
 
-                                                if ($escala) { 
+                                                if ($escala) {
                                                     $precioFinalParaSetear = round($precioBaseVenta * (1 - ($escala->porcentaje / 100)), 2);
                                                 }
                                             }
@@ -319,24 +321,14 @@ class CreateVenta extends CreateRecord
                                 })->visible(fn(Get $get): bool => !empty($get('bodega_id'))),
 
                         ]),
-                    Wizard\Step::make('Pagos')
+                    Wizard\Step::make('Cliente y Pagos')
                         ->schema([
-                            Select::make('cliente_id')
-                                ->label('Cliente')
-                                ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'mayorista']))
-                                ->optionsLimit(20)
-                                ->required()
-                                ->live()
-                                ->afterStateUpdated(function (Set $set) {
-                                    $set('tipo_pago_id', null);
-                                })
-                                ->searchable(),
                             Grid::make([
                                 'default' => 1,
                                 'md' => 10,
                             ])
                                 ->schema([
-                                    Select::make('tipo_pago_id')
+                                    /* Select::make('tipo_pago_id')
                                         ->label('Tipo de Pago')
                                         ->required()
                                         ->columnSpan(['sm' => 1, 'md' => 8])
@@ -355,7 +347,96 @@ class CreateVenta extends CreateRecord
                                                 }
                                             },
                                         ])
-                                        ->preload(),
+                                        ->preload(), */
+                                    Select::make('cliente_id')
+                                        ->label('Cliente')
+                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'mayorista']))
+                                        ->optionsLimit(20)
+                                        ->required()
+                                        ->live()
+                                        ->columnSpan(['sm' => 1, 'md' => 9])
+                                        ->afterStateUpdated(function (Set $set) {
+                                            $set('tipo_pago_id', null);
+                                        })
+                                        ->createOptionForm([
+                                            TextInput::make('nit')
+                                                ->default('CF')
+                                                ->required()
+                                                ->maxLength(25)
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(function (Set $set, $state) {
+                                                    $nit = UserController::nit($state);
+                                                    $set('razon_social', $nit);
+                                                }),
+                                            TextInput::make('razon_social')
+                                                ->required()
+                                                ->readOnly()
+                                                ->default('CF')
+                                                ->label('Razón Social'),
+                                            TextInput::make('name')
+                                                ->required()
+                                                ->label('Nombre/Nombre Comercial'),
+                                            TextInput::make('telefono')
+                                                ->label('Teléfono')
+                                                ->tel()
+                                                ->required()
+                                                ->minLength(8)
+                                                ->maxLength(8),
+                                            TextInput::make('whatsapp')
+                                                ->label('WhatsApp')
+                                                ->tel()
+                                                ->minLength(8)
+                                                ->maxLength(8),
+                                            Repeater::make('direcciones')
+                                                ->relationship()
+                                                ->schema([
+                                                    Select::make('pais_id')
+                                                        ->relationship('pais', 'pais')
+                                                        ->required()
+                                                        ->live(onBlur: true)
+                                                        ->afterStateUpdated(function (Set $set) {
+                                                            $set('departamento_id', null);
+                                                            $set('municipio_id', null);
+                                                        })
+                                                        ->default(1)
+                                                        ->searchable()
+                                                        ->preload(),
+                                                    Select::make('departamento_id')
+                                                        ->label('Departamento')
+                                                        ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                                                        ->live(onBlur: true)
+                                                        ->afterStateUpdated(function (Set $set) {
+                                                            $set('municipio_id', null);
+                                                        })
+                                                        ->required()
+                                                        ->searchable()
+                                                        ->preload(),
+                                                    Select::make('municipio_id')
+                                                        ->label('Municipio')
+                                                        ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                                                        ->required()
+                                                        ->searchable()
+                                                        ->preload(),
+                                                    TextInput::make('direccion')
+                                                        ->required()
+                                                        ->label('Dirección')
+                                                        ->maxLength(255),
+                                                    TextInput::make('referencia')
+                                                        ->required()
+                                                        ->maxLength(255),
+                                                    TextInput::make('zona')
+                                                        ->label('Zona')
+                                                        ->inputMode('decimal')
+                                                        ->rule('numeric')
+                                                        ->minValue(0),
+                                                ])->columnSpanFull()->columns(3)->defaultItems(0),
+                                        ])
+                                        ->createOptionUsing(function (array $data): int {
+                                            $user = User::create($data);
+                                            $user->assignRole('cliente'); // Asigna el rol automáticamente
+                                            return $user->id; // Devuelve el ID para que se seleccione en el campo
+                                        })
+                                        ->searchable(),
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()

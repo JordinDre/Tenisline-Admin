@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('liquido_id')->nullable();
             $table->enum('estado', ['creada', 'liquidada', 'anulada'])
                 ->default('creada');
-            $table->unsignedBigInteger('tipo_pago_id');
+            /* $table->unsignedBigInteger('tipo_pago_id'); */
             $table->enum('tipo_envio', ['guatex', 'propio']);
             $table->decimal('envio', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->nullable();
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->dateTime('fecha_devuelta')->nullable();
             $table->dateTime('fecha_parcialmente_devuelta')->nullable();
             $table->timestamps();
-            $table->foreign('tipo_pago_id')->references('id')->on('tipo_pagos');
+            /* $table->foreign('tipo_pago_id')->references('id')->on('tipo_pagos'); */
             $table->foreign('bodega_id')->references('id')->on('bodegas');
             $table->foreign('asesor_id')->references('id')->on('users');
             $table->foreign('cliente_id')->references('id')->on('users');

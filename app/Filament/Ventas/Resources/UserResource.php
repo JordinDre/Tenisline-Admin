@@ -82,10 +82,10 @@ class UserResource extends Resource implements HasShieldPermissions
                                 $nit = UserController::nit($state);
                                 $set('razon_social', $nit);
                             }),
-                        TextInput::make('dpi')
+                        /* TextInput::make('dpi')
                             ->label('DPI')
                             ->maxLength(13)
-                            ->minLength(13),
+                            ->minLength(13), */
                         TextInput::make('razon_social')
                             ->required()
                             ->readOnly()
@@ -120,7 +120,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->relationship('roles', 'name', fn ($query) => $query->whereNotIn('name', User::ROLES_ADMIN))
                             ->multiple()
                             ->preload()
-                            ->live(onBlur: true)
+                            /* ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, $state, $record) {
                                 if ($record) {
                                     if (! in_array(5, $state)) {
@@ -132,7 +132,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                         $record->supervisores()->detach();
                                     }
                                 }
-                            })
+                            }) */
                             ->searchable(),
                         /* Select::make('comercios')
                             ->label('Tipos de Comercio')
@@ -247,7 +247,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->maxSize(1024)
                     ->openable()
                     ->optimize('webp'), */
-                /* Repeater::make('direcciones')
+                Repeater::make('direcciones')
                     ->relationship()
                     ->schema([
                         Select::make('pais_id')
@@ -289,7 +289,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->inputMode('decimal')
                             ->rule('numeric')
                             ->minValue(0),
-                        TextInput::make('encargado')
+                        /* TextInput::make('encargado')
                             ->required()
                             ->maxLength(50),
                         TextInput::make('encargado_contacto')
@@ -297,16 +297,16 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->tel()
                             ->minLength(8)
-                            ->maxLength(8),
-                    ])->columnSpanFull()->columns(4)->defaultItems(0)->required(fn (Get $get) => in_array(4, $get('roles')) || in_array(5, $get('roles'))), */
-                /* Repeater::make('observaciones')
+                            ->maxLength(8), */
+                    ])->columnSpanFull()->columns(4)->defaultItems(0),
+                Repeater::make('observaciones')
                     ->relationship()
                     ->defaultItems(0)
                     ->schema([
                         Textarea::make('observacion')->label('Observación'),
                         Hidden::make('user_id')
                             ->default(auth()->user()->id),
-                    ])->columnSpanFull(), */
+                    ])->columnSpanFull(),
             ]);
     }
 
