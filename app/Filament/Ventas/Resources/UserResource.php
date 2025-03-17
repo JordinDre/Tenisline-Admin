@@ -336,10 +336,10 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->listWithLineBreaks()
                     ->bulleted(),
-                TextColumn::make('supervisores.name')
+                /* TextColumn::make('supervisores.name')
                     ->searchable()
                     ->copyable()
-                    ->sortable(),
+                    ->sortable(), */
                 TextColumn::make('nit')
                     ->searchable()
                     ->copyable()
@@ -353,7 +353,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->label('Whatsapp')
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('saldo')
+                /* Tables\Columns\TextColumn::make('saldo')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('credito')
@@ -361,7 +361,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 Tables\Columns\TextColumn::make('credito_dias')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable(), */
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime('d/m/Y H:i:s')

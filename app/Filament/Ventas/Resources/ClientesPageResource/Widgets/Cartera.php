@@ -3,8 +3,9 @@
 namespace App\Filament\Ventas\Resources\ClientesPageResource\Widgets;
 
 use App\Models\Orden;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Illuminate\Support\Facades\Schema;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class Cartera extends BaseWidget
 {
@@ -16,11 +17,22 @@ class Cartera extends BaseWidget
 
     public static function canView(): bool
     {
+        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+            return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
+             }
+             
         return auth()->user()->can('widget_Cartera');
     }
 
     protected function getStats(): array
     {
+        if (!Schema::hasTable('ordens')) { 
+            return [
+             'labels' => [], // Labels vacíos para el gráfico
+              'datasets' => [], // Datasets vacíos para el gráfico
+              ];
+              }
+              
         $user = auth()->user();
         $currentMonth = now()->month;
         $currentYear = now()->year;
