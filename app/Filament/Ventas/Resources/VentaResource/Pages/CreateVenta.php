@@ -431,6 +431,79 @@ class CreateVenta extends CreateRecord
                                                         ->minValue(0),
                                                 ])->columnSpanFull()->columns(3)->defaultItems(0),
                                         ])
+                                        ->editOptionForm([
+                                            TextInput::make('nit')
+                                                ->default('CF')
+                                                ->required()
+                                                ->maxLength(25)
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(function (Set $set, $state) {
+                                                    $nit = UserController::nit($state);
+                                                    $set('razon_social', $nit);
+                                                }),
+                                            TextInput::make('razon_social')
+                                                ->required()
+                                                ->readOnly()
+                                                ->default('CF')
+                                                ->label('Razón Social'),
+                                            TextInput::make('name')
+                                                ->required()
+                                                ->label('Nombre/Nombre Comercial'),
+                                            TextInput::make('telefono')
+                                                ->label('Teléfono')
+                                                ->tel()
+                                                ->required()
+                                                ->minLength(8)
+                                                ->maxLength(8),
+                                            TextInput::make('whatsapp')
+                                                ->label('WhatsApp')
+                                                ->tel()
+                                                ->minLength(8)
+                                                ->maxLength(8),
+                                            Repeater::make('direcciones')
+                                                ->relationship()
+                                                ->schema([
+                                                    Select::make('pais_id')
+                                                        ->relationship('pais', 'pais')
+                                                        ->required()
+                                                        ->live(onBlur: true)
+                                                        ->afterStateUpdated(function (Set $set) {
+                                                            $set('departamento_id', null);
+                                                            $set('municipio_id', null);
+                                                        })
+                                                        ->default(1)
+                                                        ->searchable()
+                                                        ->preload(),
+                                                    Select::make('departamento_id')
+                                                        ->label('Departamento')
+                                                        ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                                                        ->live(onBlur: true)
+                                                        ->afterStateUpdated(function (Set $set) {
+                                                            $set('municipio_id', null);
+                                                        })
+                                                        ->required()
+                                                        ->searchable()
+                                                        ->preload(),
+                                                    Select::make('municipio_id')
+                                                        ->label('Municipio')
+                                                        ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                                                        ->required()
+                                                        ->searchable()
+                                                        ->preload(),
+                                                    TextInput::make('direccion')
+                                                        ->required()
+                                                        ->label('Dirección')
+                                                        ->maxLength(255),
+                                                    TextInput::make('referencia')
+                                                        ->required()
+                                                        ->maxLength(255),
+                                                    TextInput::make('zona')
+                                                        ->label('Zona')
+                                                        ->inputMode('decimal')
+                                                        ->rule('numeric')
+                                                        ->minValue(0),
+                                                ])->columnSpanFull()->columns(3)->defaultItems(0),
+                                        ])
                                         ->createOptionUsing(function (array $data): int {
                                             $user = User::create($data);
                                             $user->assignRole('cliente'); // Asigna el rol automáticamente
@@ -453,7 +526,8 @@ class CreateVenta extends CreateRecord
                                         ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF), */
                                 ]),
                             Repeater::make('pagos')
-                                ->label('')
+                                ->label('Pagos')
+                                ->required()
                                 ->relationship()
                                 ->minItems(1)
                                 ->defaultItems(1)
