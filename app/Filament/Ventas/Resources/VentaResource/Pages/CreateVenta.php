@@ -455,19 +455,16 @@ class CreateVenta extends CreateRecord
                             Repeater::make('pagos')
                                 ->label('')
                                 ->relationship()
-                                ->minItems(function (Get $get) {
-                                    return $get('tipo_pago_id') == 4 ? 1 : 0;
-                                })
-                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 4)
-                                ->defaultItems(0)
+                                ->minItems(1)
+                                ->defaultItems(1)
                                 ->columns(7)
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
+                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
                                         ->required()
                                         ->live()
-                                        ->columnSpan(['sm' => 1, 'md' => 2])
+                                        ->columnSpan(['sm' => 1, 'md' => 1])
                                         ->searchable()
                                         ->preload(),
                                     TextInput::make('monto')
@@ -487,8 +484,8 @@ class CreateVenta extends CreateRecord
                                         ->rules([
                                             fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
-                                                    Pago::where('banco_id', $get('banco_id'))
-                                                    ->where('fecha_transaccion', $get('fecha_transaccion'))
+                                                    Pago::/* where('banco_id', $get('banco_id'))
+                                                    -> */where('fecha_transaccion', $get('fecha_transaccion'))
                                                     ->where('no_documento', $value)
                                                     ->exists()
                                                 ) {
@@ -497,7 +494,7 @@ class CreateVenta extends CreateRecord
                                             },
                                         ])
                                         ->required(),
-                                    TextInput::make('no_autorizacion')
+                                    /* TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
@@ -522,7 +519,7 @@ class CreateVenta extends CreateRecord
                                         ->required()
                                         ->relationship('banco', 'banco')
                                         ->searchable()
-                                        ->preload(),
+                                        ->preload(), */
                                     DatePicker::make('fecha_transaccion')
                                         ->default(now())
                                         ->required(),
