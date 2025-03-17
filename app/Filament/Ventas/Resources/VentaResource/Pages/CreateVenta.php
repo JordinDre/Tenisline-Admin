@@ -288,7 +288,6 @@ class CreateVenta extends CreateRecord
                                             $producto = Producto::find($productoId);
                                             $precioBaseVenta = $producto->precio_venta;
                                             $precioMayorista = $producto->precio_mayorista;
-                                            $porcentajeDescuento = 0;
 
                                             $cliente_id_en_formulario = $get('../../cliente_id'); // Obtener cliente_id del formulario
                                             $clienteRol = null;
@@ -303,8 +302,7 @@ class CreateVenta extends CreateRecord
                                             } else {
                                                 $precioFinalParaSetear = $precioBaseVenta; // Usar precio venta normal
 
-                                                if ($escala) { // Aplicar escala solo si es cliente normal (o sin cliente mayorista)
-                                                    $porcentajeDescuento = $escala->porcentaje;
+                                                if ($escala) { 
                                                     $precioFinalParaSetear = round($precioBaseVenta * (1 - ($escala->porcentaje / 100)), 2);
                                                 }
                                             }
