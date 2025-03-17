@@ -59,6 +59,7 @@ class CreateVenta extends CreateRecord
                             })
                         )
                             ->preload()
+                            ->default(1)
                             ->live()
                             ->afterStateUpdated(function (Set $set) {
                                 $set('detalles', []);
@@ -86,7 +87,7 @@ class CreateVenta extends CreateRecord
                             ->label('Total'),
                     ]),
                 Wizard::make([
-                    Wizard\Step::make('Cliente')
+                    /* Wizard\Step::make('Cliente')
                         ->schema([
                             Select::make('cliente_id')
                                 ->label('Cliente')
@@ -100,9 +101,21 @@ class CreateVenta extends CreateRecord
                                 ->searchable(),
                             Textarea::make('observaciones')
                                 ->columnSpanFull(),
-                        ]),
-                    Wizard\Step::make('Productos')
+                        ]), */
+                    Wizard\Step::make('Cliente y Productos')
                         ->schema([
+                            Select::make('cliente_id')
+                                ->label('Cliente')
+                                ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'mayorista']))
+                                ->optionsLimit(20)
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function (Set $set) {
+                                    $set('tipo_pago_id', null);
+                                })
+                                ->searchable(),
+                            Textarea::make('observaciones')
+                                ->columnSpanFull(),
                             Repeater::make('detalles')
                                 ->label('')
                                 ->relationship()
@@ -199,14 +212,12 @@ class CreateVenta extends CreateRecord
                                         ->rule('numeric')
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                Log::info('Validando Cantidad - Dentro de Regla - get(../../../cliente_id): ' . $get('../../../cliente_id')); // Log del intento de obtener cliente_id
-                                                Log::info('Validando Cantidad - Dentro de Regla - get(): ', $get()); 
                                                 $invetario = Inventario::where('producto_id', $get('producto_id'))->where('bodega_id', $get('../../../bodega_id'))->first();
                                                 if ($invetario && $value > $invetario->existencia) {
                                                     $fail('La cantidad de productos no puede ser mayor al inventario. Exist: '.$invetario->existencia);
                                                 }
                                     
-                                                $cliente_id_en_formulario = $get('../../cliente_id'); // Ojo con los niveles de '..'
+                                                $cliente_id_en_formulario = $get('../../cliente_id'); 
                                                 $clienteRol = null;
                                                 if ($cliente_id_en_formulario) {
                                                     $cliente = User::find($cliente_id_en_formulario);
@@ -288,7 +299,7 @@ class CreateVenta extends CreateRecord
                                     });
                                     $set('subtotal', round($subtotal, 2));
                                     $get('subtotal') >= Factura::CF || $set('facturar_cf', false);
-                                    $get('subtotal') >= Factura::CF || $set('comp', false);
+                                    /* $get('subtotal') >= Factura::CF || $set('comp', false); */
                                     $set('total', round($subtotal, 2));
                                 })->visible(fn (Get $get): bool => !empty($get('bodega_id'))),
                                 
@@ -330,10 +341,10 @@ class CreateVenta extends CreateRecord
                                             }
                                         })
                                         ->label('Facturar CF'),
-                                    Toggle::make('comp')
+                                    /* Toggle::make('comp')
                                         ->inline(false)
                                         ->label('Comp')
-                                        ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
+                                        ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF), */
                                 ]),
                             Repeater::make('pagos')
                                 ->label('')
