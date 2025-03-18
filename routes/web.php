@@ -13,6 +13,9 @@ Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('pro
 Route::get('/', function () {
     return redirect('/admin');
 });
+Route::get('/login', function () {
+    return redirect('/admin');
+});
 
 Route::middleware('auth')->group(function () {
     /* Route::get('/crear-orden', [TiendaController::class, 'orden'])->name('crear.orden');
