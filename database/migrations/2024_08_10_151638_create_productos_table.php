@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('modelo', 250)->nullable();
             $table->string('talla', 250)->nullable();
             $table->string('color')->nullable();
-            $table->enum('genero', ['Hombre', 'Mujer', 'Niños', 'Niñas', 'Bebés', 'Unisex']);
+            $table->enum('genero', ['CABALLERO', 'DAMA', ]);
             $table->json('imagenes')->nullable();
             $table->json('videos')->nullable();
             $table->unsignedBigInteger('proveedor_id')->nullable();

@@ -75,32 +75,34 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($venta) {
-                self::restarInventario($venta, 'Venta facturada');
+                self::restarInventario($venta, 'Venta Confirmada');
+                /* self::restarInventario($venta, 'Venta facturada');
                 $venta->fecha_vencimiento = $venta->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                /* $res = FELController::facturaVenta($venta);
+                $res = FELController::facturaVenta($venta);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
-                } */
+                }
                 $factura = new Factura;
-                $factura->fel_tipo = /* $venta->tipo_pago_id == 2 ? 'FCAM' : */ 'FACT';
-                $factura->fel_uuid = /* $res['uuid'] */ 'pendiente';
-                $factura->fel_serie = /* $res['serie'] */'pendiente';
-                $factura->fel_numero = /* $res['numero'] */'pendiente';
-                $factura->fel_fecha = /* $res['fecha'] */now();
+                $factura->fel_tipo =  'FCAM' ;
+                $factura->fel_uuid = $res['uuid'];
+                $factura->fel_serie = $res['serie'];
+                $factura->fel_numero = $res['numero'];
+                $factura->fel_fecha = $res['fecha'];
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
                 $venta->factura()->save($factura);
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('facturación')->log('Venta facturada');
+                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('facturación')->log('Venta facturada'); */
+                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada'); 
             });
             Notification::make()
                 ->color('success')
-                ->title('Se ha facturado la Venta #'.$venta->id)
+                ->title('Se ha confirmado la Venta #'.$venta->id)
                 ->success()
                 ->send();
         } catch (Exception $e) {
             Notification::make()
                 ->color('danger')
-                ->title('Error al facturar la Venta')
+                ->title('Error al confirmar la Venta')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
