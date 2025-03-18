@@ -30,6 +30,12 @@ class TipoPago extends Model
         12 => 'AUTORIZACION',
     ];
 
+    public const FORMAS_PAGO_VENTA = [
+        'CONTADO',
+        'TARJETA',
+        'LINK DE PAGO',
+    ];
+
     public const FORMAS_PAGO = [
         'DEPÓSITO',
         'TRANSFERENCIA',

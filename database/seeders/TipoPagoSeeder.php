@@ -25,6 +25,7 @@ class TipoPagoSeeder extends Seeder
             ['tipo_pago' => 'EFECTIVO'],
             ['tipo_pago' => 'NOTA DE CRÉDITO'],
             ['tipo_pago' => 'AUTORIZACIÓN'],
+            ['tipo_pago' => 'LINK DE PAGO'],
         ];
 
         foreach ($tipoPagos as $tipoPago) {

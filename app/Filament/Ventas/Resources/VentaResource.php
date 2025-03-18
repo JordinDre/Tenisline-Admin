@@ -158,14 +158,14 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     TextInput::make('cantidad')
                                         ->label('Cantidad')
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                    Select::make('escala_id')
+                                    /* Select::make('escala_id')
                                         ->label('Escala')
                                         ->options(
                                             fn (Get $get) => Producto::find($get('producto_id'))?->escalas()->pluck('escala', 'id')
                                         )
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->placeholder('Escoger')
-                                        ->required(),
+                                        ->required(), */
                                     TextInput::make('precio')
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
                                     Placeholder::make('subtotal')

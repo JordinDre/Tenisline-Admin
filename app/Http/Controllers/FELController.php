@@ -23,17 +23,12 @@ class FELController extends Controller
         foreach ($orden->detalles as $item) {
             $producto = Producto::withTrashed()->find($item->producto_id);
             $descripcion = $producto->codigo . ' - ' . $producto->descripcion . ' - ' . $producto->marca->marca . ' - ' . $producto->presentacion->presentacion;
-            $precioUnitario = $orden->comp ? $item->precio_comp : $item->precio;
+            $precioUnitario = $item->precio;
             $precioTotal = round($item->cantidad * $precioUnitario, 2);
             $montoGravable = round($precioTotal / 1.12, 2);
             $montoImpuesto = round($montoGravable * 0.12, 2);
             $totalMontoImpuesto += round($montoImpuesto, 2);
-
-            if ($orden->comp) {
-                $granTotal += round($item->cantidad * $item->precio_comp, 2);
-            } else {
-                $granTotal += round($item->cantidad * $item->precio, 2);
-            }
+            $granTotal += round($item->cantidad * $item->precio, 2);
 
             $xmlItems .= '<dte:Item BienOServicio="B" NumeroLinea="' . $correlativo . '">
             <dte:Cantidad>' . $item->cantidad . '</dte:Cantidad>
@@ -233,18 +228,12 @@ class FELController extends Controller
             if ($item->devuelto > 0) {
                 $producto = Producto::withTrashed()->find($item->producto_id);
                 $descripcion = $producto->codigo . ' - ' . $producto->descripcion . ' - ' . $producto->marca->marca . ' - ' . $producto->presentacion->presentacion;
-                $precioUnitario = $orden->comp ? $item->precio_comp : $item->precio;
+                $precioUnitario = $item->precio;
                 $precioTotal = round($item->devuelto * $precioUnitario, 2);
                 $montoGravable = round($precioTotal / 1.12, 2);
                 $montoImpuesto = round($montoGravable * 0.12, 2);
                 $totalMontoImpuesto += round($montoImpuesto, 2);
-
-                if ($orden->comp) {
-                    $granTotal += round($item->devuelto * $item->precio_comp, 2);
-                } else {
-                    $granTotal += round($item->devuelto * $item->precio, 2);
-                }
-
+                $granTotal += round($item->devuelto * $item->precio, 2);
                 $xmlItems .= '<dte:Item BienOServicio="B" NumeroLinea="' . $correlativo . '">
                 <dte:Cantidad>' . $item->devuelto . '</dte:Cantidad>
                 <dte:UnidadMedida>UNI</dte:UnidadMedida>
@@ -391,18 +380,12 @@ class FELController extends Controller
         foreach ($venta->detalles as $item) {
             $producto = Producto::withTrashed()->find($item->producto_id);
             $descripcion = $producto->codigo . ' - ' . $producto->descripcion . ' - ' . $producto->marca->marca;
-            $precioUnitario = $venta->comp ? $item->precio_comp : $item->precio;
+            $precioUnitario = $item->precio;
             $precioTotal = round($item->cantidad * $precioUnitario, 2);
             $montoGravable = round($precioTotal / 1.12, 2);
             $montoImpuesto = round($montoGravable * 0.12, 2);
             $totalMontoImpuesto += round($montoImpuesto, 2);
-
-            if ($venta->comp) {
-                $granTotal += round($item->cantidad * $item->precio_comp, 2);
-            } else {
-                $granTotal += round($item->cantidad * $item->precio, 2);
-            }
-
+            $granTotal += round($item->cantidad * $item->precio, 2);
             $xmlItems .= '<dte:Item BienOServicio="B" NumeroLinea="' . $correlativo . '">
             <dte:Cantidad>' . $item->cantidad . '</dte:Cantidad>
             <dte:UnidadMedida>UNI</dte:UnidadMedida>
@@ -573,18 +556,12 @@ class FELController extends Controller
             if ($item->devuelto > 0) {
                 $producto = Producto::withTrashed()->find($item->producto_id);
                 $descripcion = $producto->codigo . ' - ' . $producto->descripcion . ' - ' . $producto->marca->marca;
-                $precioUnitario = $venta->comp ? $item->precio_comp : $item->precio;
+                $precioUnitario = $item->precio;
                 $precioTotal = round($item->devuelto * $precioUnitario, 2);
                 $montoGravable = round($precioTotal / 1.12, 2);
                 $montoImpuesto = round($montoGravable * 0.12, 2);
                 $totalMontoImpuesto += round($montoImpuesto, 2);
-
-                if ($venta->comp) {
-                    $granTotal += round($item->devuelto * $item->precio_comp, 2);
-                } else {
-                    $granTotal += round($item->devuelto * $item->precio, 2);
-                }
-
+                $granTotal += round($item->devuelto * $item->precio, 2);
                 $xmlItems .= '<dte:Item BienOServicio="B" NumeroLinea="' . $correlativo . '">
                 <dte:Cantidad>' . $item->devuelto . '</dte:Cantidad>
                 <dte:UnidadMedida>UNI</dte:UnidadMedida>

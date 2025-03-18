@@ -82,10 +82,10 @@ class VentaController extends Controller
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                 } */
                 $factura = new Factura;
-                $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-                $factura->fel_uuid = /* $res['uuid'] */ '324234242432';
-                $factura->fel_serie = /* $res['serie'] */'3242424';
-                $factura->fel_numero = /* $res['numero'] */'23434534';
+                $factura->fel_tipo = /* $venta->tipo_pago_id == 2 ? 'FCAM' : */ 'FACT';
+                $factura->fel_uuid = /* $res['uuid'] */ 'pendiente';
+                $factura->fel_serie = /* $res['serie'] */'pendiente';
+                $factura->fel_numero = /* $res['numero'] */'pendiente';
                 $factura->fel_fecha = /* $res['fecha'] */now();
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
@@ -115,7 +115,7 @@ class VentaController extends Controller
                 if ($venta->tipo_pago_id == 2) {
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
-                if ($venta->factura()->exists()) {
+                /* if ($venta->factura()->exists()) {
                     $res = FELController::anularFacturaVenta($venta, $data['motivo']);
                     if (! $res['resultado']) {
                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
@@ -131,7 +131,7 @@ class VentaController extends Controller
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
                     $venta->factura()->delete();
-                }
+                } */
                 $venta->estado = 'anulada';
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();
@@ -219,7 +219,7 @@ class VentaController extends Controller
                     }
                 }
 
-                if ($venta->factura()->exists()) {
+               /*  if ($venta->factura()->exists()) {
                     $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
                     if (! $res['resultado']) {
                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
@@ -235,7 +235,7 @@ class VentaController extends Controller
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
                     $venta->factura()->delete();
-                }
+                } */
 
                 $venta->estado = $estado;
                 $venta->motivo = $data['motivo'];
@@ -256,36 +256,6 @@ class VentaController extends Controller
             Notification::make()
                 ->color('danger')
                 ->title('Error al devolver la Venta')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
-    }
-
-    public static function cotizacionOrden(Venta $orden)
-    {
-        try {
-            DB::transaction(function () use ($orden) {
-                $user = User::find($orden->cliente_id);
-                if ($orden->tipo_pago_id == 2 && $orden->total > ($user->credito - $user->saldo)) {
-                    throw new Exception('El cliente no tiene suficiente crédito para realizar la compra');
-                }
-                $orden->estado = 'creada';
-                $orden->save();
-                if ($orden->tipo_pago_id == 2) {
-                    UserController::sumarSaldo($orden->cliente_id, $orden->total);
-                }
-            });
-            activity()->performedOn($orden)->causedBy(auth()->user())->withProperties($orden)->event('conversion')->log('Cotización a Orden');
-            Notification::make()
-                ->color('success')
-                ->title('Se ha convertido la cotización a Orden #'.$orden->id)
-                ->success()
-                ->send();
-        } catch (Exception $e) {
-            Notification::make()
-                ->color('danger')
-                ->title('Error al completar la Orden')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
