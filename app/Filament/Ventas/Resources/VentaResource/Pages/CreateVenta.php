@@ -358,6 +358,17 @@ class CreateVenta extends CreateRecord
                                         ->afterStateUpdated(function (Set $set) {
                                             $set('tipo_pago_id', null);
                                         })
+                                        ->rules([
+                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                $total = floor($get('total')); // Ignora decimales de 'total'
+                                                $pagos = collect($get('pagos'))->sum('monto');
+                                                $pagos = floor($pagos); // Ignora decimales de la suma de 'pagos'
+
+                                                if ($total != $pagos && $value == 4) {
+                                                    $fail('El monto total de los pagos no puede ser diferente al total de la venta.');
+                                                }
+                                            },
+                                        ])
                                         ->createOptionForm([
                                             TextInput::make('nit')
                                                 ->default('CF')
