@@ -63,11 +63,11 @@ class VentaResource extends Resource implements HasShieldPermissions
             'create',
             /* 'update', */
             'liquidate',
-            'factura',
+            /* 'factura', */
             'annular',
             'return',
-            'facturar',
-            'credit_note',
+            /* 'facturar',
+            'credit_note', */
         ];
     }
 

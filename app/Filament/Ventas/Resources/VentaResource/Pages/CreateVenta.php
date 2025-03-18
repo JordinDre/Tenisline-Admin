@@ -315,7 +315,7 @@ class CreateVenta extends CreateRecord
                                         }
                                     });
                                     $set('subtotal', round($subtotal, 2));
-                                    $get('subtotal') >= Factura::CF || $set('facturar_cf', false);
+                                    /* $get('subtotal') >= Factura::CF || $set('facturar_cf', false); */
                                     /* $get('subtotal') >= Factura::CF || $set('comp', false); */
                                     $set('total', round($subtotal, 2));
                                 })->visible(fn(Get $get): bool => !empty($get('bodega_id'))),
@@ -510,17 +510,17 @@ class CreateVenta extends CreateRecord
                                             return $user->id; // Devuelve el ID para que se seleccione en el campo
                                         })
                                         ->searchable(),
-                                    Toggle::make('facturar_cf')
+                                    /* Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
                                         ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
-                                        /* ->afterStateUpdated(function (Set $set, Get $get) {
+                                        ->afterStateUpdated(function (Set $set, Get $get) {
                                             if (! $get('facturar_cf')) {
                                                 $set('comp', false);
                                             }
-                                        }) */
+                                        }) 
                                         ->label('Facturar CF'),
-                                    /* Toggle::make('comp')
+                                       Toggle::make('comp')
                                         ->inline(false)
                                         ->label('Comp')
                                         ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF), */
@@ -554,7 +554,7 @@ class CreateVenta extends CreateRecord
                                         ->required(),
                                     Hidden::make('total'),
                                     TextInput::make('no_documento')
-                                        ->label('No. Documento')
+                                        ->label('No. Documento o Autorización')
                                         ->rules([
                                             fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
@@ -566,8 +566,7 @@ class CreateVenta extends CreateRecord
                                                     $fail('La combinación de Banco, Fecha de Transacción y No. Documento ya existe en los pagos.');
                                                 }
                                             },
-                                        ])
-                                        ->required(),
+                                        ]),
                                     /* TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
@@ -598,6 +597,7 @@ class CreateVenta extends CreateRecord
                                         ->default(now())
                                         ->required(),
                                     FileUpload::make('imagen')
+                                        ->required()
                                         ->image()
                                         ->downloadable()
                                         ->label('Imágen')
