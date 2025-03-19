@@ -70,7 +70,7 @@ class ListPagos extends ListRecords
                         ->searchable(),
                     Select::make('tipo_pago_id')
                         ->label('Forma de Pago')
-                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
+                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
                         ->required()
                         ->live()
                         ->searchable()
@@ -93,12 +93,12 @@ class ListPagos extends ListRecords
                                 ->default(auth()->user()->id),
                             TextInput::make('no_documento')
                                 ->rules([
-                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                         if (
                                             Pago::where('banco_id', $get('banco_id'))
-                                                ->where('fecha_transaccion', $get('fecha_transaccion'))
-                                                ->where('no_documento', $value)
-                                                ->exists()
+                                            ->where('fecha_transaccion', $get('fecha_transaccion'))
+                                            ->where('no_documento', $value)
+                                            ->exists()
                                         ) {
                                             $fail('La combinación de Banco, Fecha de Transacción y No. Documento ya existe en los pagos.');
                                         }
@@ -108,22 +108,22 @@ class ListPagos extends ListRecords
                                 ->required(),
                             TextInput::make('no_autorizacion')
                                 ->label('No. Autorización')
-                                ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                 ->required(),
                             TextInput::make('no_auditoria')
                                 ->label('No. Auditoría')
-                                ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                 ->required(),
                             TextInput::make('afiliacion')
                                 ->label('Afiliación')
-                                ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                 ->required(),
                             Select::make('cuotas')
                                 ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                 ->required(),
                             TextInput::make('nombre_cuenta')
-                                ->visible(fn (Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
+                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
                                 ->required(),
                             Select::make('banco_id')
                                 ->label('Banco')
@@ -145,6 +145,7 @@ class ListPagos extends ListRecords
                         ->visibility('public')
                         ->appendFiles()
                         ->maxSize(5000)
+                        ->resize(50)
                         ->openable()
                         ->columnSpanFull()
                         ->optimize('webp')

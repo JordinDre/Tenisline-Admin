@@ -106,7 +106,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         Select::make('proveedor_id')
                             ->searchable()
                             ->visible(auth()->user()->can('view_supplier_producto'))
-                            ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
+                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
                         Select::make('marca_id')
                             ->required()
                             ->optionsLimit(12)
@@ -293,6 +293,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->reorderable()
                     ->appendFiles()
                     ->maxSize(5000)
+                    ->resize(50)
                     ->openable()
                     ->optimize('webp')
                     ->columnSpanFull(),
@@ -318,7 +319,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -401,7 +402,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -424,7 +425,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn (Producto $record): View => view(
+                    ->modalContent(fn(Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))
