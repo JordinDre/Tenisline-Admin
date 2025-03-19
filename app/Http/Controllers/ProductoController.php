@@ -199,7 +199,7 @@ class ProductoController extends Controller
             });
         } */
 
-        return $query->limit(50)
+        return $query->limit(10)
             ->get()
             ->mapWithKeys(function (Producto $record) use ($tipo, $bodega_id) {
                 return [$record->id => ProductoController::renderProductos($record, $tipo, $bodega_id)];
