@@ -166,7 +166,7 @@ class ProductoController extends Controller
                     <span style='color: black;'>Descripción: </span>{$record->descripcion}
                 </div>
                 <div style='color: black;'>
-                    Marca: {$record->marca->marca}
+                    Marca: {$record->marca->marca}, Talla: {$record->talla}, Estilo: {$record->genero}
                 </div>
                 <div style='color: black; font-weight: bold; margin-top: 5px;'>
                     Existencia: {$stock}
