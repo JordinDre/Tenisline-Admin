@@ -2,35 +2,35 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use Closure;
-use App\Models\Pago;
-use Filament\Tables;
+use App\Filament\Inventario\Resources\CompraResource\Pages;
+use App\Http\Controllers\CompraController;
+use App\Http\Controllers\ProductoController;
 use App\Models\Compra;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Grid;
-use Filament\Tables\Actions\Action;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\ActionGroup;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
-use App\Http\Controllers\CompraController;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\ActionsPosition;
-use App\Http\Controllers\ProductoController;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Inventario\Resources\CompraResource\Pages;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class CompraResource extends Resource implements HasShieldPermissions
 {
@@ -196,7 +196,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         $precio = (float) $detalle['precio'];
                                         $cantidad = (float) $detalle['cantidad'];
 
-                                        return $precio  * $cantidad;
+                                        return $precio * $cantidad;
                                     });
                                     $set('subtotal', round($subtotal, 2));
                                 }),
@@ -213,7 +213,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->preload()
                                         ->placeholder('Seleccione')
                                         ->live()
-                                        ->searchable(),/* 
+                                        ->searchable(), /*
                                     TextInput::make('dias_credito')
                                         ->label('Días de Crédito')
                                         ->minValue(1)
@@ -305,7 +305,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->directory(config('filesystems.default'))
                                         ->visibility('public')
                                         ->appendFiles()
-                                        ->maxSize(1024)
+                                        ->maxSize(5000)
                                         ->openable()
                                         ->columnSpan(['sm' => 1, 'md' => 3])
                                         ->optimize('webp'),

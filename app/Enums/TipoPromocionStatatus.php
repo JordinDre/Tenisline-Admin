@@ -1,11 +1,12 @@
 <?php
 
 namespace App\Enums;
+
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 enum TipoPromocionStatatus: string implements HasColor, HasLabel
-{   
+{
     case Mix = 'mix';
     case Bonificacion = 'bonificacion';
     case Descuento = 'descuento';
@@ -30,5 +31,4 @@ enum TipoPromocionStatatus: string implements HasColor, HasLabel
             self::Combo => 'primary',
         };
     }
-    
 }

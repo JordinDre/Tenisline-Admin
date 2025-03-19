@@ -2,11 +2,11 @@
 
 namespace App\Filament\Ventas\Widgets;
 
-use Filament\Tables\Table;
-use Illuminate\Support\Facades\Schema;
-use Filament\Tables\Columns\TextColumn;
 use App\Http\Controllers\Utils\Functions;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Schema;
 
 class AsesoresAsignados extends BaseWidget
 {
@@ -18,10 +18,10 @@ class AsesoresAsignados extends BaseWidget
 
     public static function canView(): bool
     {
-        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+        if (! Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
-             }
-             
+        }
+
         return auth()->user()->can('widget_AsesoresAsignados');
     }
 

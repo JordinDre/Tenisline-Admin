@@ -3,12 +3,12 @@
 namespace App\Filament\Inventario\Widgets;
 
 use App\Models\Guia;
-use Filament\Tables;
 use App\Models\Orden;
+use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Schema;
-use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Schema;
 
 class OrdenesRecolectadas extends BaseWidget
 {
@@ -24,10 +24,10 @@ class OrdenesRecolectadas extends BaseWidget
 
     public static function canView(): bool
     {
-        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+        if (! Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
-             }
-             
+        }
+
         return auth()->user()->can('widget_OrdenesRecolectadas');
     }
 
@@ -35,13 +35,13 @@ class OrdenesRecolectadas extends BaseWidget
     {
         $query = Schema::hasTable('ordens')
         ? Orden::query() // Si la tabla 'ordens' EXISTE, usar la consulta normal
-        ->when(
-       Schema::hasTable('ordenes'), // Condición (redundante aquí, pero se deja por claridad, podrías simplificar)
-        fn ($q) => $q
-        ->whereRaw('1=1') //  <- PLACEHOLDER, REEMPLAZA CON LA CONSULTA REAL DE ORDENESTADOS!!!
-        )
+            ->when(
+                Schema::hasTable('ordenes'), // Condición (redundante aquí, pero se deja por claridad, podrías simplificar)
+                fn ($q) => $q
+                    ->whereRaw('1=1') //  <- PLACEHOLDER, REEMPLAZA CON LA CONSULTA REAL DE ORDENESTADOS!!!
+            )
         : Guia::query()->whereRaw('1=0');
-        
+
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

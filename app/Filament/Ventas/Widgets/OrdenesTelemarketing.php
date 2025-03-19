@@ -2,13 +2,13 @@
 
 namespace App\Filament\Ventas\Widgets;
 
-use App\Models\User;
+use App\Http\Controllers\Utils\Functions;
 use App\Models\Labor;
 use App\Models\Orden;
+use App\Models\User;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Facades\Schema;
-use App\Http\Controllers\Utils\Functions;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Schema;
 
 class OrdenesTelemarketing extends ChartWidget
 {
@@ -22,21 +22,21 @@ class OrdenesTelemarketing extends ChartWidget
 
     public static function canView(): bool
     {
-        if (!Schema::hasTable('labors') && !Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+        if (! Schema::hasTable('labors') && ! Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
-             }
-             
+        }
+
         return auth()->user()->can('widget_OrdenesTelemarketing');
     }
 
     protected function getData(): array
     {
-        if (!Schema::hasTable('labors') && !Schema::hasTable('ordens')) { 
+        if (! Schema::hasTable('labors') && ! Schema::hasTable('ordens')) {
             return [
-             'labels' => [], // Labels vacíos para el gráfico
-              'datasets' => [], // Datasets vacíos para el gráfico
-              ];
-              }
+                'labels' => [], // Labels vacíos para el gráfico
+                'datasets' => [], // Datasets vacíos para el gráfico
+            ];
+        }
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;

@@ -66,7 +66,7 @@ class RoleSeeder extends Seeder
             }
         }
 
-        //PERMISSIONS
+        // PERMISSIONS
         Permission::create(['name' => 'unlock']);
         Permission::create(['name' => 'impersonate_user']);
         Permission::create(['name' => 'banner-manager']);
@@ -165,7 +165,6 @@ class RoleSeeder extends Seeder
         $administrador = Role::create(['name' => 'cliente']);
         $administrador = Role::create(['name' => 'vendedor']);
         $administrador = Role::create(['name' => 'mayorista']);
-
 
         /* $facturador = Role::create(['name' => 'facturador']);
         $proveedor = Role::create(['name' => 'proveedor']);

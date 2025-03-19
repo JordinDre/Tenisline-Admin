@@ -244,7 +244,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->panelLayout('grid')
                     ->reorderable()
                     ->appendFiles()
-                    ->maxSize(1024)
+                    ->maxSize(5000)
                     ->openable()
                     ->optimize('webp'), */
                 Repeater::make('direcciones')

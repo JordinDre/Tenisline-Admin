@@ -118,7 +118,7 @@ class UserResource extends Resource implements HasShieldPermissions
                         DatePicker::make('fecha_nacimiento')
                             ->label('Fecha de Nacimiento'),
                         Select::make('roles')
-                            ->relationship('roles', 'name', fn($query) => $query->whereNotIn('name', User::ROLES_ADMIN))
+                            ->relationship('roles', 'name', fn ($query) => $query->whereNotIn('name', User::ROLES_ADMIN))
                             ->multiple()
                             ->preload()
                             /* ->live(onBlur: true)
@@ -155,8 +155,8 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->searchable(), */
                         Select::make('tipo_pagos')
                             ->label('Tipos de Pago')
-                            ->required(fn(Get $get) => in_array([4, 6], $get('roles')))
-                            ->relationship('tipo_pagos', 'tipo_pago', fn($query) => $query->whereIn('tipo_pago', TipoPago::CLIENTE_PAGOS))
+                            ->required(fn (Get $get) => in_array([4, 6], $get('roles')))
+                            ->relationship('tipo_pagos', 'tipo_pago', fn ($query) => $query->whereIn('tipo_pago', TipoPago::CLIENTE_PAGOS))
                             ->live()
                             /* ->afterStateUpdated(function (Set $set, $state) {
                                 if (! in_array(2, $state)) {
@@ -191,11 +191,11 @@ class UserResource extends Resource implements HasShieldPermissions
                     ]),
                 Select::make('bodegas')
                     ->multiple()
-                    ->required(fn(Get $get) => ! empty(array_intersect([1, 2, 3, 12, 13, 14, 16, 17], $get('roles'))))
+                    ->required(fn (Get $get) => ! empty(array_intersect([1, 2, 3, 12, 13, 14, 16, 17], $get('roles'))))
                     ->relationship(
                         'bodegas',
                         'bodega',
-                        fn(Builder $query) => $query->whereNotIn('bodega', Bodega::TRASLADO_NAME)
+                        fn (Builder $query) => $query->whereNotIn('bodega', Bodega::TRASLADO_NAME)
                     )
                     ->preload()
                     ->searchable(),
@@ -208,7 +208,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->panelLayout('grid')
                     ->reorderable()
                     ->appendFiles()
-                    ->maxSize(1024)
+                    ->maxSize(5000)
                     ->openable()
                     ->optimize('webp'),
                 Repeater::make('direcciones')
@@ -227,7 +227,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->preload(),
                         Select::make('departamento_id')
                             ->label('Departamento')
-                            ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                            ->options(fn (Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set) {
                                 $set('municipio_id', null);
@@ -237,7 +237,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->preload(),
                         Select::make('municipio_id')
                             ->label('Municipio')
-                            ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                            ->options(fn (Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
                             ->required()
                             ->searchable()
                             ->preload(),
@@ -345,12 +345,12 @@ class UserResource extends Resource implements HasShieldPermissions
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Impersonate::make()->visible(fn($record) => auth()->user()->can('impersonate', $record)),
+                Impersonate::make()->visible(fn ($record) => auth()->user()->can('impersonate', $record)),
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('Desactivar')
-                        ->visible(fn($record) => auth()->user()->can('delete', $record))
+                        ->visible(fn ($record) => auth()->user()->can('delete', $record))
                         ->color('danger')
                         ->icon('heroicon-o-trash')
                         ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -373,7 +373,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                 ->success()
                                 ->send();
                         })
-                        ->modalContent(fn(User $record): View => view(
+                        ->modalContent(fn (User $record): View => view(
                             'filament.pages.actions.observaciones',
                             ['record' => $record],
                         ))
@@ -396,7 +396,7 @@ class UserResource extends Resource implements HasShieldPermissions
     public static function getRelations(): array
     {
         return [
-            /* OrdenesRelationManager::class, */];
+        /* OrdenesRelationManager::class, */];
     }
 
     public static function getPages(): array

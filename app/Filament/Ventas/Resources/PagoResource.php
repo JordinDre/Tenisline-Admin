@@ -181,7 +181,7 @@ class PagoResource extends Resource implements HasShieldPermissions
                     ->directory(config('filesystems.default'))
                     ->visibility('public')
                     ->appendFiles()
-                    ->maxSize(1024)
+                    ->maxSize(5000)
                     ->openable()
                     ->columnSpanFull()
                     ->optimize('webp')

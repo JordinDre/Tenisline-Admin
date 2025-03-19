@@ -11,25 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-       /*  Schema::create('orden_detalles', function (Blueprint $table) {
-            $table->id();
-            $table->integer('cantidad');
-            $table->decimal('precio', 10, 2);
-            $table->decimal('ganancia', 10, 2)->nullable();
-            $table->decimal('subtotal', 10, 2)->nullable();
-            $table->decimal('precio_comp', 10, 2)->nullable();
-            $table->decimal('comision', 10, 2)->nullable();
-            $table->integer('bonificacion')->nullable()->default(0);
-            $table->integer('devuelto')->nullable()->default(0);
-            $table->integer('devuelto_mal')->nullable()->default(0);
-            $table->unsignedBigInteger('producto_id');
-            $table->unsignedBigInteger('orden_id');
-            $table->unsignedBigInteger('escala_id')->nullable();
-            $table->timestamps();
-            $table->foreign('producto_id')->references('id')->on('productos');
-            $table->foreign('orden_id')->references('id')->on('ordens');
-            $table->foreign('escala_id')->references('id')->on('escalas');
-        }); */
+        /*  Schema::create('orden_detalles', function (Blueprint $table) {
+             $table->id();
+             $table->integer('cantidad');
+             $table->decimal('precio', 10, 2);
+             $table->decimal('ganancia', 10, 2)->nullable();
+             $table->decimal('subtotal', 10, 2)->nullable();
+             $table->decimal('precio_comp', 10, 2)->nullable();
+             $table->decimal('comision', 10, 2)->nullable();
+             $table->integer('bonificacion')->nullable()->default(0);
+             $table->integer('devuelto')->nullable()->default(0);
+             $table->integer('devuelto_mal')->nullable()->default(0);
+             $table->unsignedBigInteger('producto_id');
+             $table->unsignedBigInteger('orden_id');
+             $table->unsignedBigInteger('escala_id')->nullable();
+             $table->timestamps();
+             $table->foreign('producto_id')->references('id')->on('productos');
+             $table->foreign('orden_id')->references('id')->on('ordens');
+             $table->foreign('escala_id')->references('id')->on('escalas');
+         }); */
     }
 
     /**

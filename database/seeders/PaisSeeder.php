@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Bodega;
 use App\Models\Pais;
 use Illuminate\Database\Seeder;
 

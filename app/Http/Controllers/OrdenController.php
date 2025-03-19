@@ -269,7 +269,7 @@ class OrdenController extends Controller
                 } */
                 $factura = new Factura;
                 $factura->fel_tipo = $orden->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-                $factura->fel_uuid = /* $res['uuid'] */'asfds';
+                $factura->fel_uuid = /* $res['uuid'] */ 'asfds';
                 $factura->fel_serie = /* $res['serie'] */ 'asfds';
                 $factura->fel_numero = /* $res['numero'] */ 'asfds';
                 $factura->fel_fecha = /* $res['fecha'] */ now();

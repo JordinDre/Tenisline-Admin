@@ -39,7 +39,7 @@ class ListPagos extends ListRecords
                 ->form([
                     Select::make('cliente_id')
                         ->label('Cliente')
-                       /*  ->options(
+                        /*  ->options(
                             User::where(function ($query) {
                                 $query->whereHas('creditosOrdenesPendientes')
                                     ->orWhereHas('creditosVentasPendientes');
@@ -144,7 +144,7 @@ class ListPagos extends ListRecords
                         ->directory(config('filesystems.default'))
                         ->visibility('public')
                         ->appendFiles()
-                        ->maxSize(1024)
+                        ->maxSize(5000)
                         ->openable()
                         ->columnSpanFull()
                         ->optimize('webp')

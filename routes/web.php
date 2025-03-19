@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TiendaController;
 use Illuminate\Support\Facades\Route;
 
