@@ -105,7 +105,7 @@ class CreateVenta extends CreateRecord
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
                                             return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'), $get('../../cliente_id'));
                                         })
-                                        ->optionsLimit(20)
+                                        ->optionsLimit(10)
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                         ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
                                         ->live()
