@@ -106,7 +106,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->searchable()
                                         ->required(),
                                     Select::make('proveedor_id')
-                                        ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor'))
+                                        ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor'))
                                         ->searchable(),
                                 ]),
                         ]),
@@ -127,7 +127,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductos($record, 'compra', null))
+                                        ->getOptionLabelFromRecordUsing(fn(Producto $record) => ProductoController::renderProductos($record, 'compra', null))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
@@ -233,7 +233,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
+                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
                                         ->required()
                                         ->live()
                                         ->columnSpan(['sm' => 1, 'md' => 2])
@@ -255,12 +255,12 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->default(auth()->user()->id),
                                     TextInput::make('no_documento')
                                         ->label('No. Documento')->rules([
-                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
                                                     Pago::where('banco_id', $get('banco_id'))
-                                                        ->where('fecha_transaccion', $get('fecha_transaccion'))
-                                                        ->where('no_documento', $value)
-                                                        ->exists()
+                                                    ->where('fecha_transaccion', $get('fecha_transaccion'))
+                                                    ->where('no_documento', $value)
+                                                    ->exists()
                                                 ) {
                                                     $fail('La combinación de Banco, Fecha de Transacción y No. Documento ya existe en los pagos.');
                                                 }
@@ -269,22 +269,22 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->required(),
                                     TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     TextInput::make('no_auditoria')
                                         ->label('No. Auditoría')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     TextInput::make('afiliacion')
                                         ->label('Afiliación')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     Select::make('cuotas')
                                         ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     TextInput::make('nombre_cuenta')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     Select::make('banco_id')
                                         ->label('Banco')
@@ -305,7 +305,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->directory(config('filesystems.default'))
                                         ->visibility('public')
                                         ->appendFiles()
-                                        ->maxSize(1024)
+                                        ->maxSize(5000)
                                         ->openable()
                                         ->columnSpan(['sm' => 1, 'md' => 3])
                                         ->optimize('webp'),
@@ -381,15 +381,15 @@ class CompraResource extends Resource implements HasShieldPermissions
                         ->label('Confirmar')
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
-                        ->action(fn (Compra $record) => CompraController::confirmar($record))
-                        ->visible(fn ($record) => auth()->user()->can('confirm', $record)),
+                        ->action(fn(Compra $record) => CompraController::confirmar($record))
+                        ->visible(fn($record) => auth()->user()->can('confirm', $record)),
                     Action::make('annular')
                         ->label('Anular')
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->requiresConfirmation()
-                        ->action(fn (Compra $record) => CompraController::anular($record))
-                        ->visible(fn ($record) => auth()->user()->can('annular', $record)),
+                        ->action(fn(Compra $record) => CompraController::anular($record))
+                        ->visible(fn($record) => auth()->user()->can('annular', $record)),
                 ])
                     ->link()
                     ->label('Acciones'),

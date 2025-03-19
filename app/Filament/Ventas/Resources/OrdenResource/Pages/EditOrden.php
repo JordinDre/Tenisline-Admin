@@ -497,7 +497,7 @@ class EditOrden extends EditRecord
                                         ->directory(config('filesystems.default'))
                                         ->visibility('public')
                                         ->appendFiles()
-                                        ->maxSize(1024)
+                                        ->maxSize(5000)
                                         ->openable()
                                         ->columnSpan(['sm' => 1, 'md' => 3])
                                         ->optimize('webp')

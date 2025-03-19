@@ -293,7 +293,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->panelLayout('grid')
                     ->reorderable()
                     ->appendFiles()
-                    ->maxSize(1024)
+                    ->maxSize(5000)
                     ->openable()
                     ->optimize('webp')
                     ->columnSpanFull(),
@@ -348,7 +348,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('escalas.porcentaje')
-                    ->label('Escalas Procentajes')    
+                    ->label('Escalas Procentajes')
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('proveedor.name')
