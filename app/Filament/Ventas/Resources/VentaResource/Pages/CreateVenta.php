@@ -49,44 +49,23 @@ class CreateVenta extends CreateRecord
     {
         return $form
             ->schema([
-                Grid::make(['default' => 3])
-                    ->schema([
-                        Select::make('bodega_id')
-                            ->relationship(
-                                'bodega',
-                                'bodega',
-                                fn(Builder $query) => $query->whereHas('user', function ($query) {
-                                    $query->where('user_id', auth()->user()->id);
-                                })
-                            )
-                            ->preload()
-                            ->default(1)
-                            ->live()
-                            ->afterStateUpdated(function (Set $set) {
-                                $set('detalles', []);
-                            })
-                            ->searchable()
-                            ->required(),
-                        TextInput::make('subtotal')
-                            ->prefix('Q')
-                            ->readOnly()
-                            ->label('SubTotal'),
-                        TextInput::make('total')
-                            ->readOnly()
-                            ->prefix('Q')
-                            /* ->rules([
-                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                    $user = User::find($get('cliente_id'));
-                                    if ($get('tipo_pago_id') == 2 && $value > ($user->credito - $user->saldo)) {
-                                        $fail('El Cliente no cuenta con suficiente crédito para realizar la compra.');
-                                    }
-                                    if ($user && in_array($user->nit, [null, '', 'CF', 'cf', 'cF', 'Cf'], true) && $value >= \App\Models\Factura::CF) {
-                                        $fail('El Cliente no cuenta con NIT registrado para el valor de la Orden.');
-                                    }
-                                },
-                            ]) */
-                            ->label('Total'),
-                    ]),
+                Select::make('bodega_id')
+                    ->relationship(
+                        'bodega',
+                        'bodega',
+                        fn(Builder $query) => $query->whereHas('user', function ($query) {
+                            $query->where('user_id', auth()->user()->id);
+                        })
+                    )
+                    ->preload()
+                    ->default(1)
+                    ->columnSpanFull()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set) {
+                        $set('detalles', []);
+                    })
+                    ->searchable()
+                    ->required(),
                 Wizard::make([
                     /* Wizard\Step::make('Cliente')
                         ->schema([
@@ -629,6 +608,28 @@ class CreateVenta extends CreateRecord
                                 ->columnSpanFull(),
                         ]),
                 ])->skippable()->columnSpanFull(),
+                Grid::make(['default' => 2])
+                    ->schema([
+                        TextInput::make('subtotal')
+                            ->prefix('Q')
+                            ->readOnly()
+                            ->label('SubTotal'),
+                        TextInput::make('total')
+                            ->readOnly()
+                            ->prefix('Q')
+                            /* ->rules([
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    $user = User::find($get('cliente_id'));
+                                    if ($get('tipo_pago_id') == 2 && $value > ($user->credito - $user->saldo)) {
+                                        $fail('El Cliente no cuenta con suficiente crédito para realizar la compra.');
+                                    }
+                                    if ($user && in_array($user->nit, [null, '', 'CF', 'cf', 'cF', 'Cf'], true) && $value >= \App\Models\Factura::CF) {
+                                        $fail('El Cliente no cuenta con NIT registrado para el valor de la Orden.');
+                                    }
+                                },
+                            ]) */
+                            ->label('Total'),
+                    ]),
             ]);
     }
 
