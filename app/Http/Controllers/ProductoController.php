@@ -184,7 +184,8 @@ class ProductoController extends Controller
         $query = Producto::query()
             ->where('descripcion', 'like', "%{$search}%")
             ->orWhere('codigo', 'like', "%{$search}%")
-            ->orWhere('modelo', 'like', "%{$search}%")
+            ->orWhere('genero', 'like', "%{$search}%")
+            ->orWhere('talla', 'like', "%{$search}%")
             ->orWhereHas('marca', function ($query) use ($search) {
                 $query->where('marca', 'like', "%{$search}%");
             })
