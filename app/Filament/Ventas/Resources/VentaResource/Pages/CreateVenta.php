@@ -101,7 +101,7 @@ class CreateVenta extends CreateRecord
                                         ->relationship('producto', 'descripcion')
                                         ->getOptionLabelFromRecordUsing(fn(Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
                                         ->allowHtml()
-                                        ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'codigo', 'modelo'])
+                                        ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'codigo', 'modelo', 'genero'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
                                             return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'), $get('../../cliente_id'));
                                         })
