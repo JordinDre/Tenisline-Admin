@@ -2,33 +2,31 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Models\User;
-use Filament\Tables;
+use App\Filament\Inventario\Resources\ProductoResource\Pages;
 use App\Models\Escala;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use App\Models\Producto;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
 use App\Models\Observacion;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
+use App\Models\Producto;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Inventario\Resources\ProductoResource\Pages;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class ProductoResource extends Resource implements HasShieldPermissions
 {
@@ -108,7 +106,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         Select::make('proveedor_id')
                             ->searchable()
                             ->visible(auth()->user()->can('view_supplier_producto'))
-                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
+                            ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
                         Select::make('marca_id')
                             ->required()
                             ->optionsLimit(12)
@@ -179,7 +177,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->options(function (callable $get) {
                                 $productoId = $get('producto_id');
 
-                                if (!$productoId) {
+                                if (! $productoId) {
                                     return [
                                         'lunes' => 'Lunes',
                                         'martes' => 'Martes',
@@ -222,6 +220,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                                 if ($record) {
                                     return $record->id;
                                 }
+
                                 return null;
                             }),
                     ])->columnSpanFull()->columns([
@@ -229,14 +228,14 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         'md' => 3,
                         'lg' => 5,
                     ])->afterStateHydrated(function (Repeater $component, ?Producto $record) {
-                        if (!$record) {
+                        if (! $record) {
                             $component->schema([
                                 Select::make('dia')
                                     ->label('Día')
                                     ->options(function (callable $get) {
                                         $productoId = $get('producto_id');
 
-                                        if (!$productoId) {
+                                        if (! $productoId) {
                                             return [
                                                 'lunes' => 'Lunes',
                                                 'martes' => 'Martes',
@@ -319,7 +318,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -402,7 +401,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -425,7 +424,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn(Producto $record): View => view(
+                    ->modalContent(fn (Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))

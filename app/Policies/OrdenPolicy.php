@@ -31,7 +31,7 @@ class OrdenPolicy
      */
     public function create(User $user): bool
     {
-        return /* $user->can('create_orden') &&  */ $user->hasAnyRole(User::ORDEN_ROLES);
+        return /* $user->can('create_orden') && */ $user->hasAnyRole(User::ORDEN_ROLES);
     }
 
     /**

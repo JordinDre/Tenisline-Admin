@@ -17,11 +17,11 @@ return new class extends Migration
             $table->foreign('promocion_id')->references('id')->on('promocions');
             $table->unsignedBigInteger('producto_id');
             $table->foreign('producto_id')->references('id')->on('productos'); */
-            // En el caso de promociones MIX o COMBO se puede definir un rol:
-            // 'principal' para el producto base o disparador
-            // 'adicional' para los que se agregan a la promoción
-         /*    $table->enum('tipo', ['principal', 'adicional'])->nullable();
-            $table->timestamps();
+        // En el caso de promociones MIX o COMBO se puede definir un rol:
+        // 'principal' para el producto base o disparador
+        // 'adicional' para los que se agregan a la promoción
+        /*    $table->enum('tipo', ['principal', 'adicional'])->nullable();
+           $table->timestamps();
         }); */
     }
 

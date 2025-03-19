@@ -115,6 +115,7 @@ class PDFController extends Controller
                 curl_close($curl);
                 $orden->estado = 'preparada';
                 $orden->save();
+
                 return response($result)
                     ->header('Content-Type', 'application/pdf')
                     ->header('Content-Disposition', 'inline; filename="guia.pdf"');

@@ -89,7 +89,7 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('escala.porcentaje')
-                    ->label('Escala Porcentaje')    
+                    ->label('Escala Porcentaje')
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('precio')

@@ -4,10 +4,10 @@ namespace App\Filament\Ventas\Widgets;
 
 use App\Models\Labor;
 use Filament\Actions\Action;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Saade\FilamentFullCalendar\Actions\ViewAction;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
@@ -21,10 +21,10 @@ class CalendarioLaboral extends FullCalendarWidget
 
     public static function canView(): bool
     {
-        if (!Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
+        if (! Schema::hasTable('ordens')) { // Reemplaza 'ordens' con el nombre real de tu tabla
             return false; // Si la tabla 'ordens' NO existe, NO mostrar el widget
-             }
-             
+        }
+
         return auth()->user()->can('widget_CalendarioLaboral');
     }
 

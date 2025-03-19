@@ -20,7 +20,7 @@ class Promocion extends Model
         return LogOptions::defaults()
             ->logOnly(['*'])
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => "Se ha registrado un {$eventName}")
+            ->setDescriptionForEvent(fn (string $eventName) => "Se ha registrado un {$eventName}")
             ->dontSubmitEmptyLogs();
     }
 
@@ -47,5 +47,4 @@ class Promocion extends Model
     {
         return $this->hasMany(PromocionDetalle::class);
     }
-
 }

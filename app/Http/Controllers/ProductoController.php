@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\User;
 use App\Models\Bodega;
 use App\Models\Escala;
-use App\Models\Producto;
 use App\Models\Inventario;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Log;
+use App\Models\Producto;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Database\Query\Builder;
+use Spatie\Permission\Models\Role;
 
 class ProductoController extends Controller
 {
@@ -19,17 +18,15 @@ class ProductoController extends Controller
         Carbon::setLocale('es');
         $diaSemana = strtolower(Carbon::now()->dayName);
 
-        
         $escala = Escala::where('producto_id', $productoId)
             ->where('dia', $diaSemana)
             ->first();
 
-        return $escala; 
+        return $escala;
     }
-    
+
     public static function renderProductos(Producto $record, string $tipo, $bodega_id = null, $cliente_id = null): string
     {
-
 
         $inventario = $bodega_id ? Inventario::where('producto_id', $record->id)->where('bodega_id', $bodega_id)->first() : null;
         $stock = $inventario ? $inventario->existencia : 0;
@@ -48,7 +45,7 @@ class ProductoController extends Controller
             $precioConDescuento = round($precioVenta * (1 - ($escala->porcentaje / 100)), 2); // Calcular precio con descuento
             $diaDescuento = ucfirst($escala->dia); // Obtener el día de la escala y poner la primera letra en mayúscula
         }
-        
+
         $precioMostrar = ''; // Inicializamos vacío
 
         $clienteRol = null;
@@ -57,41 +54,40 @@ class ProductoController extends Controller
             $clienteRol = $cliente?->getRoleNames()->first(); // Asumiendo que el cliente tiene solo un rol principal
         }
 
-
         $preciosHTML = ''; // Inicializamos para acumular los precios a mostrar
 
         if ($clienteRol === 'mayorista') {
             $preciosHTML = "<div style='margin-top: 5px;'>
                                 <div style='font-weight: bold; color: blue;'>
-                                    Precio Mayorista: Q. " . number_format($precioMayorista, 2) . "
+                                    Precio Mayorista: Q. ".number_format($precioMayorista, 2)."
                                 </div>
                                 <div style='color: grey; text-decoration: line-through;'>
-                                    Precio Venta: Q. " . number_format($precioVenta, 2) . "
+                                    Precio Venta: Q. ".number_format($precioVenta, 2).'
                                 </div>
-                            </div>";
+                            </div>';
         } else {
             if ($escala) {
                 $preciosHTML = "<div style='margin-top: 5px;'>
                                     <div style='font-weight: bold; color: green;'>
-                                        Precio con Descuento ({$escala->porcentaje}% - {$diaDescuento}): Q. " . number_format($precioConDescuento, 2) . "
+                                        Precio con Descuento ({$escala->porcentaje}% - {$diaDescuento}): Q. ".number_format($precioConDescuento, 2)."
                                     </div>
                                     <div style='color: grey; text-decoration: line-through;'>
-                                        Precio Venta: Q. " . number_format($precioVenta, 2) . "
+                                        Precio Venta: Q. ".number_format($precioVenta, 2)."
                                     </div>
                                     <div style='color: blue;'>
-                                        Precio Mayorista: Q. " . number_format($precioMayorista, 2) . "
+                                        Precio Mayorista: Q. ".number_format($precioMayorista, 2).'
                                     </div>
-                                </div>";
-                } else {
-                    $preciosHTML = "<div style='margin-top: 5px;'>
+                                </div>';
+            } else {
+                $preciosHTML = "<div style='margin-top: 5px;'>
                                         <div style='font-weight: bold; color: black;'>
-                                            Precio Venta: Q. " . number_format($precioVenta, 2) . "
+                                            Precio Venta: Q. ".number_format($precioVenta, 2)."
                                         </div>
                                         <div style='color: blue;'>
-                                            Precio Mayorista: Q. " . number_format($precioMayorista, 2) . "
+                                            Precio Mayorista: Q. ".number_format($precioMayorista, 2).'
                                         </div>
-                                    </div>";
-                }
+                                    </div>';
+            }
         }
         /* if ($tipo) {
             $rolesValidos = $tipo === 'venta' ? User::VENTA_ROLES : User::ORDEN_ROLES;
@@ -110,46 +106,46 @@ class ProductoController extends Controller
             ? config('filesystems.disks.s3.url').$producto->imagenes[0]
             : asset('images/icono.png'); */
 
-       /*  $escalasHtml = $escalasFiltradas->isNotEmpty()
-            ? $escalasFiltradas->map(fn ($escala) => "<div style='margin-right: 10px;'><strong>{$escala->escala}:</strong> Q{$escala->precio}</div>")
-                ->implode('')
-            : '';
+        /*  $escalasHtml = $escalasFiltradas->isNotEmpty()
+             ? $escalasFiltradas->map(fn ($escala) => "<div style='margin-right: 10px;'><strong>{$escala->escala}:</strong> Q{$escala->precio}</div>")
+                 ->implode('')
+             : '';
 
-        return "
-        <div style='display: flex; align-items: flex-start;'> 
-            <img src='{$imagenUrl}' alt='Imagen del producto' 
-                 style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
-            <div>
-                <div style='font-weight: bold; color: black;'> 
-                    ID: {$producto->id} - <span style='color: black;'>{$producto->codigo}</span>
-                </div>
-                <div style='color: black;'> 
-                    <span style='color: black;'>Descripción: </span>{$producto->descripcion}
-                </div>
-                <div style='color: black;'>
-                    Marca: {$producto->marca->marca} - Presentación: {$producto->presentacion->presentacion}
-                </div>
-                <div style='color: black; font-weight: bold; margin-top: 5px;'>
-                    Existencia: {$existencia}
-                </div>
-                <div>
-                    <div style='display: flex; flex-wrap: wrap; margin-top: 5px;'>{$escalasHtml}</div>
-                </div>
-            </div>
-        </div>"; */
+         return "
+         <div style='display: flex; align-items: flex-start;'>
+             <img src='{$imagenUrl}' alt='Imagen del producto'
+                  style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
+             <div>
+                 <div style='font-weight: bold; color: black;'>
+                     ID: {$producto->id} - <span style='color: black;'>{$producto->codigo}</span>
+                 </div>
+                 <div style='color: black;'>
+                     <span style='color: black;'>Descripción: </span>{$producto->descripcion}
+                 </div>
+                 <div style='color: black;'>
+                     Marca: {$producto->marca->marca} - Presentación: {$producto->presentacion->presentacion}
+                 </div>
+                 <div style='color: black; font-weight: bold; margin-top: 5px;'>
+                     Existencia: {$existencia}
+                 </div>
+                 <div>
+                     <div style='display: flex; flex-wrap: wrap; margin-top: 5px;'>{$escalasHtml}</div>
+                 </div>
+             </div>
+         </div>"; */
         /* return "
-        <div style='display: flex; align-items: flex-start;'> 
-            <img src='{$imagenUrl}' alt='Imagen del producto' 
+        <div style='display: flex; align-items: flex-start;'>
+            <img src='{$imagenUrl}' alt='Imagen del producto'
                  style='width: 100px; height: 100px; object-fit: cover; margin-right: 10px;' />
             <div>
-                <div style='font-weight: bold; color: black;'> 
+                <div style='font-weight: bold; color: black;'>
                     ID: {$producto->id} - <span style='color: black;'>{$producto->nombre}</span>
                 </div>
-                <div style='color: black;'> 
+                <div style='color: black;'>
                     <span style='color: black;'>Descripción: </span>{$producto->descripcion}
                 </div>
                 <div style='color: black;'>
-                    Marca: {$producto->marca->marca} 
+                    Marca: {$producto->marca->marca}
                 </div>
                 <div style='color: black; font-weight: bold; margin-top: 5px;'>
                     Existencia: {$existencia}
@@ -157,7 +153,7 @@ class ProductoController extends Controller
             </div>
         </div>"; */
 
-        return 
+        return
             "
         <div style='display: flex; align-items: flex-start;'> 
             <img src='{$imagenUrl}' alt='Imagen del producto' 
@@ -179,18 +175,16 @@ class ProductoController extends Controller
                     <div style='display: flex; flex-wrap: wrap; margin-top: 5px;'>{$preciosHTML}</div>
                 </div>
             </div>
-        </div>"
-        ;
+        </div>";
 
-        
     }
 
     public static function searchProductos(string $search, string $tipo, $bodega_id = null): array
     {
         $query = Producto::query()
             ->where('descripcion', 'like', "%{$search}%")
-            ->orWhere('codigo', 'like', "%{$search}%") 
-            ->orWhere('modelo', 'like', "%{$search}%") 
+            ->orWhere('codigo', 'like', "%{$search}%")
+            ->orWhere('modelo', 'like', "%{$search}%")
             ->orWhereHas('marca', function ($query) use ($search) {
                 $query->where('marca', 'like', "%{$search}%");
             })
@@ -204,14 +198,13 @@ class ProductoController extends Controller
             });
         } */
 
-
         return $query->limit(50)
             ->get()
             ->mapWithKeys(function (Producto $record) use ($tipo, $bodega_id) {
                 return [$record->id => ProductoController::renderProductos($record, $tipo, $bodega_id)];
             })
             ->toArray();
-            
+
         /* $productos = Producto::query()
             ->with(['marca', 'presentacion'])
             ->where(function ($query) use ($search) {

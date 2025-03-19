@@ -66,7 +66,7 @@ class EditOrden extends EditRecord
                             ->prefix('Q')
                             ->readOnly()
                             ->rules([
-                                fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                     $subtotal = 0;
                                     $cantidadCubetasCanecas = 0;
                                     $cantidadProductos = 0;
@@ -125,7 +125,7 @@ class EditOrden extends EditRecord
                             ->readOnly()
                             ->prefix('Q')
                             ->rules([
-                                fn(Get $get, Model $record): Closure => function (string $attribute, $value, Closure $fail) use ($get, $record) {
+                                fn (Get $get, Model $record): Closure => function (string $attribute, $value, Closure $fail) use ($get, $record) {
                                     $user = User::find($get('cliente_id'));
                                     if ($get('tipo_pago_id') == 2 && $value > (($user->credito + $record->total) - $user->saldo)) {
                                         $fail('El Cliente no cuenta con suficiente crédito para realizar la compra.');
@@ -142,7 +142,7 @@ class EditOrden extends EditRecord
                     ]),
                 Wizard::make([
                     Wizard\Step::make('Productos')
-                        ->disabled(fn($record) => auth()->user()->can('products', $record) && $record->estado->value != 'cotizacion')
+                        ->disabled(fn ($record) => auth()->user()->can('products', $record) && $record->estado->value != 'cotizacion')
                         ->schema([
                             Repeater::make('detalles')
                                 ->label('')
@@ -161,7 +161,7 @@ class EditOrden extends EditRecord
                                         ->relationship('producto', 'descripcion', function ($query) {
                                             $query->withTrashed();
                                         })
-                                        ->getOptionLabelFromRecordUsing(fn(Producto $record, Get $get) => ProductoController::renderProductos($record, 'orden', 1))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'orden', 1))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search): array {
@@ -174,9 +174,9 @@ class EditOrden extends EditRecord
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
                                                 $userRoles = User::find($get('../../asesor_id'))->roles->pluck('name');
-                                                $role = collect(User::ORDEN_ROLES)->first(fn($r) => $userRoles->contains($r));
+                                                $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
                                                 $escala = Escala::where('producto_id', $state)
-                                                    ->whereHas('role', fn($q) => $q->where('name', $role))
+                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                     ->orderByDesc('precio')
                                                     ->first();
                                                 if ($escala) {
@@ -200,11 +200,11 @@ class EditOrden extends EditRecord
                                         ->suffixAction(
                                             Action::make('ver')
                                                 ->icon('heroicon-s-eye')
-                                                ->modalContent(fn($state): View => view(
+                                                ->modalContent(fn ($state): View => view(
                                                     'filament.pages.actions.producto',
                                                     [
                                                         'url' => Producto::find($state)?->imagenes[0]
-                                                            ? config('filesystems.disks.s3.url') . Producto::find($state)->imagenes[0]
+                                                            ? config('filesystems.disks.s3.url').Producto::find($state)->imagenes[0]
                                                             : null,
                                                         'alt' => Producto::find($state)?->descripcion ?? 'Sin descripción',
                                                     ],
@@ -231,10 +231,10 @@ class EditOrden extends EditRecord
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
                                                 $userRoles = User::find($get('../../asesor_id'))->roles->pluck('name');
-                                                $role = collect(User::ORDEN_ROLES)->first(fn($r) => $userRoles->contains($r));
+                                                $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
                                                 $escala = Escala::where('precio', '<', $state)
                                                     ->where('producto_id', $get('producto_id'))
-                                                    ->whereHas('role', fn($q) => $q->where('name', $role))
+                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                     ->orderByDesc('precio')
                                                     ->first();
                                                 if ($escala) {
@@ -254,12 +254,12 @@ class EditOrden extends EditRecord
                                         ->inputMode('decimal')
                                         ->rule('numeric')
                                         ->minValue(function (Get $get) {
-                                            if (!auth()->user()->can('products_orden')) {
+                                            if (! auth()->user()->can('products_orden')) {
                                                 $userRoles = User::find($get('../../asesor_id'))->roles->pluck('name');
-                                                $role = collect(User::ORDEN_ROLES)->first(fn($r) => $userRoles->contains($r));
+                                                $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
 
                                                 return Escala::where('producto_id', $get('producto_id'))
-                                                    ->whereHas('role', fn($q) => $q->where('name', $role))
+                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                     ->orderBy('precio')
                                                     ->first()->precio;
                                             }
@@ -272,7 +272,7 @@ class EditOrden extends EditRecord
                                     Select::make('escala_id')
                                         ->label('Escala')
                                         ->options(
-                                            fn(Get $get) => Producto::withTrashed()->find($get('producto_id'))?->escalas()->pluck('escala', 'id')
+                                            fn (Get $get) => Producto::withTrashed()->find($get('producto_id'))?->escalas()->pluck('escala', 'id')
                                         )
                                         ->disabled()
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
@@ -317,14 +317,14 @@ class EditOrden extends EditRecord
                                 ->schema([
                                     Select::make('cliente_id')
                                         ->label('Cliente')
-                                        ->disabled(fn($record) => $record->estado->value != 'cotizacion')
+                                        ->disabled(fn ($record) => $record->estado->value != 'cotizacion')
                                         ->relationship(
                                             'cliente',
                                             'name',
                                         )
                                         ->optionsLimit(12)
                                         ->getOptionLabelFromRecordUsing(
-                                            fn(User $record) => collect([
+                                            fn (User $record) => collect([
                                                 $record->id,
                                                 $record->nit ? $record->nit : 'CF',
                                                 $record->name,
@@ -339,8 +339,8 @@ class EditOrden extends EditRecord
                             Select::make('direccion_id')
                                 ->label('Dirección')
                                 ->required()
-                                ->disabled(fn($record) => $record->estado->value != 'cotizacion')
-                                ->options(fn(Get $get) => User::find($get('cliente_id'))?->direcciones->mapWithKeys(function ($direccion) {
+                                ->disabled(fn ($record) => $record->estado->value != 'cotizacion')
+                                ->options(fn (Get $get) => User::find($get('cliente_id'))?->direcciones->mapWithKeys(function ($direccion) {
                                     return [
                                         $direccion->id => collect([
                                             $direccion->direccion ?? '',
@@ -367,11 +367,11 @@ class EditOrden extends EditRecord
                                     DatePicker::make('prefechado')
                                         ->minDate(today())
                                         ->maxDate(today()->endOfMonth())
-                                        ->visible(fn($record) => $record->estado->value != 'cotizacion')
+                                        ->visible(fn ($record) => $record->estado->value != 'cotizacion')
                                         ->label('Prefechado'),
                                     DatePicker::make('prefechado')
                                         ->label('Prefechado')
-                                        ->visible(fn($record) => $record->estado->value == 'cotizacion')
+                                        ->visible(fn ($record) => $record->estado->value == 'cotizacion')
                                         ->minDate(now()->addDay()->startOfDay())
                                         ->maxDate(min(now()->addDays(7), now()->endOfMonth()->startOfDay())),
                                     Select::make('estado')
@@ -382,14 +382,14 @@ class EditOrden extends EditRecord
                                         ->label('Tipo de Envío')
                                         ->options(EnvioStatus::class)
                                         ->default('guatex')
-                                        ->disabled(fn($record) => $record->estado->value != 'cotizacion')
+                                        ->disabled(fn ($record) => $record->estado->value != 'cotizacion')
                                         ->required(),
                                     Select::make('guatex_destino')
                                         ->label('Destino')
-                                        ->visible(fn(Get $get) => $get('tipo_envio') == 'guatex')
+                                        ->visible(fn (Get $get) => $get('tipo_envio') == 'guatex')
                                         ->preload()
                                         ->required()
-                                        ->disabled(!auth()->user()->can('products_orden'))
+                                        ->disabled(! auth()->user()->can('products_orden'))
                                         ->searchable()
                                         ->columnSpan(['default' => 1, 'lg' => 3])
                                         ->options(function (Get $get) {
@@ -412,7 +412,7 @@ class EditOrden extends EditRecord
                                         }),
                                 ]),
                             Textarea::make('observaciones')
-                                ->disabled(fn($record) => $record->estado->value != 'cotizacion')
+                                ->disabled(fn ($record) => $record->estado->value != 'cotizacion')
                                 ->columnSpanFull(),
                         ]),
                     Wizard\Step::make('Pagos')
@@ -424,10 +424,10 @@ class EditOrden extends EditRecord
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Tipo de Pago')
-                                        ->disabled(fn($record) => $record->estado->value != 'cotizacion')
+                                        ->disabled(fn ($record) => $record->estado->value != 'cotizacion')
                                         ->columnSpan(['sm' => 1, 'md' => 8])
                                         ->options(
-                                            fn(Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
+                                            fn (Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
                                         )
                                         ->required()
                                         ->searchable()
@@ -435,7 +435,7 @@ class EditOrden extends EditRecord
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
-                                        ->disabled(fn(Get $get, $record) => $get('total') >= Factura::CF)
+                                        ->disabled(fn (Get $get, $record) => $get('total') >= Factura::CF)
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             if (! $get('facturar_cf')) {
                                                 $set('comp', false);
@@ -445,21 +445,21 @@ class EditOrden extends EditRecord
                                     Toggle::make('comp')
                                         ->inline(false)
                                         ->label('Comp')
-                                        ->disabled(fn(Get $get, $record) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
+                                        ->disabled(fn (Get $get, $record) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
                                     Toggle::make('pago_validado')
                                         ->label('Pago Validado')
-                                        ->visible(fn($record) => auth()->user()->can('validate_pay', $record))
+                                        ->visible(fn ($record) => auth()->user()->can('validate_pay', $record))
                                         ->inline(false),
                                 ]),
                             Repeater::make('pagos')
                                 ->label('')
                                 ->relationship()
-                                ->disabled(fn($record) => $record->estado->value != 'cotizacion')
+                                ->disabled(fn ($record) => $record->estado->value != 'cotizacion')
                                 ->columns(7)
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
+                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
                                         ->columnSpan(['sm' => 1, 'md' => 2]),
                                     TextInput::make('monto')
                                         ->label('Monto')
@@ -471,22 +471,22 @@ class EditOrden extends EditRecord
                                         ->label('No. Documento'),
                                     TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
                                     TextInput::make('no_auditoria')
                                         ->label('No. Auditoría')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
                                     TextInput::make('afiliacion')
                                         ->label('Afiliación')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
                                     Select::make('cuotas')
                                         ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
                                     TextInput::make('nombre_cuenta')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null),
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null),
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
                                         ->relationship('banco', 'banco'),
                                     DatePicker::make('fecha_transaccion'),
                                     FileUpload::make('imagen')

@@ -4,9 +4,9 @@ namespace App\Filament\Ventas\Resources\OrdenResource\Pages;
 
 use App\Filament\Ventas\Resources\OrdenResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewOrden extends ViewRecord
 {
@@ -23,7 +23,7 @@ class ViewOrden extends ViewRecord
     {
         return $infolist
             ->schema([
-                TextEntry::make('total')->label('Post title')
+                TextEntry::make('total')->label('Post title'),
             ]);
     }
 }

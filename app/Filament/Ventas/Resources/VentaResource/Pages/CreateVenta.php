@@ -35,7 +35,6 @@ use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Log;
 
 class CreateVenta extends CreateRecord
 {
@@ -56,7 +55,7 @@ class CreateVenta extends CreateRecord
                             ->relationship(
                                 'bodega',
                                 'bodega',
-                                fn(Builder $query) => $query->whereHas('user', function ($query) {
+                                fn (Builder $query) => $query->whereHas('user', function ($query) {
                                     $query->where('user_id', auth()->user()->id);
                                 })
                             )
@@ -121,7 +120,7 @@ class CreateVenta extends CreateRecord
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn(Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
                                         ->allowHtml()
                                         ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'presentacion.presentacion', 'codigo', 'modelo'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
@@ -168,6 +167,7 @@ class CreateVenta extends CreateRecord
                                                 $set('descuento_porcentaje', $porcentajeDescuento);
                                                 $cantidad = $get('cantidad') ?? 1;
                                                 $set('subtotal', round((float) $precioFinalParaSetear * (float) $cantidad, 2));
+
                                                 return;
                                             }
                                             // Limpiar campos si no se encuentra escala o se deselecciona producto
@@ -200,10 +200,10 @@ class CreateVenta extends CreateRecord
                                         ->inputMode('decimal')
                                         ->rule('numeric')
                                         ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 $invetario = Inventario::where('producto_id', $get('producto_id'))->where('bodega_id', $get('../../../bodega_id'))->first();
                                                 if ($invetario && $value > $invetario->existencia) {
-                                                    $fail('La cantidad de productos no puede ser mayor al inventario. Exist: ' . $invetario->existencia);
+                                                    $fail('La cantidad de productos no puede ser mayor al inventario. Exist: '.$invetario->existencia);
                                                 }
 
                                                 $cliente_id_en_formulario = $get('../../cliente_id');
@@ -318,7 +318,7 @@ class CreateVenta extends CreateRecord
                                     /* $get('subtotal') >= Factura::CF || $set('facturar_cf', false); */
                                     /* $get('subtotal') >= Factura::CF || $set('comp', false); */
                                     $set('total', round($subtotal, 2));
-                                })->visible(fn(Get $get): bool => !empty($get('bodega_id'))),
+                                })->visible(fn (Get $get): bool => ! empty($get('bodega_id'))),
 
                         ]),
                     Wizard\Step::make('Cliente y Pagos')
@@ -350,7 +350,7 @@ class CreateVenta extends CreateRecord
                                         ->preload(), */
                                     Select::make('cliente_id')
                                         ->label('Cliente')
-                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'mayorista']))
+                                        ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'mayorista']))
                                         ->optionsLimit(20)
                                         ->required()
                                         ->live()
@@ -359,7 +359,7 @@ class CreateVenta extends CreateRecord
                                             $set('tipo_pago_id', null);
                                         })
                                         ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 $total = floor($get('total')); // Ignora decimales de 'total'
                                                 $pagos = collect($get('pagos'))->sum('monto');
                                                 $pagos = floor($pagos); // Ignora decimales de la suma de 'pagos'
@@ -414,7 +414,7 @@ class CreateVenta extends CreateRecord
                                                         ->preload(),
                                                     Select::make('departamento_id')
                                                         ->label('Departamento')
-                                                        ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                                                        ->options(fn (Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
                                                         ->live(onBlur: true)
                                                         ->afterStateUpdated(function (Set $set) {
                                                             $set('municipio_id', null);
@@ -424,7 +424,7 @@ class CreateVenta extends CreateRecord
                                                         ->preload(),
                                                     Select::make('municipio_id')
                                                         ->label('Municipio')
-                                                        ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                                                        ->options(fn (Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
                                                         ->required()
                                                         ->searchable()
                                                         ->preload(),
@@ -487,7 +487,7 @@ class CreateVenta extends CreateRecord
                                                         ->preload(),
                                                     Select::make('departamento_id')
                                                         ->label('Departamento')
-                                                        ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                                                        ->options(fn (Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
                                                         ->live(onBlur: true)
                                                         ->afterStateUpdated(function (Set $set) {
                                                             $set('municipio_id', null);
@@ -497,7 +497,7 @@ class CreateVenta extends CreateRecord
                                                         ->preload(),
                                                     Select::make('municipio_id')
                                                         ->label('Municipio')
-                                                        ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                                                        ->options(fn (Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
                                                         ->required()
                                                         ->searchable()
                                                         ->preload(),
@@ -518,6 +518,7 @@ class CreateVenta extends CreateRecord
                                         ->createOptionUsing(function (array $data): int {
                                             $user = User::create($data);
                                             $user->assignRole('cliente'); // Asigna el rol automáticamente
+
                                             return $user->id; // Devuelve el ID para que se seleccione en el campo
                                         })
                                         ->searchable(),
@@ -529,7 +530,7 @@ class CreateVenta extends CreateRecord
                                             if (! $get('facturar_cf')) {
                                                 $set('comp', false);
                                             }
-                                        }) 
+                                        })
                                         ->label('Facturar CF'),
                                        Toggle::make('comp')
                                         ->inline(false)
@@ -546,7 +547,7 @@ class CreateVenta extends CreateRecord
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
+                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
                                         ->required()
                                         ->live()
                                         ->columnSpan(['sm' => 1, 'md' => 1])
@@ -567,12 +568,12 @@ class CreateVenta extends CreateRecord
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
                                         ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
                                                     Pago::/* where('banco_id', $get('banco_id'))
-                                                    -> */where('fecha_transaccion', $get('fecha_transaccion'))
-                                                    ->where('no_documento', $value)
-                                                    ->exists()
+                                                    -> */ where('fecha_transaccion', $get('fecha_transaccion'))
+                                                        ->where('no_documento', $value)
+                                                        ->exists()
                                                 ) {
                                                     $fail('La combinación de Banco, Fecha de Transacción y No. Documento ya existe en los pagos.');
                                                 }

@@ -20,7 +20,6 @@ class UserSeeder extends Seeder
             'vendedor',
             'mayorista',
 
-
             /* 'facturador',
             'supervisor preventa',
             'supervisor venta directa',

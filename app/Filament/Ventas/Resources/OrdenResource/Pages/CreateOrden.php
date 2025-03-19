@@ -57,7 +57,7 @@ class CreateOrden extends CreateRecord
                             ->prefix('Q')
                             ->readOnly()
                             ->rules([
-                                fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                     $subtotal = 0;
                                     $cantidadCubetasCanecas = 0;
                                     $cantidadProductos = 0;
@@ -110,7 +110,7 @@ class CreateOrden extends CreateRecord
                             ->readOnly()
                             ->prefix('Q')
                             ->rules([
-                                fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                     $user = User::find($get('cliente_id'));
                                     if ($get('tipo_pago_id') == 2 && $value > ($user->credito - $user->saldo) && $get('estado') != 'cotizacion') {
                                         $fail('El Cliente no cuenta con suficiente crédito para realizar la compra.');
@@ -143,7 +143,7 @@ class CreateOrden extends CreateRecord
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn(Producto $record) => ProductoController::renderProductos($record, 'orden', 1))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductos($record, 'orden', 1))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
@@ -156,9 +156,9 @@ class CreateOrden extends CreateRecord
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
                                                 $userRoles = auth()->user()->roles->pluck('name');
-                                                $role = collect(User::ORDEN_ROLES)->first(fn($r) => $userRoles->contains($r));
+                                                $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
                                                 $escala = Escala::where('producto_id', $state)
-                                                    ->whereHas('role', fn($q) => $q->where('name', $role))
+                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                     ->orderByDesc('precio')
                                                     ->first();
                                                 if ($escala) {
@@ -182,11 +182,11 @@ class CreateOrden extends CreateRecord
                                         ->suffixAction(
                                             Action::make('ver')
                                                 ->icon('heroicon-s-eye')
-                                                ->modalContent(fn($state): View => view(
+                                                ->modalContent(fn ($state): View => view(
                                                     'filament.pages.actions.producto',
                                                     [
                                                         'url' => Producto::find($state)?->imagenes[0]
-                                                            ? config('filesystems.disks.s3.url') . Producto::find($state)->imagenes[0]
+                                                            ? config('filesystems.disks.s3.url').Producto::find($state)->imagenes[0]
                                                             : null,
                                                         'alt' => Producto::find($state)?->descripcion ?? 'Sin descripción',
                                                     ],
@@ -214,10 +214,10 @@ class CreateOrden extends CreateRecord
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
                                                 $userRoles = auth()->user()->roles->pluck('name');
-                                                $role = collect(User::ORDEN_ROLES)->first(fn($r) => $userRoles->contains($r));
+                                                $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
                                                 $escala = Escala::where('precio', '<', $state)
                                                     ->where('producto_id', $get('producto_id'))
-                                                    ->whereHas('role', fn($q) => $q->where('name', $role))
+                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                     ->orderByDesc('precio')
                                                     ->first();
                                                 if ($escala) {
@@ -237,10 +237,10 @@ class CreateOrden extends CreateRecord
                                         ->rule('numeric')
                                         ->minValue(function (Get $get) {
                                             $userRoles = auth()->user()->roles->pluck('name');
-                                            $role = collect(User::ORDEN_ROLES)->first(fn($r) => $userRoles->contains($r));
+                                            $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
 
                                             return Escala::where('producto_id', $get('producto_id'))
-                                                ->whereHas('role', fn($q) => $q->where('name', $role))
+                                                ->whereHas('role', fn ($q) => $q->where('name', $role))
                                                 ->orderBy('precio')
                                                 ->first()->precio;
                                         })
@@ -287,19 +287,19 @@ class CreateOrden extends CreateRecord
                                 ->relationship(
                                     'cliente',
                                     'name',
-                                    fn(Builder $query) => $query->whereIn('users.id', auth()->user()->clientes()->pluck('users.id'))
+                                    fn (Builder $query) => $query->whereIn('users.id', auth()->user()->clientes()->pluck('users.id'))
                                 )
                                 ->optionsLimit(12)
                                 ->getOptionLabelFromRecordUsing(
-                                    fn(User $record) => collect([
+                                    fn (User $record) => collect([
                                         $record->id,
                                         $record->nit ? $record->nit : 'CF',
                                         $record->name,
                                         $record->razon_social,
                                         $record->ordenes()->whereIn('estado', ['enviada'])->count() > 0 ? '(Ordenes Pendientes de Entrega) ' : '',
                                         ($record->creditosOrdenesAtrasados->count() > 0 || $record->creditosVentasAtrasados->count() > 0)
-                                            ? '(Créditos Atrasados, Mínimo a Cancelar: Q' . $record->creditosOrdenesAtrasados->sum(fn($orden) => $orden->total - $orden->pagos->sum('monto')) +
-                                            $record->creditosVentasAtrasados->sum(fn($venta) => $venta->total - $venta->pagos->sum('monto')) . ')'
+                                            ? '(Créditos Atrasados, Mínimo a Cancelar: Q'.$record->creditosOrdenesAtrasados->sum(fn ($orden) => $orden->total - $orden->pagos->sum('monto')) +
+                                            $record->creditosVentasAtrasados->sum(fn ($venta) => $venta->total - $venta->pagos->sum('monto')).')'
                                             : '',
                                     ])->filter()->join(' - ')
                                 )
@@ -314,7 +314,7 @@ class CreateOrden extends CreateRecord
                                         ->icon('tabler-history')
                                         ->slideOver()
                                         ->modalSubmitAction(false)
-                                        ->modalContent(fn($state): View => view(
+                                        ->modalContent(fn ($state): View => view(
                                             'filament.pages.actions.historial',
                                             [
                                                 'ordenes' => User::find($state)->ordenes,
@@ -331,7 +331,7 @@ class CreateOrden extends CreateRecord
                             Select::make('direccion_id')
                                 ->required()
                                 ->label('Dirección')
-                                ->options(fn(Get $get) => User::find($get('cliente_id'))?->direcciones->mapWithKeys(function ($direccion) {
+                                ->options(fn (Get $get) => User::find($get('cliente_id'))?->direcciones->mapWithKeys(function ($direccion) {
                                     return [
                                         $direccion->id => collect([
                                             $direccion->direccion ?? '',
@@ -371,7 +371,7 @@ class CreateOrden extends CreateRecord
                                         ->required(),
                                     Select::make('guatex_destino')
                                         ->label('Destino')
-                                        ->visible(fn(Get $get) => $get('tipo_envio') == 'guatex')
+                                        ->visible(fn (Get $get) => $get('tipo_envio') == 'guatex')
                                         ->preload()
                                         ->required()
                                         ->searchable()
@@ -410,14 +410,14 @@ class CreateOrden extends CreateRecord
                                         ->required()
                                         ->columnSpan(['sm' => 1, 'md' => 8])
                                         ->options(
-                                            fn(Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
+                                            fn (Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
                                         )
                                         ->live()
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             $set('pagos', []);
                                         })
                                         ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if ($get('total') < collect($get('pagos'))->sum('monto') && $value == 4) {
                                                     $fail('El monto total de los pagos no puede ser mayor al total de la orden.');
                                                 }
@@ -446,7 +446,7 @@ class CreateOrden extends CreateRecord
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
-                                        ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
+                                        ->disabled(fn (Get $get) => $get('total') >= Factura::CF)
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             if (! $get('facturar_cf')) {
                                                 $set('comp', false);
@@ -456,7 +456,7 @@ class CreateOrden extends CreateRecord
                                     Toggle::make('comp')
                                         ->inline(false)
                                         ->label('Comp')
-                                        ->disabled(fn(Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
+                                        ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
                                 ]),
                             Repeater::make('pagos')
                                 ->label('')
@@ -464,13 +464,13 @@ class CreateOrden extends CreateRecord
                                 ->minItems(function (Get $get) {
                                     return $get('tipo_pago_id') == 4 ? 1 : 0;
                                 })
-                                ->visible(fn(Get $get) => $get('tipo_pago_id') == 4)
+                                ->visible(fn (Get $get) => $get('tipo_pago_id') == 4)
                                 ->defaultItems(0)
                                 ->columns(7)
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
+                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
                                         ->required()
                                         ->live()
                                         ->columnSpan(['sm' => 1, 'md' => 2])
@@ -493,12 +493,12 @@ class CreateOrden extends CreateRecord
                                     TextInput::make('no_documento')
                                         ->label('No. Documento')
                                         ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
                                                     Pago::where('banco_id', $get('banco_id'))
-                                                    ->where('fecha_transaccion', $get('fecha_transaccion'))
-                                                    ->where('no_documento', $value)
-                                                    ->exists()
+                                                        ->where('fecha_transaccion', $get('fecha_transaccion'))
+                                                        ->where('no_documento', $value)
+                                                        ->exists()
                                                 ) {
                                                     $fail('La combinación de Banco, Fecha de Transacción y No. Documento ya existe en los pagos.');
                                                 }
@@ -507,22 +507,22 @@ class CreateOrden extends CreateRecord
                                         ->required(),
                                     TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     TextInput::make('no_auditoria')
                                         ->label('No. Auditoría')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     TextInput::make('afiliacion')
                                         ->label('Afiliación')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     Select::make('cuotas')
                                         ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     TextInput::make('nombre_cuenta')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
+                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
                                         ->required(),
                                     Select::make('banco_id')
                                         ->label('Banco')
@@ -566,7 +566,7 @@ class CreateOrden extends CreateRecord
     {
         try {
             // Obtener todos los registros necesarios en una sola consulta
-           
+
             $productos = Producto::findMany(array_column($this->data['detalles'], 'producto_id'));
             $escalas = Escala::findMany(array_column($this->data['detalles'], 'escala_id'));
 

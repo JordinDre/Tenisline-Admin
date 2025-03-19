@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
+use App\Models\Bodega;
+use App\Models\Factura;
+use App\Models\Inventario;
+use App\Models\Kardex;
+use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
-use App\Models\Bodega;
-use App\Models\Kardex;
-use App\Models\Factura;
-use App\Models\Producto;
-use App\Models\Inventario;
-use Illuminate\Support\Facades\DB;
+use Exception;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class VentaController extends Controller
-{   
+{
     public static function sumarInventario(Venta $venta, string $descripcion)
     {
         $venta->detalles->each(function ($detalle) use ($venta, $descripcion) {
@@ -92,7 +92,7 @@ class VentaController extends Controller
                 $factura->tipo = 'factura';
                 $venta->factura()->save($factura);
                 activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('facturación')->log('Venta facturada'); */
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada'); 
+                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
             });
             Notification::make()
                 ->color('success')
@@ -221,23 +221,23 @@ class VentaController extends Controller
                     }
                 }
 
-               /*  if ($venta->factura()->exists()) {
-                    $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
-                    if (! $res['resultado']) {
-                        throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
-                    }
-                    $factura = new Factura;
-                    $factura->fel_tipo = 'NCRE';
-                    $factura->fel_uuid = $res['uuid'];
-                    $factura->fel_serie = $res['serie'];
-                    $factura->fel_numero = $res['numero'];
-                    $factura->fel_fecha = $res['fecha'];
-                    $factura->user_id = auth()->user()->id;
-                    $factura->tipo = 'devolucion';
-                    $factura->motivo = $data['motivo'];
-                    $venta->factura()->save($factura);
-                    $venta->factura()->delete();
-                } */
+                /*  if ($venta->factura()->exists()) {
+                     $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
+                     if (! $res['resultado']) {
+                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
+                     }
+                     $factura = new Factura;
+                     $factura->fel_tipo = 'NCRE';
+                     $factura->fel_uuid = $res['uuid'];
+                     $factura->fel_serie = $res['serie'];
+                     $factura->fel_numero = $res['numero'];
+                     $factura->fel_fecha = $res['fecha'];
+                     $factura->user_id = auth()->user()->id;
+                     $factura->tipo = 'devolucion';
+                     $factura->motivo = $data['motivo'];
+                     $venta->factura()->save($factura);
+                     $venta->factura()->delete();
+                 } */
 
                 $venta->estado = $estado;
                 $venta->motivo = $data['motivo'];

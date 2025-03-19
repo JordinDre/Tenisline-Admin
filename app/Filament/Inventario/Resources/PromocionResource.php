@@ -4,7 +4,6 @@ namespace App\Filament\Inventario\Resources;
 
 use App\Enums\TipoPromocionStatatus;
 use App\Filament\Inventario\Resources\PromocionResource\Pages;
-use App\Filament\Inventario\Resources\PromocionResource\RelationManagers;
 use App\Http\Controllers\ProductoController;
 use App\Models\Producto;
 use App\Models\Promocion;
@@ -16,8 +15,6 @@ use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PromocionResource extends Resource
 {
@@ -43,42 +40,42 @@ class PromocionResource extends Resource
                 Forms\Components\TextInput::make('cantidad')
                     ->numeric()
                     ->required()
-                    ->visible(fn(Get $get) => in_array($get('tipo'), ['mix', 'bonificacion', 'descuento']))
+                    ->visible(fn (Get $get) => in_array($get('tipo'), ['mix', 'bonificacion', 'descuento']))
                     ->default(null),
                 Forms\Components\TextInput::make('bonificacion')
                     ->numeric()
                     ->label('Bonificación')
-                    ->visible(fn(Get $get) => in_array($get('tipo'), ['mix', 'bonificacion']))
+                    ->visible(fn (Get $get) => in_array($get('tipo'), ['mix', 'bonificacion']))
                     ->required()
                     ->default(null),
                 Forms\Components\TextInput::make('descuento')
                     ->numeric()
                     ->required()
                     ->prefix('%')
-                    ->visible(fn(Get $get) => in_array($get('tipo'), ['descuento']))
+                    ->visible(fn (Get $get) => in_array($get('tipo'), ['descuento']))
                     ->default(null),
                 Forms\Components\Select::make('marca_id')
                     ->relationship('marca', 'marca')
-                    ->visible(fn(Get $get) => in_array($get('tipo'), ['mix']))
+                    ->visible(fn (Get $get) => in_array($get('tipo'), ['mix']))
                     ->searchable()
                     ->required(),
                 Forms\Components\Select::make('presentacion_id')
                     ->relationship('presentacion', 'presentacion')
-                    ->visible(fn(Get $get) => in_array($get('tipo'), ['mix']))
+                    ->visible(fn (Get $get) => in_array($get('tipo'), ['mix']))
                     ->searchable()
                     ->required(),
 
                 Repeater::make('detalles')
                     ->label('')
                     ->required()
-                    ->visible(fn(Get $get) => in_array($get('tipo'), ['combo']))
+                    ->visible(fn (Get $get) => in_array($get('tipo'), ['combo']))
                     ->collapsible()
                     ->relationship()
                     ->schema([
                         Select::make('producto_id')
                             ->label('Producto')
-                            ->relationship('producto', 'descripcion', fn($query) => $query->with(['marca', 'presentacion', 'escalas']))
-                            ->getOptionLabelFromRecordUsing(fn(Producto $record, Get $get) => ProductoController::renderProductos($record, null, null))
+                            ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca', 'presentacion', 'escalas']))
+                            ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, null, null))
                             ->allowHtml()
                             ->searchable(['id'])
                             ->getSearchResultsUsing(function (string $search): array {
