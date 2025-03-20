@@ -181,14 +181,24 @@ class ProductoController extends Controller
 
     public static function searchProductos(string $search, string $tipo, $bodega_id = null): array
     {
-        $query = Producto::query()
-            ->where('descripcion', 'like', "%{$search}%")
-            ->orWhere('codigo', 'like', "%{$search}%")
-            ->orWhere('genero', 'like', "%{$search}%")
-            ->orWhere('talla', 'like', "%{$search}%")
-            ->orWhereHas('marca', function ($query) use ($search) {
-                $query->where('marca', 'like', "%{$search}%");
-            })
+
+        $query = Producto::query();
+        $terms = explode(' ', $search);
+        $terms = array_filter($terms);
+
+
+        foreach ($terms as $term) {
+            $query->where(function ($q) use ($term) {
+                $q->where('descripcion', 'like', "%{$term}%")
+                    ->orWhere('codigo', 'like', "%{$term}%")
+                    ->orWhere('modelo', 'like', "%{$term}%")
+                    ->orWhere('talla', 'like', "%{$term}%")
+                    ->orWhere('genero', 'like', "%{$term}%")
+                    ->orWhereHas('marca', function ($query) use ($term) {
+                        $query->where('marca', 'like', "%{$term}%");
+                    });
+            });
+        }
             /* ->orWhereHas('presentacion', function ($query) use ($search) {
                 $query->where('presentacion', 'like', "%{$search}%");
             }) */;
