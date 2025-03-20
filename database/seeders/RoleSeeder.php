@@ -43,6 +43,7 @@ class RoleSeeder extends Seeder
             'meta',
             'tienda',
             'carrito',
+            'caja::chica'
         ];
 
         $actions = [
