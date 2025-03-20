@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\CajaChica;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Auth\Access\Response;
 
 class CajaChicaPolicy
 {
@@ -15,15 +16,15 @@ class CajaChicaPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_cajachica');
+        return $user->can('view_any_caja::chica');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, CajaChica $inventario): bool
+    public function view(User $user, CajaChica $cajachica): bool
     {
-        return $user->can('view_cajachica');
+        return $user->can('view_caja::chica');
     }
 
     /**
@@ -31,23 +32,23 @@ class CajaChicaPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->can('create_any_caja::chica');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, CajaChica $inventario): bool
+    public function update(User $user, CajaChica $cajachica): bool
     {
-        return false;
+        return /* $user->can('update_bodega') */ $user->hasRole('super_admin');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, CajaChica $inventario): bool
+    public function delete(User $user, CajaChica $cajachica): bool
     {
-        return false;
+        return /* $user->can('delete_bodega') */ false;
     }
 
     /**
@@ -55,7 +56,7 @@ class CajaChicaPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return false;
+        return /* $user->can('delete_any_bodega') */ false;
     }
 
     /**
@@ -63,7 +64,7 @@ class CajaChicaPolicy
      */
     public function forceDelete(User $user, CajaChica $cajachica): bool
     {
-        return false;
+        return /* $user->can('force_delete_bodega') */ false;
     }
 
     /**
@@ -71,7 +72,7 @@ class CajaChicaPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return false;
+        return /* $user->can('force_delete_any_bodega') */ false;
     }
 
     /**
@@ -79,7 +80,7 @@ class CajaChicaPolicy
      */
     public function restore(User $user, CajaChica $cajachica): bool
     {
-        return false;
+        return /* $user->can('restore_bodega') */ false;
     }
 
     /**
@@ -87,7 +88,7 @@ class CajaChicaPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return false;
+        return /* $user->can('restore_any_bodega') */ false;
     }
 
     /**
@@ -95,7 +96,7 @@ class CajaChicaPolicy
      */
     public function replicate(User $user, CajaChica $cajachica): bool
     {
-        return false;
+        return /* $user->can('replicate_bodega') */ false;
     }
 
     /**
@@ -103,6 +104,6 @@ class CajaChicaPolicy
      */
     public function reorder(User $user): bool
     {
-        return false;
+        return /* $user->can('reorder_bodega') */ false;
     }
 }
