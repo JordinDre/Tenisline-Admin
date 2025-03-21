@@ -2,9 +2,11 @@
 
 namespace App\Filament\Inventario\Resources\CajaChicaResource\Pages;
 
-use App\Filament\Inventario\Resources\CajaChicaResource;
+use App\Models\Pago;
 use Filament\Actions;
+use App\Models\CajaChica;
 use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Inventario\Resources\CajaChicaResource;
 
 class CreateCajaChica extends CreateRecord
 {

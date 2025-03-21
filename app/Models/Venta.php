@@ -87,4 +87,9 @@ class Venta extends Model
     {
         return $this->morphOne(Factura::class, 'facturable')->where('tipo', 'devolucion');
     }
+
+    public function cierreDia(): BelongsTo
+    {
+        return $this->belongsTo(CierreDia::class);
+    }
 }

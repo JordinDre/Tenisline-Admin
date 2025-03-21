@@ -365,6 +365,7 @@ class CreateVenta extends CreateRecord
                                                 ->label('Razón Social'),
                                             TextInput::make('name')
                                                 ->required()
+                                                ->unique(table: User::class)
                                                 ->label('Nombre/Nombre Comercial'),
                                             TextInput::make('telefono')
                                                 ->label('Teléfono')
@@ -438,6 +439,7 @@ class CreateVenta extends CreateRecord
                                                 ->label('Razón Social'),
                                             TextInput::make('name')
                                                 ->required()
+                                                ->unique(table: User::class)
                                                 ->label('Nombre/Nombre Comercial'),
                                             TextInput::make('telefono')
                                                 ->label('Teléfono')
