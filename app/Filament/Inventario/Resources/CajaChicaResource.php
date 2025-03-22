@@ -21,9 +21,7 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = CajaChica::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    protected static ?string $slug = 'cajachica';
+    protected static ?string $navigationIcon = 'tabler-box';
 
     protected static ?string $pluralModelLabel = 'Caja Chica';
 
@@ -39,6 +37,7 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
             
         ];
     }
+
     public static function form(Form $form): Form
     {
         return $form
