@@ -75,57 +75,35 @@ class VentaResource extends Resource implements HasShieldPermissions
     {
         return $form
             ->schema([
-                Grid::make(['default' => 2])
-                    ->schema([
-                        TextInput::make('subtotal')
-                            ->prefix('Q')
-                            ->label('SubTotal'),
-                        TextInput::make('total')
-                            ->prefix('Q')
-                            ->label('Total'),
-                    ]),
+                Select::make('bodega_id')
+                    ->relationship(
+                        'bodega',
+                        'bodega',
+                        fn(Builder $query) => $query->whereHas('user', function ($query) {
+                            $query->where('user_id', auth()->user()->id);
+                        })
+                    )
+                    ->preload()
+                    ->default(1)
+                    ->columnSpanFull()
+                    ->searchable()
+                    ->required(),
                 Wizard::make([
-                    Wizard\Step::make('Cliente')
+                    /* Wizard\Step::make('Cliente')
                         ->schema([
-                            Grid::make(2)
-                                ->schema([
-                                    Select::make('bodega_id')
-                                        ->relationship(
-                                            'bodega',
-                                            'bodega'
-                                        ),
-                                    Select::make('cliente_id')
-                                        ->label('Cliente')
-                                        ->relationship(
-                                            'cliente',
-                                            'name',
-                                        )
-                                        ->optionsLimit(12)
-                                        ->getOptionLabelFromRecordUsing(
-                                            fn (User $record) => collect([
-                                                $record->id,
-                                                $record->nit ? $record->nit : 'CF',
-                                                $record->name,
-                                            ])->filter()->join(' - ')
-                                        ),
-                                ]),
-                            Grid::make([
-                                'default' => 1,
-                                'sm' => 3,
-                            ])
-                                ->schema([
-                                    Select::make('user_id')
-                                        ->label('Vendedor')
-                                        ->relationship('asesor', 'name'),
-                                    DateTimePicker::make('created_at')
-                                        ->label('Fecha de Creación')
-                                        ->format('d/m/Y H:i:s'),
-                                    Select::make('estado')
-                                        ->options(EstadoVentaStatus::class),
-                                ]),
+                            Select::make('cliente_id')
+                                ->label('Cliente')
+                                ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'mayorista']))
+                                ->optionsLimit(20)
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function (Set $set) {
+                                    $set('tipo_pago_id', null);
+                                })
+                                ->searchable(),
                             Textarea::make('observaciones')
                                 ->columnSpanFull(),
-                        ]),
+                        ]), */
                     Wizard\Step::make('Productos')
                         ->schema([
                             Repeater::make('detalles')
@@ -142,113 +120,219 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('producto_id')
                                         ->label('Producto')
-                                        ->relationship('producto', 'descripcion', function ($query) {
-                                            $query->withTrashed();
-                                        })
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id')))
+                                        ->relationship('producto', 'descripcion')
+                                        ->getOptionLabelFromRecordUsing(fn(Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
                                         ->allowHtml()
-                                        ->searchable(['id'])
+                                        ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'genero', 'talla'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                            return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'));
+                                            return ProductoController::searchProductos($search, 'venta', $get('../../bodega_id'), $get('../../cliente_id'));
                                         })
-                                        ->optionsLimit(20)
+                                        ->optionsLimit(10)
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                        ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 4, 'xl' => 6])
+                                        ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
                                         ->required(),
                                     TextInput::make('cantidad')
                                         ->label('Cantidad')
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                    /* Select::make('escala_id')
-                                        ->label('Escala')
-                                        ->options(
-                                            fn (Get $get) => Producto::find($get('producto_id'))?->escalas()->pluck('escala', 'id')
-                                        )
+                                        ->default(1)
+                                        ->minValue(1)
+                                        ->inputMode('decimal')
+                                        ->rule('numeric')
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->placeholder('Escoger')
-                                        ->required(), */
+                                        ->required(),
                                     TextInput::make('precio')
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                    Placeholder::make('subtotal')
-                                        ->label('Subtotal')
-                                        ->content(function (Get $get) {
-                                            $escala = Escala::find($get('escala_id'));
-                                            if ($escala) {
-                                                return $escala->precio * (is_numeric($get('cantidad')) ? (float) $get('cantidad') : 0);
-                                            }
+                                        ->label('Precio')
+                                        /* ->live(onBlur: true) */
+                                        /* ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                            if ($state) {
+                                                $userRoles = auth()->user()->roles->pluck('name');
+                                                $role = collect(User::VENTA_ROLES)->first(fn ($r) => $userRoles->contains($r));
+                                                $escala = Escala::where('precio', '<', $state)
+                                                    ->where('producto_id', $get('producto_id'))
+                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
+                                                    ->orderByDesc('precio')
+                                                    ->first();
+                                                if ($escala) {
+                                                    $set('escala_id', $escala->id);
+                                                    $set('comision', $escala->comision);
+                                                    $set('subtotal', round((float) $state * (float) $get('cantidad'), 2));
+                                                    $set('ganancia', round((float) $state * (float) $get('cantidad') * ($escala->comision / 100), 2));
 
-                                            return 0;
-                                        }),
-                                ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto'),
+                                                    return;
+                                                }
+                                            }
+                                        }) */
+                                        ->default(0)
+                                        ->readOnly()
+                                        ->required()
+                                        ->prefix('Q')
+                                        ->inputMode('decimal')
+                                        ->rule('numeric')
+                                        /* ->minValue(function (Get $get) {
+                                            $userRoles = auth()->user()->roles->pluck('name');
+                                            $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
+
+                                            return Escala::where('producto_id', $get('producto_id'))
+                                                ->whereHas('role', fn ($q) => $q->where('name', $role))
+                                                ->orderBy('precio')
+                                                ->first()->precio;
+                                        }) */
+                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
+                                    TextInput::make('subtotal')
+                                        ->label('SubTotal')
+                                        ->prefix('Q')
+                                        ->default(0)
+                                        ->readOnly()
+                                        ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2]),
+                                ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
+                        
+
                         ]),
-                    Wizard\Step::make('Pagos')
+                    Wizard\Step::make('Cliente y Pagos')
                         ->schema([
                             Grid::make([
                                 'default' => 1,
-                                'md' => 11,
+                                'md' => 10,
                             ])
                                 ->schema([
-                                    Select::make('tipo_pago_id')
+                                    /* Select::make('tipo_pago_id')
                                         ->label('Tipo de Pago')
                                         ->required()
                                         ->columnSpan(['sm' => 1, 'md' => 8])
                                         ->options(
-                                            fn (Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
-                                        ),
-                                    Toggle::make('facturar_cf')
+                                            fn(Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
+                                        )
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                                            $set('pagos', []);
+                                        })
+                                        ->searchable()
+                                        ->rules([
+                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                if ($get('total') < collect($get('pagos'))->sum('monto') && $value == 4) {
+                                                    $fail('El monto total de los pagos no puede ser mayor al total de la orden.');
+                                                }
+                                            },
+                                        ])
+                                        ->preload(), */
+                                    Select::make('cliente_id')
+                                        ->label('Cliente')
+                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'mayorista']))
+                                        ->optionsLimit(20)
+                                        ->required()
+                                        ->columnSpan(['sm' => 1, 'md' => 9])                                 
+                                        ->searchable(),
+                                    /* Toggle::make('facturar_cf')
                                         ->inline(false)
+                                        ->live()
+                                        ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
+                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                                            if (! $get('facturar_cf')) {
+                                                $set('comp', false);
+                                            }
+                                        })
                                         ->label('Facturar CF'),
-                                    Toggle::make('comp')
+                                       Toggle::make('comp')
                                         ->inline(false)
-                                        ->label('Comp'),
-                                    Toggle::make('pago_validado')
-                                        ->label('Pago Validado')
-                                        ->inline(false),
+                                        ->label('Comp')
+                                        ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF), */
                                 ]),
                             Repeater::make('pagos')
-                                ->label('')
+                                ->label('Pagos')
+                                ->required()
                                 ->relationship()
+                                ->minItems(1)
+                                ->defaultItems(1)
                                 ->columns(7)
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO))
-                                        ->columnSpan(['sm' => 1, 'md' => 2]),
+                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
+                                        ->required()
+                                        ->live()
+                                        ->columnSpan(['sm' => 1, 'md' => 1])
+                                        ->searchable()
+                                        ->preload(),
                                     TextInput::make('monto')
-                                        ->label('Monto'),
+                                        ->label('Monto')
+                                        ->prefix('Q')
+                                        ->inputMode('decimal')
+                                        ->rule('numeric')
+                                        ->minValue(1)
+                                        ->required(),
                                     TextInput::make('no_documento')
-                                        ->label('No. Documento'),
-                                    TextInput::make('no_autorizacion')
+                                        ->label('No. Documento o Autorización'),
+                                    /* TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->required(),
                                     TextInput::make('no_auditoria')
                                         ->label('No. Auditoría')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->required(),
                                     TextInput::make('afiliacion')
                                         ->label('Afiliación')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->required(),
                                     Select::make('cuotas')
                                         ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null),
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
+                                        ->required(),
                                     TextInput::make('nombre_cuenta')
-                                        ->visible(fn (Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null),
+                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
+                                        ->required(),
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->relationship('banco', 'banco'),
-                                    DatePicker::make('fecha_transaccion'),
+                                        ->required()
+                                        ->relationship('banco', 'banco')
+                                        ->searchable()
+                                        ->preload(), */
+                                    DatePicker::make('fecha_transaccion')
+                                        ->default(now())
+                                        ->required(),
                                     FileUpload::make('imagen')
+                                        ->required()
                                         ->image()
                                         ->downloadable()
                                         ->label('Imágen')
+                                        ->imageEditor()
                                         ->disk(config('filesystems.disks.s3.driver'))
                                         ->directory(config('filesystems.default'))
                                         ->visibility('public')
                                         ->appendFiles()
+                                        ->maxSize(5000)
+                                        ->resize(50)
                                         ->openable()
-                                        ->columnSpan(['sm' => 1, 'md' => 3]),
-                                ])->collapsible(),
+                                        ->columnSpan(['sm' => 1, 'md' => 3])
+                                        ->optimize('webp'),
+                                ])
+                                ->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
+                            Textarea::make('observaciones')
+                                ->columnSpanFull(),
                         ]),
                 ])->skippable()->columnSpanFull(),
+                Grid::make(['default' => 2])
+                    ->schema([
+                        TextInput::make('subtotal')
+                            ->prefix('Q')
+                            ->readOnly()
+                            ->label('SubTotal'),
+                        TextInput::make('total')
+                            ->readOnly()
+                            ->prefix('Q')
+                            /* ->rules([
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    $user = User::find($get('cliente_id'));
+                                    if ($get('tipo_pago_id') == 2 && $value > ($user->credito - $user->saldo)) {
+                                        $fail('El Cliente no cuenta con suficiente crédito para realizar la compra.');
+                                    }
+                                    if ($user && in_array($user->nit, [null, '', 'CF', 'cf', 'cF', 'Cf'], true) && $value >= \App\Models\Factura::CF) {
+                                        $fail('El Cliente no cuenta con NIT registrado para el valor de la Orden.');
+                                    }
+                                },
+                            ]) */
+                            ->label('Total'),
+                    ]),
             ]);
     }
 
