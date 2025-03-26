@@ -90,7 +90,7 @@
 
     <section class="info-section">
         <div><strong>Datos de Orden #{{ $venta->id }}</strong></div>
-        <div>Tipo de Pago: {{ $venta->tipo_pago->tipo_pago }}</div>
+        <div>Tipo de Pago: {{ $venta->pagos->first()->tipoPago->tipo_pago ?? 'Sin Tipo de Pago' }}</div>
         <div>Estado: {{ $venta->estado->value }}</div>
         <div class="descripcion">Observaciones: {{ $venta->observaciones }}</div>
     </section>

@@ -2,39 +2,40 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use App\Filament\Ventas\Resources\VentaResource;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\VentaController;
-use App\Models\Departamento;
+use Closure;
+use App\Models\Pago;
+use App\Models\User;
 use App\Models\Escala;
 use App\Models\Factura;
-use App\Models\Inventario;
-use App\Models\Municipio;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use App\Models\User;
-use Closure;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\Municipio;
+use App\Models\Inventario;
+use App\Models\Departamento;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Resources\Pages\CreateRecord;
+use App\Http\Controllers\ProductoController;
+use Filament\Forms\Components\Actions\Action;
+use Illuminate\Validation\ValidationException;
+use App\Filament\Ventas\Resources\VentaResource;
 
 class CreateVenta extends CreateRecord
 {
@@ -343,9 +344,9 @@ class CreateVenta extends CreateRecord
                                                 $pagos = collect($get('pagos'))->sum('monto');
                                                 $pagos = floor($pagos); // Ignora decimales de la suma de 'pagos'
 
-                                                if ($total != $pagos && $value == 4) {
+                                                /* if ($total != $pagos && $value == 4) {
                                                     $fail('El monto total de los pagos no puede ser diferente al total de la venta.');
-                                                }
+                                                } */
                                             },
                                         ])
                                         ->createOptionForm([
@@ -632,7 +633,27 @@ class CreateVenta extends CreateRecord
                             ]) */
                             ->label('Total'),
                     ]),
+                    
+                ]);
+    }
+
+    protected function beforeCreate(): void
+    {
+        $totalVenta = $this->data['total'] ?? 0;
+        $totalPagos = collect($this->data['pagos'] ?? [])->sum('monto');
+
+        if (round($totalVenta, 2) != round($totalPagos, 2)) {
+            Notification::make()
+                ->warning()
+                ->color('warning')
+                ->title('Advertencia')
+                ->body('El total de los pagos no coincide con el total de la venta.')
+                ->persistent()
+                ->send();
+            throw ValidationException::withMessages([
+                'pagos' => 'El total de los pagos no coincide con el total de la venta.',
             ]);
+        }
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
