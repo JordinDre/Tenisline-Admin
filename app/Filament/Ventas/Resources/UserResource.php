@@ -93,6 +93,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->label('Razón Social'),
                         TextInput::make('name')
                             ->required()
+                            ->unique(table: User::class)
                             ->label('Nombre/Nombre Comercial'),
                         TextInput::make('telefono')
                             ->label('Teléfono')

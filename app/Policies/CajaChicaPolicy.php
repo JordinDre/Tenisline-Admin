@@ -32,7 +32,7 @@ class CajaChicaPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_any_caja::chica');
+        return /* $user->can('create_venta') */ $user->hasAnyRole(User::VENTA_ROLES);
     }
 
     /**
