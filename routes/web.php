@@ -5,9 +5,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TiendaController;
 use Illuminate\Support\Facades\Route;
 
-/* Route::get('/', [TiendaController::class, 'index'])->name('inicio');
+Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
-Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto'); */
+Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto');
 
 Route::get('/', function () {
     return redirect('/admin');

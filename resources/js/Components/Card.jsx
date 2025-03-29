@@ -21,7 +21,7 @@ export default function Card({ producto }) {
                         ', ' +
                         producto.marca +
                         ', ' +
-                        producto.presentacion}
+                        producto.genero}
                 </Link>
 
                 {/* <div className="mt-4 flex items-center justify-between gap-4">

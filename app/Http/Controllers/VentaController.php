@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Factura;
-use App\Models\Inventario;
-use App\Models\Kardex;
-use App\Models\Producto;
+use Exception;
+use App\Models\Pago;
 use App\Models\User;
 use App\Models\Venta;
-use Exception;
-use Filament\Notifications\Notification;
+use App\Models\Bodega;
+use App\Models\Kardex;
+use App\Models\Factura;
+use App\Models\Producto;
+use App\Models\Inventario;
 use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 
 class VentaController extends Controller
 {
@@ -138,6 +139,8 @@ class VentaController extends Controller
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();
                 $venta->anulo_id = auth()->user()->id;
+                $pago = Pago::where('pagable_id', $venta->id);
+                $pago->delete();
                 $venta->save();
                 activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('anulación')->log('Venta anulada');
             });

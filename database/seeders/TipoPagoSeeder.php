@@ -13,7 +13,7 @@ class TipoPagoSeeder extends Seeder
     public function run(): void
     {
         $tipoPagos = [
-            ['tipo_pago' => 'CONTADO'],
+            ['tipo_pago' => 'EFECTIVO'],
             ['tipo_pago' => 'CRÉDITO'],
             ['tipo_pago' => 'PAGO CONTRA ENTREGA'],
             ['tipo_pago' => 'PRONTO PAGO'],
