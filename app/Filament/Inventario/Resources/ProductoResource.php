@@ -85,12 +85,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->maxLength(250),
                         Select::make('genero')
                             ->options([
-                                'Hombre' => 'Hombre',
-                                'Mujer' => 'Mujer',
-                                'Niño' => 'Niño',
-                                'Niña' => 'Niña',
-                                'Bebés' => 'Bebés',
-                                'Unisex' => 'Unisex',
+                                'CABALLERO' => 'CABALLERO',
+                                'DAMA' => 'DAMA',
                             ])
                             ->native(false)
                             ->required(),
