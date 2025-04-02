@@ -343,14 +343,19 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('escalas.dia')
+                Tables\Columns\TextColumn::make('inventario.existencia')
+                    ->label('Existencia')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
+                /* Tables\Columns\TextColumn::make('escalas.dia')
                     ->label('Escalas Dias')
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('escalas.porcentaje')
                     ->label('Escalas Procentajes')
                     ->copyable()
-                    ->sortable(),
+                    ->sortable(), */
                 Tables\Columns\TextColumn::make('proveedor.name')
                     ->copyable()
                     ->searchable()

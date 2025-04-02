@@ -31,7 +31,7 @@ class TipoPago extends Model
     ];
 
     public const FORMAS_PAGO_VENTA = [
-        'EFECTIVO',
+        'CONTADO',
         'TARJETA',
         'LINK DE PAGO',
         'TRANSFERENCIA',
@@ -54,7 +54,7 @@ class TipoPago extends Model
     ];
 
     public const COMPRAS_PAGOS = [
-        'EFECTIVO',
+        'CONTADO',
         'CRÉDITO',
     ];
 }

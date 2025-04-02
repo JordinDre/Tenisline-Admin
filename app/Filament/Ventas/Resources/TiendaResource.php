@@ -86,7 +86,7 @@ class TiendaResource extends Resource implements HasShieldPermissions
                                         'red' => 'Rojo',
                                         'yellow' => 'Amarillo',
                                     ])
-                                    ->default('blue') // Color por defecto
+                                    ->default('black') // Color por defecto
                                     ->required(),
                             ]),
 
