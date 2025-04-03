@@ -368,10 +368,11 @@ class FELController extends Controller
 
     public static function facturaVenta($venta)
     {
+        
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf ? 'CF' : $cliente->nit;
         $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
-        $tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
+        $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
 
         $totalMontoImpuesto = 0;
         $xmlItems = '';
@@ -405,9 +406,9 @@ class FELController extends Controller
             </dte:Item>';
             $correlativo++;
         }
-
+        
         $xmlComplementos = '';
-        if ($venta->tipo_pago_id == 2) {
+        if ($venta->pagos->first()->tipo_pago_id == 2) {
             $xmlComplementos = '<dte:Complementos>
             <dte:Complemento IDComplemento="Cambiaria" NombreComplemento="Cambiaria" URIComplemento="http://www.sat.gob.gt/fel/cambiaria.xsd">
             <cfc:AbonosFacturaCambiaria xmlns:cfc="http://www.sat.gob.gt/dte/fel/CompCambiaria/0.1.0" Version="1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/CompCambiaria/0.1.0 C:\Users\Desktop\SAT_FEL_FINAL_V1\Esquemas\GT_Complemento_Cambiaria-0.1.0.xsd">
@@ -472,7 +473,7 @@ class FELController extends Controller
                         </dte:DatosEmision>
                     </dte:DTE>  
                     <dte:Adenda>
-                        <CondicionesPago>'.$venta->tipo_pago->tipo_pago.'</CondicionesPago>
+                        <CondicionesPago>'.$venta->pagos->first()->tipoPago->tipo_pago.'</CondicionesPago>
                         <SolicitadoPor>'.User::withTrashed()->find($venta->asesor_id)->name.'</SolicitadoPor>
                         <Vendedor>'.User::withTrashed()->find($venta->asesor_id)->id.'</Vendedor>
                         <Envio>0</Envio>
@@ -492,11 +493,10 @@ class FELController extends Controller
                 'Content-Type: application/xml',
             ],
         ]);
-
+        
         $response = curl_exec($curl);
         curl_close($curl);
         $responseData = json_decode($response, true);
-
         return $responseData;
     }
 
@@ -638,7 +638,7 @@ class FELController extends Controller
                     </dte:DatosEmision>
                 </dte:DTE>
                 <dte:Adenda>
-                    <CondicionesPago>'.$venta->tipo_pago->tipo_pago.'</CondicionesPago>
+                    <CondicionesPago>'.$venta->pagos->first()->tipoPago->tipo_pago.'</CondicionesPago>
                     <SolicitadoPor>'.User::withTrashed()->find($venta->asesor_id)->id->name.'</SolicitadoPor>
                     <Vendedor>'.User::withTrashed()->find($venta->asesor_id)->id->id.'</Vendedor>
                     <Envio>0</Envio>

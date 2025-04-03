@@ -35,12 +35,12 @@ export default function Catalogo({ productos, search }) {
                     value={data.search}
                     onChange={(e) => setData('search', e.target.value)}
                     placeholder="Buscar productos..."
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-black-500"
                 />
                 <button
                     type="submit"
                     disabled={processing}
-                    className="ml-2 rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+                    className="ml-2 rounded-lg bg-black-500 px-4 py-2 text-white hover:bg-black-600"
                 >
                     Buscar
                 </button>
@@ -71,7 +71,7 @@ export default function Catalogo({ productos, search }) {
                                     href={link.url}
                                     className={`flex h-8 items-center justify-center rounded-lg px-4 py-1 text-center leading-tight transition-colors duration-200 ${
                                         link.active
-                                            ? 'border border-blue-300 bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                            ? 'border border-black-300 bg-black-50 text-black-600 hover:bg-black-100'
                                             : 'border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                                     }`}
                                     dangerouslySetInnerHTML={{
