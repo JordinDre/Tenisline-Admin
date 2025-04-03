@@ -40,6 +40,7 @@ use App\Filament\Ventas\Resources\VentaResource;
 class CreateVenta extends CreateRecord
 {
     protected static string $resource = VentaResource::class;
+    protected $subtotalOriginal;
 
     protected function getRedirectUrl(): string
     {
@@ -330,7 +331,7 @@ class CreateVenta extends CreateRecord
                                         ->preload(), */
                                     Select::make('cliente_id')
                                         ->label('Cliente')
-                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'mayorista']))
+                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'cliente_apertura', 'mayorista']))
                                         ->optionsLimit(20)
                                         ->required()
                                         ->live()
@@ -609,7 +610,55 @@ class CreateVenta extends CreateRecord
                                 ->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                             Textarea::make('observaciones')
                                 ->columnSpanFull(),
-                        ]),
+                        ])
+                        ->afterStateUpdated(function (Set $set, Get $get) {
+                            
+                            $clienteId = $get('cliente_id');
+                            $detalles = is_array($get('detalles')) ? $get('detalles') : [];
+                            
+                            $productosCount = 0;
+                            foreach ($detalles as $detalle) {
+                                $productosCount += $detalle['cantidad'];
+                            }
+                            
+                            if ($clienteId && $productosCount >= 2) {
+                                $cliente = User::with('roles')->find($clienteId);
+                
+                                $tieneRolApertura = false;
+                                foreach ($cliente->roles as $role) {
+                                    if ($role->name === 'cliente_apertura') {
+                                        $tieneRolApertura = true;
+                                        break;
+                                    }
+                                }
+
+                                if ($tieneRolApertura) {
+                                    if (!isset($this->subtotalOriginal)) {
+                                        $this->subtotalOriginal = $get('subtotal');
+                                    }
+                                    $subtotalConDescuento = round($this->subtotalOriginal * 0.8, 2);
+                                    $set('subtotal', $subtotalConDescuento);
+                                    $set('total', $subtotalConDescuento);
+
+                                    
+                                    Notification::make()
+                                        ->title('Descuento aplicado')
+                                        ->body('Se ha aplicado un descuento del 20% debido al rol "cliente_apertura".')
+                                        ->success()
+                                        ->send();
+                                } else {
+                                    if (isset($this->subtotalOriginal)) {
+                                        $set('subtotal', $this->subtotalOriginal);
+                                        $set('total', $this->subtotalOriginal);
+                                    }
+                                }
+                            } else {
+                                if (isset($this->subtotalOriginal)) {
+                                    $set('subtotal', $this->subtotalOriginal);
+                                    $set('total', $this->subtotalOriginal);
+                                }
+                            }
+                        }),
                 ])->skippable()->columnSpanFull(),
                 Grid::make(['default' => 2])
                     ->schema([
