@@ -17,11 +17,15 @@ export default function Card({ producto }) {
                     href={`/producto/${producto.slug}`}
                     className="text-lg font-semibold leading-tight text-gray-900 hover:underline dark:text-white"
                 >
-                    {producto.descripcion +
+                    {producto.codigo +
+                        ', ' +
+                        producto.descripcion +
                         ', ' +
                         producto.marca +
                         ', ' +
-                        producto.presentacion}
+                        producto.genero +
+                        ', ' +
+                        producto.talla}
                 </Link>
 
                 {/* <div className="mt-4 flex items-center justify-between gap-4">

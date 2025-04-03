@@ -85,37 +85,45 @@ class TiendaController extends Controller
 
     public function catalogo(Request $request)
     {
-        $search = $request->search ?: 'harmish';
+        $search = $request->search;
 
         $productos = Producto::query()
-            ->with(['marca', 'presentacion', 'enlinea']) // Cargamos relaciones necesarias
-            ->where(function ($query) use ($search) {
+            ->with(['marca']);
+
+        if ($search) {
+            $productos->where(function ($query) use ($search) {
                 $query->where('codigo', 'LIKE', "%{$search}%")
                     ->orWhere('id', 'LIKE', "%{$search}%")
                     ->orWhere('descripcion', 'LIKE', "%{$search}%")
-                    ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"))
-                    ->orWhereHas('presentacion', fn ($q) => $q->where('presentacion', 'LIKE', "%{$search}%"));
-            })
-            ->paginate(20)
+                    ->orWhere('modelo', 'like', "%{$search}%")
+                    ->orWhere('talla', 'like', "%{$search}%")
+                    ->orWhere('genero', 'like', "%{$search}%")
+                    ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"));
+            });
+        }
+
+        $productos = $productos->paginate(20)
             ->through(function ($producto) {
                 return [
                     'id' => $producto->id,
                     'codigo' => $producto->codigo,
                     'slug' => $producto->slug,
                     'descripcion' => $producto->descripcion,
-                    'precio' => $producto->enlinea->precio ?? null,
+                    'precio' => $producto->precio_venta ?? null,
+                    'modelo' => $producto->modelo ?? null,
+                    'talla' => $producto->talla ?? null,
+                    'genero' => $producto->genero ?? null,
                     'imagen' => isset($producto->imagenes[0])
                         ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
-                    'presentacion' => $producto->presentacion->presentacion ?? null,
                 ];
             });
 
-        return Inertia::render('Catalogo', [
-            'productos' => $productos,
-            'search' => $request->search,
-        ]);
+            return Inertia::render('Catalogo', [
+                'productos' => $productos,
+                /* 'search' => $request->search, */
+            ]);
     }
 
     public function producto($slug)
@@ -126,15 +134,13 @@ class TiendaController extends Controller
             'producto' => [
                 'id' => $producto->id,
                 'codigo' => $producto->codigo,
-                'detalle' => $producto->detalle,
                 'slug' => $producto->slug,
                 'descripcion' => $producto->descripcion,
-                'precio' => $producto->enlinea->precio ?? null,
+                'precio' => $producto->precio_venta ?? null,
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca,
-                'presentacion' => $producto->presentacion->presentacion,
             ],
         ]);
     }

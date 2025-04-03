@@ -20,7 +20,7 @@ export default function Producto({ producto }) {
                         ', ' +
                         producto.marca +
                         ', ' +
-                        producto.presentacion}
+                        producto.genero}
                 </title>
                 <meta
                     name={producto.slug}
@@ -50,7 +50,7 @@ export default function Producto({ producto }) {
                                     ', ' +
                                     producto.marca +
                                     ', ' +
-                                    producto.presentacion}
+                                    producto.genero}
                             </h1>
                             {/* <div className="mt-4 sm:flex sm:items-center sm:gap-4">
                                 <p className="text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl">

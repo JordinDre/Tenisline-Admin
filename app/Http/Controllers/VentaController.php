@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Factura;
-use App\Models\Inventario;
-use App\Models\Kardex;
-use App\Models\Producto;
+use Exception;
+use App\Models\Pago;
 use App\Models\User;
 use App\Models\Venta;
-use Exception;
-use Filament\Notifications\Notification;
+use App\Models\Bodega;
+use App\Models\Kardex;
+use App\Models\Factura;
+use App\Models\Producto;
+use App\Models\Inventario;
 use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 
 class VentaController extends Controller
 {
@@ -76,9 +77,9 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($venta) {
                 self::restarInventario($venta, 'Venta Confirmada');
-                /* self::restarInventario($venta, 'Venta facturada');
-                $venta->fecha_vencimiento = $venta->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                $res = FELController::facturaVenta($venta);
+                self::restarInventario($venta, 'Venta facturada');
+                $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+                /* $res = FELController::facturaVenta($venta);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                 }
@@ -114,10 +115,10 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($data, $venta) {
                 self::sumarInventario($venta, 'Venta anulada');
-                if ($venta->tipo_pago_id == 2) {
+                /* if ($venta->tipo_pago_id == 2) {
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
-                /* if ($venta->factura()->exists()) {
+                if ($venta->factura()->exists()) {
                     $res = FELController::anularFacturaVenta($venta, $data['motivo']);
                     if (! $res['resultado']) {
                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
@@ -138,6 +139,8 @@ class VentaController extends Controller
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();
                 $venta->anulo_id = auth()->user()->id;
+                $pago = Pago::where('pagable_id', $venta->id);
+                $pago->delete();
                 $venta->save();
                 activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('anulación')->log('Venta anulada');
             });
