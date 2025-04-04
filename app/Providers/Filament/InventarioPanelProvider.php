@@ -69,7 +69,7 @@ class InventarioPanelProvider extends PanelProvider
             ->userMenuItems([
                 MenuItem::make()
                     ->label('Tienda')
-                    ->url(fn (): string => '/')
+                    ->url(fn (): string => '/catalogo')
                     ->icon('tabler-building-store'),
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')

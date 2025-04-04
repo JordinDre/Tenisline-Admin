@@ -16,11 +16,15 @@ export default function Producto({ producto }) {
         <Layout>
             <Head>
                 <title>
-                    {producto.descripcion +
+                {producto.codigo +
+                        ', ' +
+                        producto.descripcion +
                         ', ' +
                         producto.marca +
                         ', ' +
-                        producto.genero}
+                        producto.genero +
+                        ', ' +
+                        producto.talla}
                 </title>
                 <meta
                     name={producto.slug}
@@ -46,11 +50,15 @@ export default function Producto({ producto }) {
 
                         <div className="mt-6 sm:mt-8 lg:mt-0">
                             <h1 className="text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl">
-                                {producto.descripcion +
-                                    ', ' +
-                                    producto.marca +
-                                    ', ' +
-                                    producto.genero}
+                            {producto.codigo +
+                                ', ' +
+                                producto.descripcion +
+                                ', ' +
+                                producto.marca +
+                                ', ' +
+                                producto.genero +
+                                ', ' +
+                                producto.talla}
                             </h1>
                             {/* <div className="mt-4 sm:flex sm:items-center sm:gap-4">
                                 <p className="text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl">

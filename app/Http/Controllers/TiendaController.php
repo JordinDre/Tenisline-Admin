@@ -137,6 +137,8 @@ class TiendaController extends Controller
                 'slug' => $producto->slug,
                 'descripcion' => $producto->descripcion,
                 'precio' => $producto->precio_venta ?? null,
+                'talla' => $producto->talla ?? null,
+                'genero' => $producto->genero ?? null,
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
