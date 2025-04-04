@@ -2,7 +2,7 @@ import NavLink from './NavLink';
 
 export default function Navigation() {
     return (
-        <nav className="bg-sky-700 dark:bg-gray-700">
+        <nav className="bg-zinc-700 dark:bg-zinc-700">
             <div className="mx-auto max-w-screen-xl px-4 py-3">
                 <div className="flex items-center">
                     <ul className="mt-0 flex flex-row space-x-8 text-sm font-medium rtl:space-x-reverse">

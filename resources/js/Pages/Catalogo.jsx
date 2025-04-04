@@ -35,12 +35,12 @@ export default function Catalogo({ productos, search }) {
                     value={data.search}
                     onChange={(e) => setData('search', e.target.value)}
                     placeholder="Buscar productos..."
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-black-500"
+                    className="focus:ring-black-500 w-full rounded-lg border border-zinc-300 px-4 py-2 text-zinc-700 focus:outline-none focus:ring-2"
                 />
                 <button
                     type="submit"
                     disabled={processing}
-                    className="ml-2 rounded-lg bg-black-500 px-4 py-2 text-white hover:bg-black-600"
+                    className="hover:bg-black-600 ml-2 rounded-lg bg-black px-4 py-2 text-white"
                 >
                     Buscar
                 </button>
@@ -54,8 +54,8 @@ export default function Catalogo({ productos, search }) {
                 </div>
             ) : (
                 <div className="mx-auto flex max-w-screen-xl flex-col items-center justify-center gap-4 px-4 py-10 text-center">
-                    <FaSearch className="text-6xl text-gray-500" />
-                    <p className="text-lg font-semibold text-gray-500">
+                    <FaSearch className="text-6xl text-zinc-500" />
+                    <p className="text-lg font-semibold text-zinc-500">
                         No se encontró ningún producto
                     </p>
                 </div>
@@ -71,8 +71,8 @@ export default function Catalogo({ productos, search }) {
                                     href={link.url}
                                     className={`flex h-8 items-center justify-center rounded-lg px-4 py-1 text-center leading-tight transition-colors duration-200 ${
                                         link.active
-                                            ? 'border border-black-300 bg-black-50 text-black-600 hover:bg-black-100'
-                                            : 'border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                                            ? 'border-black-300 bg-black-50 text-black-600 hover:bg-black-100 border'
+                                            : 'border border-zinc-300 bg-white text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700'
                                     }`}
                                     dangerouslySetInnerHTML={{
                                         __html: link.label,

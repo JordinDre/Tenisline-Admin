@@ -46,21 +46,21 @@ export default function Inicio({ contenido, url }) {
                 )}
             </div>
             <div className="flex flex-col items-center justify-center px-4 text-center">
-                <FaTools className="my-6 text-6xl text-gray-700" />
-                <h1 className="text-2xl font-bold text-gray-800">
+                <FaTools className="my-6 text-6xl text-zinc-700" />
+                <h1 className="text-2xl font-bold text-zinc-800">
                     ¡Estamos trabajando para ti!
                 </h1>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-zinc-600">
                     Muy pronto estaremos de vuelta con una{' '}
                     <strong>nueva tienda en línea</strong> para brindarte una
                     mejor experiencia de compra.
                 </p>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-zinc-600">
                     Mientras tanto, te invitamos a{' '}
                     <strong>explorar nuestro catálogo</strong> y conocer
                     nuestros productos. 📦✨
                 </p>
-                <p className="mt-4 text-gray-600">
+                <p className="mt-4 text-zinc-600">
                     Gracias por tu paciencia y confianza. 😊
                 </p>
             </div>

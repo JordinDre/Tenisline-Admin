@@ -3,8 +3,8 @@ import { HiArrowRight } from 'react-icons/hi'; // Importando el ícono de flecha
 
 export default function Seccion({ data, url }) {
     return (
-        <section className="bg-gradient-to-r from-sky-200 to-sky-600 px-4 py-12 antialiased dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 md:py-16">
-            <div className="mx-auto grid max-w-screen-xl rounded-lg bg-white shadow-xl dark:bg-gray-800 lg:grid-cols-12 lg:gap-8 xl:gap-16">
+        <section className="bg-gradient-to-r from-zinc-200 to-zinc-600 px-4 py-12 antialiased dark:bg-gradient-to-r dark:from-zinc-800 dark:to-zinc-900 md:py-16">
+            <div className="mx-auto grid max-w-screen-xl rounded-lg bg-white shadow-xl dark:bg-zinc-800 lg:grid-cols-12 lg:gap-8 xl:gap-16">
                 {/* Imagen */}
                 <div className="mb-6 flex justify-center lg:col-span-5 lg:mb-0">
                     <Link href={route('catalogo')}>
@@ -20,7 +20,7 @@ export default function Seccion({ data, url }) {
 
                 {/* Contenido */}
                 <div className="animate__animated animate__fadeIn animate__delay-1s animate__fadeInUp flex flex-col justify-center pr-0 text-center md:pr-12 lg:col-span-7 lg:text-left">
-                    <h1 className="mb-4 text-lg font-semibold leading-tight text-gray-900 dark:text-white md:text-2xl">
+                    <h1 className="mb-4 text-lg font-semibold leading-tight text-zinc-900 dark:text-white md:text-2xl">
                         {data.contenido}
                     </h1>
                     <Link

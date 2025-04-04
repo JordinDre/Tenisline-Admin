@@ -100,7 +100,7 @@ class RoleResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('team.name')
                     ->default('Global')
                     ->badge()
-                    ->color(fn (mixed $state): string => str($state)->contains('Global') ? 'gray' : 'primary')
+                    ->color(fn (mixed $state): string => str($state)->contains('Global') ? 'zinc' : 'primary')
                     ->label(__('filament-shield::filament-shield.column.team'))
                     ->searchable()
                     ->visible(fn (): bool => static::shield()->isCentralApp() && Utils::isTenancyEnabled()),

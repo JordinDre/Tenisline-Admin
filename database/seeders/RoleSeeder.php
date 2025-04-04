@@ -166,6 +166,7 @@ class RoleSeeder extends Seeder
         $administrador = Role::create(['name' => 'cliente']);
         $administrador = Role::create(['name' => 'vendedor']);
         $administrador = Role::create(['name' => 'mayorista']);
+        $administrador = Role::create(['name' => 'cliente_apertura']);
 
         /* $facturador = Role::create(['name' => 'facturador']);
         $proveedor = Role::create(['name' => 'proveedor']);

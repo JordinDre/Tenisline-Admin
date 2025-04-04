@@ -17,7 +17,7 @@ export default function Productos({ data, url }) {
     return (
         <div className="relative w-full overflow-hidden">
             <div
-                className={`animate-marquee flex w-[200%] space-x-4 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                className={`flex w-[200%] animate-marquee space-x-4 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
             >
                 {duplicatedImages.map((src, index) => (
                     <div

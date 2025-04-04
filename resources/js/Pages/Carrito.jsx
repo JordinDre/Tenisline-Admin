@@ -42,7 +42,7 @@ export default function Carrito() {
             </Head>
 
             <div className="mx-auto mt-10 max-w-screen-xl p-4">
-                <h1 className="mb-6 text-2xl font-bold text-gray-800">
+                <h1 className="mb-6 text-2xl font-bold text-zinc-800">
                     Tu carrito
                 </h1>
                 {carrito.length > 0 ? (
@@ -51,7 +51,7 @@ export default function Carrito() {
                             {carrito.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="flex flex-col items-center justify-between border-b border-gray-200 pb-4 sm:flex-row"
+                                    className="flex flex-col items-center justify-between border-b border-zinc-200 pb-4 sm:flex-row"
                                 >
                                     <div className="flex items-center gap-4">
                                         <img
@@ -62,14 +62,14 @@ export default function Carrito() {
                                             className="h-20 w-20 rounded-lg object-cover"
                                         />
                                         <div>
-                                            <p className="text-lg font-semibold text-gray-800">
+                                            <p className="text-lg font-semibold text-zinc-800">
                                                 {item.producto.descripcion}
                                             </p>
-                                            <p className="text-sm text-gray-500">
+                                            <p className="text-sm text-zinc-500">
                                                 Código: {item.producto.id}-
                                                 {item.producto.codigo}
                                             </p>
-                                            <p className="text-sm font-bold text-gray-700">
+                                            <p className="text-sm font-bold text-zinc-700">
                                                 Precio: Q{item.precio}{' '}
                                                 &nbsp;&nbsp;&nbsp;SubTotal: Q
                                                 {(
@@ -88,7 +88,7 @@ export default function Carrito() {
                                         >
                                             <FaMinus />
                                         </button>
-                                        <span className="text-lg font-semibold text-gray-800">
+                                        <span className="text-lg font-semibold text-zinc-800">
                                             {item.cantidad}
                                         </span>
                                         <button
@@ -124,8 +124,8 @@ export default function Carrito() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center">
-                        <MdOutlineRemoveShoppingCart className="text-9xl text-gray-400" />
-                        <p className="mt-4 text-xl font-semibold text-gray-600">
+                        <MdOutlineRemoveShoppingCart className="text-9xl text-zinc-400" />
+                        <p className="mt-4 text-xl font-semibold text-zinc-600">
                             Tu carrito está vacío. ¡Agrega productos para
                             continuar!
                         </p>
