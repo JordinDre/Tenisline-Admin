@@ -88,21 +88,28 @@ class TiendaController extends Controller
         $search = $request->search;
 
         $productos = Producto::query()
-            ->with(['marca']);
+            ->with(['marca', 'stock'])
+            ->leftJoin('inventarios as inv', function ($join) {
+                $join->on('productos.id', '=', 'inv.producto_id')
+                    ->where('inv.bodega_id', 1);
+            });
 
         if ($search) {
             $productos->where(function ($query) use ($search) {
-                $query->where('codigo', 'LIKE', "%{$search}%")
-                    ->orWhere('id', 'LIKE', "%{$search}%")
-                    ->orWhere('descripcion', 'LIKE', "%{$search}%")
-                    ->orWhere('modelo', 'like', "%{$search}%")
-                    ->orWhere('talla', 'like', "%{$search}%")
-                    ->orWhere('genero', 'like', "%{$search}%")
+                $query->where('productos.codigo', 'LIKE', "%{$search}%")
+                    ->orWhere('productos.id', 'LIKE', "%{$search}%")
+                    ->orWhere('productos.descripcion', 'LIKE', "%{$search}%")
+                    ->orWhere('productos.modelo', 'like', "%{$search}%")
+                    ->orWhere('productos.talla', 'like', "%{$search}%")
+                    ->orWhere('productos.genero', 'like', "%{$search}%")
                     ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"));
             });
         }
 
-        $productos = $productos->paginate(20)
+        // Ordenar por existencia > 0 primero
+        $productos = $productos->orderByRaw('CASE WHEN inv.existencia > 0 THEN 0 ELSE 1 END')
+            ->select('productos.*') // importante para evitar problemas al usar joins
+            ->paginate(20)
             ->through(function ($producto) {
                 return [
                     'id' => $producto->id,
@@ -113,17 +120,17 @@ class TiendaController extends Controller
                     'modelo' => $producto->modelo ?? null,
                     'talla' => $producto->talla ?? null,
                     'genero' => $producto->genero ?? null,
+                    'stock' => $producto->stock->existencia ?? 0,
                     'imagen' => isset($producto->imagenes[0])
                         ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
                 ];
             });
-
-            return Inertia::render('Catalogo', [
-                'productos' => $productos,
-                /* 'search' => $request->search, */
-            ]);
+            
+        return Inertia::render('Catalogo', [
+            'productos' => $productos,
+        ]);
     }
 
     public function producto($slug)
@@ -137,6 +144,10 @@ class TiendaController extends Controller
                 'slug' => $producto->slug,
                 'descripcion' => $producto->descripcion,
                 'precio' => $producto->precio_venta ?? null,
+                'genero' => $producto->genero ?? null,
+                'modelo' => $producto->modelo ?? null,
+                'talla' => $producto->talla ?? null,
+                'stock' => $producto->stock->existencia ?? 0,
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),

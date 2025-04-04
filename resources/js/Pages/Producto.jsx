@@ -16,9 +16,13 @@ export default function Producto({ producto }) {
         <Layout>
             <Head>
                 <title>
-                    {producto.descripcion +
+                    {producto.codigo +
+                        ', ' +
+                        producto.descripcion +
                         ', ' +
                         producto.marca +
+                        ', ' +
+                        producto.talla +
                         ', ' +
                         producto.genero}
                 </title>
@@ -33,7 +37,7 @@ export default function Producto({ producto }) {
                 />
             </Head>
 
-            <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
+            <section className="bg-white py-8 antialiased dark:bg-zinc-900 md:py-16">
                 <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
                     <div className="lg:grid lg:grid-cols-2 lg:gap-8 xl:gap-16">
                         <div className="mx-auto max-w-md shrink-0 lg:max-w-lg">
@@ -45,20 +49,58 @@ export default function Producto({ producto }) {
                         </div>
 
                         <div className="mt-6 sm:mt-8 lg:mt-0">
-                            <h1 className="text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl">
-                                {producto.descripcion +
+                            <h1 className="text-xl font-semibold text-zinc-900 dark:text-white sm:text-2xl">
+                                {producto.codigo +
+                                    ', ' +
+                                    producto.descripcion +
                                     ', ' +
                                     producto.marca +
                                     ', ' +
+                                    producto.talla +
+                                    ', ' +
                                     producto.genero}
                             </h1>
-                            {/* <div className="mt-4 sm:flex sm:items-center sm:gap-4">
-                                <p className="text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl">
+                            <div className="mt-4 sm:flex sm:items-center sm:gap-4">
+                                <p className="text-2xl font-extrabold text-zinc-900 dark:text-white sm:text-3xl">
                                     {producto.precio
                                         ? 'Q' + producto.precio
                                         : ''}
                                 </p>
-                            </div> */}
+                            </div>
+                            <div className="mt-4">
+                                <div
+                                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm ${
+                                        producto.stock > 0
+                                            ? 'bg-green-100 text-green-700 ring-1 ring-green-300'
+                                            : 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                                    }`}
+                                >
+                                    <svg
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
+                                        viewBox="0 0 24 24"
+                                    >
+                                        {producto.stock > 0 ? (
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M5 13l4 4L19 7"
+                                            />
+                                        ) : (
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M6 18L18 6M6 6l12 12"
+                                            />
+                                        )}
+                                    </svg>
+                                    {producto.stock > 0
+                                        ? `En existencia: ${producto.stock} unidades`
+                                        : 'Sin stock disponible'}
+                                </div>
+                            </div>
 
                             {user && producto.precio && (
                                 <form
@@ -77,15 +119,15 @@ export default function Producto({ producto }) {
                             <Link
                                 href={route('catalogo')}
                                 disabled={processing}
-                                className="btn-neutral-content btn mt-2 w-full rounded-lg py-2 font-semibold"
+                                className="btn-zinc-content btn mt-2 w-full rounded-lg py-2 font-semibold"
                             >
-                                Buscar Más Productos
+                                Ver Más Productos
                             </Link>
 
-                            <hr className="my-6 border-gray-200 dark:border-gray-800 md:my-8" />
+                            <hr className="my-6 border-zinc-200 dark:border-zinc-800 md:my-8" />
 
                             <div
-                                className="text-gray-500 dark:text-gray-400"
+                                className="text-zinc-500 dark:text-zinc-400"
                                 dangerouslySetInnerHTML={{
                                     __html: producto.detalle,
                                 }}

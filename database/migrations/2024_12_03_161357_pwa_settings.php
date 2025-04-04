@@ -6,8 +6,8 @@ class PWASettings extends SettingsMigration
 {
     public function up(): void
     {
-        $this->migrator->add('pwa.pwa_app_name', 'Harmish APP');
-        $this->migrator->add('pwa.pwa_short_name', 'Harmish');
+        $this->migrator->add('pwa.pwa_app_name', 'Tenisline APP');
+        $this->migrator->add('pwa.pwa_short_name', 'Tenis');
         $this->migrator->add('pwa.pwa_start_url', '/');
         $this->migrator->add('pwa.pwa_background_color', '#ffffff');
         $this->migrator->add('pwa.pwa_theme_color', '#000000');

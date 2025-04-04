@@ -116,8 +116,8 @@ export default function CrearOrden({ direcciones, tipoPagos }) {
                 </div>
             ) : (
                 <div className="mt-20 flex flex-col items-center justify-center">
-                    <MdShoppingCart className="text-9xl text-gray-400" />
-                    <p className="mt-4 text-xl font-semibold text-gray-600">
+                    <MdShoppingCart className="text-9xl text-zinc-400" />
+                    <p className="mt-4 text-xl font-semibold text-zinc-600">
                         Tu carrito está vacío. ¡Agrega productos para continuar!
                     </p>
                 </div>

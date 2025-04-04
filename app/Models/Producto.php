@@ -74,4 +74,9 @@ class Producto extends Model
     {
         return $this->morphMany(Observacion::class, 'observacionable');
     }
+
+    public function stock(): HasOne
+    {
+        return $this->hasOne(Inventario::class)->where('bodega_id', 1);
+    }
 }

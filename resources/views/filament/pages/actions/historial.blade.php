@@ -1,6 +1,6 @@
 <div class="overflow-x-auto">
-    <table class="w-full divide-gray-200 border border-gray-200 rounded-lg shadow-sm">
-        <thead class="bg-gray-50">
+    <table class="w-full divide-zinc-200 border border-zinc-200 rounded-lg shadow-sm">
+        <thead class="bg-zinc-50">
             <tr>
                 <th class="px-6 py-3 text-left text-sm font-semibold tracking-wider">ID</th>
                 <th class="px-6 py-3 text-left text-sm font-semibold tracking-wider">Creado</th>
@@ -28,7 +28,7 @@
                 <th class="px-6 py-3 text-left text-sm font-semibold tracking-wider">Actualizado</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white divide-y divide-zinc-200">
             @foreach ($ordenes as $orden)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->id }}</td>

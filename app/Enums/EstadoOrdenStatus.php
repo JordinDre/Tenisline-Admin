@@ -43,7 +43,7 @@ enum EstadoOrdenStatus: string implements HasColor, HasLabel
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::Cotizacion => 'gray',
+            self::Cotizacion => 'zinc',
             self::BackOrder => 'warning',
             self::Creada => 'primary',
             self::Completada => 'violet',

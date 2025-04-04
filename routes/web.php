@@ -10,11 +10,11 @@ Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo')
 Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto');
 
 Route::get('/', function () {
-    return redirect('/admin');
+    return redirect('/catalogo');
 });
-Route::get('/login', function () {
+/* Route::get('/login', function () {
     return redirect('/admin');
-});
+}); */
 
 Route::middleware('auth')->group(function () {
     /* Route::get('/crear-orden', [TiendaController::class, 'orden'])->name('crear.orden');

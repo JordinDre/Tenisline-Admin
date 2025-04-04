@@ -91,8 +91,8 @@ class Ventas extends ChartWidget
                 [
                     'label' => 'Total '.Functions::money($data->sum('total')),
                     'data' => $data->pluck('total')->toArray(),
-                    'backgroundColor' => '#38BDF8', // sky-400
-                    'borderColor' => '#0EA5E9', // sky-500
+                    'backgroundColor' => '#38BDF8', // zinc-400
+                    'borderColor' => '#0EA5E9', // zinc-500
                 ],
                 [
                     'label' => 'Cantidad '.number_format($data->sum('cantidad')),
@@ -127,14 +127,14 @@ class Ventas extends ChartWidget
                 [
                     'label' => 'Ticket Promedio '.Functions::money($data->sum('ticket_promedio')),
                     'data' => $data->pluck('ticket_promedio')->toArray(),
-                    'backgroundColor' => '#78716C', // stone-500 (marrón)
-                    'borderColor' => '#57534E', // stone-600 (marrón oscuro)
+                    'backgroundColor' => '#78716C', // zinc-500 (marrón)
+                    'borderColor' => '#57534E', // zinc-600 (marrón oscuro)
                 ],
                 [
                     'label' => 'Cuota Diaria '.Functions::money($data->sum('cuota_diaria')),
                     'data' => $data->pluck('cuota_diaria')->toArray(),
-                    'backgroundColor' => '#6B7280', // gray-500
-                    'borderColor' => '#4B5563', // gray-600
+                    'backgroundColor' => '#6B7280', // zinc-500
+                    'borderColor' => '#4B5563', // zinc-600
                 ],
             ],
         ];

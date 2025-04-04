@@ -16,8 +16,8 @@ export default function Cuenta() {
                     className="avatar btn btn-circle btn-ghost"
                 >
                     <div className="avatar placeholder">
-                        <div className="w-10 rounded-full bg-sky-700 text-neutral-content">
-                            <span className="text-lg">
+                        <div className="text-zinc-content w-10 rounded-full bg-zinc-700">
+                            <span className="text-lg text-white">
                                 {userInitials || <FaRegUser />}
                             </span>
                         </div>

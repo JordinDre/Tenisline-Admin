@@ -40,13 +40,13 @@ export default function CarritoDrawer() {
                 className="btn btn-circle btn-ghost"
             >
                 <div className="indicator">
-                    <FaShoppingCart className="h-5 w-5 text-gray-700" />
+                    <FaShoppingCart className="h-5 w-5 text-zinc-700" />
                     <span className="badge indicator-item badge-sm bg-red-500 text-white">
                         {user
                             ? carrito.reduce(
-                                  (total, item) => total + item.cantidad,
-                                  0,
-                              )
+                                (total, item) => total + item.cantidad,
+                                0,
+                            )
                             : 0}
                     </span>
                 </div>
@@ -65,12 +65,12 @@ export default function CarritoDrawer() {
                             <>
                                 {/* Mostrar el total arriba */}
                                 <div className="mb-6">
-                                    <p className="text-xl font-semibold text-gray-800">
+                                    <p className="text-xl font-semibold text-zinc-800">
                                         Total: Q{total.toFixed(2)}
                                     </p>
                                     <div className="mt-2">
                                         {faltaParaEnvioGratis > 0 ? (
-                                            <p className="text-sm text-gray-800">
+                                            <p className="text-sm text-zinc-800">
                                                 Faltan Q
                                                 {faltaParaEnvioGratis.toFixed(
                                                     2,
@@ -78,11 +78,11 @@ export default function CarritoDrawer() {
                                                 para el envío gratis
                                             </p>
                                         ) : (
-                                            <p className="text-sm text-gray-800">
+                                            <p className="text-sm text-zinc-800">
                                                 ¡Tienes envío gratis!
                                             </p>
                                         )}
-                                        <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                                        <div className="mt-2 h-2 w-full rounded-full bg-zinc-200">
                                             <div
                                                 className={`h-2 rounded-full ${progresoColor}`}
                                                 style={{
@@ -108,15 +108,15 @@ export default function CarritoDrawer() {
                                                 className="h-12 w-12 rounded-lg object-cover"
                                             />
                                             <div className="flex-1">
-                                                <p className="text-sm font-semibold text-gray-800">
+                                                <p className="text-sm font-semibold text-zinc-800">
                                                     {item.producto.descripcion},{' '}
                                                     {item.producto.marca.marca}
                                                 </p>
-                                                <p className="mt-1 text-xs text-gray-500">
+                                                <p className="mt-1 text-xs text-zinc-500">
                                                     Cantidad: {item.cantidad}
                                                 </p>
                                             </div>
-                                            <p className="text-sm font-semibold text-gray-800">
+                                            <p className="text-sm font-semibold text-zinc-800">
                                                 Q
                                                 {(
                                                     item.precio * item.cantidad
@@ -136,12 +136,12 @@ export default function CarritoDrawer() {
                                 </div>
                             </>
                         ) : (
-                            <div className="flex flex-col items-center text-center text-gray-500">
-                                <MdOutlineRemoveShoppingCart className="h-12 w-12 text-gray-300" />
+                            <div className="flex flex-col items-center text-center text-zinc-500">
+                                <MdOutlineRemoveShoppingCart className="h-12 w-12 text-zinc-300" />
                                 <p className="mt-2 text-sm font-semibold">
                                     Tu carrito está vacío
                                 </p>
-                                <p className="mt-1 text-xs text-gray-400">
+                                <p className="mt-1 text-xs text-zinc-400">
                                     Agrega productos para comenzar tu compra.
                                 </p>
                             </div>
