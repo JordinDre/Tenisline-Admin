@@ -504,7 +504,59 @@ class CreateVenta extends CreateRecord
 
                                             return $user->id; // Devuelve el ID para que se seleccione en el campo
                                         })
-                                        ->searchable(),
+                                        ->searchable()
+                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                            
+                                            $clienteId = $get('cliente_id');
+                                            $detalles = is_array($get('detalles')) ? $get('detalles') : [];
+                                            
+                                            if (!isset($this->subtotalOriginal)) {
+                                                $this->subtotalOriginal = $get('subtotal');
+                                            }
+                                            
+                                            $productosCount = 0;
+                                            foreach ($detalles as $detalle) {
+                                                $productosCount += $detalle['cantidad'];
+                                            }
+                                            
+                                            if ($clienteId && $productosCount >= 2) {
+                                                $cliente = User::with('roles')->find($clienteId);
+                                
+                                                $tieneRolApertura = false;
+                                                foreach ($cliente->roles as $role) {
+                                                    if ($role->name === 'cliente_apertura') {
+                                                        $tieneRolApertura = true;
+                                                        break;
+                                                    }
+                                                }
+                
+                                                if ($tieneRolApertura) {
+                                                    if (!isset($this->subtotalOriginal)) {
+                                                        $this->subtotalOriginal = $get('subtotal');
+                                                    }
+                                                    $subtotalConDescuento = round($this->subtotalOriginal * 0.8, 2);
+                                                    $set('subtotal', $subtotalConDescuento);
+                                                    $set('total', $subtotalConDescuento);
+                
+                                                    
+                                                    Notification::make()
+                                                        ->title('Descuento aplicado')
+                                                        ->body('Se ha aplicado un descuento del 20% debido al rol "cliente_apertura".')
+                                                        ->success()
+                                                        ->send();
+                                                } else {
+                                                    if (isset($this->subtotalOriginal)) {
+                                                        $set('subtotal', $this->subtotalOriginal);
+                                                        $set('total', $this->subtotalOriginal);
+                                                    }
+                                                }
+                                            } else {
+                                                if (isset($this->subtotalOriginal)) {
+                                                    $set('subtotal', $this->subtotalOriginal);
+                                                    $set('total', $this->subtotalOriginal);
+                                                }
+                                            }
+                                        }),
                                     /* Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
@@ -610,55 +662,7 @@ class CreateVenta extends CreateRecord
                                 ->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                             Textarea::make('observaciones')
                                 ->columnSpanFull(),
-                        ])
-                        ->afterStateUpdated(function (Set $set, Get $get) {
-                            
-                            $clienteId = $get('cliente_id');
-                            $detalles = is_array($get('detalles')) ? $get('detalles') : [];
-                            
-                            $productosCount = 0;
-                            foreach ($detalles as $detalle) {
-                                $productosCount += $detalle['cantidad'];
-                            }
-                            
-                            if ($clienteId && $productosCount >= 2) {
-                                $cliente = User::with('roles')->find($clienteId);
-                
-                                $tieneRolApertura = false;
-                                foreach ($cliente->roles as $role) {
-                                    if ($role->name === 'cliente_apertura') {
-                                        $tieneRolApertura = true;
-                                        break;
-                                    }
-                                }
-
-                                if ($tieneRolApertura) {
-                                    if (!isset($this->subtotalOriginal)) {
-                                        $this->subtotalOriginal = $get('subtotal');
-                                    }
-                                    $subtotalConDescuento = round($this->subtotalOriginal * 0.8, 2);
-                                    $set('subtotal', $subtotalConDescuento);
-                                    $set('total', $subtotalConDescuento);
-
-                                    
-                                    Notification::make()
-                                        ->title('Descuento aplicado')
-                                        ->body('Se ha aplicado un descuento del 20% debido al rol "cliente_apertura".')
-                                        ->success()
-                                        ->send();
-                                } else {
-                                    if (isset($this->subtotalOriginal)) {
-                                        $set('subtotal', $this->subtotalOriginal);
-                                        $set('total', $this->subtotalOriginal);
-                                    }
-                                }
-                            } else {
-                                if (isset($this->subtotalOriginal)) {
-                                    $set('subtotal', $this->subtotalOriginal);
-                                    $set('total', $this->subtotalOriginal);
-                                }
-                            }
-                        }),
+                        ]),
                 ])->skippable()->columnSpanFull(),
                 Grid::make(['default' => 2])
                     ->schema([
