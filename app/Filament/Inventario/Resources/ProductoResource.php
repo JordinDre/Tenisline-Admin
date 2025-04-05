@@ -17,6 +17,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -309,7 +312,12 @@ class ProductoResource extends Resource implements HasShieldPermissions
     public static function table(Table $table): Table
     {
         return $table
-            ->extremePaginationLinks()
+        ->extremePaginationLinks()
+        ->headerActions([
+            ExportAction::make()->exports([
+                ExcelExport::make()->withFilename('Productos '.date('d-m-Y'))->fromTable(),
+            ])->label('Exportar')->color('success'),
+        ])
             ->columns([
                 Tables\Columns\TextColumn::make('imagenes')
                     ->label('Imágen')
@@ -339,8 +347,24 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('talla')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('genero')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('inventario.existencia')
                     ->label('Existencia')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('precio_venta')
+                    ->label('Precio de Venta')
+                    ->formatStateUsing(function ($record) {
+                        return number_format($record->precio_venta, 2);
+                    })
                     ->copyable()
                     ->searchable()
                     ->sortable(),
@@ -352,10 +376,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Escalas Procentajes')
                     ->copyable()
                     ->sortable(), */
-                Tables\Columns\TextColumn::make('proveedor.name')
+                /* Tables\Columns\TextColumn::make('proveedor.name')
                     ->copyable()
                     ->searchable()
-                    ->sortable(),
+                    ->sortable(), */
                 Tables\Columns\TextColumn::make('fecha_ingreso')
                     ->label('Fecha de Ingreso')
                     ->dateTime('d/m/Y')
