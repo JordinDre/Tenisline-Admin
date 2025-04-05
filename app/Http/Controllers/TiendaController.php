@@ -139,10 +139,10 @@ class TiendaController extends Controller
 
         return Inertia::render('Producto', [
             'producto' => [
-                'id' => $producto->id,
-                'codigo' => $producto->codigo,
-                'slug' => $producto->slug,
-                'descripcion' => $producto->descripcion,
+                'id' => $producto->id ?? null,
+                'codigo' => $producto->codigo ?? null,
+                'slug' => $producto->slug ?? null,
+                'descripcion' => $producto->descripcion ?? null,
                 'precio' => $producto->precio_venta ?? null,
                 'genero' => $producto->genero ?? null,
                 'modelo' => $producto->modelo ?? null,
@@ -151,7 +151,7 @@ class TiendaController extends Controller
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
-                'marca' => $producto->marca->marca,
+                'marca' => $producto->marca->marca ?? null,
             ],
         ]);
     }
