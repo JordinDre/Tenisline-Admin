@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call(MunicipioSeeder::class);
         $this->call(BancoSeeder::class);
         $this->call(RoleSeeder::class);
+        $this->call(ClienteAperturaSeeder::class);
 
         Bodega::create([
             'bodega' => 'Zacapa',
