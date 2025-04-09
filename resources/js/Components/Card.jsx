@@ -17,9 +17,14 @@ export default function Card({ producto }) {
                     href={`/producto/${producto.slug}`}
                     className="text-lg font-semibold leading-tight text-zinc-900 hover:underline dark:text-white"
                 >
-                    <div><span className="font-semibold">CÓDIGO:</span> {producto.codigo}</div>
+                    <div>
+                        <span className="font-semibold">CÓDIGO:</span>{' '}
+                        {producto.codigo}
+                    </div>
                     <div>MARCA: {producto.marca}</div>
-                    <div>TALLA: US {producto.talla} {producto.genero}</div>
+                    <div>
+                        TALLA: US {producto.talla} {producto.genero}
+                    </div>
                     <div>COLOR: {producto.color}</div>
                     <div>NOMBRE: {producto.descripcion}</div>
                 </Link>

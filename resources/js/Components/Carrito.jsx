@@ -44,9 +44,9 @@ export default function CarritoDrawer() {
                     <span className="badge indicator-item badge-sm bg-red-500 text-white">
                         {user
                             ? carrito.reduce(
-                                (total, item) => total + item.cantidad,
-                                0,
-                            )
+                                  (total, item) => total + item.cantidad,
+                                  0,
+                              )
                             : 0}
                     </span>
                 </div>
