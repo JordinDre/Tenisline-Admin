@@ -86,14 +86,13 @@ class TiendaController extends Controller
     public function catalogo(Request $request)
     {
         $search = $request->search;
-
+    
         $productos = Producto::query()
             ->with(['marca', 'stock'])
-            ->leftJoin('inventarios as inv', function ($join) {
-                $join->on('productos.id', '=', 'inv.producto_id')
-                    ->where('inv.bodega_id', 1);
+            ->whereHas('stock', function ($query) {
+                $query->where('existencia', '>', 0); // Solo productos con stock en bodega_id = 1
             });
-
+    
         if ($search) {
             $productos->where(function ($query) use ($search) {
                 $query->where('productos.codigo', 'LIKE', "%{$search}%")
@@ -105,10 +104,9 @@ class TiendaController extends Controller
                     ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"));
             });
         }
-
-        // Ordenar por existencia > 0 primero
-        $productos = $productos->orderByRaw('CASE WHEN inv.existencia > 0 THEN 0 ELSE 1 END')
-            ->select('productos.*') // importante para evitar problemas al usar joins
+    
+        $productos = $productos
+            ->orderBy('descripcion') // o cualquier orden que prefieras
             ->paginate(20)
             ->through(function ($producto) {
                 return [
@@ -127,11 +125,11 @@ class TiendaController extends Controller
                     'marca' => $producto->marca->marca ?? null,
                 ];
             });
-            
+    
         return Inertia::render('Catalogo', [
             'productos' => $productos,
         ]);
-    }
+    }    
 
     public function producto($slug)
     {
