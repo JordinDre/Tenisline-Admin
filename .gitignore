@@ -8,6 +8,9 @@
 /public/hot
 /public/storage
 /public/css
+/public/css/
+/public/js/
+/package-lock.json
 /storage/*.key
 /vendor
 .env
