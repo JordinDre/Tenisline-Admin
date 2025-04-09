@@ -112,10 +112,9 @@ class TiendaController extends Controller
             });
         }
 
-        $productos->where('inv.existencia', '>', 0);
 
         // Ordenar por existencia > 0 primero
-        $productos = $productos->orderByRaw('CASE WHEN inv.existencia > 0 THEN 0 ELSE 1 END')
+        $productos = $productos
             ->select('productos.*') // importante para evitar problemas al usar joins
             ->paginate(20)
             ->through(function ($producto) {
