@@ -86,6 +86,7 @@ class TiendaController extends Controller
     public function catalogo(Request $request)
     {
         $search = $request->search;
+        $marca = $request->marca;
 
         $productos = Producto::query()
             ->with(['marca', 'stock'])
@@ -106,6 +107,14 @@ class TiendaController extends Controller
             });
         }
 
+        if ($marca) {
+            $productos->whereHas('marca', function ($query) use ($marca) {
+                $query->where('marca', '=', $marca);
+            });
+        }
+
+        $productos->where('inv.existencia', '>', 0);
+
         // Ordenar por existencia > 0 primero
         $productos = $productos->orderByRaw('CASE WHEN inv.existencia > 0 THEN 0 ELSE 1 END')
             ->select('productos.*') // importante para evitar problemas al usar joins
@@ -119,6 +128,7 @@ class TiendaController extends Controller
                     'precio' => $producto->precio_venta ?? null,
                     'modelo' => $producto->modelo ?? null,
                     'talla' => $producto->talla ?? null,
+                    'color' => $producto->color ?? null,
                     'genero' => $producto->genero ?? null,
                     'stock' => $producto->stock->existencia ?? 0,
                     'imagen' => isset($producto->imagenes[0])

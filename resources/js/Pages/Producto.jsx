@@ -15,17 +15,17 @@ export default function Producto({ producto }) {
     return (
         <Layout>
             <Head>
-                <title>
-                    {producto.codigo +
-                        ', ' +
-                        producto.descripcion +
-                        ', ' +
-                        producto.marca +
-                        ', ' +
-                        producto.talla +
-                        ', ' +
-                        producto.genero}
-                </title>
+            <title>
+                {producto.codigo +
+                    ', ' +
+                    producto.descripcion +
+                    ', ' +
+                    producto.marca +
+                    ', ' +
+                    producto.talla +
+                    ', ' +
+                    producto.genero }
+            </title>
                 <meta
                     name={producto.slug}
                     content="Producto - Tienda en línea"
@@ -50,23 +50,6 @@ export default function Producto({ producto }) {
 
                         <div className="mt-6 sm:mt-8 lg:mt-0">
                             <h1 className="text-xl font-semibold text-zinc-900 dark:text-white sm:text-2xl">
-                                {producto.codigo +
-                                    ', ' +
-                                    producto.descripcion +
-                                    ', ' +
-                                    producto.marca +
-                                    ', ' +
-                                    producto.talla +
-                                    ', ' +
-                                    producto.genero}
-                            </h1>
-                            <div className="mt-4 sm:flex sm:items-center sm:gap-4">
-                                <p className="text-2xl font-extrabold text-zinc-900 dark:text-white sm:text-3xl">
-                                    {producto.precio
-                                        ? 'Q' + producto.precio
-                                        : ''}
-                                </p>
-                            </div>
                             <div className="mt-4">
                                 <div
                                     className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm ${
@@ -101,6 +84,34 @@ export default function Producto({ producto }) {
                                         : 'Sin stock disponible'}
                                 </div>
                             </div>
+                            </h1>
+                            <div className="mt-4 space-y-1 text-zinc-800 dark:text-white text-sm sm:text-base">
+                                {[
+                                    `CÓDIGO: ${producto.codigo}`,
+                                    `MARCA: ${producto.marca}`,
+                                    `TALLA: US ${producto.talla} ${producto.genero}`,
+                                    `COLOR: ${producto.color}`,
+                                    `NOMBRE: ${producto.descripcion}`,
+                                ].map((linea, index) => (
+                                    <div key={index}>
+                                        {index === 0 ? <span className="font-semibold">{linea}</span> : linea}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-4 space-y-1 text-zinc-800 dark:text-white text-sm sm:text-base">
+                                {[
+                                    `PRECIO: Q.${producto.precio}`,
+                                    `PRECIO OFERTA: `,
+                                ].map((linea, index) => (
+                                    <div key={index}>
+                                        {index === 0 ? (
+                                            <span className="font-semibold text-blue-600">{linea}</span>
+                                        ) : (
+                                            <span className="font-semibold text-green-600">{linea}</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
 
                             {user && producto.precio && (
                                 <form
@@ -116,13 +127,17 @@ export default function Producto({ producto }) {
                                     </button> */}
                                 </form>
                             )}
-                            <Link
-                                href={route('catalogo')}
-                                disabled={processing}
-                                className="btn-zinc-content btn mt-2 w-full rounded-lg py-2 font-semibold"
-                            >
-                                Ver Más Productos
-                            </Link>
+                            <div className="mt-4 flex gap-4">
+                                {['ADIDAS', 'HOKA', 'NIKE', 'REEBOK'].map((marca, index) => (
+                                    <Link
+                                    key={index}
+                                    href={route('catalogo', { marca: marca.toLowerCase() })}
+                                    className="btn-zinc-content btn px-4 py-2 text-sm font-semibold rounded-lg"
+                                    >
+                                        {marca}
+                                    </Link>
+                                ))}
+                            </div>
 
                             <hr className="my-6 border-zinc-200 dark:border-zinc-800 md:my-8" />
 
