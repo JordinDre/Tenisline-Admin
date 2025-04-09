@@ -117,6 +117,7 @@ class TiendaController extends Controller
                     'precio' => $producto->precio_venta ?? null,
                     'modelo' => $producto->modelo ?? null,
                     'talla' => $producto->talla ?? null,
+                    'color' => $producto->color ?? null,
                     'genero' => $producto->genero ?? null,
                     'stock' => $producto->stock->existencia ?? 0,
                     'imagen' => isset($producto->imagenes[0])
