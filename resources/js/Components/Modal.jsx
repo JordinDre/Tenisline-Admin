@@ -10,7 +10,7 @@ export default function Modal({
     show = false,
     maxWidth = '2xl',
     closeable = true,
-    onClose = () => { },
+    onClose = () => {},
 }) {
     const close = () => {
         if (closeable) {
