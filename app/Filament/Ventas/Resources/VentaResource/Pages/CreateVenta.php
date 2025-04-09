@@ -515,7 +515,12 @@ class CreateVenta extends CreateRecord
                                             }
                                         
                                             $cliente = User::with('roles')->find($clienteId);
-                                            $clienteRol = $cliente?->getRoleNames()->first();
+                                            $roles = $cliente?->getRoleNames() ?? collect();
+
+                                            $esClienteApertura = $roles->contains('cliente_apertura');
+                                            $esClienteNormal = $roles->contains('cliente');
+
+                                            
                                         
                                             $nuevoDetalles = [];
                                             $cantidadTotal = 0;
@@ -541,19 +546,13 @@ class CreateVenta extends CreateRecord
                                                 ];
                                             }
                                         
-                                            logger([
-                                                'cliente_roles' => $cliente?->getRoleNames(),
-                                                'cantidad_total' => $cantidadTotal,
-                                                'subtotal antes' => $get('subtotal'),
-                                                'aplica descuento' => $cliente && $cliente->hasRole('cliente_apertura') && $cantidadTotal >= 2,
-                                            ]);
-                                        
+                                            $aplicaDescuento = $esClienteApertura && ! $esClienteNormal && $cantidadTotal >= 2;
                                             $subtotal = collect($nuevoDetalles)->sum('subtotal');
                                             $total = $subtotal;
                                         
-                                            if ($clienteRol === 'cliente_apertura' && $cantidadTotal >= 2) {
+                                            if ($aplicaDescuento) {
                                                 $total = round($subtotal * 0.8, 2);
-                                        
+                                            
                                                 Notification::make()
                                                     ->title('Descuento aplicado')
                                                     ->body('Se ha aplicado un descuento del 20% por ser cliente de apertura.')

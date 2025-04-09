@@ -580,11 +580,11 @@ class OrdenResource extends Resource implements HasShieldPermissions
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca', 'presentacion', 'escalas']))
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, null, 1))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, '', 1))
                                         ->allowHtml()
                                         ->searchable(['id'])
                                         ->getSearchResultsUsing(function (string $search): array {
-                                            return ProductoController::searchProductos($search, null, 1);
+                                            return ProductoController::searchProductos($search, '', 1);
                                         })
                                         ->optionsLimit(12)
                                         ->required(),
