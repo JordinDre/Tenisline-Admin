@@ -67,7 +67,7 @@ export default function Catalogo({ productos, search }) {
                     <ul className="inline-flex flex-wrap items-center justify-center gap-2 text-sm">
                         {productos.links.map((link, index) => (
                             <li key={index}>
-                                <Link
+                               {/* <Link
                                     href={link.url}
                                     className={`flex h-8 items-center justify-center rounded-lg px-4 py-1 text-center leading-tight transition-colors duration-200 ${
                                         link.active
@@ -77,7 +77,7 @@ export default function Catalogo({ productos, search }) {
                                     dangerouslySetInnerHTML={{
                                         __html: link.label,
                                     }}
-                                />
+                                /> */}
                             </li>
                         ))}
                     </ul>

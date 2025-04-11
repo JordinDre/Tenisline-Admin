@@ -131,7 +131,6 @@ class FELController extends Controller
                         </dte:Receptor>
                         <dte:Frases>
                             <dte:Frase CodigoEscenario="1" TipoFrase="1"></dte:Frase>
-                            <dte:Frase CodigoEscenario="1" TipoFrase="2"></dte:Frase>
                         </dte:Frases>
                         <dte:Items>'.$xmlItems.'</dte:Items>
                         <dte:Totales>
@@ -321,7 +320,6 @@ class FELController extends Controller
                         </dte:Receptor>
                         <dte:Frases>
                         <dte:Frase CodigoEscenario="1" TipoFrase="1"></dte:Frase>
-                        <dte:Frase CodigoEscenario="1" TipoFrase="2"></dte:Frase>
                         </dte:Frases>
                         <dte:Items>'.$xmlItems.'</dte:Items>
                         <dte:Totales>
@@ -460,7 +458,6 @@ class FELController extends Controller
                         </dte:Receptor>
                         <dte:Frases>
                             <dte:Frase CodigoEscenario="1" TipoFrase="1"></dte:Frase>
-                            <dte:Frase CodigoEscenario="1" TipoFrase="2"></dte:Frase>
                         </dte:Frases>
                         <dte:Items>'.$xmlItems.'</dte:Items>
                         <dte:Totales>
@@ -621,7 +618,6 @@ class FELController extends Controller
                         </dte:Receptor>
                         <dte:Frases>
                         <dte:Frase CodigoEscenario="1" TipoFrase="1"></dte:Frase>
-                        <dte:Frase CodigoEscenario="1" TipoFrase="2"></dte:Frase>
                         </dte:Frases>
                         <dte:Items>'.$xmlItems.'</dte:Items>
                         <dte:Totales>

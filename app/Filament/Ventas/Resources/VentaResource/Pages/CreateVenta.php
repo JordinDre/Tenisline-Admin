@@ -22,6 +22,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use App\Http\Controllers\UserController;
@@ -69,21 +70,198 @@ class CreateVenta extends CreateRecord
                     ->searchable()
                     ->required(),
                 Wizard::make([
-                    /* Wizard\Step::make('Cliente')
+                    Wizard\Step::make('Cliente')
                         ->schema([
+                            Toggle::make('facturar_cf')
+                                            ->inline(false)
+                                            ->live()
+                                            ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
+                                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                                if (! $get('facturar_cf')) {
+                                                    $set('comp', false);
+                                                }
+                                            })
+                                            ->label('Facturar CF'),
                             Select::make('cliente_id')
-                                ->label('Cliente')
-                                ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'mayorista']))
-                                ->optionsLimit(20)
-                                ->required()
-                                ->live()
-                                ->afterStateUpdated(function (Set $set) {
-                                    $set('tipo_pago_id', null);
-                                })
-                                ->searchable(),
-                            Textarea::make('observaciones')
-                                ->columnSpanFull(),
-                        ]), */
+                                        ->label('Cliente')
+                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'cliente_apertura', 'mayorista']))
+                                        ->optionsLimit(20)
+                                        ->required()
+                                        ->live()
+                                        ->reactive()
+                                        ->columnSpan(['sm' => 1, 'md' => 9])
+                                        ->rules([
+                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                $total = floor($get('total')); // Ignora decimales de 'total'
+                                                $pagos = collect($get('pagos'))->sum('monto');
+                                                $pagos = floor($pagos); // Ignora decimales de la suma de 'pagos'
+
+                                                /* if ($total != $pagos && $value == 4) {
+                                                    $fail('El monto total de los pagos no puede ser diferente al total de la venta.');
+                                                } */
+                                            },
+                                            ])
+                                            ->createOptionForm([
+                                                TextInput::make('nit')
+                                                    ->default('CF')
+                                                    ->required()
+                                                    ->maxLength(25)
+                                                    ->live(onBlur: true)
+                                                    ->afterStateUpdated(function (Set $set, $state) {
+                                                        $nit = UserController::nit($state);
+                                                        $set('razon_social', $nit);
+                                                    }),
+                                                TextInput::make('razon_social')
+                                                    ->required()
+                                                    ->readOnly()
+                                                    ->default('CF')
+                                                    ->label('Razón Social'),
+                                                TextInput::make('name')
+                                                    ->required()
+                                                    ->unique(table: User::class)
+                                                    ->label('Nombre/Nombre Comercial'),
+                                                TextInput::make('telefono')
+                                                    ->label('Teléfono')
+                                                    ->tel()
+                                                    ->required()
+                                                    ->minLength(8)
+                                                    ->maxLength(8),
+                                                TextInput::make('whatsapp')
+                                                    ->label('WhatsApp')
+                                                    ->tel()
+                                                    ->minLength(8)
+                                                    ->maxLength(8),
+                                                Repeater::make('direcciones')
+                                                    ->relationship()
+                                                    ->schema([
+                                                        Select::make('pais_id')
+                                                            ->relationship('pais', 'pais')
+                                                            ->required()
+                                                            ->live(onBlur: true)
+                                                            ->afterStateUpdated(function (Set $set) {
+                                                                $set('departamento_id', null);
+                                                                $set('municipio_id', null);
+                                                            })
+                                                            ->default(1)
+                                                            ->searchable()
+                                                            ->preload(),
+                                                        Select::make('departamento_id')
+                                                            ->label('Departamento')
+                                                            ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                                                            ->live(onBlur: true)
+                                                            ->afterStateUpdated(function (Set $set) {
+                                                                $set('municipio_id', null);
+                                                            })
+                                                            ->required()
+                                                            ->searchable()
+                                                            ->preload(),
+                                                        Select::make('municipio_id')
+                                                            ->label('Municipio')
+                                                            ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                                                            ->required()
+                                                            ->searchable()
+                                                            ->preload(),
+                                                        TextInput::make('direccion')
+                                                            ->required()
+                                                            ->label('Dirección')
+                                                            ->maxLength(255),
+                                                        TextInput::make('referencia')
+                                                            ->required()
+                                                            ->maxLength(255),
+                                                        TextInput::make('zona')
+                                                            ->label('Zona')
+                                                            ->inputMode('decimal')
+                                                            ->rule('numeric')
+                                                            ->minValue(0),
+                                                    ])->columnSpanFull()->columns(3)->defaultItems(0),
+                                            ])
+                                            ->editOptionForm([
+                                                TextInput::make('nit')
+                                                    ->default('CF')
+                                                    ->required()
+                                                    ->maxLength(25)
+                                                    ->live(onBlur: true)
+                                                    ->afterStateUpdated(function (Set $set, $state) {
+                                                        $nit = UserController::nit($state);
+                                                        $set('razon_social', $nit);
+                                                    }),
+                                                TextInput::make('razon_social')
+                                                    ->required()
+                                                    ->readOnly()
+                                                    ->default('CF')
+                                                    ->label('Razón Social'),
+                                                TextInput::make('name')
+                                                    ->required()
+                                                    ->unique(table: User::class)
+                                                    ->label('Nombre/Nombre Comercial'),
+                                                TextInput::make('telefono')
+                                                    ->label('Teléfono')
+                                                    ->tel()
+                                                    ->required()
+                                                    ->minLength(8)
+                                                    ->maxLength(8),
+                                                TextInput::make('whatsapp')
+                                                    ->label('WhatsApp')
+                                                    ->tel()
+                                                    ->minLength(8)
+                                                    ->maxLength(8),
+                                                Repeater::make('direcciones')
+                                                    ->relationship()
+                                                    ->schema([
+                                                        Select::make('pais_id')
+                                                            ->relationship('pais', 'pais')
+                                                            ->required()
+                                                            ->live(onBlur: true)
+                                                            ->afterStateUpdated(function (Set $set) {
+                                                                $set('departamento_id', null);
+                                                                $set('municipio_id', null);
+                                                            })
+                                                            ->default(1)
+                                                            ->searchable()
+                                                            ->preload(),
+                                                        Select::make('departamento_id')
+                                                            ->label('Departamento')
+                                                            ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                                                            ->live(onBlur: true)
+                                                            ->afterStateUpdated(function (Set $set) {
+                                                                $set('municipio_id', null);
+                                                            })
+                                                            ->required()
+                                                            ->searchable()
+                                                            ->preload(),
+                                                        Select::make('municipio_id')
+                                                            ->label('Municipio')
+                                                            ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                                                            ->required()
+                                                            ->searchable()
+                                                            ->preload(),
+                                                        TextInput::make('direccion')
+                                                            ->required()
+                                                            ->label('Dirección')
+                                                            ->maxLength(255),
+                                                        TextInput::make('referencia')
+                                                            ->required()
+                                                            ->maxLength(255),
+                                                        TextInput::make('zona')
+                                                            ->label('Zona')
+                                                            ->inputMode('decimal')
+                                                            ->rule('numeric')
+                                                            ->minValue(0),
+                                                    ])->columnSpanFull()->columns(3)->defaultItems(0),
+                                            ])
+                                            ->createOptionUsing(function (array $data): int {
+                                                $user = User::create($data);
+                                                $user->assignRole('cliente'); // Asigna el rol automáticamente
+    
+                                                return $user->id; // Devuelve el ID para que se seleccione en el campo
+                                            })
+                                            ->searchable(),
+                                            
+                                        //    Toggle::make('comp')
+                                        //     ->inline(false)
+                                        //     ->label('Comp')
+                                        //     ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
+                        ]),
                     Wizard\Step::make('Productos')
                         ->schema([
                             Repeater::make('detalles')
@@ -98,6 +276,40 @@ class CreateVenta extends CreateRecord
                                     'xl' => 3,
                                 ])
                                 ->schema([
+                                    Toggle::make('aplicar_descuento_item') 
+                                    ->label('Aplicar 20% Descuento')
+                                    ->inline(false)
+                                    ->live() 
+                                    ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1]) 
+                                    ->reactive()
+                                    ->dehydrated(false) 
+                                    ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
+                                        $cantidad = $get('cantidad') ?? 1;
+                                        $precioOriginal = $get('precio_original') ?? 0; 
+                                        $precioFinal = $precioOriginal;
+
+                                        $clienteId = $get('../../cliente_id');
+                                        $cliente = User::with('roles')->find($clienteId);
+                                        $roles = $cliente?->getRoleNames() ?? collect();
+                                        $esClienteApertura = $roles->contains('cliente_apertura');
+
+                                        if ($state && $esClienteApertura) {
+                                            $precioFinal = round($precioOriginal * 0.8, 2);
+                                        }
+
+                                        $set('precio', $precioFinal);
+                                        $set('subtotal', round($precioFinal * $cantidad, 2));
+
+                                        $productos = $get('../../detalles') ?? [];
+                                        $totalGeneral = 0;
+                                        $subtotalGeneral = 0;
+                                        foreach ($productos as $productoItem) {
+                                            $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                            $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                        }
+                                        $set('../../subtotal', round($subtotalGeneral, 2));
+                                        $set('../../total', round($totalGeneral, 2));
+                                    }),
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
@@ -112,51 +324,45 @@ class CreateVenta extends CreateRecord
                                         ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
                                         ->live()
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                            if ($state && $get('../../bodega_id')) {
-                                                $productoId = $state;
+                                            $clienteId = $get('../../cliente_id');
+                                            $cantidad = $get('cantidad') ?? 1;
 
-                                                $escala = ProductoController::getEscalaPrecio(
-                                                    productoId: $productoId,
-                                                );
-
-                                                $producto = Producto::find($productoId);
-                                                $precioBaseVenta = $producto->precio_venta;
-                                                $precioMayorista = $producto->precio_mayorista;
-                                                $porcentajeDescuento = 0;
-
-                                                $cliente_id_en_formulario = $get('../../cliente_id'); // Obtener cliente_id del formulario
-                                                $clienteRol = null;
-
-                                                if ($cliente_id_en_formulario) {
-                                                    $cliente = User::find($cliente_id_en_formulario);
-                                                    $clienteRol = $cliente?->getRoleNames()->first(); // **Obtener el rol del cliente**
-                                                }
-
-                                                if ($clienteRol === 'mayorista') {
-                                                    $precioFinalParaSetear = $precioMayorista; // Usar precio mayorista
-                                                } else {
-                                                    $precioFinalParaSetear = $precioBaseVenta; // Usar precio venta normal
-
-                                                    if ($escala) { // Aplicar escala solo si es cliente normal (o sin cliente mayorista)
-                                                        $porcentajeDescuento = $escala->porcentaje;
-                                                        $precioFinalParaSetear = round($precioBaseVenta * (1 - ($escala->porcentaje / 100)), 2);
-                                                    }
-                                                }
-                                                $set('escala_id', $escala ? $escala->id : null);
-                                                $set('precio', $precioFinalParaSetear); // **Usar $precioFinalParaSetear para setear el precio**
-                                                /* $set('precio_comp', $producto->precio_costo); */
-                                                $set('descuento_porcentaje', $porcentajeDescuento);
-                                                $cantidad = $get('cantidad') ?? 1;
-                                                $set('subtotal', round((float) $precioFinalParaSetear * (float) $cantidad, 2));
-
+                                            if (! $clienteId || ! $state) {
                                                 return;
                                             }
-                                            // Limpiar campos si no se encuentra escala o se deselecciona producto
-                                            $set('escala_id', null);
-                                            $set('precio', 0);
-                                            /* $set('precio_comp', null); */
-                                            $set('subtotal', 0);
-                                            $set('descuento_porcentaje', 0); // Limpiar porcentaje de descuento también
+
+                                            $cliente = User::with('roles')->find($clienteId);
+                                            $roles = $cliente?->getRoleNames() ?? collect();
+                                            $esClienteApertura = $roles->contains('cliente_apertura');
+
+                                            $producto = Producto::find($state);
+                                            $precioOriginal = $producto->precio_venta;
+                                            $set('precio_original', $precioOriginal); // Guardamos el precio original
+
+                                            $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
+                                            $precioFinal = $precioOriginal;
+
+                                            if ($esClienteApertura && $aplicarDescuento) {
+                                                $precioFinal = round($precioOriginal * 0.8, 2);
+                                                Notification::make()
+                                                    ->title('Descuento aplicado')
+                                                    ->body('Se ha aplicado un 20% de descuento a este producto.')
+                                                    ->success()
+                                                    ->send();
+                                            }
+
+                                            $set('precio', $precioFinal);
+                                            $set('subtotal', round($precioFinal * $cantidad, 2));
+
+                                            $productos = $get('../../detalles') ?? [];
+                                            $totalGeneral = 0;
+                                            $subtotalGeneral = 0;
+                                            foreach ($productos as $productoItem) {
+                                                $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                                $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                            }
+                                            $set('../../subtotal', round($subtotalGeneral, 2));
+                                            $set('../../total', round($totalGeneral, 2));
                                         })
                                         /* ->suffixAction(
                                             Action::make('ver')
@@ -180,25 +386,6 @@ class CreateVenta extends CreateRecord
                                         ->minValue(1)
                                         ->inputMode('decimal')
                                         ->rule('numeric')
-                                        ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                $invetario = Inventario::where('producto_id', $get('producto_id'))->where('bodega_id', $get('../../../bodega_id'))->first();
-                                                if ($invetario && $value > $invetario->existencia) {
-                                                    $fail('La cantidad de productos no puede ser mayor al inventario. Exist: ' . $invetario->existencia);
-                                                }
-
-                                                $cliente_id_en_formulario = $get('../../cliente_id');
-                                                $clienteRol = null;
-                                                if ($cliente_id_en_formulario) {
-                                                    $cliente = User::find($cliente_id_en_formulario);
-                                                    $clienteRol = $cliente?->getRoleNames()->first();
-                                                }
-
-                                                if ($clienteRol === 'mayorista' && $value < 10) {
-                                                    $fail('Para clientes mayoristas, la cantidad mínima por producto es 10.');
-                                                }
-                                            },
-                                        ])
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             $set('subtotal', round((float) $state * (float) $get('precio'), 2));
@@ -258,51 +445,11 @@ class CreateVenta extends CreateRecord
                                         ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2]),
                                 ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
                                 ->live()
-                                ->afterStateUpdated(function (Set $set, Get $get) {
-                                    $detalles = $get('detalles');
-                                    $subtotal = collect($detalles)->sum(function ($detalle) use ($get) {
-                                        if ($detalle['producto_id']) {
-                                            $productoId = $detalle['producto_id'];
-
-                                            $escala = ProductoController::getEscalaPrecio(
-                                                productoId: $productoId,
-                                            );
-
-                                            $producto = Producto::find($productoId);
-                                            $precioBaseVenta = $producto->precio_venta;
-                                            $precioMayorista = $producto->precio_mayorista;
-
-                                            $cliente_id_en_formulario = $get('../../cliente_id'); // Obtener cliente_id del formulario
-                                            $clienteRol = null;
-
-                                            if ($cliente_id_en_formulario) {
-                                                $cliente = User::find($cliente_id_en_formulario);
-                                                $clienteRol = $cliente?->getRoleNames()->first(); // **Obtener el rol del cliente**
-                                            }
-
-                                            if ($clienteRol === 'mayorista') {
-                                                $precioFinalParaSetear = $precioMayorista; // Usar precio mayorista
-                                            } else {
-                                                $precioFinalParaSetear = $precioBaseVenta; // Usar precio venta normal
-
-                                                if ($escala) {
-                                                    $precioFinalParaSetear = round($precioBaseVenta * (1 - ($escala->porcentaje / 100)), 2);
-                                                }
-                                            }
-                                            $precio = $detalle['precio'] ? (float) $detalle['precio'] : $precioFinalParaSetear;
-                                            $cantidad = $detalle['cantidad'] ? (float) $detalle['cantidad'] : 1;
-
-                                            return $precio * $cantidad;
-                                        }
-                                    });
-                                    $set('subtotal', round($subtotal, 2));
-                                    /* $get('subtotal') >= Factura::CF || $set('facturar_cf', false); */
-                                    /* $get('subtotal') >= Factura::CF || $set('comp', false); */
-                                    $set('total', round($subtotal, 2));
-                                })->visible(fn(Get $get): bool => ! empty($get('bodega_id'))),
+                                ->reactive()
+                                ->visible(fn(Get $get): bool => ! empty($get('bodega_id'))),
 
                         ]),
-                    Wizard\Step::make('Cliente y Pagos')
+                    Wizard\Step::make('Pagos')
                         ->schema([
                             Grid::make([
                                 'default' => 1,
@@ -329,256 +476,7 @@ class CreateVenta extends CreateRecord
                                             },
                                         ])
                                         ->preload(), */
-                                    Select::make('cliente_id')
-                                        ->label('Cliente')
-                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'cliente_apertura', 'mayorista']))
-                                        ->optionsLimit(20)
-                                        ->required()
-                                        ->live()
-                                        ->reactive()
-                                        ->columnSpan(['sm' => 1, 'md' => 9])
-                                        ->afterStateUpdated(function (Set $set) {
-                                            $set('tipo_pago_id', null);
-                                        })
-                                        ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                $total = floor($get('total')); // Ignora decimales de 'total'
-                                                $pagos = collect($get('pagos'))->sum('monto');
-                                                $pagos = floor($pagos); // Ignora decimales de la suma de 'pagos'
-
-                                                /* if ($total != $pagos && $value == 4) {
-                                                    $fail('El monto total de los pagos no puede ser diferente al total de la venta.');
-                                                } */
-                                            },
-                                        ])
-                                        ->createOptionForm([
-                                            TextInput::make('nit')
-                                                ->default('CF')
-                                                ->required()
-                                                ->maxLength(25)
-                                                ->live(onBlur: true)
-                                                ->afterStateUpdated(function (Set $set, $state) {
-                                                    $nit = UserController::nit($state);
-                                                    $set('razon_social', $nit);
-                                                }),
-                                            TextInput::make('razon_social')
-                                                ->required()
-                                                ->readOnly()
-                                                ->default('CF')
-                                                ->label('Razón Social'),
-                                            TextInput::make('name')
-                                                ->required()
-                                                ->unique(table: User::class)
-                                                ->label('Nombre/Nombre Comercial'),
-                                            TextInput::make('telefono')
-                                                ->label('Teléfono')
-                                                ->tel()
-                                                ->required()
-                                                ->minLength(8)
-                                                ->maxLength(8),
-                                            TextInput::make('whatsapp')
-                                                ->label('WhatsApp')
-                                                ->tel()
-                                                ->minLength(8)
-                                                ->maxLength(8),
-                                            Repeater::make('direcciones')
-                                                ->relationship()
-                                                ->schema([
-                                                    Select::make('pais_id')
-                                                        ->relationship('pais', 'pais')
-                                                        ->required()
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(function (Set $set) {
-                                                            $set('departamento_id', null);
-                                                            $set('municipio_id', null);
-                                                        })
-                                                        ->default(1)
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    Select::make('departamento_id')
-                                                        ->label('Departamento')
-                                                        ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(function (Set $set) {
-                                                            $set('municipio_id', null);
-                                                        })
-                                                        ->required()
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    Select::make('municipio_id')
-                                                        ->label('Municipio')
-                                                        ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
-                                                        ->required()
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    TextInput::make('direccion')
-                                                        ->required()
-                                                        ->label('Dirección')
-                                                        ->maxLength(255),
-                                                    TextInput::make('referencia')
-                                                        ->required()
-                                                        ->maxLength(255),
-                                                    TextInput::make('zona')
-                                                        ->label('Zona')
-                                                        ->inputMode('decimal')
-                                                        ->rule('numeric')
-                                                        ->minValue(0),
-                                                ])->columnSpanFull()->columns(3)->defaultItems(0),
-                                        ])
-                                        ->editOptionForm([
-                                            TextInput::make('nit')
-                                                ->default('CF')
-                                                ->required()
-                                                ->maxLength(25)
-                                                ->live(onBlur: true)
-                                                ->afterStateUpdated(function (Set $set, $state) {
-                                                    $nit = UserController::nit($state);
-                                                    $set('razon_social', $nit);
-                                                }),
-                                            TextInput::make('razon_social')
-                                                ->required()
-                                                ->readOnly()
-                                                ->default('CF')
-                                                ->label('Razón Social'),
-                                            TextInput::make('name')
-                                                ->required()
-                                                ->unique(table: User::class)
-                                                ->label('Nombre/Nombre Comercial'),
-                                            TextInput::make('telefono')
-                                                ->label('Teléfono')
-                                                ->tel()
-                                                ->required()
-                                                ->minLength(8)
-                                                ->maxLength(8),
-                                            TextInput::make('whatsapp')
-                                                ->label('WhatsApp')
-                                                ->tel()
-                                                ->minLength(8)
-                                                ->maxLength(8),
-                                            Repeater::make('direcciones')
-                                                ->relationship()
-                                                ->schema([
-                                                    Select::make('pais_id')
-                                                        ->relationship('pais', 'pais')
-                                                        ->required()
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(function (Set $set) {
-                                                            $set('departamento_id', null);
-                                                            $set('municipio_id', null);
-                                                        })
-                                                        ->default(1)
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    Select::make('departamento_id')
-                                                        ->label('Departamento')
-                                                        ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(function (Set $set) {
-                                                            $set('municipio_id', null);
-                                                        })
-                                                        ->required()
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    Select::make('municipio_id')
-                                                        ->label('Municipio')
-                                                        ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
-                                                        ->required()
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    TextInput::make('direccion')
-                                                        ->required()
-                                                        ->label('Dirección')
-                                                        ->maxLength(255),
-                                                    TextInput::make('referencia')
-                                                        ->required()
-                                                        ->maxLength(255),
-                                                    TextInput::make('zona')
-                                                        ->label('Zona')
-                                                        ->inputMode('decimal')
-                                                        ->rule('numeric')
-                                                        ->minValue(0),
-                                                ])->columnSpanFull()->columns(3)->defaultItems(0),
-                                        ])
-                                        ->createOptionUsing(function (array $data): int {
-                                            $user = User::create($data);
-                                            $user->assignRole('cliente'); // Asigna el rol automáticamente
-
-                                            return $user->id; // Devuelve el ID para que se seleccione en el campo
-                                        })
-                                        ->searchable()
-                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                            $clienteId = $get('cliente_id');
-                                            $detalles = $get('detalles') ?? [];
-                                        
-                                            if (! $clienteId) {
-                                                return;
-                                            }
-                                        
-                                            $cliente = User::with('roles')->find($clienteId);
-                                            $roles = $cliente?->getRoleNames() ?? collect();
-
-                                            $esClienteApertura = $roles->contains('cliente_apertura');
-                                            $esClienteNormal = $roles->contains('cliente');
-
-                                            
-                                        
-                                            $nuevoDetalles = [];
-                                            $cantidadTotal = 0;
-                                        
-                                            foreach ($detalles as $detalle) {
-                                                $productoId = $detalle['producto_id'] ?? null;
-                                                $cantidad = $detalle['cantidad'] ?? 1;
-                                        
-                                                if (! $productoId) {
-                                                    $nuevoDetalles[] = $detalle;
-                                                    continue;
-                                                }
-                                        
-                                                $producto = Producto::find($productoId);
-                                                $precio = $producto->precio_venta;
-                                        
-                                                $cantidadTotal += $cantidad;
-                                        
-                                                $nuevoDetalles[] = [
-                                                    ...$detalle,
-                                                    'precio' => $precio,
-                                                    'subtotal' => round($precio * $cantidad, 2),
-                                                ];
-                                            }
-                                        
-                                            $aplicaDescuento = $esClienteApertura && ! $esClienteNormal && $cantidadTotal >= 2;
-                                            $subtotal = collect($nuevoDetalles)->sum('subtotal');
-                                            $total = $subtotal;
-                                        
-                                            if ($aplicaDescuento) {
-                                                $total = round($subtotal * 0.8, 2);
-                                            
-                                                Notification::make()
-                                                    ->title('Descuento aplicado')
-                                                    ->body('Se ha aplicado un descuento del 20% por ser cliente de apertura.')
-                                                    ->success()
-                                                    ->send();
-                                            }
-                                        
-                                            $set('detalles', $nuevoDetalles);
-                                            $set('subtotal', round($subtotal, 2));
-                                            $set('subtotal', $total);
-                                            $set('total', $total);
-                                        }),
-                                    /* Toggle::make('facturar_cf')
-                                        ->inline(false)
-                                        ->live()
-                                        ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
-                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                            if (! $get('facturar_cf')) {
-                                                $set('comp', false);
-                                            }
-                                        })
-                                        ->label('Facturar CF'),
-                                       Toggle::make('comp')
-                                        ->inline(false)
-                                        ->label('Comp')
-                                        ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF), */
+ 
                                 ]),
                             Repeater::make('pagos')
                                 ->label('Pagos')
