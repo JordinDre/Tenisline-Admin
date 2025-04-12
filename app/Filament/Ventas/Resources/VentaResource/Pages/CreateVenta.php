@@ -70,18 +70,13 @@ class CreateVenta extends CreateRecord
                     ->searchable()
                     ->required(),
                 Wizard::make([
-                    Wizard\Step::make('Cliente')
+                    Wizard\Step::make('Cliente y Productos')
+                    ->schema([
+                        Grid::make([
+                            'default' => 1,
+                            'md' => 18,
+                        ])
                         ->schema([
-                            Toggle::make('facturar_cf')
-                                            ->inline(false)
-                                            ->live()
-                                            ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
-                                            ->afterStateUpdated(function (Set $set, Get $get) {
-                                                if (! $get('facturar_cf')) {
-                                                    $set('comp', false);
-                                                }
-                                            })
-                                            ->label('Facturar CF'),
                             Select::make('cliente_id')
                                         ->label('Cliente')
                                         ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'cliente_apertura', 'mayorista']))
@@ -89,7 +84,7 @@ class CreateVenta extends CreateRecord
                                         ->required()
                                         ->live()
                                         ->reactive()
-                                        ->columnSpan(['sm' => 1, 'md' => 9])
+                                        ->columnSpan(['sm' => 1, 'md' => 15])
                                         ->rules([
                                             fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 $total = floor($get('total')); // Ignora decimales de 'total'
@@ -256,14 +251,17 @@ class CreateVenta extends CreateRecord
                                                 return $user->id; // Devuelve el ID para que se seleccione en el campo
                                             })
                                             ->searchable(),
-                                            
-                                        //    Toggle::make('comp')
-                                        //     ->inline(false)
-                                        //     ->label('Comp')
-                                        //     ->disabled(fn (Get $get) => $get('facturar_cf') == false || $get('total') >= Factura::CF),
-                        ]),
-                    Wizard\Step::make('Productos')
-                        ->schema([
+                                            Toggle::make('facturar_cf')
+                                            ->inline(false)
+                                            ->live()
+                                            ->disabled(fn(Get $get) => $get('total') >= Factura::CF)
+                                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                                if (! $get('facturar_cf')) {
+                                                    $set('comp', false);
+                                                }
+                                            })
+                                            ->label('Facturar CF')
+                                            ->columnSpan(3),
                             Repeater::make('detalles')
                                 ->label('')
                                 ->relationship()
@@ -277,12 +275,21 @@ class CreateVenta extends CreateRecord
                                 ])
                                 ->schema([
                                     Toggle::make('aplicar_descuento_item') 
-                                    ->label('Aplicar 20% Descuento')
+                                    ->label('Descuento')
                                     ->inline(false)
                                     ->live() 
                                     ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1]) 
                                     ->reactive()
                                     ->dehydrated(false) 
+                                    ->visible(function (Get $get): bool {
+                                        $clienteId = $get('../../cliente_id'); 
+                                
+                                        if (! $clienteId) return false;
+                                
+                                        $cliente = \App\Models\User::with('roles')->find($clienteId);
+                                
+                                        return $cliente?->roles->pluck('name')->contains('cliente_apertura') ?? false;
+                                    })
                                     ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
                                         $cantidad = $get('cantidad') ?? 1;
                                         $precioOriginal = $get('precio_original') ?? 0; 
@@ -326,7 +333,7 @@ class CreateVenta extends CreateRecord
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             $clienteId = $get('../../cliente_id');
                                             $cantidad = $get('cantidad') ?? 1;
-
+                                            
                                             if (! $clienteId || ! $state) {
                                                 return;
                                             }
@@ -334,14 +341,14 @@ class CreateVenta extends CreateRecord
                                             $cliente = User::with('roles')->find($clienteId);
                                             $roles = $cliente?->getRoleNames() ?? collect();
                                             $esClienteApertura = $roles->contains('cliente_apertura');
-
+                                            
                                             $producto = Producto::find($state);
                                             $precioOriginal = $producto->precio_venta;
-                                            $set('precio_original', $precioOriginal); // Guardamos el precio original
+                                            $set('precio_original', $precioOriginal); 
 
                                             $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
                                             $precioFinal = $precioOriginal;
-
+                                            
                                             if ($esClienteApertura && $aplicarDescuento) {
                                                 $precioFinal = round($precioOriginal * 0.8, 2);
                                                 Notification::make()
@@ -388,7 +395,34 @@ class CreateVenta extends CreateRecord
                                         ->rule('numeric')
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                            $set('subtotal', round((float) $state * (float) $get('precio'), 2));
+                                            $precio = $get('precio') ?? 0;
+                                            $precioOriginal = $get('precio_original') ?? 0;
+                                    
+                                            $clienteId = $get('../../cliente_id');
+                                            $cliente = \App\Models\User::with('roles')->find($clienteId);
+                                            $roles = $cliente?->getRoleNames() ?? collect();
+                                            $esClienteApertura = $roles->contains('cliente_apertura');
+                                    
+                                            $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
+                                            $precioFinal = $precioOriginal;
+                                    
+                                            if ($esClienteApertura && $aplicarDescuento) {
+                                                $precioFinal = round($precioOriginal * 0.8, 2);
+                                            }
+                                    
+                                            $set('precio', $precioFinal);
+                                            $set('subtotal', round($precioFinal * $state, 2));
+                                    
+                                            // Recalcular totales generales
+                                            $productos = $get('../../detalles') ?? [];
+                                            $totalGeneral = 0;
+                                            $subtotalGeneral = 0;
+                                            foreach ($productos as $productoItem) {
+                                                $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                                $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                            }
+                                            $set('../../subtotal', round($subtotalGeneral, 2));
+                                            $set('../../total', round($totalGeneral, 2));
                                         })
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->required(),
@@ -446,9 +480,23 @@ class CreateVenta extends CreateRecord
                                 ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
                                 ->live()
                                 ->reactive()
-                                ->visible(fn(Get $get): bool => ! empty($get('bodega_id'))),
+                                ->visible(fn(Get $get): bool => ! empty($get('bodega_id')))
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    $productos = $get('detalles') ?? [];
+                                    $totalGeneral = 0;
+                                    $subtotalGeneral = 0;
+                            
+                                    foreach ($productos as $productoItem) {
+                                        $subtotal = (float) ($productoItem['subtotal'] ?? 0);
+                                        $totalGeneral += $subtotal;
+                                        $subtotalGeneral += $subtotal;
+                                    }
+                            
+                                    $set('subtotal', round($subtotalGeneral, 2));
+                                    $set('total', round($totalGeneral, 2));
+                                }),
 
-                        ]),
+                        ])]),
                     Wizard\Step::make('Pagos')
                         ->schema([
                             Grid::make([
