@@ -77,9 +77,8 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($venta) {
                 self::restarInventario($venta, 'Venta Confirmada');
-                /* self::restarInventario($venta, 'Venta facturada'); */
-                $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                /* $res = FELController::facturaVenta($venta);
+               /*  $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+                $res = FELController::facturaVenta($venta);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                 }
@@ -91,8 +90,7 @@ class VentaController extends Controller
                 $factura->fel_fecha = $res['fecha'];
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
-                $venta->factura()->save($factura);
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('facturación')->log('Venta facturada'); */
+                $venta->factura()->save($factura); */
                 activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
             });
             Notification::make()

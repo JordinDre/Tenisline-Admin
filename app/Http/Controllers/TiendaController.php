@@ -88,8 +88,7 @@ class TiendaController extends Controller
         $search = $request->search;
         $marca = $request->marca;
 
-        $productos = Producto::query()
-            ->with(['marca', 'stock'])
+        $productos = Producto::with('marca', 'stock')
             ->whereHas('stock', function ($query) {
                 $query->where('existencia', '>', 0); // Solo productos con stock en bodega_id = 1
             });
@@ -112,10 +111,7 @@ class TiendaController extends Controller
             });
         }
 
-
-        // Ordenar por existencia > 0 primero
         $productos = $productos
-            ->select('productos.*') // importante para evitar problemas al usar joins
             ->paginate(20)
             ->through(function ($producto) {
                 return [
@@ -138,6 +134,7 @@ class TiendaController extends Controller
     
         return Inertia::render('Catalogo', [
             'productos' => $productos,
+            'search' => $search,
         ]);
     }    
 
