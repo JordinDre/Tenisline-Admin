@@ -61,28 +61,30 @@ export default function Catalogo({ productos, search }) {
                 </div>
             )}
 
-            {/* Paginación */}
-            {productos.data.length > 0 && (
-                <nav className="mt-6 flex w-full justify-center">
-                    <ul className="inline-flex flex-wrap items-center justify-center gap-2 text-sm">
-                        {productos.links.map((link, index) => (
-                            <li key={index}>
-                               {/* <Link
-                                    href={link.url}
-                                    className={`flex h-8 items-center justify-center rounded-lg px-4 py-1 text-center leading-tight transition-colors duration-200 ${
-                                        link.active
-                                            ? 'border-black-300 bg-black-50 text-black-600 hover:bg-black-100 border'
-                                            : 'border border-zinc-300 bg-white text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700'
-                                    }`}
-                                    dangerouslySetInnerHTML={{
-                                        __html: link.label,
-                                    }}
-                                /> */}
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-            )}
+            <ul className="mt-6 flex items-center justify-center gap-1">
+                {productos?.links?.map((link, index) => (
+                    <li key={index}>
+                        {link.url ? (
+                            <Link
+                                href={link.url + `&search=${data.search}`}
+                                className={`min-w-[36px] rounded-md px-3 py-1 text-center text-sm transition-colors duration-200 ${
+                                    link.active
+                                        ? 'border border-black bg-black text-white shadow'
+                                        : 'border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 hover:text-black'
+                                }`}
+                                dangerouslySetInnerHTML={{
+                                    __html: link.label,
+                                }}
+                            />
+                        ) : (
+                            <span
+                                className="min-w-[36px] rounded-md border border-zinc-200 bg-white px-3 py-1 text-center text-sm text-zinc-400"
+                                dangerouslySetInnerHTML={{ __html: link.label }}
+                            />
+                        )}
+                    </li>
+                ))}
+            </ul>
         </Layout>
     );
 }
