@@ -20,7 +20,7 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 <li>
                                     <a
-                                        href="https://www.facebook.com/share/1AzrHecqHK/"
+                                        href="https://www.facebook.com/share/16Sa9BWJbs/"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center hover:underline"
@@ -30,7 +30,7 @@ export default function Footer() {
                                 </li>
                                 <li>
                                     <a
-                                        href="https://www.tiktok.com/@calidadesharmish?_t=ZM-8tigM9E2BAz&_r=1"
+                                        href="https://www.tiktok.com/@tenisline.gt?_t=ZM-8vXGCraMk9m&_r=1"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center hover:underline"
@@ -40,7 +40,7 @@ export default function Footer() {
                                 </li>
                                 <li>
                                     <a
-                                        href="https://www.instagram.com/calidadesharmish/profilecard/?igsh=dGUyZDA5aGNrb2hy"
+                                        href="https://www.instagram.com/tenisline_gt?igsh=MWs3bDl3bzBxMzFncg=="
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center hover:underline"
@@ -68,11 +68,11 @@ export default function Footer() {
                                 Contacto
                             </h6>
                             <ul className="space-y-3">
-                                <li>
+                                {/* <li>
                                     <span className="block">
                                         PBX: +502 23158518
                                     </span>
-                                </li>
+                                </li> */}
                                 {/* <li>
                                     <a
                                         href="mailto:info@example.com"
@@ -88,14 +88,14 @@ export default function Footer() {
                                         rel="noopener noreferrer"
                                         className="hover:underline"
                                     >
-                                        WhatsApp: +502 31136836
+                                        WhatsApp: +502 39900606
                                     </a>
                                 </li>
                             </ul>
                         </div>
 
                         {/* Términos y Condiciones */}
-                        <div>
+                        {/* <div>
                             <h6 className="mb-4 text-sm font-semibold uppercase">
                                 Visita Nuestro Catálogo Digital
                             </h6>
@@ -111,7 +111,7 @@ export default function Footer() {
                             >
                                 Visitar Catálogo
                             </a>
-                        </div>
+                        </div> */}
                     </div>
 
                     {/* Logo */}
