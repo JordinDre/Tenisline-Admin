@@ -504,7 +504,7 @@ class FELController extends Controller
         $xml = '<dte:GTAnulacionDocumento xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dte="http://www.sat.gob.gt/dte/fel/0.1.0" xmlns:n1="http://www.altova.com/samplexml/other-namespace" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="0.1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/0.1.0 C:\Users\User\Desktop\FEL\Esquemas\GT_AnulacionDocumento-0.1.0.xsd">
             <dte:SAT>
                 <dte:AnulacionDTE ID="DatosCertificados">
-                <dte:DatosGenerales FechaEmisionDocumentoAnular="'.Carbon::parse($venta->factura->fel_fecha)->format('Y-m-d').'" FechaHoraAnulacion="'.now()->format('Y-m-d\TH:i:s').'" ID="DatosAnulacion" IDReceptor="'.$receptorID.'" MotivoAnulacion="'.$motivo.'" NITEmisor="'.env('NIT').'" NumeroDocumentoAAnular="'.$venta->factura->fel_uuid.'"></dte:DatosGenerales>
+                <dte:DatosGenerales FechaEmisionDocumentoAnular="'.Carbon::parse($venta->factura->fel_fecha)->format('Y-m-d\TH:i:s').'" FechaHoraAnulacion="'.now()->format('Y-m-d\TH:i:s').'" ID="DatosAnulacion" IDReceptor="'.$receptorID.'" MotivoAnulacion="'.$motivo.'" NITEmisor="'.env('NIT').'" NumeroDocumentoAAnular="'.$venta->factura->fel_uuid.'"></dte:DatosGenerales>
                 </dte:AnulacionDTE>
             </dte:SAT>
             </dte:GTAnulacionDocumento>';

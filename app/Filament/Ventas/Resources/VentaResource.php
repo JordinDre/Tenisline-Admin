@@ -529,18 +529,18 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->label('Motivo de Devolución')
                                         ->minLength(10)
                                         ->columnSpan(['default' => 1, 'md' => 4]),
-                                    TextInput::make('costo_envio')
-                                        ->label('Costo Envío')
-                                        ->columnSpan(1)
-                                        ->disabled(),
-                                    TextInput::make('apoyo')
-                                        ->label('Apoyo')
-                                        ->inputMode('decimal')
-                                        ->rule('numeric')
-                                        ->columnSpan(1)
-                                        ->minValue(0)
-                                        ->default(0)
-                                        ->required(),
+                                    // TextInput::make('costo_envio')
+                                    //     ->label('Costo Envío')
+                                    //     ->columnSpan(1)
+                                    //     ->disabled(),
+                                    // TextInput::make('apoyo')
+                                    //     ->label('Apoyo')
+                                    //     ->inputMode('decimal')
+                                    //     ->rule('numeric')
+                                    //     ->columnSpan(1)
+                                    //     ->minValue(0)
+                                    //     ->default(0)
+                                    //     ->required(),
                                 ]),
                             Repeater::make('detalles')
                                 ->label('')
@@ -572,13 +572,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                                                 ->minValue(0)
                                                 ->default(0)
                                                 ->required(),
-                                            TextInput::make('devuelto_mal')
-                                                ->label('De lo Devuelto, Cuánto está Mal?')
-                                                ->inputMode('decimal')
-                                                ->rule('numeric')
-                                                ->minValue(0)
-                                                ->default(0)
-                                                ->required(),
+                                            // TextInput::make('devuelto_mal')
+                                            //     ->label('De lo Devuelto, Cuánto está Mal?')
+                                            //     ->inputMode('decimal')
+                                            //     ->rule('numeric')
+                                            //     ->minValue(0)
+                                            //     ->default(0)
+                                            //     ->required(),
                                         ]),
                                 ]),
                         ])
