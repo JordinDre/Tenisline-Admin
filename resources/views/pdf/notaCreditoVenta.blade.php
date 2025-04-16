@@ -122,7 +122,7 @@
                         <td>{{ $dt->producto->codigo }}</td>
                         <td style="text-align: left;">
                             {{ $dt->producto->descripcion }},
-                            {{ $dt->producto->presentacion->presentacion }},
+                            {{-- {{ $dt->producto->presentacion->presentacion }}, --}}
                             {{ $dt->producto->marca->marca }}
                         </td>
                         <td style="text-align: right;">{{ Number::currency($dt->precio, 'GTQ') }}</td>

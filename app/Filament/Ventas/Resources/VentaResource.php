@@ -465,7 +465,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
-                    /* Action::make('nota_credito')
+                     Action::make('nota_credito')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => auth()->user()->can('credit_note', $record))
                         ->modalContent(fn (Venta $record): View => view(
@@ -480,7 +480,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalWidth(MaxWidth::FiveExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
-                        ->modalSubmitAction(false), */
+                        ->modalSubmitAction(false), 
                     /* Action::make('facturar')
                         ->label('Facturar')
                         ->requiresConfirmation()
