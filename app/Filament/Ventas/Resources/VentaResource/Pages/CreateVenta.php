@@ -393,6 +393,26 @@ class CreateVenta extends CreateRecord
                                         ->minValue(1)
                                         ->inputMode('decimal')
                                         ->rule('numeric')
+                                        ->rules([
+                                            'required',
+                                            'numeric',
+                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                $productoId = $get('producto_id');
+                                                $bodegaId = $get('../../bodega_id'); // subir dos niveles si está fuera del Repeater
+                                        
+                                                if (! $productoId || ! is_numeric($value) || ! $bodegaId) return;
+                                        
+                                                $inventario = \App\Models\Inventario::where('producto_id', $productoId)
+                                                    ->where('bodega_id', $bodegaId)
+                                                    ->first();
+                                        
+                                                $existencia = $inventario?->existencia ?? 0;
+                                        
+                                                if ($value > $existencia) {
+                                                    $fail("No hay suficiente existencia en la bodega seleccionada. Existencia disponible: {$existencia}");
+                                                }
+                                            }
+                                        ])                                                               
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             $precio = $get('precio') ?? 0;
