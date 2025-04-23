@@ -111,7 +111,7 @@ class FELController extends Controller
                     <dte:DTE ID="DatosCertificados">
                         <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="'.$tipo.'"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.env('NIT').'" NombreComercial="'.env('NOMBRE_COMERCIAL').'" NombreEmisor="'.env('RAZON_SOCIAL').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="2" NITEmisor="'.env('NIT').'" NombreComercial="'.env('NOMBRE_COMERCIAL').'" NombreEmisor="'.env('RAZON_SOCIAL').'">
                             <dte:DireccionEmisor>
                                 <dte:Direccion>'.env('DIRECCION').'</dte:Direccion>
                                 <dte:CodigoPostal>'.env('CODIGO_POSTAL').'</dte:CodigoPostal>
@@ -300,7 +300,7 @@ class FELController extends Controller
                 <dte:DTE ID="DatosCertificados">
                   <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="NCRE"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.env('NIT').'" NombreComercial="'.env('NOMBRE_COMERCIAL').'" NombreEmisor="'.env('RAZON_SOCIAL').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="2" NITEmisor="'.env('NIT').'" NombreComercial="'.env('NOMBRE_COMERCIAL').'" NombreEmisor="'.env('RAZON_SOCIAL').'">
                         <dte:DireccionEmisor>
                         <dte:Direccion>'.env('DIRECCION').'</dte:Direccion>
                         <dte:CodigoPostal>'.env('CODIGO_POSTAL').'</dte:CodigoPostal>
@@ -437,7 +437,7 @@ class FELController extends Controller
                     <dte:DTE ID="DatosCertificados">
                         <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="'.$tipo.'"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="2" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
                             <dte:DireccionEmisor>
                                 <dte:Direccion>'.config('services.fel.direccion').'</dte:Direccion>
                                 <dte:CodigoPostal>'.config('services.fel.codigo_postal').'</dte:CodigoPostal>
@@ -601,7 +601,7 @@ class FELController extends Controller
                 <dte:DTE ID="DatosCertificados">
                   <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="NCRE"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="2" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
                         <dte:DireccionEmisor>
                         <dte:Direccion>'.config('services.fel.direccion').'</dte:Direccion>
                         <dte:CodigoPostal>'.config('services.fel.codigo_postal').'</dte:CodigoPostal>
