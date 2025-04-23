@@ -77,7 +77,7 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($venta) {
                 self::restarInventario($venta, 'Venta Confirmada');
-               /*  $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+                $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
                 $res = FELController::facturaVenta($venta);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
@@ -90,7 +90,7 @@ class VentaController extends Controller
                 $factura->fel_fecha = $res['fecha'];
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
-                $venta->factura()->save($factura); */
+                $venta->factura()->save($factura); 
                 activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
             });
             Notification::make()
@@ -113,7 +113,7 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($data, $venta) {
                 self::sumarInventario($venta, 'Venta anulada');
-                /* if ($venta->tipo_pago_id == 2) {
+                 if ($venta->tipo_pago_id == 2) {
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
                 if ($venta->factura()->exists()) {
@@ -132,7 +132,7 @@ class VentaController extends Controller
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
                     $venta->factura()->delete();
-                } */
+                }
                 $venta->estado = 'anulada';
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();
@@ -192,37 +192,37 @@ class VentaController extends Controller
                         );
                     }
 
-                    if ($detalle->devuelto_mal > 0) {
-                        $inventario = Inventario::firstOrCreate(
-                            [
-                                'producto_id' => $detalle->producto_id,
-                                'bodega_id' => Bodega::MAL_ESTADO,
-                            ],
-                            [
-                                'existencia' => 0,
-                            ]
-                        );
-                        $existenciaInicial = $inventario ? $inventario->existencia : 0;
-                        $inventario->existencia += $detalle->devuelto_mal;
-                        $inventario->save();
-                        Kardex::registrar(
-                            $detalle->producto_id,
-                            Bodega::MAL_ESTADO,
-                            $detalle->devuelto_mal,
-                            $existenciaInicial,
-                            $inventario->existencia,
-                            'entrada',
-                            $venta,
-                            'Devolución de venta'
-                        );
-                    }
+                    // if ($detalle->devuelto_mal > 0) {
+                    //     $inventario = Inventario::firstOrCreate(
+                    //         [
+                    //             'producto_id' => $detalle->producto_id,
+                    //             'bodega_id' => Bodega::MAL_ESTADO,
+                    //         ],
+                    //         [
+                    //             'existencia' => 0,
+                    //         ]
+                    //     );
+                    //     $existenciaInicial = $inventario ? $inventario->existencia : 0;
+                    //     $inventario->existencia += $detalle->devuelto_mal;
+                    //     $inventario->save();
+                    //     Kardex::registrar(
+                    //         $detalle->producto_id,
+                    //         Bodega::MAL_ESTADO,
+                    //         $detalle->devuelto_mal,
+                    //         $existenciaInicial,
+                    //         $inventario->existencia,
+                    //         'entrada',
+                    //         $venta,
+                    //         'Devolución de venta'
+                    //     );
+                    // }
 
-                    if (($detalle->cantidad) != $detalle->devuelto) {
-                        $estado = 'parcialmente devuelta';
-                    }
+                    // if (($detalle->cantidad) != $detalle->devuelto) {
+                    //     $estado = 'parcialmente devuelta';
+                    // }
                 }
 
-                /*  if ($venta->factura()->exists()) {
+                  if ($venta->factura()->exists()) {
                      $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
                      if (! $res['resultado']) {
                          throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
@@ -238,11 +238,11 @@ class VentaController extends Controller
                      $factura->motivo = $data['motivo'];
                      $venta->factura()->save($factura);
                      $venta->factura()->delete();
-                 } */
+                 } 
 
                 $venta->estado = $estado;
                 $venta->motivo = $data['motivo'];
-                $venta->apoyo = $data['apoyo'];
+                //$venta->apoyo = $data['apoyo'];
                 $venta->fecha_devuelta = now();
                 $venta->devolvio_id = auth()->user()->id;
                 $venta->save();
@@ -269,7 +269,7 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($venta) {
-                if ($venta->pago_validado == 0 || round(floatval($venta->total), 0) != round(floatval($venta->pagos->sum('total')), 0)) {
+                if (round(floatval($venta->total), 0) != round(floatval($venta->pagos->sum('total')), 0)) {
                     throw new Exception('No se ha completado el proceso de pago de la Venta');
                 }
                 $venta->fecha_liquidada = now();

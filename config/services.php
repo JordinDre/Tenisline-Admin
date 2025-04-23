@@ -41,6 +41,18 @@ return [
         'usuario_firma' => env('FEL_USUARIO_FIRMA', 'CALIDADES_DEMO'),
         'identificador' => env('FEL_IDENTIFICADOR', 'CALIDADES_DEMO'),
         'llave_firma' => env('FEL_LLAVE_FIRMA', 'f8f8afb5c114c4f5aa485c41084c092e'),
+
+        'nit'             => env('NIT'),
+        'correo'          => env('CORREO'),
+        'nombre_comercial'=> env('NOMBRE_COMERCIAL'),
+        'razon_social'    => env('RAZON_SOCIAL'),
+        'direccion'       => env('DIRECCION'),
+        'codigo_postal'   => env('CODIGO_POSTAL'),
+        'municipio'       => env('MUNICIPIO'),
+        'departamento'    => env('DEPARTAMENTO'),
+        'pais'            => env('PAIS'),
+        'pbx'             => env('PBX'),
+        'whatsapp'        => env('WHATSAPP'),
     ],
 
     // Configuración de Guatex

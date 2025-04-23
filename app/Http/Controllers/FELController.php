@@ -366,7 +366,6 @@ class FELController extends Controller
 
     public static function facturaVenta($venta)
     {
-        
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf ? 'CF' : $cliente->nit;
         $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
@@ -438,22 +437,22 @@ class FELController extends Controller
                     <dte:DTE ID="DatosCertificados">
                         <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="'.$tipo.'"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.env('NIT').'" NombreComercial="'.env('NOMBRE_COMERCIAL').'" NombreEmisor="'.env('RAZON_SOCIAL').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
                             <dte:DireccionEmisor>
-                                <dte:Direccion>'.env('DIRECCION').'</dte:Direccion>
-                                <dte:CodigoPostal>'.env('CODIGO_POSTAL').'</dte:CodigoPostal>
-                                <dte:Municipio>'.env('MUNICIPIO').'</dte:Municipio>
-                                <dte:Departamento>'.env('DEPARTAMENTO').'</dte:Departamento>
-                                <dte:Pais>'.env('PAIS').'</dte:Pais>
+                                <dte:Direccion>'.config('services.fel.direccion').'</dte:Direccion>
+                                <dte:CodigoPostal>'.config('services.fel.codigo_postal').'</dte:CodigoPostal>
+                                <dte:Municipio>'.config('services.fel.municipio').'</dte:Municipio>
+                                <dte:Departamento>'.config('services.fel.departamento').'</dte:Departamento>
+                                <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
                             </dte:DireccionEmisor>
                         </dte:Emisor>
-                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.env('CORREO').'"'.$tipoEspecial.'>
+                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.config('fel.correo').'"'.$tipoEspecial.'>
                             <dte:DireccionReceptor>
                             <dte:Direccion>'.$venta->bodega->direccion.'</dte:Direccion>
                             <dte:CodigoPostal>0</dte:CodigoPostal>
                             <dte:Municipio>'.$venta->bodega->municipio->municipio.'</dte:Municipio>
                             <dte:Departamento>'.$venta->bodega->departamento->departamento.'</dte:Departamento>
-                            <dte:Pais>'.env('PAIS').'</dte:Pais>
+                            <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
                             </dte:DireccionReceptor>
                         </dte:Receptor>
                         <dte:Frases>
@@ -504,7 +503,7 @@ class FELController extends Controller
         $xml = '<dte:GTAnulacionDocumento xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dte="http://www.sat.gob.gt/dte/fel/0.1.0" xmlns:n1="http://www.altova.com/samplexml/other-namespace" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="0.1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/0.1.0 C:\Users\User\Desktop\FEL\Esquemas\GT_AnulacionDocumento-0.1.0.xsd">
             <dte:SAT>
                 <dte:AnulacionDTE ID="DatosCertificados">
-                <dte:DatosGenerales FechaEmisionDocumentoAnular="'.Carbon::parse($venta->factura->fel_fecha)->format('Y-m-d').'" FechaHoraAnulacion="'.now()->format('Y-m-d\TH:i:s').'" ID="DatosAnulacion" IDReceptor="'.$receptorID.'" MotivoAnulacion="'.$motivo.'" NITEmisor="'.env('NIT').'" NumeroDocumentoAAnular="'.$venta->factura->fel_uuid.'"></dte:DatosGenerales>
+                <dte:DatosGenerales FechaEmisionDocumentoAnular="'.Carbon::parse($venta->factura->fel_fecha)->format('Y-m-d\TH:i:s').'" FechaHoraAnulacion="'.now()->format('Y-m-d\TH:i:s').'" ID="DatosAnulacion" IDReceptor="'.$receptorID.'" MotivoAnulacion="'.$motivo.'" NITEmisor="'.config('services.fel.nit').'" NumeroDocumentoAAnular="'.$venta->factura->fel_uuid.'"></dte:DatosGenerales>
                 </dte:AnulacionDTE>
             </dte:SAT>
             </dte:GTAnulacionDocumento>';
@@ -541,9 +540,13 @@ class FELController extends Controller
 
     public static function devolverFacturaVenta($venta, $motivo)
     {
+        
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf ? 'CF' : $cliente->nit;
         $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
+
+        $asesor = User::withTrashed()->find($venta->asesor_id);
+
 
         $totalMontoImpuesto = 0;
         $granTotal = 0;
@@ -598,22 +601,22 @@ class FELController extends Controller
                 <dte:DTE ID="DatosCertificados">
                   <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="NCRE"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.env('NIT').'" NombreComercial="'.env('NOMBRE_COMERCIAL').'" NombreEmisor="'.env('RAZON_SOCIAL').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="1" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
                         <dte:DireccionEmisor>
-                        <dte:Direccion>'.env('DIRECCION').'</dte:Direccion>
-                        <dte:CodigoPostal>'.env('CODIGO_POSTAL').'</dte:CodigoPostal>
-                        <dte:Municipio>'.env('MUNICIPIO').'</dte:Municipio>
-                        <dte:Departamento>'.env('DEPARTAMENTO').'</dte:Departamento>
-                        <dte:Pais>'.env('PAIS').'</dte:Pais>
+                        <dte:Direccion>'.config('services.fel.direccion').'</dte:Direccion>
+                        <dte:CodigoPostal>'.config('services.fel.codigo_postal').'</dte:CodigoPostal>
+                        <dte:Municipio>'.config('services.fel.municipio').'</dte:Municipio>
+                        <dte:Departamento>'.config('services.fel.departamento').'</dte:Departamento>
+                        <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
                         </dte:DireccionEmisor>
                         </dte:Emisor>
-                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.env('CORREO').'"'.$tipoEspecial.'>
+                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.config('services.fel.correo').'"'.$tipoEspecial.'>
                         <dte:DireccionReceptor>
                             <dte:Direccion>'.$venta->bodega->direccion.'</dte:Direccion>
                             <dte:CodigoPostal>0</dte:CodigoPostal>
                             <dte:Municipio>'.$venta->bodega->municipio->municipio.'</dte:Municipio>
                             <dte:Departamento>'.$venta->bodega->departamento->departamento.'</dte:Departamento>
-                            <dte:Pais>'.env('PAIS').'</dte:Pais>
+                            <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
                             </dte:DireccionReceptor>
                         </dte:Receptor>
                         <dte:Frases>
@@ -635,8 +638,8 @@ class FELController extends Controller
                 </dte:DTE>
                 <dte:Adenda>
                     <CondicionesPago>'.$venta->pagos->first()->tipoPago->tipo_pago.'</CondicionesPago>
-                    <SolicitadoPor>'.User::withTrashed()->find($venta->asesor_id)->id->name.'</SolicitadoPor>
-                    <Vendedor>'.User::withTrashed()->find($venta->asesor_id)->id->id.'</Vendedor>
+                    <SolicitadoPor>'.$asesor->name.'</SolicitadoPor>
+                    <Vendedor>'.$asesor->id.'</Vendedor>
                     <Envio>0</Envio>
                     <OrdenCompra>'.$venta->id.'</OrdenCompra>
                     <TelReceptor>'.$cliente->telefono.'</TelReceptor>
