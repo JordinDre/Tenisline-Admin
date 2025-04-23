@@ -446,7 +446,7 @@ class FELController extends Controller
                                 <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
                             </dte:DireccionEmisor>
                         </dte:Emisor>
-                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.config('fel.correo').'"'.$tipoEspecial.'>
+                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.config('services.fel.correo').'"'.$tipoEspecial.'>
                             <dte:DireccionReceptor>
                             <dte:Direccion>'.$venta->bodega->direccion.'</dte:Direccion>
                             <dte:CodigoPostal>0</dte:CodigoPostal>
