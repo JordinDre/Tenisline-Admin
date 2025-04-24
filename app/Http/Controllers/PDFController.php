@@ -68,7 +68,13 @@ class PDFController extends Controller
 
     public function notaCreditoVenta($id)
     {
-        $venta = Venta::find($id);
+        $venta = Venta::with([
+            'cliente',
+            'asesor',
+            'detalles.producto.marca',
+            'factura',
+            'devolucion'
+        ])->findOrFail($id);
         $html = view('pdf.notaCreditoVenta', compact('venta'))->render();
         $pdf = Pdf::loadHTML($html);
 
