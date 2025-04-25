@@ -79,7 +79,6 @@ class VentaController extends Controller
                 self::restarInventario($venta, 'Venta Confirmada');
                 $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
                 $res = FELController::facturaVenta($venta);
-                dd($res);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                 }
@@ -114,7 +113,7 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($data, $venta) {
                 self::sumarInventario($venta, 'Venta anulada');
-                /* if ($venta->tipo_pago_id == 2) {
+                if ($venta->tipo_pago_id == 2) {
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
                 if ($venta->factura()->exists()) {
@@ -133,7 +132,7 @@ class VentaController extends Controller
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
                     $venta->factura()->delete();
-                } */
+                }
                 $venta->estado = 'anulada';
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();

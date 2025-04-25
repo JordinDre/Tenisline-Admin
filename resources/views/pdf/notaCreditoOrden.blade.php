@@ -51,13 +51,13 @@
         <div style="display: table-cell; width: 50%; ">
             <img src="{{ public_path('/images/logo.png') }}" alt="Logo" style="max-width: 50%;">
             <div class="salto">
-                <div>{{ env('RAZON_SOCIAL') }}</div>
-                <div>{{ env('NOMBRE_COMERCIAL') }}</div>
-                <div>{{ env('DIRECCION') }}</div>
-                <div>{{ env('MUNICIPIO') }}, {{ env('DEPARTAMENTO') }}</div>
-                <div>PBX: {{ env('PBX') }}</div>
-                <div>Whatsapp: {{ env('WHATSAPP') }}</div>
-                <div>NIT: {{ env('NIT') }}</div>
+                <div>{{ config('services.fel.razon_social') }}</div>
+                <div>{{ config('services.fel.nombre_comercial') }}</div>
+                <div>{{ config('services.fel.direccion') }}</div>
+                <div>{{ config('services.fel.municipio') }}, {{ config('services.fel.departamento')}}</div>
+                <div>PBX: {{ config('services.fel.pbx') }}</div>
+                <div>Whatsapp: {{ config('services.fel.whatsapp') }}</div>
+                <div>NIT: {{ config('services.fel.nit') }}</div>
 
                 <div class="salto">
                     <div>

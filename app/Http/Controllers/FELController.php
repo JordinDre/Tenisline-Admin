@@ -367,10 +367,10 @@ class FELController extends Controller
     public static function facturaVenta($venta)
     {
         $cliente = User::withTrashed()->find($venta->cliente_id);
-        $receptorID = $venta->facturar_cf ? 'CF' : $cliente->nit;
-        $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
+        $receptorID = $venta->facturar_cf == false ? $cliente->nit : 'CF';
+        $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name;
         $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-
+        
         $totalMontoImpuesto = 0;
         $xmlItems = '';
         $correlativo = 1;
@@ -403,7 +403,7 @@ class FELController extends Controller
             </dte:Item>';
             $correlativo++;
         }
-        
+
         $xmlComplementos = '';
         if ($venta->pagos->first()->tipo_pago_id == 2) {
             $xmlComplementos = '<dte:Complementos>
@@ -489,10 +489,11 @@ class FELController extends Controller
                 'Content-Type: application/xml',
             ],
         ]);
-        
+
         $response = curl_exec($curl);
         curl_close($curl);
         $responseData = json_decode($response, true);
+
         return $responseData;
     }
 
@@ -540,13 +541,12 @@ class FELController extends Controller
 
     public static function devolverFacturaVenta($venta, $motivo)
     {
-        
+
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf ? 'CF' : $cliente->nit;
         $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
 
         $asesor = User::withTrashed()->find($venta->asesor_id);
-
 
         $totalMontoImpuesto = 0;
         $granTotal = 0;

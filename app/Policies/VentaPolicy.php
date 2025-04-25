@@ -115,10 +115,9 @@ class VentaPolicy
 
     public function factura(User $user, Venta $venta): bool
     {
-        return false;
         $estadosPermitidos = ['creada', 'liquidada'];
 
-        return $user->can('factura_venta') && in_array($venta->estado->value, $estadosPermitidos) && $venta->factura()->exists() && ! $venta->comp;
+        return $user->can('factura_venta') && in_array($venta->estado->value, $estadosPermitidos) && $venta->factura()->exists();
     }
 
     public function facturar(User $user, Venta $venta): bool
@@ -131,13 +130,15 @@ class VentaPolicy
 
     public function return(User $user, Venta $venta): bool
     {
-        $estadosPermitidos = ['liquidada'];
+        return false;
+        $estadosPermitidos = ['creada', 'liquidada'];
 
         return $user->can('return_venta') && in_array($venta->estado->value, $estadosPermitidos);
     }
 
     public function credit_note(User $user, Venta $venta): bool
     {
+        return false;
         $estadosPermitidos = ['creada', 'liquidada', 'devuelta', 'parcialmente devuelta'];
 
         return $user->can('credit_note_venta') && in_array($venta->estado->value, $estadosPermitidos);

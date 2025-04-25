@@ -13,10 +13,8 @@ use App\Models\User;
 use App\Models\Venta;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -79,7 +77,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->relationship(
                         'bodega',
                         'bodega',
-                        fn(Builder $query) => $query->whereHas('user', function ($query) {
+                        fn (Builder $query) => $query->whereHas('user', function ($query) {
                             $query->where('user_id', auth()->user()->id);
                         })
                     )
@@ -121,7 +119,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn(Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
+                                        ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', $get('../../bodega_id'), $get('../../cliente_id')))
                                         ->allowHtml()
                                         ->searchable(['id', 'codigo', 'descripcion', 'marca.marca', 'genero', 'talla'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
@@ -183,8 +181,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->default(0)
                                         ->readOnly()
                                         ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
-                        
+                                ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto'),
 
                         ]),
                     Wizard\Step::make('Cliente y Pagos')
@@ -216,10 +213,10 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->preload(), */
                                     Select::make('cliente_id')
                                         ->label('Cliente')
-                                        ->relationship('cliente', 'name', fn(Builder $query) => $query->role(['cliente', 'mayorista']))
+                                        ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'mayorista']))
                                         ->optionsLimit(20)
                                         ->required()
-                                        ->columnSpan(['sm' => 1, 'md' => 9])                                 
+                                        ->columnSpan(['sm' => 1, 'md' => 9])
                                         ->searchable(),
                                     /* Toggle::make('facturar_cf')
                                         ->inline(false)
@@ -246,7 +243,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn(Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
+                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
                                         ->required()
                                         ->live()
                                         ->columnSpan(['sm' => 1, 'md' => 1])
@@ -399,6 +396,49 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->bulleted()
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('factura.fel_uuid')
+                    ->label('Fel No. Autorización')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('factura.fel_numero')
+                    ->label('Fel No. DTE')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('factura.fel_serie')
+                    ->label('Fel No. Serie')
+                    ->sortable()
+                    ->copyable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('factura.fel_fecha')
+                    ->label('Fel Fecha')
+                    ->dateTime('d/m/Y H:i:s')
+                    ->sortable()->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('anulacion.fel_uuid')
+                    ->label('Anulación Autorización')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('anulacion.fel_numero')
+                    ->label('Anulación No. DTE')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('anulacion.fel_serie')
+                    ->label('Anulación No. Serie')
+                    ->sortable()
+                    ->copyable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('anulacion.fel_fecha')
+                    ->label('Anulación Fel Fecha')
+                    ->dateTime('d/m/Y H:i:s')
+                    ->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('anulacion.motivo')
+                    ->label('Motivo Anulación')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
                 /* Tables\Columns\TextColumn::make('detalles.producto.presentacion.presentacion')
                     ->label('Presentación')
                     ->searchable()
@@ -465,7 +505,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
-                     Action::make('nota_credito')
+                    /* Action::make('nota_credito')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => auth()->user()->can('credit_note', $record))
                         ->modalContent(fn (Venta $record): View => view(
@@ -480,7 +520,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalWidth(MaxWidth::FiveExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
-                        ->modalSubmitAction(false), 
+                        ->modalSubmitAction(false),  */
                     /* Action::make('facturar')
                         ->label('Facturar')
                         ->requiresConfirmation()
@@ -609,26 +649,8 @@ class VentaResource extends Resource implements HasShieldPermissions
         ];
     }
 
-    /* public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-        $user = auth()->user();
-
-        if ($user->hasAnyRole(['administrador', 'super_admin', 'facturador', 'creditos', 'rrhh', 'gerente'])) {
-            return $query;
-        }
-
-        if ($user->hasAnyRole(User::VENTA_ROLES)) {
-            $query->where('asesor_id', $user->id);
-
-            return $query;
-        }
-
-        if ($user->hasAnyRole(User::SUPERVISORES_ORDEN)) {
-            $supervisedIds = $user->asesoresSupervisados->pluck('id');
-            $query->whereIn('asesor_id', $supervisedIds);
-
-            return $query;
-        }
-    } */
+        return parent::getEloquentQuery()->orderByDesc('created_at');
+    }
 }
