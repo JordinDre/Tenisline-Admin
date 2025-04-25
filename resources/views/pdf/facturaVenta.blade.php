@@ -88,17 +88,17 @@
 
 <body>
     <header style="text-align: center;">
-        <img src="{{ public_path('/img/logo.png') }}" alt="Logo"
+        <img src="{{ public_path('/images/logo.png') }}" alt="Logo"
             style="max-width: 80%; filter: grayscale(100%) brightness(0);">
         <br><br>
         <div>
-            <div>ENCONTRADOS, SOCIEDAD ANONIMA</div>
-            {{-- <div>26 AVENIDA 6-91 A ZONA 4</div>
-            <div>COLONIA EL NARANJO</div>
-            <div>MIXCO, GUATEMALA</div>
-            <div>NIT: 107761475</div>
-            <div>PBX: +502 23158519</div>
-            <div>Whatsapp: +502 5493 4520</div> --}}
+            <div>{{ config('services.fel.razon_social') }}</div>
+            <div>{{ config('services.fel.nombre_comercial') }}</div>
+            <div>{{ config('services.fel.direccion') }}</div>
+            <div>{{ config('services.fel.municipio') }}, {{ config('services.fel.departamento') }}</div>
+            <div>PBX: {{ config('services.fel.pbx') }}</div>
+            <div>Whatsapp: {{ config('services.fel.whatsapp') }}</div>
+            <div>NIT: {{ config('services.fel.nit') }}</div>
         </div>
         <br>
         <div>

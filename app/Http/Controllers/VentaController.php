@@ -77,20 +77,20 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($venta) {
                 self::restarInventario($venta, 'Venta Confirmada');
-               /*  $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+                $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
                 $res = FELController::facturaVenta($venta);
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                 }
                 $factura = new Factura;
-                $factura->fel_tipo =  'FCAM' ;
+                $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
                 $factura->fel_uuid = $res['uuid'];
                 $factura->fel_serie = $res['serie'];
                 $factura->fel_numero = $res['numero'];
                 $factura->fel_fecha = $res['fecha'];
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
-                $venta->factura()->save($factura); */
+                $venta->factura()->save($factura);
                 activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
             });
             Notification::make()
@@ -113,7 +113,7 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($data, $venta) {
                 self::sumarInventario($venta, 'Venta anulada');
-                /* if ($venta->tipo_pago_id == 2) {
+                if ($venta->tipo_pago_id == 2) {
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
                 if ($venta->factura()->exists()) {
@@ -132,7 +132,7 @@ class VentaController extends Controller
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
                     $venta->factura()->delete();
-                } */
+                }
                 $venta->estado = 'anulada';
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();

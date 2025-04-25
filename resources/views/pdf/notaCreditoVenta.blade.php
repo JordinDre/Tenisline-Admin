@@ -51,13 +51,13 @@
         <div style="display: table-cell; width: 50%; ">
             <img src="{{ public_path('/images/logo.png') }}" alt="Logo" style="max-width: 50%;">
             <div class="salto">
-                <div>{{ env('RAZON_SOCIAL') }}</div>
-                <div>{{ env('NOMBRE_COMERCIAL') }}</div>
-                <div>{{ env('DIRECCION') }}</div>
-                <div>{{ env('MUNICIPIO') }}, {{ env('DEPARTAMENTO') }}</div>
-                <div>PBX: {{ env('PBX') }}</div>
-                <div>Whatsapp: {{ env('WHATSAPP') }}</div>
-                <div>NIT: {{ env('NIT') }}</div>
+                <div>{{ config('services.fel.razon_social') }}</div>
+                <div>{{ config('services.fel.nombre_comercial') }}</div>
+                <div>{{ config('services.fel.direccion') }}</div>
+                <div>{{ config('services.fel.municipio') }}, {{ config('services.fel.departamento')}}</div>
+                <div>PBX: {{ config('services.fel.pbx') }}</div>
+                <div>Whatsapp: {{ config('services.fel.whatsapp') }}</div>
+                <div>NIT: {{ config('services.fel.nit') }}</div>
 
                 <div class="salto">
                     <div>
@@ -85,10 +85,16 @@
             <div class="salto"></div>
             <div>FEL, Documento Tributario Electronico</div>
             <div class="salto">
-                <<div>No. Autorización: {{ $venta->devolucion->fel_uuid }}
-            </div>
-            <div>No. Serie: {{ $venta->devolucion->fel_serie }} No. DTE: {{ $venta->devolucion->fel_numero }}</div>
-            <div>Fecha de Certificación: {{ $venta->devolucion->fel_fecha }}</div>
+                @if ($venta->estado == 'creada')
+                    <div>No. Autorización: {{ $venta->factura->fel_uuid }}</div>
+                    <div>No. Serie: {{ $venta->factura->fel_serie }} No. DTE: {{ $venta->factura->fel_numero }}</div>
+                    <div>Fecha de Certificación: {{ $venta->factura->fel_fecha }}</div>
+                @else
+                    <div>No. Autorización: {{ $venta->devolucion->fel_uuid ?? '---' }}</div>
+                    <div>No. Serie: {{ $venta->devolucion->fel_serie ?? '---' }} 
+                        No. DTE: {{ $venta->devolucion->fel_numero ?? '---' }}</div>
+                    <div>Fecha de Certificación: {{ $venta->devolucion->fel_fecha ?? '---' }}</div>
+                @endif
             <div>Moneda: GTQ</div>
         </div>
         <div class="salto"></div>
@@ -122,7 +128,7 @@
                         <td>{{ $dt->producto->codigo }}</td>
                         <td style="text-align: left;">
                             {{ $dt->producto->descripcion }},
-                            {{ $dt->producto->presentacion->presentacion }},
+                            {{-- {{ $dt->producto->presentacion->presentacion }}, --}}
                             {{ $dt->producto->marca->marca }}
                         </td>
                         <td style="text-align: right;">{{ Number::currency($dt->precio, 'GTQ') }}</td>
