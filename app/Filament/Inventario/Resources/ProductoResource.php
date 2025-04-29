@@ -79,10 +79,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250),
-                        TextInput::make('modelo')
-                            ->label('Linea/Modelo')
-                            ->required()
-                            ->maxLength(250),
+                        // TextInput::make('modelo')
+                        //     ->label('Linea/Modelo')
+                        //     ->required()
+                        //     ->maxLength(250),
                         TextInput::make('talla')
                             ->required()
                             ->maxLength(250),
@@ -102,10 +102,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     'lg' => 4,
                 ])
                     ->schema([
-                        Select::make('proveedor_id')
-                            ->searchable()
-                            ->visible(auth()->user()->can('view_supplier_producto'))
-                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
+                        // Select::make('proveedor_id')
+                        //     ->searchable()
+                        //     ->visible(auth()->user()->can('view_supplier_producto'))
+                        //     ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
                         Select::make('marca_id')
                             ->required()
                             ->optionsLimit(12)
@@ -117,46 +117,11 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->relationship('presentacion', 'presentacion'), */
                         DatePicker::make('fecha_ingreso')
                             ->label('Fecha de Ingreso'),
-                    ]),
-                Grid::make([
-                    'default' => 1,
-                    'sm' => 3,
-                    'lg' => 5,
-                ])
-                    ->schema([
                         TextInput::make('precio_venta')
                             ->required()
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('precio_vendedores')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->minValue(0)
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('precio_mayorista')
-                            ->live(onBlur: true)
-                            ->minValue(0)
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('precio_compra')
-                            ->live(onBlur: true)
-                            ->minValue(0)
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('envio')
-                            ->live(onBlur: true)
-                            ->minValue(0)
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                $set('precio_costo', round((float) $state + (float) $get('precio_compra'), 2));
-                            })
                             ->inputMode('decimal')
                             ->rule('numeric'),
                         TextInput::make('precio_costo')
@@ -166,6 +131,43 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
+                    ]),
+                Grid::make([
+                    'default' => 1,
+                    'sm' => 3,
+                    'lg' => 5,
+                ])
+                    ->schema([
+                        
+                        // TextInput::make('precio_vendedores')
+                        //     ->required()
+                        //     ->live(onBlur: true)
+                        //     ->minValue(0)
+                        //     ->visible(auth()->user()->can('view_costs_producto'))
+                        //     ->inputMode('decimal')
+                        //     ->rule('numeric'),
+                        // TextInput::make('precio_mayorista')
+                        //     ->live(onBlur: true)
+                        //     ->minValue(0)
+                        //     ->visible(auth()->user()->can('view_costs_producto'))
+                        //     ->inputMode('decimal')
+                        //     ->rule('numeric'),
+                        // TextInput::make('precio_compra')
+                        //     ->live(onBlur: true)
+                        //     ->minValue(0)
+                        //     ->visible(auth()->user()->can('view_costs_producto'))
+                        //     ->inputMode('decimal')
+                        //     ->rule('numeric'),
+                        // TextInput::make('envio')
+                        //     ->live(onBlur: true)
+                        //     ->minValue(0)
+                        //     ->visible(auth()->user()->can('view_costs_producto'))
+                        //     ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                        //         $set('precio_costo', round((float) $state + (float) $get('precio_compra'), 2));
+                        //     })
+                        //     ->inputMode('decimal')
+                        //     ->rule('numeric'),
+                        
                     ]),
                 Repeater::make('escalas')
                     ->relationship()
@@ -296,16 +298,16 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->openable()
                     ->optimize('webp')
                     ->columnSpanFull(),
-                Grid::make(2)
-                    ->schema([
-                        FileUpload::make('videos')
-                            ->label('Videos')
-                            ->multiple()
-                            ->disk(config('filesystems.disks.s3.driver'))
-                            ->directory(config('filesystems.default'))
-                            ->visibility('public')
-                            ->panelLayout('grid'),
-                    ]),
+                // Grid::make(2)
+                //     ->schema([
+                //         FileUpload::make('videos')
+                //             ->label('Videos')
+                //             ->multiple()
+                //             ->disk(config('filesystems.disks.s3.driver'))
+                //             ->directory(config('filesystems.default'))
+                //             ->visibility('public')
+                //             ->panelLayout('grid'),
+                //     ]),
             ]);
     }
 
