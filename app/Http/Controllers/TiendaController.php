@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Carrito;
 use App\Models\Guia;
+use Inertia\Inertia;
+use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\OrdenDetalle;
-use App\Models\Producto;
 use App\Models\Tienda;
+use App\Models\Carrito;
+use App\Models\Producto;
+use App\Models\OrdenDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
 
 class TiendaController extends Controller
 {
@@ -87,11 +88,16 @@ class TiendaController extends Controller
     {
         $search = $request->search;
         $marca = $request->marca;
+        $bodega = $request->bodega;
 
         $productos = Producto::with('marca', 'stock')
-            ->whereHas('stock', function ($query) {
-                $query->where('existencia', '>', 0); // Solo productos con stock en bodega_id = 1
-            });
+        ->whereHas('stock', function ($query) use ($bodega) {
+            $query->where('existencia', '>', 0);
+
+            if ($bodega) {
+                $query->where('bodega_id', $bodega);
+            }
+        });
     
         if ($search) {
             $productos->where(function ($query) use ($search) {
@@ -111,8 +117,13 @@ class TiendaController extends Controller
             });
         }
 
+        if (!$search && !$marca ) {
+            $productos->inRandomOrder();
+        }
+
         $productos = $productos
             ->paginate(20)
+            ->withQueryString()
             ->through(function ($producto) {
                 return [
                     'id' => $producto->id,
@@ -131,16 +142,25 @@ class TiendaController extends Controller
                     'marca' => $producto->marca->marca ?? null,
                 ];
             });
+
+            
     
         return Inertia::render('Catalogo', [
             'productos' => $productos,
             'search' => $search,
+            'bodega' => $bodega,
         ]);
     }    
 
     public function producto($slug)
     {
         $producto = Producto::where('slug', $slug)->first();
+
+        $marcas = Marca::whereHas('productos.stock', function ($q) {
+            $q->where('existencia', '>', 0);
+        })
+        ->orderBy('marca')
+        ->pluck('marca');
 
         return Inertia::render('Producto', [
             'producto' => [
@@ -158,6 +178,7 @@ class TiendaController extends Controller
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca ?? null,
             ],
+            'marcas' => $marcas,
         ]);
     }
 

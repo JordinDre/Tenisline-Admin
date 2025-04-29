@@ -3,9 +3,10 @@ import Layout from '@/Layouts/Layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FaSearch } from 'react-icons/fa';
 
-export default function Catalogo({ productos, search }) {
+export default function Catalogo({ productos, search, bodega }) {
     const { data, setData, get, processing } = useForm({
         search: search || '',
+        bodega: bodega || '',
     });
 
     function submit(e) {
@@ -37,6 +38,19 @@ export default function Catalogo({ productos, search }) {
                     placeholder="Buscar productos..."
                     className="focus:ring-black-500 w-full rounded-lg border border-zinc-300 px-4 py-2 text-zinc-700 focus:outline-none focus:ring-2"
                 />
+
+                <select
+                    name="bodega"
+                    value={data.bodega}
+                    onChange={(e) => setData('bodega', e.target.value)}
+                    className="rounded-lg border border-zinc-300 px-4 py-2 text-zinc-700 focus:outline-none focus:ring-2 focus:ring-black"
+                >
+                        <option value="">Todas las bodegas</option>
+                        <option value="1">Zacapa</option>
+                        <option value="2">Chiquimula</option>
+                </select>
+
+
                 <button
                     type="submit"
                     disabled={processing}
