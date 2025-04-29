@@ -2,40 +2,42 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers\OrdenesRelationManager;
-use App\Http\Controllers\UserController;
-use App\Models\Bodega;
-use App\Models\Departamento;
-use App\Models\Municipio;
-use App\Models\Observacion;
-use App\Models\TipoPago;
-use App\Models\User;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use App\Models\Role;
+use App\Models\User;
+use Filament\Tables;
+use App\Models\Bodega;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\Municipio;
 use Filament\Tables\Table;
+use App\Models\Observacion;
+use App\Models\Departamento;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Filament\Resources\UserResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use App\Filament\Resources\UserResource\RelationManagers\OrdenesRelationManager;
 
 class UserResource extends Resource implements HasShieldPermissions
 {
@@ -122,6 +124,25 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->relationship('roles', 'name', fn($query) => $query->whereNotIn('name', User::ROLES_ADMIN))
                             ->multiple()
                             ->preload()
+                            ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                                $roleNames = DB::table('roles')->whereIn('id', $state)->pluck('name')->toArray();
+                        
+                                $tieneClienteApertura = in_array('cliente_apertura', $roleNames);
+                                $tieneMayorista = in_array('mayorista', $roleNames);
+                        
+                                if ($tieneClienteApertura && $tieneMayorista) {
+                                    $rolesSinConflicto = array_filter($roleNames, fn($name) => $name !== 'mayorista');
+                        
+                                    $idsSinConflicto = DB::table('roles')->whereIn('name', $rolesSinConflicto)->pluck('id')->toArray();
+                        
+                                    $set('roles', $idsSinConflicto);
+                        
+                                    Notification::make()
+                                        ->title('No puedes asignar ambos roles: cliente_apertura y mayorista.')
+                                        ->warning()
+                                        ->send();
+                                }
+                            })
                             /* ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, $state, $record) {
                                 if ($record) {
