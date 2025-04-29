@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 
 export default function Card({ producto }) {
     return (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 uppercase shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             <div className="h-56 w-full">
                 <Link href={`/producto/${producto.slug}`}>
                     <img
@@ -17,9 +17,14 @@ export default function Card({ producto }) {
                     href={`/producto/${producto.slug}`}
                     className="text-lg font-semibold leading-tight text-zinc-900 hover:underline dark:text-white"
                 >
-                    <div><span className="font-semibold">CÓDIGO:</span> {producto.codigo}</div>
+                    <div>
+                        <span className="font-semibold">CÓDIGO:</span>{' '}
+                        {producto.codigo}
+                    </div>
                     <div>MARCA: {producto.marca}</div>
-                    <div>TALLA: US {producto.talla} {producto.genero}</div>
+                    <div>
+                        TALLA: US {producto.talla} {producto.genero}
+                    </div>
                     <div>COLOR: {producto.color}</div>
                     <div>NOMBRE: {producto.descripcion}</div>
                 </Link>
