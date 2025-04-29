@@ -1,7 +1,7 @@
 import Layout from '@/Layouts/Layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
-export default function Producto({ producto }) {
+export default function Producto({ producto, marcas }) {
     const user = usePage().props.auth.user;
     const { data, post } = useForm({
         producto_id: producto.id,
@@ -80,7 +80,7 @@ export default function Producto({ producto }) {
                                             )}
                                         </svg>
                                         {producto.stock > 0
-                                            ? `En existencia: ${producto.stock} unidades`
+                                            ? `En existencia`
                                             : 'Sin stock disponible'}
                                     </div>
                                 </div>
@@ -137,20 +137,18 @@ export default function Producto({ producto }) {
                                     </button> */}
                                 </form>
                             )}
-                            <div className="mt-4 flex gap-4">
-                                {['ADIDAS', 'HOKA', 'NIKE', 'REEBOK'].map(
-                                    (marca, index) => (
+                            <div className="mt-4 overflow-x-auto">
+                                <div className="flex gap-4 w-max">
+                                    {marcas.map((marca, index) => (
                                         <Link
                                             key={index}
-                                            href={route('catalogo', {
-                                                search: marca.toLowerCase(), // establece como search directamente
-                                            })}
-                                            className="btn-zinc-content btn rounded-lg px-4 py-2 text-sm font-semibold"
+                                            href={route('catalogo', { marca })}
+                                            className="btn-zinc-content btn whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold"
                                         >
                                             {marca}
                                         </Link>
-                                    ),
-                                )}
+                                    ))}
+                                </div>
                             </div>
 
                             <hr className="my-6 border-zinc-200 dark:border-zinc-800 md:my-8" />
