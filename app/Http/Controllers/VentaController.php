@@ -11,8 +11,10 @@ use App\Models\Kardex;
 use App\Models\Factura;
 use App\Models\Producto;
 use App\Models\Inventario;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 
 class VentaController extends Controller
 {
@@ -291,5 +293,54 @@ class VentaController extends Controller
                 ->danger()
                 ->send();
         }
+    }
+
+    public static function liquidarBulk(Collection $ventas, array $data)
+    {
+        try {
+            foreach ($ventas as $venta) {
+                // if ($venta->estado !== 'creada') {
+                //     throw ValidationException::withMessages([
+                //         'estado' => "Solo puedes liquidar ventas en estado 'creada'.",
+                //     ]);
+                // }
+
+                $pagoExistente = $venta->pagos->first();
+
+                if ($pagoExistente) {
+                    $pagoExistente->update([
+                        'no_documento' => $data['no_documento'],
+                    ]);
+                } else {
+                    Pago::create([
+                        'pagable_id' => $venta->id,
+                        'pagable_type' => Venta::class,
+                        'user_id' => auth()->id(),
+                        'tipo_pago_id' => 7, 
+                        'no_documento' => $data['no_documento'],
+                        // 'monto' => $venta->total,
+                    ]);
+                }
+        
+                $venta->update([
+                    'estado' => 'liquidada',
+                ]);
+
+                Notification::make()
+                ->color('success')
+                ->title('Se ha liquidado la Venta #'.$venta->id)
+                ->success()
+                ->send();
+            }
+            
+        } catch (Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al liquidar Venta')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+        
     }
 }
