@@ -294,7 +294,7 @@ class CreateVenta extends CreateRecord
 
                                                     $cliente = \App\Models\User::with('roles')->find($clienteId);
 
-                                                    return $cliente?->roles->pluck('name')->contains('cliente_apertura') ?? false;
+                                                    return $cliente?->roles->pluck('name')->intersect(['cliente_apertura', 'mayorista'])->isNotEmpty() ?? false;
                                                 })
                                                 ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
                                                     $cantidad = $get('cantidad') ?? 1;
@@ -305,9 +305,14 @@ class CreateVenta extends CreateRecord
                                                     $cliente = User::with('roles')->find($clienteId);
                                                     $roles = $cliente?->getRoleNames() ?? collect();
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
+                                                    $esColaborador= $roles->contains('mayorista');
 
                                                     if ($state && $esClienteApertura) {
                                                         $precioFinal = round($precioOriginal * 0.8, 2);
+                                                    }
+
+                                                    if ($state && $esColaborador) {
+                                                        $precioFinal = round($precioOriginal * 0.75, 2);
                                                     }
 
                                                     $set('precio', $precioFinal);
@@ -347,6 +352,7 @@ class CreateVenta extends CreateRecord
                                                     $cliente = User::with('roles')->find($clienteId);
                                                     $roles = $cliente?->getRoleNames() ?? collect();
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
+                                                    $esColaborador = $roles->contains('mayorista');
 
                                                     $producto = Producto::find($state);
                                                     $precioOriginal = $producto->precio_venta;
@@ -360,6 +366,15 @@ class CreateVenta extends CreateRecord
                                                         Notification::make()
                                                             ->title('Descuento aplicado')
                                                             ->body('Se ha aplicado un 20% de descuento a este producto.')
+                                                            ->success()
+                                                            ->send();
+                                                    }
+
+                                                    if ($esColaborador && $aplicarDescuento) {
+                                                        $precioFinal = round($precioOriginal * 0.75, 2);
+                                                        Notification::make()
+                                                            ->title('Descuento aplicado')
+                                                            ->body('Se ha aplicado un 25% de descuento a este producto.')
                                                             ->success()
                                                             ->send();
                                                     }
@@ -430,12 +445,17 @@ class CreateVenta extends CreateRecord
                                                     $cliente = \App\Models\User::with('roles')->find($clienteId);
                                                     $roles = $cliente?->getRoleNames() ?? collect();
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
+                                                    $esColaborador = $roles->contains('mayorista');
 
                                                     $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
                                                     $precioFinal = $precioOriginal;
 
                                                     if ($esClienteApertura && $aplicarDescuento) {
                                                         $precioFinal = round($precioOriginal * 0.8, 2);
+                                                    }
+
+                                                    if ($esColaborador && $aplicarDescuento) {
+                                                        $precioFinal = round($precioOriginal * 0.75, 2);
                                                     }
 
                                                     $set('precio', $precioFinal);

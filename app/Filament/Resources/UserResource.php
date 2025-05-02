@@ -138,7 +138,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                     $set('roles', $idsSinConflicto);
                         
                                     Notification::make()
-                                        ->title('No puedes asignar ambos roles: cliente_apertura y mayorista.')
+                                        ->title('No puedes asignar ambos roles: cliente_apertura, mayorista o colaborador.')
                                         ->warning()
                                         ->send();
                                 }
