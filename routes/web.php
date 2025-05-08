@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\PDFController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TiendaController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PDFController;
+use App\Http\Controllers\TiendaController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReporteController;
 
 Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
@@ -24,6 +25,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/sumar-carrito/{id}', [TiendaController::class, 'sumarCarrito'])->name('sumar.carrito');
     Route::post('/restar-carrito/{id}', [TiendaController::class, 'restarCarrito'])->name('restar.carrito');
     Route::post('/eliminar-carrito/{id}', [TiendaController::class, 'eliminarCarrito'])->name('eliminar.carrito'); */
+
+    #REPORTES
+    Route::get('/reporte/ventas', [ReporteController::class, 'Ventas'])->name('reporte.ventas');
+    Route::get('/reporte/ventas-detallado', [ReporteController::class, 'VentasDetallado'])->name('reporte.ventas-detallado');
+    Route::get('/reporte/pagos', [ReporteController::class, 'Pagos'])->name('reporte.pagos');
+    Route::get('/reporte/resultados', [ReporteController::class, 'Resultados'])->name('reporte.resultados');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
