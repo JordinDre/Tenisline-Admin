@@ -3,7 +3,7 @@ import Layout from '@/Layouts/Layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FaSearch } from 'react-icons/fa';
 
-export default function Catalogo({ productos, search, bodega }) {
+export default function Catalogo({ productos, search, bodega, bodegas }) {
     const { data, setData, get, processing } = useForm({
         search: search || '',
         bodega: bodega || '',
@@ -43,11 +43,13 @@ export default function Catalogo({ productos, search, bodega }) {
                     name="bodega"
                     value={data.bodega}
                     onChange={(e) => setData('bodega', e.target.value)}
-                    className="rounded-lg border border-zinc-300 px-4 py-2 text-zinc-700 focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                        <option value="">Todas las bodegas</option>
-                        <option value="1">Zacapa</option>
-                        <option value="2">Chiquimula</option>
+                    <option value="">Todas las tiendas</option>
+                    {bodegas.map((b) => (
+                        <option key={b.id} value={b.id}>
+                            {b.bodega}
+                        </option>
+                    ))}
                 </select>
 
 

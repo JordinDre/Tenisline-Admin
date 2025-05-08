@@ -6,6 +6,7 @@ use App\Models\Guia;
 use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
+use App\Models\Bodega;
 use App\Models\Tienda;
 use App\Models\Carrito;
 use App\Models\Producto;
@@ -100,15 +101,24 @@ class TiendaController extends Controller
         });
     
         if ($search) {
-            $productos->where(function ($query) use ($search) {
-                $query->where('productos.codigo', 'LIKE', "%{$search}%")
-                    ->orWhere('productos.id', 'LIKE', "%{$search}%")
-                    ->orWhere('productos.descripcion', 'LIKE', "%{$search}%")
-                    ->orWhere('productos.modelo', 'like', "%{$search}%")
-                    ->orWhere('productos.talla', 'like', "%{$search}%")
-                    ->orWhere('productos.genero', 'like', "%{$search}%")
-                    ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$search}%"));
-            });
+            $searchTerms = explode(' ', $search);
+        
+            foreach ($searchTerms as $term) {
+                $productos->where(function ($query) use ($term) {
+                    $query->where('productos.codigo', 'LIKE', "%{$term}%")
+                        ->orWhere('productos.id', 'LIKE', "%{$term}%")
+                        ->orWhere('productos.descripcion', 'LIKE', "%{$term}%")
+                        ->orWhere('productos.modelo', 'like', "%{$term}%")
+                        ->orWhere('productos.talla', 'like', "%{$term}%")
+                        ->orWhere('productos.genero', 'like', "%{$term}%")
+                        ->orWhere('productos.color', 'like', "%{$term}%")
+                        ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$term}%"));
+                });
+            }
+        } else {
+            if (!$marca) {
+                $productos->inRandomOrder();
+            }
         }
 
         if ($marca) {
@@ -143,12 +153,15 @@ class TiendaController extends Controller
                 ];
             });
 
-            
+            $bodegas = Bodega::whereNotIn('bodega', ['Mal estado', 'Traslado'])
+            ->where('bodega', 'not like', '%bodega%')
+            ->get(['id', 'bodega']);
     
         return Inertia::render('Catalogo', [
             'productos' => $productos,
             'search' => $search,
-            'bodega' => $bodega,
+            'bodega' => $bodega, 
+            'bodegas' => $bodegas,
         ]);
     }    
 
