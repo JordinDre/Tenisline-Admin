@@ -2,38 +2,40 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Enums\EstadoVentaStatus;
-use App\Filament\Ventas\Resources\VentaResource\Pages;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\VentaController;
+use App\Models\User;
+use Filament\Tables;
+use App\Models\Venta;
 use App\Models\Escala;
+use Filament\Forms\Get;
 use App\Models\Producto;
 use App\Models\TipoPago;
-use App\Models\User;
-use App\Models\Venta;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Enums\EstadoVentaStatus;
+use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
+use Filament\Tables\Actions\Action;
+use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Actions\BulkAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
 use Filament\Tables\Enums\FiltersLayout;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
+use Illuminate\Database\Eloquent\Collection;
+use App\Filament\Ventas\Resources\VentaResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class VentaResource extends Resource implements HasShieldPermissions
 {
@@ -629,7 +631,63 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->link()
                     ->label('Acciones'),
             ], position: ActionsPosition::BeforeColumns)
-            ->poll('60s');
+            ->poll('60s')
+            ->bulkActions([
+                BulkAction::make('liquidar')
+                    ->label('Liquidar')
+                    ->color('success')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->slideOver()
+                    ->closeModalByClickingAway(false)
+                    ->modalWidth(MaxWidth::ScreenSmall)
+                    ->fillForm([
+                        'no_documento' => '',
+                    ])
+                    ->form([
+                        Grid::make(['default' => 1, 'md' => 6])
+                            ->schema([
+                                // Select::make('tipo_pago_id')
+                                //         ->label('Forma de Pago')
+                                //         ->required()
+                                //         ->live()
+                                //         ->columnSpan(['sm' => 1, 'md' => 1])
+                                //         ->searchable()
+                                //         ->preload(),
+                                //     TextInput::make('monto')
+                                //         ->label('Monto')
+                                //         ->prefix('Q')
+                                //         ->live(onBlur: true)
+                                //         ->inputMode('decimal')
+                                //         ->rule('numeric')
+                                //         ->minValue(1)
+                                //         ->required(),
+                                    TextInput::make('no_documento')
+                                        ->label('No. Documento o Autorización')
+                                        ->columnSpan(['sm' => 1, 'md' => 3]),
+                                    // DatePicker::make('fecha_transaccion')
+                                    //     ->default(now())
+                                    //     ->required(),
+                                    // FileUpload::make('imagen')
+                                    //     ->required()
+                                    //     ->image()
+                                    //     ->downloadable()
+                                    //     ->label('Imágen')
+                                    //     ->imageEditor()
+                                    //     ->disk(config('filesystems.disks.s3.driver'))
+                                    //     ->directory(config('filesystems.default'))
+                                    //     ->visibility('public')
+                                    //     ->appendFiles()
+                                    //     ->maxSize(5000)
+                                    //     ->resize(50)
+                                    //     ->openable()
+                                    //     ->columnSpan(['sm' => 1, 'md' => 3])
+                                    //     ->optimize('webp'),
+                            ]),
+                    ])
+                    ->action(function (Collection $records, array $data): void {
+                        VentaController::liquidarBulk($records, $data);
+                    }),
+                ]);
     }
 
     public static function getRelations(): array
