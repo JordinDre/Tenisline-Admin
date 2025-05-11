@@ -224,7 +224,7 @@ class VentaController extends Controller
                     }
                 }
 
-                /*  if ($venta->factura()->exists()) {
+                 if ($venta->factura()->exists()) {
                      $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
                      if (! $res['resultado']) {
                          throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
@@ -240,7 +240,7 @@ class VentaController extends Controller
                      $factura->motivo = $data['motivo'];
                      $venta->factura()->save($factura);
                      $venta->factura()->delete();
-                 } */
+                 }
 
                 $venta->estado = $estado;
                 $venta->motivo = $data['motivo'];
