@@ -85,12 +85,12 @@ class ConfirmTraslado extends EditRecord
                             ->relationship('producto', 'descripcion', function ($query) {
                                 $query->withTrashed(); // Incluir productos eliminados
                             })
-                            ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, null, $get('../../entrada_id')))
+                            ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, '', $get('../../entrada_id')))
                             ->allowHtml()
                             ->disabled()
                             ->searchable(['id'])
                             ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                return ProductoController::searchProductos($search, null, $get('../../entrada_id'));
+                                return ProductoController::searchProductos($search, '', $get('../../entrada_id'));
                             })
                             ->optionsLimit(20)
                             ->columnSpanFull()
