@@ -36,7 +36,7 @@ class TrasladoController extends Controller
                 $cantidad = $detalle->cantidad_enviada ?? $detalle->cantidad_recibida;
                 if ($inventario->existencia < $cantidad) {
                     $producto = Producto::withTrashed()->find($detalle->producto_id);
-                    throw new Exception("La cantidad solicitada para el producto {$producto->id} - {$producto->codigo} - {$producto->descripcion} - {$producto->marca->marca} - {$producto->presentacion->presentacion} supera la existencia disponible.");
+                    throw new Exception("La cantidad solicitada para el producto {$producto->id} - {$producto->codigo} - {$producto->descripcion} - {$producto->marca->marca} supera la existencia disponible.");
                 }
                 $inventario->existencia -= $cantidad;
             }
@@ -108,7 +108,7 @@ class TrasladoController extends Controller
                 $traslado->fecha_confirmado = now();
                 $traslado->receptor_id = auth()->user()->id;
                 $traslado->save();
-                OrdenController::actualizarBackorder();
+                /* OrdenController::actualizarBackorder(); */
             });
 
             activity()->performedOn($traslado)->causedBy(auth()->user())
