@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        /* Schema::create('traslados', function (Blueprint $table) {
+        Schema::create('traslados', function (Blueprint $table) {
             $table->id();
             $table->enum('estado', ['creado', 'preparado', 'en tránsito', 'recibido', 'confirmado', 'anulado'])->default('creado');
             $table->unsignedBigInteger('salida_id');
@@ -20,7 +20,6 @@ return new class extends Migration
             $table->unsignedBigInteger('receptor_id')->nullable();
             $table->unsignedBigInteger('piloto_id')->nullable();
             $table->unsignedBigInteger('anulo_id')->nullable();
-            $table->unsignedBigInteger('vehiculo_id')->nullable();
             $table->text('observaciones')->nullable();
             $table->dateTime('fecha_preparado')->nullable();
             $table->dateTime('fecha_salida')->nullable();
@@ -34,9 +33,8 @@ return new class extends Migration
             $table->foreign('emisor_id')->references('id')->on('users');
             $table->foreign('receptor_id')->references('id')->on('users');
             $table->foreign('piloto_id')->references('id')->on('users');
-            $table->foreign('vehiculo_id')->references('id')->on('vehiculos');
             $table->foreign('anulo_id')->references('id')->on('users');
-        }); */
+        });
     }
 
     /**
