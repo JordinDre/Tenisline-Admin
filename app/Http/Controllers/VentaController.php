@@ -271,7 +271,7 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($venta) {
-                if ($venta->pago_validado == 0 || round(floatval($venta->total), 0) != round(floatval($venta->pagos->sum('total')), 0)) {
+                if (round(floatval($venta->total), 0) != round(floatval($venta->pagos->sum('total')), 0)) {
                     throw new Exception('No se ha completado el proceso de pago de la Venta');
                 }
                 $venta->fecha_liquidada = now();
