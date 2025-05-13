@@ -559,9 +559,9 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('tabler-truck-return')
                         ->visible(fn ($record) => auth()->user()->can('return', $record))
                         ->fillForm(fn (Venta $record): array => [
-                            'costo_envio' => $record->costo_envio,
+                            /* 'costo_envio' => $record->costo_envio, */
                             'motivo' => $record->motivo,
-                            'apoyo' => $record->apoyo,
+                            /* 'apoyo' => $record->apoyo, */
                         ])
                         ->form([
                             Grid::make(['default' => 1, 'md' => 6])
