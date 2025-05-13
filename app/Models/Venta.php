@@ -45,12 +45,12 @@ class Venta extends Model
 
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'cliente_id');
+        return $this->belongsTo(User::class, 'cliente_id')->withTrashed();
     }
 
     public function asesor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'asesor_id');
+        return $this->belongsTo(User::class, 'asesor_id')->withTrashed();
     }
 
     public function tipo_pago(): BelongsTo
