@@ -244,7 +244,7 @@ class VentaController extends Controller
 
                 $venta->estado = $estado;
                 $venta->motivo = $data['motivo'];
-                $venta->apoyo = $data['apoyo'];
+                /* $venta->apoyo = $data['apoyo']; */
                 $venta->fecha_devuelta = now();
                 $venta->devolvio_id = auth()->user()->id;
                 $venta->save();
