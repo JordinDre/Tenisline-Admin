@@ -137,7 +137,7 @@ class VentaPolicy
 
     public function credit_note(User $user, Venta $venta): bool
     {
-        $estadosPermitidos = ['creada', 'liquidada', 'devuelta', 'parcialmente devuelta'];
+        $estadosPermitidos = ['devuelta', 'parcialmente devuelta'];
 
         return $user->can('credit_note_venta') && in_array($venta->estado->value, $estadosPermitidos);
     }
