@@ -56,7 +56,7 @@ class ProductoController extends Controller
 
         $preciosHTML = ''; // Inicializamos para acumular los precios a mostrar
 
-        if ($clienteRol === 'mayorista') {
+        if ($clienteRol === 'colaborador') {
             $preciosHTML = "<div style='margin-top: 5px;'>
                                 <div style='font-weight: bold; color: blue;'>
                                     Precio Mayorista: Q. ".number_format($precioMayorista, 2)."
@@ -186,7 +186,6 @@ class ProductoController extends Controller
         $terms = explode(' ', $search);
         $terms = array_filter($terms);
 
-
         foreach ($terms as $term) {
             $query->where(function ($q) use ($term) {
                 $q->where('descripcion', 'like', "%{$term}%")
@@ -199,9 +198,9 @@ class ProductoController extends Controller
                     });
             });
         }
-            /* ->orWhereHas('presentacion', function ($query) use ($search) {
-                $query->where('presentacion', 'like', "%{$search}%");
-            }) */;
+        /* ->orWhereHas('presentacion', function ($query) use ($search) {
+            $query->where('presentacion', 'like', "%{$search}%");
+        }) */
 
         /* if ($bodega_id) {
             $query->whereHas('inventarios', function (Builder $query) use ($bodega_id) {

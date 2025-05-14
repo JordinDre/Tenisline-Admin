@@ -2,42 +2,42 @@
 
 namespace App\Filament\Resources;
 
-use Closure;
-use App\Models\Role;
-use App\Models\User;
-use Filament\Tables;
-use App\Models\Bodega;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use App\Models\TipoPago;
-use Filament\Forms\Form;
-use App\Models\Municipio;
-use Filament\Tables\Table;
-use App\Models\Observacion;
-use App\Models\Departamento;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\DB;
-use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
+use App\Filament\Resources\UserResource\Pages;
+use App\Filament\Resources\UserResource\RelationManagers\OrdenesRelationManager;
 use App\Http\Controllers\UserController;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
-use Filament\Tables\Actions\ActionGroup;
+use App\Models\Bodega;
+use App\Models\Departamento;
+use App\Models\Municipio;
+use App\Models\Observacion;
+use App\Models\Role;
+use App\Models\TipoPago;
+use App\Models\User;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\ActionsPosition;
-use App\Filament\Resources\UserResource\Pages;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\DB;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use App\Filament\Resources\UserResource\RelationManagers\OrdenesRelationManager;
 
 class UserResource extends Resource implements HasShieldPermissions
 {
@@ -121,24 +121,24 @@ class UserResource extends Resource implements HasShieldPermissions
                         DatePicker::make('fecha_nacimiento')
                             ->label('Fecha de Nacimiento'),
                         Select::make('roles')
-                            ->relationship('roles', 'name', fn($query) => $query->whereNotIn('name', User::ROLES_ADMIN))
+                            ->relationship('roles', 'name', fn ($query) => $query->whereNotIn('name', User::ROLES_ADMIN))
                             ->multiple()
                             ->preload()
                             ->afterStateUpdated(function (Set $set, Get $get, $state) {
                                 $roleNames = DB::table('roles')->whereIn('id', $state)->pluck('name')->toArray();
-                        
+
                                 $tieneClienteApertura = in_array('cliente_apertura', $roleNames);
-                                $tieneMayorista = in_array('mayorista', $roleNames);
-                        
+                                $tieneMayorista = in_array('colaborador', $roleNames);
+
                                 if ($tieneClienteApertura && $tieneMayorista) {
-                                    $rolesSinConflicto = array_filter($roleNames, fn($name) => $name !== 'mayorista');
-                        
+                                    $rolesSinConflicto = array_filter($roleNames, fn ($name) => $name !== 'colaborador');
+
                                     $idsSinConflicto = DB::table('roles')->whereIn('name', $rolesSinConflicto)->pluck('id')->toArray();
-                        
+
                                     $set('roles', $idsSinConflicto);
-                        
+
                                     Notification::make()
-                                        ->title('No puedes asignar ambos roles: cliente_apertura, mayorista o colaborador.')
+                                        ->title('No puedes asignar ambos roles: cliente_apertura, colaborador o colaborador.')
                                         ->warning()
                                         ->send();
                                 }
@@ -177,8 +177,8 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->searchable(), */
                         Select::make('tipo_pagos')
                             ->label('Tipos de Pago')
-                            ->required(fn(Get $get) => in_array([4, 6], $get('roles')))
-                            ->relationship('tipo_pagos', 'tipo_pago', fn($query) => $query->whereIn('tipo_pago', TipoPago::CLIENTE_PAGOS))
+                            ->required(fn (Get $get) => in_array([4, 6], $get('roles')))
+                            ->relationship('tipo_pagos', 'tipo_pago', fn ($query) => $query->whereIn('tipo_pago', TipoPago::CLIENTE_PAGOS))
                             ->live()
                             /* ->afterStateUpdated(function (Set $set, $state) {
                                 if (! in_array(2, $state)) {
@@ -213,11 +213,11 @@ class UserResource extends Resource implements HasShieldPermissions
                     ]),
                 Select::make('bodegas')
                     ->multiple()
-                    ->required(fn(Get $get) => ! empty(array_intersect([1, 2, 3, 12, 13, 14, 16, 17], $get('roles'))))
+                    ->required(fn (Get $get) => ! empty(array_intersect([1, 2, 3, 12, 13, 14, 16, 17], $get('roles'))))
                     ->relationship(
                         'bodegas',
                         'bodega',
-                        fn(Builder $query) => $query->whereNotIn('bodega', Bodega::TRASLADO_NAME)
+                        fn (Builder $query) => $query->whereNotIn('bodega', Bodega::TRASLADO_NAME)
                     )
                     ->preload()
                     ->searchable(),
@@ -250,7 +250,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->preload(),
                         Select::make('departamento_id')
                             ->label('Departamento')
-                            ->options(fn(Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
+                            ->options(fn (Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set) {
                                 $set('municipio_id', null);
@@ -260,7 +260,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->preload(),
                         Select::make('municipio_id')
                             ->label('Municipio')
-                            ->options(fn(Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
+                            ->options(fn (Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
                             ->required()
                             ->searchable()
                             ->preload(),
@@ -368,12 +368,12 @@ class UserResource extends Resource implements HasShieldPermissions
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Impersonate::make()->visible(fn($record) => auth()->user()->can('impersonate', $record)),
+                Impersonate::make()->visible(fn ($record) => auth()->user()->can('impersonate', $record)),
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('Desactivar')
-                        ->visible(fn($record) => auth()->user()->can('delete', $record))
+                        ->visible(fn ($record) => auth()->user()->can('delete', $record))
                         ->color('danger')
                         ->icon('heroicon-o-trash')
                         ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -396,7 +396,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                 ->success()
                                 ->send();
                         })
-                        ->modalContent(fn(User $record): View => view(
+                        ->modalContent(fn (User $record): View => view(
                             'filament.pages.actions.observaciones',
                             ['record' => $record],
                         ))
@@ -419,7 +419,7 @@ class UserResource extends Resource implements HasShieldPermissions
     public static function getRelations(): array
     {
         return [
-            /* OrdenesRelationManager::class, */];
+        /* OrdenesRelationManager::class, */];
     }
 
     public static function getPages(): array
