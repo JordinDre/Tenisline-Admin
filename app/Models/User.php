@@ -47,7 +47,8 @@ class User extends Authenticatable implements FilamentUser
     }
 
     public const ROL_CLIENTE_APERTURA = 'cliente_apertura';
-    public const ROL_MAYORISTA = 'mayorista';
+
+    public const ROL_MAYORISTA = 'colaborador';
 
     public const ASESOR_ROLES = [
         'asesor telemarketing',

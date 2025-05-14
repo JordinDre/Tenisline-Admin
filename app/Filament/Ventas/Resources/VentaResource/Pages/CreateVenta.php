@@ -56,8 +56,7 @@ class CreateVenta extends CreateRecord
                         'bodega',
                         'bodega',
                         fn (Builder $query) => $query
-                            ->whereHas('user', fn ($q) =>
-                                $q->where('user_id', auth()->id())
+                            ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
                             )
                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
                             ->where('bodega', 'not like', '%bodega%')
@@ -80,7 +79,7 @@ class CreateVenta extends CreateRecord
                                 ->schema([
                                     Select::make('cliente_id')
                                         ->label('Cliente')
-                                        ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'cliente_apertura', 'mayorista']))
+                                        ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'cliente_apertura', 'colaborador']))
                                         ->optionsLimit(20)
                                         ->required()
                                         ->live()
@@ -91,7 +90,7 @@ class CreateVenta extends CreateRecord
                                                 if (! $get('facturar_cf')) {
                                                     $cliente = User::find($value);
                                                     $nit = trim($cliente->nit ?? '');
-                                        
+
                                                     if (
                                                         empty($nit) ||
                                                         in_array(strtolower($nit), ['cf']) ||
@@ -296,7 +295,7 @@ class CreateVenta extends CreateRecord
 
                                                     $cliente = \App\Models\User::with('roles')->find($clienteId);
 
-                                                    return $cliente?->roles->pluck('name')->intersect(['cliente_apertura', 'mayorista'])->isNotEmpty() ?? false;
+                                                    return $cliente?->roles->pluck('name')->intersect(['cliente_apertura', 'colaborador'])->isNotEmpty() ?? false;
                                                 })
                                                 ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
                                                     $cantidad = $get('cantidad') ?? 1;
@@ -307,7 +306,7 @@ class CreateVenta extends CreateRecord
                                                     $cliente = User::with('roles')->find($clienteId);
                                                     $roles = $cliente?->getRoleNames() ?? collect();
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
-                                                    $esColaborador= $roles->contains('mayorista');
+                                                    $esColaborador = $roles->contains('colaborador');
 
                                                     if ($state && $esClienteApertura) {
                                                         $precioFinal = round($precioOriginal * 0.8, 2);
@@ -354,7 +353,7 @@ class CreateVenta extends CreateRecord
                                                     $cliente = User::with('roles')->find($clienteId);
                                                     $roles = $cliente?->getRoleNames() ?? collect();
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
-                                                    $esColaborador = $roles->contains('mayorista');
+                                                    $esColaborador = $roles->contains('colaborador');
 
                                                     $producto = Producto::find($state);
                                                     $precioOriginal = $producto->precio_venta;
@@ -447,7 +446,7 @@ class CreateVenta extends CreateRecord
                                                     $cliente = \App\Models\User::with('roles')->find($clienteId);
                                                     $roles = $cliente?->getRoleNames() ?? collect();
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
-                                                    $esColaborador = $roles->contains('mayorista');
+                                                    $esColaborador = $roles->contains('colaborador');
 
                                                     $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
                                                     $precioFinal = $precioOriginal;
