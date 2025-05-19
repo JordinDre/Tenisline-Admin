@@ -364,17 +364,22 @@ class FELController extends Controller
         return $responseData;
     }
 
-    public static function facturaVenta($venta)
+    public static function facturaVenta($venta, $bodega)
     {
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf == false ? $cliente->nit : 'CF';
         $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name;
         $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-        
+
+        $emisor = $bodega === 6 ? config('services.fel2') : config('services.fel');
+
+        $codigo = $bodega == 6 ? 4 : 2;
+
         $totalMontoImpuesto = 0;
         $xmlItems = '';
         $correlativo = 1;
         $granTotal = 0;
+
         foreach ($venta->detalles as $item) {
             $producto = Producto::withTrashed()->find($item->producto_id);
             $descripcion = $producto->codigo.' - '.$producto->descripcion.' - '.$producto->marca->marca;
@@ -383,44 +388,96 @@ class FELController extends Controller
             $montoGravable = round($precioTotal / 1.12, 2);
             $montoImpuesto = round($montoGravable * 0.12, 2);
             $totalMontoImpuesto += round($montoImpuesto, 2);
-            $granTotal += round($item->cantidad * $item->precio, 2);
+            $granTotal += round($precioTotal, 2);
+
             $xmlItems .= '<dte:Item BienOServicio="B" NumeroLinea="'.$correlativo.'">
-            <dte:Cantidad>'.$item->cantidad.'</dte:Cantidad>
-            <dte:UnidadMedida>UNI</dte:UnidadMedida>
-            <dte:Descripcion>'.$descripcion.'</dte:Descripcion>
-            <dte:PrecioUnitario>'.$precioUnitario.'</dte:PrecioUnitario>
-            <dte:Precio>'.$precioTotal.'</dte:Precio>
-            <dte:Descuento>0.00</dte:Descuento>
-            <dte:Impuestos>
-            <dte:Impuesto>
-            <dte:NombreCorto>IVA</dte:NombreCorto>
-            <dte:CodigoUnidadGravable>1</dte:CodigoUnidadGravable>
-            <dte:MontoGravable>'.$montoGravable.'</dte:MontoGravable>
-            <dte:MontoImpuesto>'.$montoImpuesto.'</dte:MontoImpuesto>
-            </dte:Impuesto>
-            </dte:Impuestos>
-            <dte:Total>'.$precioTotal.'</dte:Total>
+                <dte:Cantidad>'.$item->cantidad.'</dte:Cantidad>
+                <dte:UnidadMedida>UNI</dte:UnidadMedida>
+                <dte:Descripcion>'.$descripcion.'</dte:Descripcion>
+                <dte:PrecioUnitario>'.$precioUnitario.'</dte:PrecioUnitario>
+                <dte:Precio>'.$precioTotal.'</dte:Precio>
+                <dte:Descuento>0.00</dte:Descuento>
+                <dte:Impuestos>
+                    <dte:Impuesto>
+                        <dte:NombreCorto>IVA</dte:NombreCorto>
+                        <dte:CodigoUnidadGravable>1</dte:CodigoUnidadGravable>
+                        <dte:MontoGravable>'.$montoGravable.'</dte:MontoGravable>
+                        <dte:MontoImpuesto>'.$montoImpuesto.'</dte:MontoImpuesto>
+                    </dte:Impuesto>
+                </dte:Impuestos>
+                <dte:Total>'.$precioTotal.'</dte:Total>
             </dte:Item>';
+
             $correlativo++;
         }
 
         $xmlComplementos = '';
         if ($venta->pagos->first()->tipo_pago_id == 2) {
             $xmlComplementos = '<dte:Complementos>
-            <dte:Complemento IDComplemento="Cambiaria" NombreComplemento="Cambiaria" URIComplemento="http://www.sat.gob.gt/fel/cambiaria.xsd">
-            <cfc:AbonosFacturaCambiaria xmlns:cfc="http://www.sat.gob.gt/dte/fel/CompCambiaria/0.1.0" Version="1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/CompCambiaria/0.1.0 C:\Users\Desktop\SAT_FEL_FINAL_V1\Esquemas\GT_Complemento_Cambiaria-0.1.0.xsd">
-            <cfc:Abono>
-            <cfc:NumeroAbono>1</cfc:NumeroAbono>
-            <cfc:FechaVencimiento>'.Carbon::parse($venta->fecha_vencimiento)->format('Y-m-d').'</cfc:FechaVencimiento>
-            <cfc:MontoAbono>'.$precioTotal.'</cfc:MontoAbono>
-            </cfc:Abono>
-            </cfc:AbonosFacturaCambiaria>
-            </dte:Complemento>
+                <dte:Complemento IDComplemento="Cambiaria" NombreComplemento="Cambiaria" URIComplemento="http://www.sat.gob.gt/fel/cambiaria.xsd">
+                <cfc:AbonosFacturaCambiaria xmlns:cfc="http://www.sat.gob.gt/dte/fel/CompCambiaria/0.1.0" Version="1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/CompCambiaria/0.1.0 C:\Users\Desktop\SAT_FEL_FINAL_V1\Esquemas\GT_Complemento_Cambiaria-0.1.0.xsd">
+                    <cfc:Abono>
+                        <cfc:NumeroAbono>1</cfc:NumeroAbono>
+                        <cfc:FechaVencimiento>'.Carbon::parse($venta->fecha_vencimiento)->format('Y-m-d').'</cfc:FechaVencimiento>
+                        <cfc:MontoAbono>'.$precioTotal.'</cfc:MontoAbono>
+                    </cfc:Abono>
+                </cfc:AbonosFacturaCambiaria>
+                </dte:Complemento>
             </dte:Complementos>';
         }
 
-        $curl = curl_init();
         $tipoEspecial = ($cliente->nit || $venta->facturar_cf) ? '' : ' TipoEspecial="CUI"';
+
+        $xmlPayload = '<?xml version="1.0" encoding="UTF-8"?>
+        <dte:GTDocumento xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dte="http://www.sat.gob.gt/dte/fel/0.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="0.1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/0.2.0">
+            <dte:SAT ClaseDocumento="dte">
+                <dte:DTE ID="DatosCertificados">
+                    <dte:DatosEmision ID="DatosEmision">
+                        <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="'.$tipo.'"/>
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="'.$codigo.'" NITEmisor="'.$emisor['nit'].'" NombreComercial="'.$emisor['nombre_comercial'].'" NombreEmisor="'.$emisor['razon_social'].'">
+                            <dte:DireccionEmisor>
+                                <dte:Direccion>'.$emisor['direccion'].'</dte:Direccion>
+                                <dte:CodigoPostal>'.$emisor['codigo_postal'].'</dte:CodigoPostal>
+                                <dte:Municipio>'.$emisor['municipio'].'</dte:Municipio>
+                                <dte:Departamento>'.$emisor['departamento'].'</dte:Departamento>
+                                <dte:Pais>'.$emisor['pais'].'</dte:Pais>
+                            </dte:DireccionEmisor>
+                        </dte:Emisor>
+                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.$emisor['correo'].'"'.$tipoEspecial.'>
+                            <dte:DireccionReceptor>
+                                <dte:Direccion>'.$venta->bodega->direccion.'</dte:Direccion>
+                                <dte:CodigoPostal>0</dte:CodigoPostal>
+                                <dte:Municipio>'.$venta->bodega->municipio->municipio.'</dte:Municipio>
+                                <dte:Departamento>'.$venta->bodega->departamento->departamento.'</dte:Departamento>
+                                <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
+                            </dte:DireccionReceptor>
+                        </dte:Receptor>
+                        <dte:Frases>
+                            <dte:Frase CodigoEscenario="1" TipoFrase="1"/>
+                        </dte:Frases>
+                        <dte:Items>'.$xmlItems.'</dte:Items>
+                        <dte:Totales>
+                            <dte:TotalImpuestos>
+                                <dte:TotalImpuesto NombreCorto="IVA" TotalMontoImpuesto="'.$totalMontoImpuesto.'"/>
+                            </dte:TotalImpuestos>
+                            <dte:GranTotal>'.$granTotal.'</dte:GranTotal>
+                        </dte:Totales>
+                        '.$xmlComplementos.'
+                    </dte:DatosEmision>
+                </dte:DTE>
+                <dte:Adenda>
+                    <CondicionesPago>'.$venta->pagos->first()->tipoPago->tipo_pago.'</CondicionesPago>
+                    <SolicitadoPor>'.User::withTrashed()->find($venta->asesor_id)->name.'</SolicitadoPor>
+                    <Vendedor>'.User::withTrashed()->find($venta->asesor_id)->id.'</Vendedor>
+                    <Envio>0</Envio>
+                    <OrdenCompra>'.$venta->id.'</OrdenCompra>
+                    <TelReceptor>'.$cliente->telefono.'</TelReceptor>
+                    <PBX>'.env('PBX').'</PBX>
+                </dte:Adenda>
+            </dte:SAT>
+        </dte:GTDocumento>';
+
+        $curl = curl_init();
 
         curl_setopt_array($curl, [
             CURLOPT_URL => 'https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml',
@@ -431,70 +488,21 @@ class FELController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => '<?xml version="1.0" encoding="UTF-8"?>
-            <dte:GTDocumento xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dte="http://www.sat.gob.gt/dte/fel/0.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="0.1" xsi:schemaLocation="http://www.sat.gob.gt/dte/fel/0.2.0">
-                <dte:SAT ClaseDocumento="dte">
-                    <dte:DTE ID="DatosCertificados">
-                        <dte:DatosEmision ID="DatosEmision">
-                        <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="'.$tipo.'"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="2" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
-                            <dte:DireccionEmisor>
-                                <dte:Direccion>'.config('services.fel.direccion').'</dte:Direccion>
-                                <dte:CodigoPostal>'.config('services.fel.codigo_postal').'</dte:CodigoPostal>
-                                <dte:Municipio>'.config('services.fel.municipio').'</dte:Municipio>
-                                <dte:Departamento>'.config('services.fel.departamento').'</dte:Departamento>
-                                <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
-                            </dte:DireccionEmisor>
-                        </dte:Emisor>
-                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.config('services.fel.correo').'"'.$tipoEspecial.'>
-                            <dte:DireccionReceptor>
-                            <dte:Direccion>'.$venta->bodega->direccion.'</dte:Direccion>
-                            <dte:CodigoPostal>0</dte:CodigoPostal>
-                            <dte:Municipio>'.$venta->bodega->municipio->municipio.'</dte:Municipio>
-                            <dte:Departamento>'.$venta->bodega->departamento->departamento.'</dte:Departamento>
-                            <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
-                            </dte:DireccionReceptor>
-                        </dte:Receptor>
-                        <dte:Frases>
-                            <dte:Frase CodigoEscenario="1" TipoFrase="1"></dte:Frase>
-                        </dte:Frases>
-                        <dte:Items>'.$xmlItems.'</dte:Items>
-                        <dte:Totales>
-                            <dte:TotalImpuestos>
-                            <dte:TotalImpuesto NombreCorto="IVA" TotalMontoImpuesto="'.$totalMontoImpuesto.'"></dte:TotalImpuesto>
-                            </dte:TotalImpuestos>
-                            <dte:GranTotal>'.$granTotal.'</dte:GranTotal>
-                        </dte:Totales>
-                        '.$xmlComplementos.'
-                        </dte:DatosEmision>
-                    </dte:DTE>  
-                    <dte:Adenda>
-                        <CondicionesPago>'.$venta->pagos->first()->tipoPago->tipo_pago.'</CondicionesPago>
-                        <SolicitadoPor>'.User::withTrashed()->find($venta->asesor_id)->name.'</SolicitadoPor>
-                        <Vendedor>'.User::withTrashed()->find($venta->asesor_id)->id.'</Vendedor>
-                        <Envio>0</Envio>
-                        <OrdenCompra>'.$venta->id.'</OrdenCompra>
-                        <TelReceptor>'.$cliente->telefono.'</TelReceptor>
-                        <PBX>'.env('PBX').'</PBX>
-                    </dte:Adenda>
-                </dte:SAT>
-            </dte:GTDocumento>',
-
+            CURLOPT_POSTFIELDS => $xmlPayload,
             CURLOPT_HTTPHEADER => [
-                'UsuarioApi: '.config('services.fel.usuario_api'),
-                'LlaveApi: '.config('services.fel.llave_api'),
-                'UsuarioFirma: '.config('services.fel.usuario_firma'),
+                'UsuarioApi: '.$emisor['usuario_api'],
+                'LlaveApi: '.$emisor['llave_api'],
+                'UsuarioFirma: '.$emisor['usuario_firma'],
+                'LlaveFirma: '.$emisor['llave_firma'],
                 'Identificador:'.config('services.fel.identificador').'FACTURA-VENTA-'.$venta->id,
-                'LlaveFirma: '.config('services.fel.llave_firma'),
                 'Content-Type: application/xml',
             ],
         ]);
 
         $response = curl_exec($curl);
         curl_close($curl);
-        $responseData = json_decode($response, true);
 
-        return $responseData;
+        return json_decode($response, true);
     }
 
     public static function anularFacturaVenta($venta, $motivo)
