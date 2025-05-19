@@ -51,7 +51,7 @@ class ListVentas extends ListRecords
                     
                     Venta::whereDate('created_at', $today)
                         ->whereNull('cierre_dia_id')
-                        ->update(['cierre_dia_id' => $cierreDia->id, 'estado' => 'liquidada', 'liquido_id' => auth()->user()->id]);
+                        ->update(['cierre_dia_id' => $cierreDia->id,/*  'estado' => 'liquidada', 'liquido_id' => auth()->user()->id */]);
 
                     Cache::put('dia_liquidado', true, now()->addDay());
 
