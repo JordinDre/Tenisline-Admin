@@ -175,7 +175,7 @@ class CreateVenta extends CreateRecord
                                                         ->minValue(0),
                                                 ])->columnSpanFull()->columns(3)->defaultItems(0),
                                         ])
-                                        ->editOptionForm([
+                                        /* ->editOptionForm([
                                             TextInput::make('nit')
                                                 ->default('CF')
                                                 ->required()
@@ -248,7 +248,7 @@ class CreateVenta extends CreateRecord
                                                         ->rule('numeric')
                                                         ->minValue(0),
                                                 ])->columnSpanFull()->columns(3)->defaultItems(0),
-                                        ])
+                                        ]) */
                                         ->createOptionUsing(function (array $data): int {
                                             $user = User::create($data);
                                             $user->assignRole('cliente'); // Asigna el rol automáticamente
