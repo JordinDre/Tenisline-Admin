@@ -371,7 +371,7 @@ class FELController extends Controller
         $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name;
         $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
 
-        $emisor = $bodega === 6 ? config('services.fel2') : config('services.fel');
+        $emisor = $bodega == 6 ? config('services.fel2') : config('services.fel');
 
         $codigo = $bodega == 6 ? 4 : 2;
 
