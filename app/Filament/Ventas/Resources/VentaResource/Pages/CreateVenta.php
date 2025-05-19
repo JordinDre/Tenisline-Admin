@@ -55,11 +55,11 @@ class CreateVenta extends CreateRecord
                     ->relationship(
                         'bodega',
                         'bodega',
-                        fn (Builder $query) => $query
-                            ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
-                            )
-                            ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                            ->where('bodega', 'not like', '%bodega%')
+                         fn (Builder $query) => $query
+                             ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                             )
+                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                             ->where('bodega', 'not like', '%bodega%')
                     )
                     ->preload()
                     ->columnSpanFull()
