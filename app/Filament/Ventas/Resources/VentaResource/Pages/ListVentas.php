@@ -34,7 +34,7 @@ class ListVentas extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
-            Actions\Action::make('liquidarVentas')
+            /* Actions\Action::make('liquidarVentas')
                 ->label('Liquidar Venta del Día')
                 ->icon('heroicon-o-check-circle')
                 ->requiresConfirmation()
@@ -51,7 +51,7 @@ class ListVentas extends ListRecords
                     
                     Venta::whereDate('created_at', $today)
                         ->whereNull('cierre_dia_id')
-                        ->update(['cierre_dia_id' => $cierreDia->id,/*  'estado' => 'liquidada', 'liquido_id' => auth()->user()->id */]);
+                        ->update(['cierre_dia_id' => $cierreDia->id,]);
 
                     Cache::put('dia_liquidado', true, now()->addDay());
 
@@ -60,7 +60,7 @@ class ListVentas extends ListRecords
                         ->color('success')
                         ->success()
                         ->send();
-                }),
+                }), */
         ];
     }
 }
