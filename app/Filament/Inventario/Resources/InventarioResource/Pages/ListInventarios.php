@@ -35,9 +35,11 @@ class ListInventarios extends ListRecords
                         ->relationship(
                             'bodega',
                             'bodega',
-                            fn (Builder $query) => $query->whereHas('user', function ($query) {
-                                $query->where('user_id', auth()->user()->id);
-                            })
+                            fn (Builder $query) => $query
+                             ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                             )
+                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                             ->where('bodega', 'not like', '%bodega%')
                         )
                         ->searchable()
                         ->preload()
