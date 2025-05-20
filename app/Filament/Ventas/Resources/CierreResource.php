@@ -54,6 +54,14 @@ class CierreResource extends Resource
                                 $fail('Ya existe un cierre abierto para esta bodega. Debe cerrar el anterior.');
                             }
 
+                            $cierreHoy = Cierre::where('user_id', auth()->id())
+                                ->whereDate('apertura', now()->toDateString())
+                                ->exists();
+
+                            if ($cierreHoy) {
+                                $fail('Ya realizaste un cierre hoy. Solo puedes crear uno por día.');
+                            }
+
                         },
                     ])
                     ->searchable()
