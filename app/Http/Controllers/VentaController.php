@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
-use App\Models\Pago;
-use App\Models\User;
-use App\Models\Venta;
 use App\Models\Bodega;
-use App\Models\Kardex;
 use App\Models\Factura;
-use App\Models\Producto;
 use App\Models\Inventario;
+use App\Models\Kardex;
+use App\Models\Pago;
+use App\Models\Producto;
+use App\Models\Venta;
+use Exception;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Filament\Notifications\Notification;
-use Illuminate\Validation\ValidationException;
 
 class VentaController extends Controller
 {
@@ -224,23 +222,23 @@ class VentaController extends Controller
                     }
                 }
 
-                 if ($venta->factura()->exists()) {
-                     $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
-                     if (! $res['resultado']) {
-                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
-                     }
-                     $factura = new Factura;
-                     $factura->fel_tipo = 'NCRE';
-                     $factura->fel_uuid = $res['uuid'];
-                     $factura->fel_serie = $res['serie'];
-                     $factura->fel_numero = $res['numero'];
-                     $factura->fel_fecha = $res['fecha'];
-                     $factura->user_id = auth()->user()->id;
-                     $factura->tipo = 'devolucion';
-                     $factura->motivo = $data['motivo'];
-                     $venta->factura()->save($factura);
-                     $venta->factura()->delete();
-                 }
+                if ($venta->factura()->exists()) {
+                    $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
+                    if (! $res['resultado']) {
+                        throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
+                    }
+                    $factura = new Factura;
+                    $factura->fel_tipo = 'NCRE';
+                    $factura->fel_uuid = $res['uuid'];
+                    $factura->fel_serie = $res['serie'];
+                    $factura->fel_numero = $res['numero'];
+                    $factura->fel_fecha = $res['fecha'];
+                    $factura->user_id = auth()->user()->id;
+                    $factura->tipo = 'devolucion';
+                    $factura->motivo = $data['motivo'];
+                    $venta->factura()->save($factura);
+                    $venta->factura()->delete();
+                }
 
                 $venta->estado = $estado;
                 $venta->motivo = $data['motivo'];
@@ -299,40 +297,38 @@ class VentaController extends Controller
     {
         try {
             foreach ($ventas as $venta) {
-                // if ($venta->estado !== 'creada') {
-                //     throw ValidationException::withMessages([
-                //         'estado' => "Solo puedes liquidar ventas en estado 'creada'.",
-                //     ]);
-                // }
-
-                $pagoExistente = $venta->pagos->first();
-
-                if ($pagoExistente) {
-                    $pagoExistente->update([
-                        'no_documento' => $data['no_documento'],
-                    ]);
+                if ($venta->estado != 'creada') {
+                    throw new Exception('No se puede liquidar la venta #'.$venta->id.' porque no está en estado creada');
                 } else {
-                    Pago::create([
-                        'pagable_id' => $venta->id,
-                        'pagable_type' => Venta::class,
-                        'user_id' => auth()->id(),
-                        'tipo_pago_id' => 7, 
-                        'no_documento' => $data['no_documento'],
-                        // 'monto' => $venta->total,
-                    ]);
-                }
-        
-                $venta->update([
-                    'estado' => 'liquidada',
-                ]);
+                    $pagoExistente = $venta->pagos->first();
 
-                Notification::make()
-                ->color('success')
-                ->title('Se ha liquidado la Venta #'.$venta->id)
-                ->success()
-                ->send();
+                    if ($pagoExistente) {
+                        $pagoExistente->update([
+                            'no_documento' => $data['no_documento'],
+                            'tipo_pago_id' => $data['tipo_pago_id'],
+                        ]);
+                    } else {
+                        Pago::create([
+                            'pagable_id' => $venta->id,
+                            'pagable_type' => Venta::class,
+                            'user_id' => auth()->id(),
+                            'tipo_pago_id' => $data['tipo_pago_id'],
+                            'no_documento' => $data['no_documento'],
+                        ]);
+                    }
+
+                    $venta->update([
+                        'estado' => 'liquidada',
+                    ]);
+
+                    Notification::make()
+                        ->color('success')
+                        ->title('Se ha liquidado la Venta #'.$venta->id)
+                        ->success()
+                        ->send();
+                }
             }
-            
+
         } catch (Exception $e) {
             Notification::make()
                 ->color('danger')
@@ -341,6 +337,6 @@ class VentaController extends Controller
                 ->danger()
                 ->send();
         }
-        
+
     }
 }

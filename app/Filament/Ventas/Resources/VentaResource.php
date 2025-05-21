@@ -637,22 +637,20 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->label('Liquidar')
                     ->color('success')
                     ->icon('heroicon-o-clipboard-document-check')
-                    ->slideOver()
                     ->closeModalByClickingAway(false)
-                    ->modalWidth(MaxWidth::ScreenSmall)
                     ->fillForm([
                         'no_documento' => '',
                     ])
                     ->form([
-                        Grid::make(['default' => 1, 'md' => 6])
+                        Grid::make(2)
                             ->schema([
-                                // Select::make('tipo_pago_id')
-                                //         ->label('Forma de Pago')
-                                //         ->required()
-                                //         ->live()
-                                //         ->columnSpan(['sm' => 1, 'md' => 1])
-                                //         ->searchable()
-                                //         ->preload(),
+                                Select::make('tipo_pago_id')
+                                    ->label('Tipo de Pago')
+                                    
+                                    ->preload()
+                                    ->placeholder('Seleccione')
+                                    ->live()
+                                    ->searchable(), 
                                 //     TextInput::make('monto')
                                 //         ->label('Monto')
                                 //         ->prefix('Q')
@@ -662,26 +660,10 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 //         ->minValue(1)
                                 //         ->required(),
                                 TextInput::make('no_documento')
-                                    ->label('No. Documento o Autorización')
-                                    ->columnSpan(['sm' => 1, 'md' => 3]),
+                                    ->label('No. Documento o Autorización'),
                                 // DatePicker::make('fecha_transaccion')
                                 //     ->default(now())
                                 //     ->required(),
-                                // FileUpload::make('imagen')
-                                //     ->required()
-                                //     ->image()
-                                //     ->downloadable()
-                                //     ->label('Imágen')
-                                //     ->imageEditor()
-                                //     ->disk(config('filesystems.disks.s3.driver'))
-                                //     ->directory(config('filesystems.default'))
-                                //     ->visibility('public')
-                                //     ->appendFiles()
-                                //     ->maxSize(5000)
-                                //     ->resize(50)
-                                //     ->openable()
-                                //     ->columnSpan(['sm' => 1, 'md' => 3])
-                                //     ->optimize('webp'),
                             ]),
                     ])
                     ->action(function (Collection $records, array $data): void {

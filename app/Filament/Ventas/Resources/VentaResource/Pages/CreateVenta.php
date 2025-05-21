@@ -6,6 +6,7 @@ use App\Filament\Ventas\Resources\VentaResource;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentaController;
+use App\Models\Cierre;
 use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
@@ -55,11 +56,11 @@ class CreateVenta extends CreateRecord
                     ->relationship(
                         'bodega',
                         'bodega',
-                         fn (Builder $query) => $query
-                             ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
-                             )
-                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                             ->where('bodega', 'not like', '%bodega%')
+                        fn (Builder $query) => $query
+                            ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                            )
+                            ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                            ->where('bodega', 'not like', '%bodega%')
                     )
                     ->preload()
                     ->columnSpanFull()
@@ -695,20 +696,35 @@ class CreateVenta extends CreateRecord
 
     protected function beforeCreate(): void
     {
-        $totalVenta = $this->data['total'] ?? 0;
-        $totalPagos = collect($this->data['pagos'] ?? [])->sum('monto');
+        try {
+            $totalVenta = $this->data['total'] ?? 0;
+            $totalPagos = collect($this->data['pagos'] ?? [])->sum('monto');
 
-        if (round($totalVenta, 2) != round($totalPagos, 2)) {
+            $bodegaId = $this->data['bodega_id'] ?? null;
+            $cierreAbierto = Cierre::where('bodega_id', $bodegaId)
+                ->whereNull('cierre')
+                ->exists();
+
+            if (! $cierreAbierto) {
+                throw ValidationException::withMessages([
+                    'bodega_id' => 'No hay un cierre abierto para la bodega seleccionada.',
+                ]);
+            }
+
+            if (round($totalVenta, 2) != round($totalPagos, 2)) {
+                throw ValidationException::withMessages([
+                    'pagos' => 'El total de los pagos no coincide con el total de la venta.',
+                ]);
+            }
+        } catch (\Exception $e) {
             Notification::make()
                 ->warning()
                 ->color('warning')
                 ->title('Advertencia')
-                ->body('El total de los pagos no coincide con el total de la venta.')
+                ->body($e->getMessage())
                 ->persistent()
                 ->send();
-            throw ValidationException::withMessages([
-                'pagos' => 'El total de los pagos no coincide con el total de la venta.',
-            ]);
+            $this->halt();
         }
     }
 

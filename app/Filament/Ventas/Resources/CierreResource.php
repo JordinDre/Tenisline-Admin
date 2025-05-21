@@ -94,6 +94,17 @@ class CierreResource extends Resource
                 Tables\Columns\TextColumn::make('cierre')
                     ->dateTime()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('ventas_ids')
+                    ->label('Ventas')
+                    ->listWithLineBreaks()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('total_ventas')
+                    ->label('Total')
+                    ->money('GTQ') // o 'USD', o elimina si no quieres formato de moneda
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('resumen_pagos')
+                    ->label('Resumen Pagos')
+                    ->listWithLineBreaks(),
             ])
             ->filters([
                 //
@@ -108,7 +119,7 @@ class CierreResource extends Resource
                             'cierre' => now(),
                         ]);
                     })
-                    ->visible(fn (Cierre $record) => $record->user_id === auth()->id())
+                    ->visible(fn (Cierre $record) => $record->user_id === auth()->id() && $record->cierre === null)
                     ->requiresConfirmation()
                     ->color('success')
                     ->icon('heroicon-o-check'),
@@ -127,10 +138,15 @@ class CierreResource extends Resource
         ];
     }
 
-    /* public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): Builder
     {
+        $user = auth()->user();
+
         return parent::getEloquentQuery()
-            ->where('user_id', auth()->id()) // Solo los del usuario actual
-            ->orderByDesc('apertura'); // Orden descendente (más reciente primero)
-    } */
+            ->when(
+                ! $user->hasAnyRole(['administrador', 'super_admin']),
+                fn (Builder $query) => $query->where('user_id', $user->id)
+            )
+            ->orderByDesc('apertura');
+    }
 }

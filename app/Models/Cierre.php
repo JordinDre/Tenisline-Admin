@@ -33,4 +33,45 @@ class Cierre extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getVentasIdsAttribute()
+    {
+        return Venta::where('bodega_id', $this->bodega_id)
+            ->whereIn('estado', ['creada', 'liquidada'])
+            ->where('created_at', '>=', $this->apertura)
+            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->pluck('id')
+            ->map(fn ($id) => "Venta #{$id}")
+            ->toArray();
+    }
+
+    public function getTotalVentasAttribute()
+    {
+        return Venta::where('bodega_id', $this->bodega_id)
+            ->whereIn('estado', ['creada', 'liquidada'])
+            ->where('created_at', '>=', $this->apertura)
+            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->sum('total');
+    }
+
+    public function getResumenPagosAttribute()
+    {
+        $ventas = Venta::where('bodega_id', $this->bodega_id)
+            ->whereIn('estado', ['creada', 'liquidada'])
+            ->where('created_at', '>=', $this->apertura)
+            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->pluck('id');
+
+        $pagos = Pago::whereIn('pagable_id', $ventas)
+            ->where('pagable_type', Venta::class)
+            ->with('tipoPago')
+            ->get();
+
+        return $pagos
+            ->groupBy(fn ($pago) => $pago->tipoPago->tipo_pago ?? 'Desconocido')
+            ->map(fn ($group) => 'Q'.number_format($group->sum('monto'), 2))
+            ->map(fn ($monto, $tipo) => "{$tipo}: {$monto}")
+            ->values()
+            ->toArray();
+    }
 }
