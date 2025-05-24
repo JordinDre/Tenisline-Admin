@@ -16,7 +16,7 @@ class CajaChicaPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_caja::chica');
+        return true;
     }
 
     /**
@@ -24,7 +24,7 @@ class CajaChicaPolicy
      */
     public function view(User $user, CajaChica $cajachica): bool
     {
-        return $user->can('view_caja::chica');
+        return true;
     }
 
     /**
@@ -32,7 +32,7 @@ class CajaChicaPolicy
      */
     public function create(User $user): bool
     {
-        return /* $user->can('create_venta') */ $user->hasAnyRole(User::VENTA_ROLES);
+        return true;
     }
 
     /**
@@ -40,7 +40,7 @@ class CajaChicaPolicy
      */
     public function update(User $user, CajaChica $cajachica): bool
     {
-        return /* $user->can('update_bodega') */ $user->hasRole('super_admin');
+        return /* $user->can('update_bodega') */ $user->hasRole(['super_admin', 'administrador']);
     }
 
     /**
@@ -48,7 +48,7 @@ class CajaChicaPolicy
      */
     public function delete(User $user, CajaChica $cajachica): bool
     {
-        return /* $user->can('delete_bodega') */ false;
+        return /* $user->can('delete_bodega') */ $user->hasRole(['super_admin', 'administrador']);
     }
 
     /**
