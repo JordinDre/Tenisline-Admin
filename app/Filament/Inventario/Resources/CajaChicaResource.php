@@ -90,6 +90,10 @@ class CajaChicaResource extends Resource {
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('pagos.monto')
                     ->label('Monto')
                     ->copyable()
@@ -100,6 +104,16 @@ class CajaChicaResource extends Resource {
                     ->label('Detalle del gasto'),
                 Tables\Columns\TextColumn::make('autoriza')
                     ->label('Quien Autorizo'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Fecha de creación')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Fecha de actualización')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters([
                 //
