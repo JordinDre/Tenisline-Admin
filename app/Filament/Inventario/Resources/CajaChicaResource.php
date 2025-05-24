@@ -23,8 +23,8 @@ use App\Filament\Inventario\Resources\CajaChicaResource\Pages;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use App\Filament\Inventario\Resources\CajaChicaResource\RelationManagers;
 
-class CajaChicaResource extends Resource implements HasShieldPermissions
-{
+class CajaChicaResource extends Resource {
+
     protected static ?string $model = CajaChica::class;
 
     protected static ?string $navigationIcon = 'tabler-box';
@@ -37,14 +37,7 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
 
     protected static ?int $navigationSort = 3;
 
-    public static function getPermissionPrefixes(): array
-    {
-        return [
-            'view_any',
-            'view',
-            'create'
-        ];
-    }
+
 
     public static function form(Form $form): Form
     {
@@ -57,6 +50,7 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
                             ->maxLength(255),
                         Forms\Components\TextInput::make('autoriza')
                             ->label('Quien autoriza')
+                            ->required()
                             ->maxLength(255),
                         
                     ]),
@@ -111,7 +105,11 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('Ver Detalles')
+                    ->icon('heroicon-o-eye'),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
