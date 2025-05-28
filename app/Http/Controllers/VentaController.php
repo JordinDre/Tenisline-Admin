@@ -74,6 +74,8 @@ class VentaController extends Controller
         });
     }
 
+    /*este es el t11 el check en ventas para liquidar*/
+
     public static function facturar(Venta $venta)
     {
         try {
