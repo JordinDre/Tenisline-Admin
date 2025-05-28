@@ -156,6 +156,7 @@ class VentaController extends Controller
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
+                /* pruena de merge */
         }
     }
 
