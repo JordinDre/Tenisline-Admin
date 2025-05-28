@@ -223,7 +223,7 @@ class VentaController extends Controller
                 }
 
                 if ($venta->factura()->exists()) {
-                    $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
+                    $res = FELController::devolverFacturaVenta($venta, $data['motivo'], $venta->bodega_id);
                     if (! $res['resultado']) {
                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                     }

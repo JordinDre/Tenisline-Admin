@@ -51,7 +51,8 @@ class PDFController extends Controller
     public function facturaVenta($id)
     {
         $venta = Venta::find($id);
-        $html = view('pdf.facturaVenta', compact('venta'))->render();
+        $emisor = $venta->bodega_id == 6 ? config('services.fel2') : config('services.fel');
+        $html = view('pdf.facturaVenta', compact('venta', 'emisor'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
         return $pdf->stream("Factura Venta #{$id}.pdf");
@@ -75,7 +76,8 @@ class PDFController extends Controller
             'factura',
             'devolucion'
         ])->findOrFail($id);
-        $html = view('pdf.notaCreditoVenta', compact('venta'))->render();
+        $emisor = $venta->bodega_id == 6 ? config('services.fel2') : config('services.fel');
+        $html = view('pdf.notaCreditoVenta', compact('venta', 'emisor'))->render();
         $pdf = Pdf::loadHTML($html);
 
         return $pdf->stream("Nota Credito Venta #{$id}.pdf");

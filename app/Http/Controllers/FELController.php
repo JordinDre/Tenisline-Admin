@@ -449,7 +449,7 @@ class FELController extends Controller
                                 <dte:CodigoPostal>0</dte:CodigoPostal>
                                 <dte:Municipio>'.$venta->bodega->municipio->municipio.'</dte:Municipio>
                                 <dte:Departamento>'.$venta->bodega->departamento->departamento.'</dte:Departamento>
-                                <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
+                                <dte:Pais>'.$emisor['pais'].'</dte:Pais>
                             </dte:DireccionReceptor>
                         </dte:Receptor>
                         <dte:Frases>
@@ -472,7 +472,7 @@ class FELController extends Controller
                     <Envio>0</Envio>
                     <OrdenCompra>'.$venta->id.'</OrdenCompra>
                     <TelReceptor>'.$cliente->telefono.'</TelReceptor>
-                    <PBX>'.env('PBX').'</PBX>
+                    <PBX>'.$emisor['pbx'].'</PBX>
                 </dte:Adenda>
             </dte:SAT>
         </dte:GTDocumento>';
@@ -494,7 +494,7 @@ class FELController extends Controller
                 'LlaveApi: '.$emisor['llave_api'],
                 'UsuarioFirma: '.$emisor['usuario_firma'],
                 'LlaveFirma: '.$emisor['llave_firma'],
-                'Identificador:'.config('services.fel.identificador').'FACTURA-VENTA-'.$venta->id,
+                'Identificador:'.$emisor['identificador'].'FACTURA-VENTA-'.$venta->id,
                 'Content-Type: application/xml',
             ],
         ]);
@@ -547,7 +547,7 @@ class FELController extends Controller
         return $responseData;
     }
 
-    public static function devolverFacturaVenta($venta, $motivo)
+    public static function devolverFacturaVenta($venta, $motivo, $bodega)
     {
 
         $cliente = User::withTrashed()->find($venta->cliente_id);
@@ -555,6 +555,10 @@ class FELController extends Controller
         $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
 
         $asesor = User::withTrashed()->find($venta->asesor_id);
+
+        $emisor = $bodega == 6 ? config('services.fel2') : config('services.fel');
+
+        $codigo = $bodega == 6 ? 4 : 2;
 
         $totalMontoImpuesto = 0;
         $granTotal = 0;
@@ -609,22 +613,22 @@ class FELController extends Controller
                 <dte:DTE ID="DatosCertificados">
                   <dte:DatosEmision ID="DatosEmision">
                         <dte:DatosGenerales CodigoMoneda="GTQ" FechaHoraEmision="'.now()->format('Y-m-d\TH:i:s').'-06:00" Tipo="NCRE"></dte:DatosGenerales>
-                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="2" NITEmisor="'.config('services.fel.nit').'" NombreComercial="'.config('services.fel.nombre_comercial').'" NombreEmisor="'.config('services.fel.razon_social').'">
+                        <dte:Emisor AfiliacionIVA="GEN" CodigoEstablecimiento="'.$codigo.'" NITEmisor="'.$emisor['nit'].'" NombreComercial="'.$emisor['nombre_comercial'].'" NombreEmisor="'.$emisor['razon_social'].'">
                         <dte:DireccionEmisor>
-                        <dte:Direccion>'.config('services.fel.direccion').'</dte:Direccion>
-                        <dte:CodigoPostal>'.config('services.fel.codigo_postal').'</dte:CodigoPostal>
-                        <dte:Municipio>'.config('services.fel.municipio').'</dte:Municipio>
-                        <dte:Departamento>'.config('services.fel.departamento').'</dte:Departamento>
-                        <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
+                        <dte:Direccion>'.$emisor['direccion'].'</dte:Direccion>
+                        <dte:CodigoPostal>'.$emisor['codigo_postal'].'</dte:CodigoPostal>
+                        <dte:Municipio>'.$emisor['municipio'].'</dte:Municipio>
+                        <dte:Departamento>'.$emisor['departamento'].'</dte:Departamento>
+                        <dte:Pais>'.$emisor['pais'].'</dte:Pais>
                         </dte:DireccionEmisor>
                         </dte:Emisor>
-                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.config('services.fel.correo').'"'.$tipoEspecial.'>
+                        <dte:Receptor IDReceptor="'.$receptorID.'" NombreReceptor="'.$receptorNombre.'" CorreoReceptor="'.$emisor['correo'].'"'.$tipoEspecial.'>
                         <dte:DireccionReceptor>
                             <dte:Direccion>'.$venta->bodega->direccion.'</dte:Direccion>
                             <dte:CodigoPostal>0</dte:CodigoPostal>
                             <dte:Municipio>'.$venta->bodega->municipio->municipio.'</dte:Municipio>
                             <dte:Departamento>'.$venta->bodega->departamento->departamento.'</dte:Departamento>
-                            <dte:Pais>'.config('services.fel.pais').'</dte:Pais>
+                            <dte:Pais>'.$emisor['pais'].'</dte:Pais>
                             </dte:DireccionReceptor>
                         </dte:Receptor>
                         <dte:Frases>
@@ -651,17 +655,17 @@ class FELController extends Controller
                     <Envio>0</Envio>
                     <OrdenCompra>'.$venta->id.'</OrdenCompra>
                     <TelReceptor>'.$cliente->telefono.'</TelReceptor>
-                    <PBX>'.env('PBX').'</PBX>
+                    <PBX>'.$emisor['pbx'].'</PBX>
                 </dte:Adenda>
               </dte:SAT>
             </dte:GTDocumento>',
 
             CURLOPT_HTTPHEADER => [
-                'UsuarioApi: '.config('services.fel.usuario_api'),
-                'LlaveApi: '.config('services.fel.llave_api'),
-                'UsuarioFirma: '.config('services.fel.usuario_firma'),
-                'Identificador:'.config('services.fel.identificador').'DEVOLUCION-VENTA-'.$venta->id,
-                'LlaveFirma: '.config('services.fel.llave_firma'),
+                'UsuarioApi: '.$emisor['usuario_api'],
+                'LlaveApi: '.$emisor['llave_api'],
+                'UsuarioFirma: '.$emisor['usuario_firma'],
+                'Identificador:'.$emisor['identificador'].'DEVOLUCION-VENTA-'.$venta->id,
+                'LlaveFirma: '.$emisor['llave_firma'],
                 'Content-Type: application/xml',
             ],
         ]);
