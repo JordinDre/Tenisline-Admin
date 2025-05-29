@@ -72,6 +72,8 @@ class VentaController extends Controller
         });
     }
 
+    /*este es el t11 el check en ventas para liquidar*/
+
     public static function facturar(Venta $venta)
     {
         try {
@@ -154,6 +156,7 @@ class VentaController extends Controller
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
+                /* pruena de merge */
         }
     }
 
@@ -223,7 +226,7 @@ class VentaController extends Controller
                 }
 
                 if ($venta->factura()->exists()) {
-                    $res = FELController::devolverFacturaVenta($venta, $data['motivo']);
+                    $res = FELController::devolverFacturaVenta($venta, $data['motivo'], $venta->bodega_id);
                     if (! $res['resultado']) {
                         throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                     }
