@@ -92,13 +92,13 @@
             style="max-width: 80%; filter: grayscale(100%) brightness(0);">
         <br><br>
         <div>
-            <div>{{ config('services.fel.razon_social') }}</div>
-            <div>{{ config('services.fel.nombre_comercial') }}</div>
-            <div>{{ config('services.fel.direccion') }}</div>
-            <div>{{ config('services.fel.municipio') }}, {{ config('services.fel.departamento') }}</div>
-            <div>PBX: {{ config('services.fel.pbx') }}</div>
-            <div>Whatsapp: {{ config('services.fel.whatsapp') }}</div>
-            <div>NIT: {{ config('services.fel.nit') }}</div>
+            <div>{{ $emisor['razon_social'] }}</div>
+            <div>{{ $emisor['nombre_comercial'] }}</div>
+            <div>{{ $emisor['direccion'] }}</div>
+            <div>{{ $emisor['municipio'] }}, {{ $emisor['departamento'] }}</div>
+            <div>PBX: {{ $emisor['pbx'] }}</div>
+            <div>Whatsapp: {{ $emisor['whatsapp'] }}</div>
+            <div>NIT: {{ $emisor['nit'] }}</div>
         </div>
         <br>
         <div>
