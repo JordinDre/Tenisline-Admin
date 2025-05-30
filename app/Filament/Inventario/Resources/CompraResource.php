@@ -127,11 +127,11 @@ class CompraResource extends Resource implements HasShieldPermissions
                                     Select::make('producto_id')
                                         ->label('Producto')
                                         ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn(Producto $record) => ProductoController::renderProductos($record, 'compra', null))
+                                        ->getOptionLabelFromRecordUsing(fn(Producto $record) => ProductoController::renderProductosBasico($record, 'compra', null))
                                         ->allowHtml()
-                                        ->searchable(['id'])
+                                        ->searchable(['descripcion'])
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                            return ProductoController::searchProductos($search, 'compra', null);
+                                            return ProductoController::searchProductosBasico($search, 'compra', null);
                                         })
                                         ->optionsLimit(20)
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -143,12 +143,12 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->minValue(1)
                                         ->inputMode('decimal')
                                         ->rule('numeric')
-                                        ->live(onBlur: true)
+                                        /* ->live(onBlur: true) */
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->required(),
                                     TextInput::make('precio')
                                         ->required()
-                                        ->live(onBlur: true)
+                                        /* ->live(onBlur: true) */
                                         ->minValue(0)
                                         ->default(0)
                                         ->visible(auth()->user()->can('view_costs_producto'))
@@ -184,12 +184,17 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->default(0)
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->content(function (Get $get) {
-                                            $subtotal = $get('cantidad') * $get('precio');
-
-                                            return $subtotal;
+                                            $cantidad = (float) $get('cantidad');
+                                            $precio = (float) $get('precio');
+                                            return number_format($cantidad * $precio, 2);
                                         }),
-                                ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
-                                ->live()
+                                ])
+                                ->collapsible()
+                                ->columnSpanFull()
+                                ->reorderableWithButtons()
+                                ->reorderable()
+                                ->addActionLabel('Agregar Producto')
+                                /* ->live() */
                                 ->afterStateUpdated(function (Set $set, Get $get) {
                                     $detalles = $get('detalles');
                                     $subtotal = collect($detalles)->sum(function ($detalle) {

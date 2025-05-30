@@ -179,6 +179,22 @@ class ProductoController extends Controller
 
     }
 
+    public static function renderProductosBasico(Producto $producto, string $tipo, $bodega_id = null, $cliente_id = null): string
+    {
+        $inventario = $bodega_id
+        ? Inventario::where('producto_id', $producto->id)->where('bodega_id', $bodega_id)->first()
+        : null;
+
+        $stock = $inventario?->existencia ?? 0;
+
+        $imagenUrl = isset($producto->imagenes[0])
+            ? config('filesystems.disks.s3.url') . $producto->imagenes[0]
+            : asset('images/icono.png');
+
+        return view('components.producto-preview', compact('producto', 'imagenUrl', 'stock'))->render();
+
+    }
+
     public static function searchProductos(string $search, string $tipo, $bodega_id = null): array
     {
 
@@ -230,5 +246,32 @@ class ProductoController extends Controller
         return $productos->mapWithKeys(fn ($producto) => [
             $producto->id => self::renderProductos($producto, $tipo, $bodega),
         ])->toArray(); */
+    }
+
+    public static function searchProductosBasico(string $search, string $tipo, $bodega_id = null): array
+    {
+
+        $query = Producto::query()->with(['marca']);
+
+        $terms = array_filter(explode(' ', $search));
+
+        foreach ($terms as $term) {
+            $query->where(function ($q) use ($term) {
+                $q->where('descripcion', 'like', "%{$term}%")
+                    ->orWhere('codigo', 'like', "%{$term}%")
+                    ->orWhere('modelo', 'like', "%{$term}%")
+                    ->orWhere('talla', 'like', "%{$term}%")
+                    ->orWhere('genero', 'like', "%{$term}%")
+                    ->orWhereHas('marca', function ($q2) use ($term) {
+                        $q2->where('marca', 'like', "%{$term}%");
+                    });
+            });
+        }
+
+        $productos = $query->limit(10)->get();
+
+        return $productos->mapWithKeys(function (Producto $producto) use ($tipo, $bodega_id) {
+            return [$producto->id => self::renderProductos($producto, $tipo, $bodega_id)];
+        })->toArray();
     }
 }
