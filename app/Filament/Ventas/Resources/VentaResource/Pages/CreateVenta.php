@@ -288,8 +288,12 @@ class CreateVenta extends CreateRecord
                                                 ->reactive()
                                                 ->dehydrated(false)
                                                 ->visible(function (Get $get): bool {
-                                                    $clienteId = $get('../../cliente_id');
+                                                    $bodegaId = $get('../../bodega_id');
+                                                    if ($bodegaId == 6) {
+                                                        return false;
+                                                    }
 
+                                                    $clienteId = $get('../../cliente_id');
                                                     if (! $clienteId) {
                                                         return false;
                                                     }
@@ -298,6 +302,7 @@ class CreateVenta extends CreateRecord
 
                                                     return $cliente?->roles->pluck('name')->intersect(['cliente_apertura', 'colaborador'])->isNotEmpty() ?? false;
                                                 })
+
                                                 ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
                                                     $cantidad = $get('cantidad') ?? 1;
                                                     $precioOriginal = $get('precio_original') ?? 0;
