@@ -452,8 +452,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->label('Creado')
                     ->dateTime('d/m/Y H:i:s')
                     ->copyable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizado')
                     ->dateTime('d/m/Y H:i:s')
