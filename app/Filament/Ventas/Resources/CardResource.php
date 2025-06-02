@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
@@ -45,14 +46,22 @@ class CardResource extends Resource
                         TextInput::make('correlativo')
                             ->required()
                             ->maxLength(100),
-                        Select::make('user_id')
+                        Select::make('cliente_id')
                             ->label('Cliente')
                             ->relationship('user', 'name', fn (Builder $query) => $query->role(['cliente', 'colaborador']))
                             ->optionsLimit(20)
                             ->required()
                             ->searchable(),
-                        Toggle::make('estado')
-                        ->label('Activo')
+                        Hidden::make('user_id')
+                            ->default(auth()->user()->id),
+                        TextInput::make('dpi')
+                            ->label('DPI')
+                            ->maxLength(13)
+                            ->minLength(13)
+                            ->required()
+                            ->unique(table: User::class, ignorable: fn ($record) => $record),
+                        /* Toggle::make('estado')
+                        ->label('Activo') */
                     ]),
             ]);
     }
@@ -66,20 +75,24 @@ class CardResource extends Resource
                     ->label('ID')
                     ->copyable()
                     ->sortable(),
+                TextColumn::make('user.name')
+                    ->label('Usuario')
+                    ->listWithLineBreaks(),
                 TextColumn::make('correlativo')
                     ->listWithLineBreaks(),
-                TextColumn::make('user.name')
+                TextColumn::make('cliente.name')
+                    ->label('Cliente')
                     ->listWithLineBreaks(),
-                TextColumn::make('user.dpi')
+                TextColumn::make('dpi')
                     ->label('DPI')
                     ->listWithLineBreaks(),
-                Tables\Columns\TextColumn::make('estado')
+                /* Tables\Columns\TextColumn::make('estado')
                 ->badge()
                 ->formatStateUsing(fn ($state) => $state == 1 ? 'Activo' : 'Inactivo')
                 ->colors([
                     'success' => fn ($state) => $state == 1,
                     'danger' => fn ($state) => $state == 0,
-                ]),
+                ]), */
             ])
             ->filters([
                 //
