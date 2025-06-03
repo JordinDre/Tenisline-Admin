@@ -72,7 +72,7 @@ class VentaController extends Controller
         });
     }
 
-    /*este es el t11 el check en ventas para liquidar*/
+    /* este es el t11 el check en ventas para liquidar */
 
     public static function facturar(Venta $venta)
     {
@@ -156,7 +156,7 @@ class VentaController extends Controller
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
-                /* pruena de merge */
+            /* pruena de merge */
         }
     }
 
@@ -168,16 +168,21 @@ class VentaController extends Controller
                 if ($venta->tipo_pago_id == 2) {
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
+
                 foreach ($venta->detalles as $detalle) {
+                    $totalDevuelto = $detalle->devuelto + $detalle->devuelto_mal;
+
+                    if ($totalDevuelto > $detalle->cantidad) {
+                        throw new \Exception("La cantidad devuelta del producto {$detalle->producto->descripcion} excede la cantidad vendida.");
+                    }
+
                     if ($detalle->devuelto > 0) {
                         $inventario = Inventario::firstOrCreate(
                             [
                                 'producto_id' => $detalle->producto_id,
                                 'bodega_id' => $venta->bodega_id,
                             ],
-                            [
-                                'existencia' => 0,
-                            ]
+                            ['existencia' => 0]
                         );
                         $existenciaInicial = $inventario ? $inventario->existencia : 0;
                         $cantidadTotal = $detalle->devuelto - $detalle->devuelto_mal;
@@ -201,9 +206,7 @@ class VentaController extends Controller
                                 'producto_id' => $detalle->producto_id,
                                 'bodega_id' => Bodega::MAL_ESTADO,
                             ],
-                            [
-                                'existencia' => 0,
-                            ]
+                            ['existencia' => 0]
                         );
                         $existenciaInicial = $inventario ? $inventario->existencia : 0;
                         $inventario->existencia += $detalle->devuelto_mal;
@@ -220,7 +223,7 @@ class VentaController extends Controller
                         );
                     }
 
-                    if (($detalle->cantidad) != $detalle->devuelto) {
+                    if ($detalle->cantidad != $detalle->devuelto) {
                         $estado = 'parcialmente devuelta';
                     }
                 }
