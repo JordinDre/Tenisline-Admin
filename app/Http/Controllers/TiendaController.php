@@ -90,6 +90,11 @@ class TiendaController extends Controller
         $search = $request->search;
         $marca = $request->marca;
         $bodega = $request->bodega;
+        $tallas = $request->tallas ?? [];
+        $precioMin = $request->precioMin;
+        $precioMax = $request->precioMax;
+        $color = $request->color;
+        $genero = $request->genero;
 
         $productos = Producto::with('marca', 'stock')
         ->whereHas('stock', function ($query) use ($bodega) {
@@ -115,10 +120,6 @@ class TiendaController extends Controller
                         ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$term}%"));
                 });
             }
-        } else {
-            if (!$marca) {
-                $productos->inRandomOrder();
-            }
         }
 
         if ($marca) {
@@ -127,8 +128,24 @@ class TiendaController extends Controller
             });
         }
 
-        if (!$search && !$marca ) {
+        if (!empty($tallas)) {
+            $productos->whereIn('talla', $tallas);
+        }
+    
+        if ($color) {
+            $productos->where('color', $color);
+        }
+
+        if ($genero) {
+            $productos->where('genero', $genero); // ✅ NUEVO filtro
+        }
+
+        /* if (!$search && !$marca ) {
             $productos->inRandomOrder();
+        } */
+
+        if ($precioMin !== null && $precioMax !== null) {
+            $productos->whereBetween('precio_venta', [$precioMin, $precioMax]);
         }
 
         $productos = $productos
@@ -156,12 +173,27 @@ class TiendaController extends Controller
             $bodegas = Bodega::whereNotIn('bodega', ['Mal estado', 'Traslado'])
             ->where('bodega', 'not like', '%bodega%')
             ->get(['id', 'bodega']);
+
+            $tallasDisponibles = Producto::select('talla')->distinct()->pluck('talla');
+            $marcasDisponibles = Marca::select('marca')->distinct()->pluck('marca');
+            $colores = Producto::select('color')->whereNotNull('color')->distinct()->pluck('color');
+            $generosDisponibles = Producto::select('genero')->distinct()->pluck('genero')->filter()->values();
     
         return Inertia::render('Catalogo', [
             'productos' => $productos,
             'search' => $search,
-            'bodega' => $bodega, 
+            'bodega' => $bodega,
             'bodegas' => $bodegas,
+            'marca' => $marca,
+            'color' => $color,
+            'tallas' => $tallas,
+            'genero' => $genero,
+            'precioMin' => $precioMin,
+            'precioMax' => $precioMax,
+            'tallasDisponibles' => $tallasDisponibles,
+            'marcasDisponibles' => $marcasDisponibles,
+            'coloresDisponibles' => $colores,
+            'generosDisponibles' => $generosDisponibles,
         ]);
     }    
 
