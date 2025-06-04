@@ -16,6 +16,7 @@ use App\Models\TipoPago;
 use Filament\Forms\Form;
 use App\Models\Municipio;
 use App\Models\Departamento;
+use App\Helpers\DescuentosHelper;
 use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
 use Filament\Support\Enums\MaxWidth;
@@ -278,6 +279,55 @@ class CreateVenta extends CreateRecord
                                         })
                                         ->label('Facturar CF')
                                         ->columnSpan(3),
+                                    Toggle::make('aplicar_descuento')
+                                        ->label('Promo Junio')
+                                        ->inline(false)
+                                        ->dehydrated(false)
+                                        ->visible(fn (Get $get): bool => ! empty($get('bodega_id')))
+                                        ->reactive()
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            if ($state) {
+                                                $productosOriginales = $get('detalles');
+                                    
+                                                $descuento = \App\Helpers\DescuentosHelper::aplicarDescuentoMitadPorPar($productosOriginales);
+                                    
+                                                if (empty($descuento)) {
+                                                    Notification::make()
+                                                        ->title('Debes seleccionar al menos 2 pares para aplicar el descuento')
+                                                        ->danger()
+                                                        ->send();
+                                    
+                                                    $set('aplicar_descuento', false);
+                                                    return;
+                                                }
+                                    
+                                                $set('backup_detalles', $productosOriginales);
+                                                $set('detalles', $descuento);
+
+                                                $subtotalGeneral = collect($descuento)->sum(fn ($item) => $item['cantidad'] * $item['precio']);
+                                                $set('subtotal', $subtotalGeneral);
+                                                $set('total', $subtotalGeneral);
+                                    
+                                                Notification::make()
+                                                    ->title('Descuento aplicado a los pares más económicos')
+                                                    ->success()
+                                                    ->send();
+                                            } else {
+                                                $original = $get('backup_detalles');
+
+                                                $subtotalGeneral = collect($original)->sum(fn ($item) => $item['cantidad'] * $item['precio']);
+                                                $set('subtotal', $subtotalGeneral);
+                                                $set('total', $subtotalGeneral);
+                                    
+                                                if ($original) {
+                                                    $set('detalles', $original);
+                                                    Notification::make()
+                                                        ->title('Descuento eliminado, productos restaurados')
+                                                        ->info()
+                                                        ->send();
+                                                }
+                                            }
+                                        }),
                                     Repeater::make('detalles')
                                         ->label('')
                                         ->relationship()
@@ -478,16 +528,15 @@ class CreateVenta extends CreateRecord
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
 
-                                                    // Recalcular totales generales
-                                                    $productos = $get('../../detalles') ?? [];
+                                                    $productos = $get('detalles') ?? [];
                                                     $totalGeneral = 0;
                                                     $subtotalGeneral = 0;
                                                     foreach ($productos as $productoItem) {
                                                         $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
                                                         $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
                                                     }
-                                                    $set('../../subtotal', round($subtotalGeneral, 2));
-                                                    $set('../../total', round($totalGeneral, 2));
+                                                    $set('subtotal', round($subtotalGeneral, 2));
+                                                    $set('total', round($totalGeneral, 2));
                                                 })
                                                 ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                                 ->required(),
@@ -541,7 +590,10 @@ class CreateVenta extends CreateRecord
                                                 ->prefix('Q')
                                                 ->default(0)
                                                 ->readOnly()
-                                                ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2]),
+                                                ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2])
+                                                ->afterStateUpdated(fn (Set $set, Get $get) => 
+                                                $set('subtotal', $get('cantidad') * $get('precio'))
+                                                ),
                                         ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
                                         ->live()
                                         ->reactive()
