@@ -80,7 +80,7 @@ class VentaController extends Controller
             DB::transaction(function () use ($venta) {
                 self::restarInventario($venta, 'Venta Confirmada');
                 $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                $res = FELController::facturaVenta($venta, $venta->bodega_id);
+                /* $res = FELController::facturaVenta($venta, $venta->bodega_id); */
                 if (! $res['resultado']) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
                 }
