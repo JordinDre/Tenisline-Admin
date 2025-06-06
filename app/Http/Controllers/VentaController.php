@@ -78,12 +78,18 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($venta) {
+                $res = FELController::facturaVenta($venta, $venta->bodega_id);
+                if (
+                    ! isset($res['resultado']) ||
+                    ! $res['resultado'] ||
+                    ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
+                ) {
+                    throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
+
+                }
+
                 self::restarInventario($venta, 'Venta Confirmada');
                 $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                /* $res = FELController::facturaVenta($venta, $venta->bodega_id); */
-                if (! $res['resultado']) {
-                    throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
-                }
                 $factura = new Factura;
                 $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
                 $factura->fel_uuid = $res['uuid'];
