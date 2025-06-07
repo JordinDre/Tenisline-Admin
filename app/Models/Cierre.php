@@ -54,6 +54,16 @@ class Cierre extends Model
             ->sum('total');
     }
 
+    public function getTotalTenisAttribute()
+    {
+        return VentaDetalle::whereHas('venta', function ($query) {
+            $query->where('bodega_id', $this->bodega_id)
+                ->whereIn('estado', ['creada', 'liquidada'])
+                ->where('created_at', '>=', $this->apertura)
+                ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre));
+        })->count('producto_id');
+    }
+
     public function getResumenPagosAttribute()
     {
         $ventas = Venta::where('bodega_id', $this->bodega_id)

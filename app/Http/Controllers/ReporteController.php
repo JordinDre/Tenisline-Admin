@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Exports\ReportePagosExport;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ReporteResultadosExport;
 use App\Exports\ReporteVentasClientesExport;
 use App\Exports\ReporteVentasDetalladasExport;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReporteController extends Controller
 {
@@ -30,6 +30,7 @@ class ReporteController extends Controller
                 users.dpi,
                 users.razon_social,
                 ventas.estado,
+                bodegas.bodega AS bodega,
                 CASE
                     WHEN COUNT(op.id) >= 1 THEN '✓'
                     WHEN COUNT(op.id) = 0 THEN 'x'
@@ -47,68 +48,71 @@ class ReporteController extends Controller
                 ) AS asesor
             FROM ventas
                 JOIN users ON users.id = ventas.cliente_id
-            LEFT JOIN facturas on facturas.facturable_id = ventas.id
+                LEFT JOIN facturas ON facturas.facturable_id = ventas.id
                 LEFT JOIN pagos op ON op.pagable_id = ventas.id
                 JOIN tipo_pagos ON tipo_pagos.id = op.tipo_pago_id
+                JOIN bodegas ON bodegas.id = ventas.bodega_id
             WHERE
                 DATE(ventas.created_at) BETWEEN ?
                 AND ?
                 AND ventas.estado NOT IN ('devuelta', 'anulada')
             GROUP BY
                 ventas.id, ventas.created_at, facturas.fel_uuid, facturas.fel_serie, facturas.fel_numero, facturas.fel_fecha, users.created_at,
-                users.nit, users.dpi, users.razon_social, ventas.estado, tipo_pagos.tipo_pago, ventas.total, ventas.asesor_id, ventas.tipo_envio
+                users.nit, users.dpi, users.razon_social, ventas.estado, bodegas.bodega, tipo_pagos.tipo_pago, ventas.total, ventas.asesor_id, ventas.tipo_envio
         ";
 
         $data = DB::select($consulta, [
             $fecha_incial,
             $fecha_final,
         ]);
-
-        return Excel::download(new ReporteVentasClientesExport($data), 'Ventas fecha: ' . $fecha_incial . ' - ' . $fecha_final . '.xlsx');
+        
+        return Excel::download(new ReporteVentasClientesExport($data), 'Ventas fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
     }
 
     public function VentasDetallado(Request $request)
     {
-        
-        $consulta = DB::select("
-                    SELECT
-                        ventas.created_at,
-                        ventas.id,
-                        ventas.estado,
-                        ventas.cliente_id,
-                        users.razon_social,
-                        users.nit,
-                        ventas.envio,
-                        ventas.subtotal,
-                        total,
-                        venta_detalles.producto_id,
-                        productos.codigo,
-                        productos.descripcion,
-                        marcas.marca,
-                        venta_detalles.cantidad,
-                        productos.precio_compra,
-                        COALESCE(productos.envio, 0) as envio_producto,
-                        COALESCE(venta_detalles.precio, 0) AS precio_venta,
-                        COALESCE(venta_detalles.precio, 0) - (productos.precio_compra) * venta_detalles.cantidad AS utilidad_bruta,
-                        COALESCE(venta_detalles.precio, 0) * venta_detalles.cantidad AS subtotal_detalle,
-                        (SELECT name FROM users u WHERE u.id = ventas.asesor_id) AS asesor
-                    FROM
-                        venta_detalles
-                        INNER JOIN ventas ON venta_detalles.venta_id = ventas.id
-                        INNER JOIN users ON users.id = ventas.cliente_id
-                        INNER JOIN productos ON productos.id = venta_detalles.producto_id
-                        INNER JOIN marcas ON marcas.id = productos.marca_id
-                    WHERE
-                        MONTH(ventas.created_at) = ?
-                        AND YEAR(ventas.created_at) = ?
-                    ORDER BY
-                        asesor ASC
-                ", [
+
+        $consulta = DB::select('
+            SELECT
+                ventas.created_at,
+                ventas.id,
+                ventas.estado,
+                ventas.cliente_id,
+                users.razon_social,
+                users.nit,
+                ventas.envio,
+                ventas.subtotal,
+                ventas.total,
+                bodegas.bodega AS bodega,
+                venta_detalles.producto_id,
+                productos.codigo,
+                productos.descripcion,
+                marcas.marca,
+                venta_detalles.cantidad,
+                productos.precio_compra,
+                COALESCE(productos.envio, 0) as envio_producto,
+                COALESCE(venta_detalles.precio, 0) AS precio_venta,
+                COALESCE(venta_detalles.precio, 0) - (productos.precio_compra) * venta_detalles.cantidad AS utilidad_bruta,
+                COALESCE(venta_detalles.precio, 0) * venta_detalles.cantidad AS subtotal_detalle,
+                (SELECT name FROM users u WHERE u.id = ventas.asesor_id) AS asesor
+            FROM
+                venta_detalles
+                INNER JOIN ventas ON venta_detalles.venta_id = ventas.id
+                INNER JOIN users ON users.id = ventas.cliente_id
+                INNER JOIN productos ON productos.id = venta_detalles.producto_id
+                INNER JOIN marcas ON marcas.id = productos.marca_id
+                INNER JOIN bodegas ON bodegas.id = ventas.bodega_id
+            WHERE
+                MONTH(ventas.created_at) = ?
+                AND YEAR(ventas.created_at) = ?
+            ORDER BY
+                asesor ASC
+        ', [
             $request->mes,
-            $request->año
+            $request->año,
         ]);
 
-        return Excel::download(new ReporteVentasDetalladasExport($consulta), 'Ventas Detalladas Mes: ' . $request->mes . ' Año: ' . $request->año . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+        return Excel::download(new ReporteVentasDetalladasExport($consulta), 'Ventas Detalladas Mes: '.$request->mes.' Año: '.$request->año.'.xlsx', \Maatwebsite\Excel\Excel::XLSX);
     }
 
     public function Pagos(Request $request)
@@ -161,7 +165,7 @@ class ReporteController extends Controller
             $fecha_final,
         ]);
 
-        return Excel::download(new ReportePagosExport($data), 'Pagos fecha: ' . $fecha_incial . ' - ' . $fecha_final . '.xlsx');
+        return Excel::download(new ReportePagosExport($data), 'Pagos fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
     }
 
     public function Resultados(Request $request)
@@ -269,6 +273,6 @@ class ReporteController extends Controller
             $request->mes,
         ]);
 
-        return Excel::download(new ReporteResultadosExport($consulta), 'Resultados Mes: ' . $request->mes . ' Año: ' . $request->año . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+        return Excel::download(new ReporteResultadosExport($consulta), 'Resultados Mes: '.$request->mes.' Año: '.$request->año.'.xlsx', \Maatwebsite\Excel\Excel::XLSX);
     }
 }

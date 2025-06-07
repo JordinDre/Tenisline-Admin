@@ -55,7 +55,7 @@ class CierreResource extends Resource
                             }
 
                             $cierreHoy = Cierre::where('user_id', auth()->id())
-                                ->whereDate('apertura', now()->toDateString())
+                                ->whereDate('apertura', now()->toDateString())                           
                                 ->exists();
 
                             if ($cierreHoy) {
@@ -78,6 +78,7 @@ class CierreResource extends Resource
 
     public static function table(Table $table): Table
     {
+        
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('bodega.bodega')
@@ -92,11 +93,15 @@ class CierreResource extends Resource
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cierre')
+                
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('ventas_ids')
                     ->label('Ventas')
                     ->listWithLineBreaks()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('total_tenis')
+                    ->label('Cantidad Tenis')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('total_ventas')
                     ->label('Total')

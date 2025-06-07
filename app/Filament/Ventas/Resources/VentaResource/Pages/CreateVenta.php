@@ -2,15 +2,16 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use Closure;
-use App\Models\Pago;
-use App\Models\User;
-use App\Models\Venta;
+use App\Filament\Ventas\Resources\VentaResource;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VentaController;
 use App\Models\Cierre;
+use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use App\Models\Municipio;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
 use Filament\Forms\Form;
@@ -18,26 +19,22 @@ use App\Models\Municipio;
 use App\Models\Departamento;
 use App\Helpers\DescuentosHelper;
 use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Filament\Support\Enums\MaxWidth;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use App\Http\Controllers\UserController;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use App\Http\Controllers\VentaController;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Pages\CreateRecord;
-use App\Http\Controllers\ProductoController;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
-use App\Filament\Ventas\Resources\VentaResource;
 
 class CreateVenta extends CreateRecord
 {
@@ -56,7 +53,7 @@ class CreateVenta extends CreateRecord
         }
 
         return $this->getResource()::getUrl('index');
-        
+
     }
 
     public function form(Form $form): Form
@@ -817,6 +814,7 @@ class CreateVenta extends CreateRecord
                 ->send();
             $this->form->fill();
         } catch (\Exception $e) {
+            $this->record->delete();
             Notification::make()
                 ->warning()
                 ->color('warning')
