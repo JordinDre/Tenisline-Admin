@@ -165,6 +165,9 @@ class ProductoController extends Controller
                 <div style='color: black;'> 
                     <span style='color: black;'>Descripción: </span>{$record->descripcion}
                 </div>
+                <div style='color: black;'> 
+                    <span style='color: black;'>Color: </span>{$record->color}
+                </div>
                 <div style='color: black;'>
                     Marca: {$record->marca->marca}, Talla: {$record->talla}, Estilo: {$record->genero}
                 </div>
@@ -192,6 +195,7 @@ class ProductoController extends Controller
                     ->orWhere('codigo', 'like', "%{$term}%")
                     ->orWhere('modelo', 'like', "%{$term}%")
                     ->orWhere('talla', 'like', "%{$term}%")
+                    ->orWhere('color', 'like', "%{$term}%")
                     ->orWhere('genero', 'like', "%{$term}%")
                     ->orWhereHas('marca', function ($query) use ($term) {
                         $query->where('marca', 'like', "%{$term}%");

@@ -345,6 +345,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(), */
+                Tables\Columns\TextColumn::make('color')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('marca.marca')
                     ->copyable()
                     ->searchable()
