@@ -40,7 +40,7 @@ class CajaChicaPolicy
      */
     public function update(User $user, CajaChica $cajachica): bool
     {
-        return /* $user->can('update_bodega') */ $user->hasRole(['super_admin', 'administrador']);
+        return  false /* $user->can('update_bodega') */ /* $user->hasRole(['super_admin', 'administrador']) */;
     }
 
     /**
@@ -48,7 +48,7 @@ class CajaChicaPolicy
      */
     public function delete(User $user, CajaChica $cajachica): bool
     {
-        return /* $user->can('delete_bodega') */ $user->hasRole(['super_admin', 'administrador']);
+        return  false /* $user->can('delete_bodega') */ /* $user->hasRole(['super_admin', 'administrador']) */;
     }
 
     /**
@@ -106,4 +106,20 @@ class CajaChicaPolicy
     {
         return /* $user->can('reorder_bodega') */ false;
     }
+
+    /* public function annular(User $user, CajaChica $compra): bool
+    {
+        return true;
+        $estadosPermitidos = ['creada'];
+
+        return $user->can('annular_caja_chica') && in_array($compra->estado, $estadosPermitidos);
+    }
+
+    public function confirm(User $user, CajaChica $compra): bool
+    {
+        return true;
+        $estadosPermitidos = ['creada'];
+
+        return $user->can('confirm_caja_chica') && in_array($compra->estado, $estadosPermitidos);
+    } */
 }
