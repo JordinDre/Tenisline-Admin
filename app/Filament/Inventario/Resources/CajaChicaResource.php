@@ -5,11 +5,13 @@ namespace App\Filament\Inventario\Resources;
 use Filament\Forms;
 use App\Models\Pago;
 use Filament\Tables;
+use Filament\Forms\Set;
 use Filament\Forms\Form;
 use App\Models\CajaChica;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Fieldset;
@@ -37,12 +39,47 @@ class CajaChicaResource extends Resource {
 
     protected static ?int $navigationSort = 3;
 
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view_any',
+            'view',
+            'create',
+            'confirm',
+            'annular',
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Grid::make(2)
-                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Select::make('bodega_id')
+                            ->relationship(
+                                'bodega',
+                                'bodega',
+                                fn (Builder $query) => $query
+                                    ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                                    )
+                                    ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                                    ->where('bodega', 'not like', '%bodega%')
+                            )
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set) {
+                                $set('detalles', []);
+                            })
+                            ->searchable()
+                            ->required(),
+                            Hidden::make('user_id')
+                            ->default(auth()->user()->id),
+                            Select::make('proveedor_id')
+                            ->required()
+                            ->searchable()
+                            ->visible(auth()->user()->can('view_supplier_producto'))
+                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
                         Forms\Components\TextInput::make('detalle_gasto')
                             ->required()
                             ->maxLength(255),
@@ -69,15 +106,20 @@ class CajaChicaResource extends Resource {
                                 Hidden::make('user_id')
                                     ->default(auth()->user()->id),
                                 FileUpload::make('imagen')
+                                    ->required()
                                     ->image()
                                     ->downloadable()
                                     ->label('Imágen')
+                                    ->imageEditor()
                                     ->disk(config('filesystems.disks.s3.driver'))
                                     ->directory(config('filesystems.default'))
                                     ->visibility('public')
                                     ->appendFiles()
+                                    ->maxSize(5000)
+                                    ->resize(50)
                                     ->openable()
-                                    ->columnSpan(['sm' => 1, 'md' => 3]),
+                                    ->columnSpan(['sm' => 1, 'md' => 3])
+                                    ->optimize('webp'),
                             ]),
                     ])
                     ->defaultItems(1),
@@ -87,9 +129,18 @@ class CajaChicaResource extends Resource {
     public static function table(Table $table): Table
     {
         return $table
+            ->extremePaginationLinks()
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('usuario.name')
+                    ->label('Vendedor')
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('proveedor.name')
+                    ->label('Proveedor')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('pagos.monto')
@@ -100,18 +151,20 @@ class CajaChicaResource extends Resource {
                     ->label('No. Documento'),
                 Tables\Columns\TextColumn::make('detalle_gasto')
                     ->label('Detalle del gasto'),
+                Tables\Columns\TextColumn::make('bodega.bodega')
+                    ->label('Bodega'),
                 Tables\Columns\TextColumn::make('autoriza')
                     ->label('Quien Autorizo'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Fecha de creación')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Fecha de actualización')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -120,8 +173,19 @@ class CajaChicaResource extends Resource {
                 Tables\Actions\ViewAction::make()
                     ->label('Ver Detalles')
                     ->icon('heroicon-o-eye'),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Action::make('confirm')
+                    ->label('Confirmar')
+                    ->color('success')
+                    ->icon('heroicon-o-check-circle')
+                    /* ->action(fn(Compra $record) => CompraController::confirmar($record)) */
+                    ->visible(fn($record) => auth()->user()->can('confirm', $record)),
+                Action::make('annular')
+                    ->label('Anular')
+                    ->color('danger')
+                    ->icon('heroicon-o-x-circle')
+                    ->requiresConfirmation()
+                   /*  ->action(fn(Compra $record) => CompraController::anular($record)) */
+                    ->visible(fn($record) => auth()->user()->can('annular', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -147,33 +211,29 @@ class CajaChicaResource extends Resource {
     }
 
     public static function create(array $data): ?CajaChica
-{
-    return DB::transaction(function () use ($data) {
-        // Prepara los datos específicos para CajaChica
-        $cajaChicaData = collect($data)
-            ->only(['detalle_gasto', 'imagen'])
-            ->toArray();
-
-        // Crea el registro de CajaChica
-        $cajaChica = CajaChica::create($cajaChicaData);
-
-        // Prepara los datos para Pago
-        if ($cajaChica) {
-            $pagoData = collect($data)
-                ->only(['no_documento', 'autoriza', 'monto'])
-                ->merge([
-                    'pagable_id' => $cajaChica->id,
-                    'pagable_type' => CajaChica::class,
-                ])
+    {
+        return DB::transaction(function () use ($data) {
+            $cajaChicaData = collect($data)
+                ->only(['detalle_gasto', 'imagen'])
                 ->toArray();
 
-            // Crea el registro de Pago asociado
-            Pago::create($pagoData);
+            $cajaChica = CajaChica::create($cajaChicaData);
 
-            return $cajaChica;
-        }
+            if ($cajaChica) {
+                $pagoData = collect($data)
+                    ->only(['no_documento', 'autoriza', 'monto'])
+                    ->merge([
+                        'pagable_id' => $cajaChica->id,
+                        'pagable_type' => CajaChica::class,
+                    ])
+                    ->toArray();
 
-        return null;
-    });
-}
+                Pago::create($pagoData);
+
+                return $cajaChica;
+            }
+
+            return null;
+        });
+    }
 }
