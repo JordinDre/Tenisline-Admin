@@ -78,6 +78,7 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($venta) {
+
                 $res = FELController::facturaVenta($venta, $venta->bodega_id);
                 if (
                     ! isset($res['resultado']) ||
@@ -85,7 +86,6 @@ class VentaController extends Controller
                     ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
                 ) {
                     throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
-
                 }
 
                 self::restarInventario($venta, 'Venta Confirmada');
