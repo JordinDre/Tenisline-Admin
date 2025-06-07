@@ -1,5 +1,6 @@
 import Layout from '@/Layouts/Layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 
 export default function Producto({ producto, marcas }) {
     const user = usePage().props.auth.user;
@@ -37,130 +38,112 @@ export default function Producto({ producto, marcas }) {
                 />
             </Head>
 
-            <section className="bg-white py-8 antialiased dark:bg-zinc-900 md:py-16">
-                <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
-                    <div className="lg:grid lg:grid-cols-2 lg:gap-8 xl:gap-16">
-                        <div className="mx-auto max-w-md shrink-0 lg:max-w-lg">
+            <section className="bg-white py-10 md:py-16">
+                <div className="mx-auto max-w-screen-xl px-4 md:px-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="grid gap-8 md:grid-cols-2 md:items-start"
+                    >
+                        <div className="rounded-xl bg-zinc-50 p-4 shadow-md">
                             <img
-                                className="w-full dark:hidden"
+                                className="max-h-[400px] w-full object-contain"
                                 src={producto.imagen}
-                                alt=""
+                                alt={producto.descripcion}
                             />
                         </div>
 
-                        <div className="mt-6 sm:mt-8 lg:mt-0">
-                            <h1 className="text-xl font-semibold text-zinc-900 dark:text-white sm:text-2xl">
-                                <div className="mt-4">
-                                    <div
-                                        className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm ${
-                                            producto.stock > 0
-                                                ? 'bg-green-100 text-green-700 ring-1 ring-green-300'
-                                                : 'bg-red-100 text-red-700 ring-1 ring-red-300'
-                                        }`}
-                                    >
-                                        <svg
-                                            className="h-5 w-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth={2}
-                                            viewBox="0 0 24 24"
-                                        >
-                                            {producto.stock > 0 ? (
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M5 13l4 4L19 7"
-                                                />
-                                            ) : (
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M6 18L18 6M6 6l12 12"
-                                                />
-                                            )}
-                                        </svg>
-                                        {producto.stock > 0
-                                            ? `En existencia`
-                                            : 'Sin stock disponible'}
-                                    </div>
-                                </div>
-                            </h1>
-                            <div className="mt-4 space-y-1 text-sm text-zinc-800 dark:text-white sm:text-base">
-                                {[
-                                    `CÓDIGO: ${producto.codigo}`,
-                                    `MARCA: ${producto.marca}`,
-                                    `TALLA: US ${producto.talla} ${producto.genero}`,
-                                    `COLOR: ${producto.color}`,
-                                    `NOMBRE: ${producto.descripcion}`,
-                                ].map((linea, index) => (
-                                    <div key={index}>
-                                        {index === 0 ? (
-                                            <span className="font-semibold">
-                                                {linea}
-                                            </span>
-                                        ) : (
-                                            linea
-                                        )}
-                                    </div>
-                                ))}
+                        <div>
+                            <motion.h1
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-2xl font-bold text-zinc-800"
+                            >
+                                {producto.descripcion}
+                            </motion.h1>
+
+                            <div className="mt-3 flex items-center gap-2 text-sm">
+                                <span
+                                    className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${
+                                        producto.stock > 0
+                                            ? 'bg-green-100 text-green-700 ring-green-300'
+                                            : 'bg-red-100 text-red-700 ring-red-300'
+                                    }`}
+                                >
+                                    {producto.stock > 0
+                                        ? 'En existencia'
+                                        : 'Sin stock disponible'}
+                                </span>
                             </div>
-                            <div className="mt-4 space-y-1 text-sm text-zinc-800 dark:text-white sm:text-base">
-                                {[
-                                    `PRECIO: Q.${producto.precio}`,
-                                    `PRECIO OFERTA: `,
-                                ].map((linea, index) => (
-                                    <div key={index}>
-                                        {index === 0 ? (
-                                            <span className="font-semibold text-blue-600">
-                                                {linea}
-                                            </span>
-                                        ) : (
-                                            <span className="font-semibold text-green-600">
-                                                {linea}
-                                            </span>
-                                        )}
-                                    </div>
-                                ))}
+
+                            <div className="mt-5 space-y-2 text-sm text-zinc-700">
+                                <p>
+                                    <strong>Código:</strong> {producto.codigo}
+                                </p>
+                                <p>
+                                    <strong>Marca:</strong> {producto.marca}
+                                </p>
+                                <p>
+                                    <strong>Talla:</strong> US {producto.talla}{' '}
+                                    ({producto.genero})
+                                </p>
+                            </div>
+
+                            <div className="mt-4 text-xl font-bold text-green-600">
+                                Q{producto.precio}
                             </div>
 
                             {user && producto.precio && (
                                 <form
                                     onSubmit={submit}
-                                    className="mt-6 sm:mt-8 sm:flex sm:items-center sm:gap-4"
+                                    className="mt-6 sm:flex sm:items-center sm:gap-4"
                                 >
-                                    {/* <button
+                                    <button
                                         type="submit"
-                                        disabled={processing}
-                                        className="btn mt-6 w-full rounded-lg bg-green-600 py-2 font-semibold text-white hover:bg-green-800"
+                                        className="w-full rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700"
                                     >
                                         Añadir al carrito
-                                    </button> */}
+                                    </button>
                                 </form>
                             )}
-                            <div className="mt-4 overflow-x-auto">
-                                <div className="flex gap-4 w-max">
+
+                            <div className="mt-8">
+                                <h2 className="mb-2 text-sm font-semibold text-zinc-500">
+                                    Otras marcas:
+                                </h2>
+                                <div className="flex flex-wrap gap-2">
                                     {marcas.map((marca, index) => (
                                         <Link
                                             key={index}
                                             href={route('catalogo', { marca })}
-                                            className="btn-zinc-content btn whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold"
+                                            className="rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-800 shadow hover:bg-zinc-200"
                                         >
                                             {marca}
                                         </Link>
                                     ))}
                                 </div>
+                                <div className="mt-4">
+                                    <Link
+                                        href={route('catalogo')}
+                                        className="inline-block text-sm font-medium text-blue-600 hover:underline"
+                                    >
+                                        ← Volver al catálogo
+                                    </Link>
+                                </div>
                             </div>
 
-                            <hr className="my-6 border-zinc-200 dark:border-zinc-800 md:my-8" />
+                            <hr className="my-6 border-zinc-200" />
 
                             <div
-                                className="text-zinc-500 dark:text-zinc-400"
+                                className="prose-sm prose max-w-none text-zinc-700"
                                 dangerouslySetInnerHTML={{
                                     __html: producto.detalle,
                                 }}
                             />
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
         </Layout>
