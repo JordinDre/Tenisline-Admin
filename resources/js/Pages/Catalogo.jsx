@@ -1,7 +1,7 @@
 import Layout from '@/Layouts/Layout';
 import { useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 
 export default function Catalogo({
@@ -15,6 +15,8 @@ export default function Catalogo({
     marcasDisponibles,
     generosDisponibles,
 }) {
+    const [mostrarFiltros, setMostrarFiltros] = useState(false);
+
     const { data, setData, get } = useForm({
         search: search || '',
         bodega: bodega || '',
@@ -67,122 +69,66 @@ export default function Catalogo({
                     Catálogo de Productos
                 </h2>
 
+                {/* Botón para móviles */}
+                <button
+                    onClick={() => setMostrarFiltros(true)}
+                    className="mb-4 block w-full rounded bg-black px-4 py-2 text-white md:hidden"
+                >
+                    Mostrar filtros
+                </button>
+
+                {/* Panel móvil */}
+                {mostrarFiltros && (
+                    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 md:hidden">
+                        <div className="absolute left-0 top-0 h-full w-3/4 max-w-xs overflow-y-auto bg-white p-4 shadow-lg">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="text-lg font-semibold">
+                                    Filtros
+                                </h3>
+                                <button
+                                    className="font-bold text-red-600"
+                                    onClick={() => setMostrarFiltros(false)}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            {/* FORMULARIO MOVIL */}
+                            <Filtros
+                                data={data}
+                                setData={setData}
+                                handleCheckboxChange={handleCheckboxChange}
+                                handleReset={handleReset}
+                                bodegas={bodegas}
+                                marcasDisponibles={marcasDisponibles}
+                                generosDisponibles={generosDisponibles}
+                                tallasRango={tallasRango}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col gap-6 md:flex-row">
+                    {/* FORMULARIO ESCRITORIO */}
                     <motion.form
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="w-full space-y-6 md:w-1/4"
+                        className="hidden w-full space-y-6 md:block md:w-1/4"
                     >
                         <div className="space-y-5 border-l border-r border-black bg-gradient-to-b from-white to-zinc-50 px-6 py-4">
                             <h3 className="mb-4 text-lg font-semibold text-zinc-800">
                                 Filtrar por
                             </h3>
-                            <input
-                                type="text"
-                                name="search"
-                                placeholder="Buscar producto..."
-                                value={data.search}
-                                onChange={(e) =>
-                                    setData('search', e.target.value)
-                                }
-                                className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-black"
+                            <Filtros
+                                data={data}
+                                setData={setData}
+                                handleCheckboxChange={handleCheckboxChange}
+                                handleReset={handleReset}
+                                bodegas={bodegas}
+                                marcasDisponibles={marcasDisponibles}
+                                generosDisponibles={generosDisponibles}
+                                tallasRango={tallasRango}
                             />
-
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700">
-                                    Género
-                                </label>
-                                <select
-                                    name="genero"
-                                    value={data.genero}
-                                    onChange={(e) =>
-                                        setData('genero', e.target.value)
-                                    }
-                                    className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-black"
-                                >
-                                    <option value="">Todos</option>
-                                    {generosDisponibles.map((g, index) => (
-                                        <option key={index} value={g}>
-                                            {g}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700">
-                                    Bodega
-                                </label>
-                                <select
-                                    name="bodega"
-                                    value={data.bodega}
-                                    onChange={(e) =>
-                                        setData('bodega', e.target.value)
-                                    }
-                                    className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-black"
-                                >
-                                    <option value="">Todas</option>
-                                    {bodegas.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                            {b.bodega}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700">
-                                    Marca
-                                </label>
-                                <select
-                                    name="marca"
-                                    value={data.marca}
-                                    onChange={(e) =>
-                                        setData('marca', e.target.value)
-                                    }
-                                    className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-black"
-                                >
-                                    <option value="">Todas</option>
-                                    {marcasDisponibles.map((m, index) => (
-                                        <option key={index} value={m}>
-                                            {m}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-zinc-700">
-                                    Tallas
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {tallasRango.map((t, index) => (
-                                        <label
-                                            key={index}
-                                            className="flex items-center gap-1 text-sm text-zinc-600"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                value={t}
-                                                checked={data.tallas.includes(
-                                                    t,
-                                                )}
-                                                onChange={handleCheckboxChange}
-                                            />
-                                            {t}
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                className="w-full rounded border border-zinc-400 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
-                            >
-                                Reiniciar filtros
-                            </button>
                         </div>
                     </motion.form>
 
@@ -288,5 +234,117 @@ export default function Catalogo({
                 </div>
             </div>
         </Layout>
+    );
+}
+
+// Componente reutilizable para los filtros
+function Filtros({
+    data,
+    setData,
+    handleCheckboxChange,
+    handleReset,
+    bodegas,
+    marcasDisponibles,
+    generosDisponibles,
+    tallasRango,
+}) {
+    return (
+        <>
+            <input
+                type="text"
+                name="search"
+                placeholder="Buscar producto..."
+                value={data.search}
+                onChange={(e) => setData('search', e.target.value)}
+                className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700">
+                    Género
+                </label>
+                <select
+                    name="genero"
+                    value={data.genero}
+                    onChange={(e) => setData('genero', e.target.value)}
+                    className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                >
+                    <option value="">Todos</option>
+                    {generosDisponibles.map((g, index) => (
+                        <option key={index} value={g}>
+                            {g}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700">
+                    Bodega
+                </label>
+                <select
+                    name="bodega"
+                    value={data.bodega}
+                    onChange={(e) => setData('bodega', e.target.value)}
+                    className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                >
+                    <option value="">Todas</option>
+                    {bodegas.map((b) => (
+                        <option key={b.id} value={b.id}>
+                            {b.bodega}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700">
+                    Marca
+                </label>
+                <select
+                    name="marca"
+                    value={data.marca}
+                    onChange={(e) => setData('marca', e.target.value)}
+                    className="w-full rounded border border-zinc-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                >
+                    <option value="">Todas</option>
+                    {marcasDisponibles.map((m, index) => (
+                        <option key={index} value={m}>
+                            {m}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700">
+                    Tallas
+                </label>
+                <div className="flex flex-wrap gap-2">
+                    {tallasRango.map((t, index) => (
+                        <label
+                            key={index}
+                            className="flex items-center gap-1 text-sm text-zinc-600"
+                        >
+                            <input
+                                type="checkbox"
+                                value={t}
+                                checked={data.tallas.includes(t)}
+                                onChange={handleCheckboxChange}
+                            />
+                            {t}
+                        </label>
+                    ))}
+                </div>
+            </div>
+
+            <button
+                type="button"
+                onClick={handleReset}
+                className="w-full rounded border border-zinc-400 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+            >
+                Reiniciar filtros
+            </button>
+        </>
     );
 }

@@ -3,7 +3,6 @@
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
 use App\Filament\Ventas\Resources\VentaResource;
-use App\Helpers\DescuentosHelper;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentaController;
@@ -287,26 +286,35 @@ class CreateVenta extends CreateRecord
                                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                             if ($state) {
                                                 $productosOriginales = $get('detalles');
-                                    
+
                                                 $descuento = \App\Helpers\DescuentosHelper::aplicarDescuentoMitadPorPar($productosOriginales);
-                                    
+
                                                 if (empty($descuento)) {
                                                     Notification::make()
                                                         ->title('Debes seleccionar al menos 2 pares para aplicar el descuento')
                                                         ->danger()
                                                         ->send();
-                                    
+
                                                     $set('aplicar_descuento', false);
+
                                                     return;
                                                 }
-                                    
+
                                                 $set('backup_detalles', $productosOriginales);
-                                                $set('detalles', $descuento);
+                                                // Desactivar descuentos individuales
+                                                $detalles = collect($descuento)->map(function ($item) {
+                                                    $item['aplicar_descuento_item'] = false;
+
+                                                    return $item;
+                                                })->toArray();
+
+                                                $set('backup_detalles', $productosOriginales);
+                                                $set('detalles', $detalles);
 
                                                 $subtotalGeneral = collect($descuento)->sum(fn ($item) => $item['cantidad'] * $item['precio']);
                                                 $set('subtotal', $subtotalGeneral);
                                                 $set('total', $subtotalGeneral);
-                                    
+
                                                 Notification::make()
                                                     ->title('Descuento aplicado a los pares más económicos')
                                                     ->success()
@@ -317,9 +325,16 @@ class CreateVenta extends CreateRecord
                                                 $subtotalGeneral = collect($original)->sum(fn ($item) => $item['cantidad'] * $item['precio']);
                                                 $set('subtotal', $subtotalGeneral);
                                                 $set('total', $subtotalGeneral);
-                                    
+
                                                 if ($original) {
+                                                    $original = collect($original)->map(function ($item) {
+                                                        $item['aplicar_descuento_item'] = false;
+
+                                                        return $item;
+                                                    })->toArray();
+
                                                     $set('detalles', $original);
+
                                                     Notification::make()
                                                         ->title('Descuento eliminado, productos restaurados')
                                                         ->info()
@@ -379,6 +394,18 @@ class CreateVenta extends CreateRecord
 
                                                     if ($state && $esColaborador) {
                                                         $precioFinal = round($precioOriginal * 0.75, 2);
+                                                    }
+                                                    if ($state) {
+                                                        if ($get('../../aplicar_descuento')) {
+                                                            Notification::make()
+                                                                ->title('Solo se puede aplicar un tipo de descuento a la vez.')
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('aplicar_descuento_item', false);
+
+                                                            return;
+                                                        }
                                                     }
 
                                                     $set('precio', $precioFinal);
@@ -590,8 +617,7 @@ class CreateVenta extends CreateRecord
                                                 ->default(0)
                                                 ->readOnly()
                                                 ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2])
-                                                ->afterStateUpdated(fn (Set $set, Get $get) => 
-                                                $set('subtotal', $get('cantidad') * $get('precio'))
+                                                ->afterStateUpdated(fn (Set $set, Get $get) => $set('subtotal', $get('cantidad') * $get('precio'))
                                                 ),
                                         ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
                                         ->live()
