@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bodega;
+use App\Models\Carrito;
 use App\Models\Guia;
-use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\Bodega;
-use App\Models\Tienda;
-use App\Models\Carrito;
-use App\Models\Producto;
 use App\Models\OrdenDetalle;
+use App\Models\Producto;
+use App\Models\Tienda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TiendaController extends Controller
 {
@@ -97,17 +97,17 @@ class TiendaController extends Controller
         $genero = $request->genero;
 
         $productos = Producto::with('marca', 'stock')
-        ->whereHas('stock', function ($query) use ($bodega) {
-            $query->where('existencia', '>', 0);
+            ->whereHas('stock', function ($query) use ($bodega) {
+                $query->where('existencia', '>', 0);
 
-            if ($bodega) {
-                $query->where('bodega_id', $bodega);
-            }
-        });
-    
+                if ($bodega) {
+                    $query->where('bodega_id', $bodega);
+                }
+            });
+
         if ($search) {
             $searchTerms = explode(' ', $search);
-        
+
             foreach ($searchTerms as $term) {
                 $productos->where(function ($query) use ($term) {
                     $query->where('productos.codigo', 'LIKE', "%{$term}%")
@@ -128,10 +128,20 @@ class TiendaController extends Controller
             });
         }
 
-        if (!empty($tallas)) {
-            $productos->whereIn('talla', $tallas);
+        if (! empty($tallas)) {
+            // Normaliza las tallas ingresadas (ej. "8.0" → "8")
+            $tallasNormalizadas = collect($tallas)
+                ->map(fn ($t) => rtrim(rtrim($t, '0'), '.')) // elimina .0 o .00
+                ->unique()
+                ->toArray();
+
+            // Aplica comparación también normalizada en SQL
+            $productos->whereIn(
+                DB::raw("REPLACE(REPLACE(productos.talla, '.0', ''), '.00', '')"),
+                $tallasNormalizadas
+            );
         }
-    
+
         if ($color) {
             $productos->where('color', $color);
         }
@@ -170,15 +180,15 @@ class TiendaController extends Controller
                 ];
             });
 
-            $bodegas = Bodega::whereNotIn('bodega', ['Mal estado', 'Traslado'])
+        $bodegas = Bodega::whereNotIn('bodega', ['Mal estado', 'Traslado'])
             ->where('bodega', 'not like', '%bodega%')
             ->get(['id', 'bodega']);
 
-            $tallasDisponibles = Producto::select('talla')->distinct()->pluck('talla');
-            $marcasDisponibles = Marca::select('marca')->distinct()->pluck('marca');
-            $colores = Producto::select('color')->whereNotNull('color')->distinct()->pluck('color');
-            $generosDisponibles = Producto::select('genero')->distinct()->pluck('genero')->filter()->values();
-    
+        $tallasDisponibles = Producto::select('talla')->distinct()->pluck('talla');
+        $marcasDisponibles = Marca::select('marca')->distinct()->pluck('marca');
+        $colores = Producto::select('color')->whereNotNull('color')->distinct()->pluck('color');
+        $generosDisponibles = Producto::select('genero')->distinct()->pluck('genero')->filter()->values();
+
         return Inertia::render('Catalogo', [
             'productos' => $productos,
             'search' => $search,
@@ -195,7 +205,7 @@ class TiendaController extends Controller
             'coloresDisponibles' => $colores,
             'generosDisponibles' => $generosDisponibles,
         ]);
-    }    
+    }
 
     public function producto($slug)
     {
@@ -204,8 +214,8 @@ class TiendaController extends Controller
         $marcas = Marca::whereHas('productos.stock', function ($q) {
             $q->where('existencia', '>', 0);
         })
-        ->orderBy('marca')
-        ->pluck('marca');
+            ->orderBy('marca')
+            ->pluck('marca');
 
         return Inertia::render('Producto', [
             'producto' => [
