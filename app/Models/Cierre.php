@@ -41,8 +41,17 @@ class Cierre extends Model
             ->where('created_at', '>=', $this->apertura)
             ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
             ->pluck('id')
-            ->map(fn ($id) => "Venta #{$id}")
-            ->toArray();
+            ->map(fn ($id) => "Venta #{$id}");
+    }
+
+    public function getVentasDetallesAttribute()
+    {
+        return Venta::with(['detalles.producto'])
+            ->where('bodega_id', $this->bodega_id)
+            ->whereIn('estado', ['creada', 'liquidada'])
+            ->where('created_at', '>=', $this->apertura)
+            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->get();
     }
 
     public function getTotalVentasAttribute()

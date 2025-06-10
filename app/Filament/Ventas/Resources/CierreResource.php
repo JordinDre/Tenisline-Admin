@@ -2,16 +2,19 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Filament\Ventas\Resources\CierreResource\Pages;
-use App\Models\Cierre;
 use Closure;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use App\Models\Cierre;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\View\View;
+use App\Filament\Ventas\Resources\CierreResource\Pages;
 
 class CierreResource extends Resource
 {
@@ -96,10 +99,10 @@ class CierreResource extends Resource
                 
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('ventas_ids')
+                /* Tables\Columns\TextColumn::make('ventas_ids')
                     ->label('Ventas')
                     ->listWithLineBreaks()
-                    ->searchable(),
+                    ->searchable(), */
                 Tables\Columns\TextColumn::make('total_tenis')
                     ->label('Cantidad Tenis')
                     ->searchable(),
@@ -128,6 +131,21 @@ class CierreResource extends Resource
                     ->requiresConfirmation()
                     ->color('success')
                     ->icon('heroicon-o-check'),
+                Action::make('cierre')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->modalContent(fn (Cierre $record): View => view(
+                        'filament.pages.actions.iframe',
+                        [
+                            'record' => $record,
+                            'title' => 'Cierre #'.$record->id,
+                            'route' => route('pdf.cierre', ['id' => $record->id]),
+                            'open' => true,
+                        ],
+                    ))
+                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->slideOver()
+                    ->stickyModalHeader()
+                    ->modalSubmitAction(false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
