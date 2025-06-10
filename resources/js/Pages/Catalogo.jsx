@@ -318,7 +318,7 @@ function Filtros({
 
             <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700">
-                    Tallas
+                    Tallas US
                 </label>
                 <div className="flex flex-wrap gap-2">
                     {tallasRango.map((t, index) => (
