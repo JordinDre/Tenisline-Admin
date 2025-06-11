@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cierre;
 use App\Models\Orden;
 use App\Models\Traslado;
 use App\Models\Venta;
@@ -28,6 +29,15 @@ class PDFController extends Controller
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
         return $pdf->stream("Venta #{$id}.pdf");
+    }
+
+    public function cierre($id)
+    {
+        $cierre = Cierre::find($id);
+        $html = view('pdf.cierre', compact('cierre'))->render();
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
+
+        return $pdf->stream("Cierre #{$id}.pdf");
     }
 
     public function cotizacion($id)

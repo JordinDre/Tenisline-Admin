@@ -135,7 +135,8 @@ class CreateVenta extends CreateRecord
                                                 ->tel()
                                                 ->required()
                                                 ->minLength(8)
-                                                ->maxLength(8),
+                                                ->maxLength(8)
+                                                ->unique(table: User::class, column: 'telefono'),
                                             TextInput::make('whatsapp')
                                                 ->label('WhatsApp')
                                                 ->tel()
