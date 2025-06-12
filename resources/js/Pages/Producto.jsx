@@ -1,12 +1,17 @@
 import Layout from '@/Layouts/Layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 
 export default function Producto({ producto, marcas }) {
     const user = usePage().props.auth.user;
     const { data, post } = useForm({
         producto_id: producto.id,
     });
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     function submit(e) {
         e.preventDefault();
@@ -46,14 +51,22 @@ export default function Producto({ producto, marcas }) {
                         transition={{ duration: 0.5 }}
                         className="grid gap-8 md:grid-cols-2 md:items-start"
                     >
-                        <div className="rounded-xl bg-zinc-50 p-4 shadow-md">
+                        {/* Imagen con click para abrir modal */}
+                        <div
+                            className="cursor-zoom-in rounded-xl bg-zinc-50 p-4 shadow-md"
+                            onClick={() => setIsModalOpen(true)}
+                        >
                             <img
                                 className="max-h-[400px] w-full object-contain"
                                 src={producto.imagen}
                                 alt={producto.descripcion}
                             />
+                            <p className="mt-2 text-center text-xs text-zinc-500">
+                                Haz clic para ampliar
+                            </p>
                         </div>
 
+                        {/* Información del producto */}
                         <div>
                             <motion.h1
                                 initial={{ opacity: 0 }}
@@ -146,6 +159,23 @@ export default function Producto({ producto, marcas }) {
                     </motion.div>
                 </div>
             </section>
+
+            {/* Modal con efecto zoom */}
+            {isModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
+                    onClick={() => setIsModalOpen(false)}
+                >
+                    <Zoom>
+                        <img
+                            src={producto.imagen}
+                            alt={producto.descripcion}
+                            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+                            onClick={(e) => e.stopPropagation()} // evita cerrar modal al hacer zoom
+                        />
+                    </Zoom>
+                </div>
+            )}
         </Layout>
     );
 }
