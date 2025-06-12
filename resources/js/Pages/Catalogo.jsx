@@ -1,5 +1,5 @@
 import Layout from '@/Layouts/Layout';
-import { useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
@@ -58,12 +58,32 @@ export default function Catalogo({
         });
     };
 
+    const handleAplicarFiltros = () => {
+        setMostrarFiltros(false); // cerrar modal
+        get(route('catalogo'), {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
+
     const tallasRango = Array.from({ length: 19 }, (_, i) =>
         (4 + i * 0.5).toFixed(1),
     );
 
     return (
         <Layout>
+            <Head>
+                <title>Catálogo</title>
+                <meta
+                    name="Catalogo"
+                    content="Catálogo de productos - Tienda en línea"
+                />
+                <link
+                    rel="icon"
+                    type="image/svg+xml"
+                    href="/images/icono.png"
+                />
+            </Head>
             <div className="container mx-auto px-4 py-6">
                 <h2 className="mb-6 text-center text-3xl font-bold text-zinc-800">
                     Catálogo de Productos
@@ -92,6 +112,7 @@ export default function Catalogo({
                                     ✕
                                 </button>
                             </div>
+
                             {/* FORMULARIO MOVIL */}
                             <Filtros
                                 data={data}
@@ -103,6 +124,14 @@ export default function Catalogo({
                                 generosDisponibles={generosDisponibles}
                                 tallasRango={tallasRango}
                             />
+
+                            {/* ✅ Botón aplicar */}
+                            <button
+                                onClick={handleAplicarFiltros}
+                                className="mt-6 w-full rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+                            >
+                                Aplicar filtros
+                            </button>
                         </div>
                     </div>
                 )}
@@ -237,7 +266,7 @@ export default function Catalogo({
     );
 }
 
-// Componente reutilizable para los filtros
+// Componente Filtros (sin cambios)
 function Filtros({
     data,
     setData,
@@ -341,7 +370,7 @@ function Filtros({
             <button
                 type="button"
                 onClick={handleReset}
-                className="w-full rounded border border-zinc-400 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+                className="mt-4 w-full rounded border border-zinc-400 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
             >
                 Reiniciar filtros
             </button>
