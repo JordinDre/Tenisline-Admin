@@ -27,7 +27,7 @@ export default function Layout({ children }) {
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 48 48"
-                        className="h-20 w-20"
+                        className="h-16 w-16"
                     >
                         <path
                             fill="#fff"
