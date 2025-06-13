@@ -79,7 +79,7 @@ class VentaController extends Controller
         try {
             DB::transaction(function () use ($venta) {
 
-                $res = FELController::facturaVenta($venta, $venta->bodega_id);
+                /* $res = FELController::facturaVenta($venta, $venta->bodega_id); */
                 if (
                     ! isset($res['resultado']) ||
                     ! $res['resultado'] ||

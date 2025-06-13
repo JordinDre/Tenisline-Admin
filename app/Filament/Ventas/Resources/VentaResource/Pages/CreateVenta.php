@@ -45,7 +45,7 @@ class CreateVenta extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        $clienteId = $this->record->cliente_id;
+        /* $clienteId = $this->record->cliente_id;
 
         $ventasCount = Venta::where('cliente_id', $clienteId)->count();
 
@@ -53,8 +53,9 @@ class CreateVenta extends CreateRecord
             return route('filament.ventas.resources.cards.create');
         }
 
-        return $this->getResource()::getUrl('index');
-
+        return $this->getResource()::getUrl('index'); */
+        $ventaId = $this->record->id;
+        return route('pdf.factura.venta', ['id' => $ventaId]);
     }
 
     public function form(Form $form): Form
