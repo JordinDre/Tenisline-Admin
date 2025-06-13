@@ -96,8 +96,8 @@ class TiendaController extends Controller
         $color = $request->color;
         $genero = $request->genero;
 
-        $productos = Producto::with('marca', 'stock')
-            ->whereHas('stock', function ($query) use ($bodega) {
+        $productos = Producto::with('marca', 'inventario')
+            ->whereHas('inventario', function ($query) use ($bodega) {
                 $query->where('existencia', '>', 0);
 
                 if ($bodega) {
@@ -162,6 +162,8 @@ class TiendaController extends Controller
             ->paginate(20)
             ->withQueryString()
             ->through(function ($producto) {
+                $user = auth()->user();
+
                 return [
                     'id' => $producto->id,
                     'codigo' => $producto->codigo,
@@ -172,11 +174,21 @@ class TiendaController extends Controller
                     'talla' => $producto->talla ?? null,
                     'color' => $producto->color ?? null,
                     'genero' => $producto->genero ?? null,
-                    'stock' => $producto->stock->existencia ?? 0,
+                    'stock' => $producto->inventario->sum('existencia'),
                     'imagen' => isset($producto->imagenes[0])
                         ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
+
+                    // ✅ Agregar detalle de bodegas solo si está logueado
+                    'bodegas' => $user
+                        ? $producto->inventario
+                            ->map(fn ($inv) => [
+                                'bodega' => $inv->bodega->bodega ?? 'Desconocida',
+                                'existencia' => $inv->existencia,
+                            ])
+                            ->toArray()
+                        : null,
                 ];
             });
 
@@ -211,8 +223,10 @@ class TiendaController extends Controller
     {
         $producto = Producto::where('slug', $slug)->first();
 
-        $marcas = Marca::whereHas('productos.stock', function ($q) {
-            $q->where('existencia', '>', 0);
+        $marcas = Marca::whereHas('productos', function ($q) {
+            $q->whereHas('inventario', function ($q2) {
+                $q2->where('existencia', '>', 0);
+            });
         })
             ->orderBy('marca')
             ->pluck('marca');
@@ -227,11 +241,20 @@ class TiendaController extends Controller
                 'genero' => $producto->genero ?? null,
                 'modelo' => $producto->modelo ?? null,
                 'talla' => $producto->talla ?? null,
-                'stock' => $producto->stock->existencia ?? 0,
+                'stock' => $producto->inventario->sum('existencia'),
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca ?? null,
+                'bodegas' => auth()->check()
+                    ? $producto->inventario
+                        ->map(fn ($inv) => [
+                            'bodega' => $inv->bodega->bodega ?? 'Desconocida',
+                            'existencia' => $inv->existencia,
+                        ])
+                        ->toArray()
+                    : null,
+
             ],
             'marcas' => $marcas,
         ]);

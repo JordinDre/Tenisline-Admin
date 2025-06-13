@@ -17,9 +17,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -30,6 +27,8 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class ProductoResource extends Resource implements HasShieldPermissions
 {
@@ -138,7 +137,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     'lg' => 5,
                 ])
                     ->schema([
-                        
+
                         // TextInput::make('precio_vendedores')
                         //     ->required()
                         //     ->live(onBlur: true)
@@ -167,7 +166,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         //     })
                         //     ->inputMode('decimal')
                         //     ->rule('numeric'),
-                        
+
                     ]),
                 Repeater::make('escalas')
                     ->relationship()
@@ -314,18 +313,18 @@ class ProductoResource extends Resource implements HasShieldPermissions
     public static function table(Table $table): Table
     {
         return $table
-        ->extremePaginationLinks()
-        ->headerActions([
-            ExportAction::make()->exports([
-                ExcelExport::make()->withFilename('Productos '.date('d-m-Y'))->fromTable(),
-            ])->label('Exportar')->color('success'),
-        ])
+            ->extremePaginationLinks()
+            ->headerActions([
+                ExportAction::make()->exports([
+                    ExcelExport::make()->withFilename('Productos '.date('d-m-Y'))->fromTable(),
+                ])->label('Exportar')->color('success'),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('imagenes')
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -361,11 +360,19 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('inventario.existencia')
+                Tables\Columns\TextColumn::make('inventario')
                     ->label('Existencia')
-                    ->copyable()
-                    ->searchable()
-                    ->sortable(),
+                    ->getStateUsing(function ($record) {
+                        return $record->inventario
+                            ->map(function ($item) {
+                                return "{$item->bodega->bodega}: {$item->existencia}";
+                            })
+                            ->toArray();
+                    })
+                    ->listWithLineBreaks()
+                    ->sortable(false)
+                    ->searchable(false),
+
                 Tables\Columns\TextColumn::make('precio_venta')
                     ->label('Precio de Venta')
                     ->formatStateUsing(function ($record) {
@@ -433,7 +440,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -456,7 +463,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn(Producto $record): View => view(
+                    ->modalContent(fn (Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))
