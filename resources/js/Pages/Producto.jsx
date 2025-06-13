@@ -92,6 +92,31 @@ export default function Producto({ producto, marcas }) {
                             </div>
 
                             <div className="mt-5 space-y-2 text-sm text-zinc-700">
+                                {user &&
+                                    producto.bodegas &&
+                                    producto.bodegas.length > 0 && (
+                                        <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+                                            <p className="mb-2 text-sm font-semibold text-zinc-700">
+                                                🏬 Ubicación en bodegas:
+                                            </p>
+                                            <ul className="flex flex-wrap gap-2 text-sm text-zinc-700">
+                                                {producto.bodegas.map(
+                                                    (b, i) => (
+                                                        <li
+                                                            key={i}
+                                                            className="rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-zinc-300"
+                                                        >
+                                                            <strong>
+                                                                {b.bodega}
+                                                            </strong>
+                                                            : {b.existencia}
+                                                        </li>
+                                                    ),
+                                                )}
+                                            </ul>
+                                        </div>
+                                    )}
+
                                 <p>
                                     <strong>Código:</strong> {producto.codigo}
                                 </p>

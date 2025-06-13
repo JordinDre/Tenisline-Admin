@@ -35,6 +35,7 @@ class TipoPago extends Model
         'TARJETA',
         'LINK DE PAGO',
         'TRANSFERENCIA',
+        '3 CUOTAS',
     ];
 
     public const FORMAS_PAGO = [
