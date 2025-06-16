@@ -14,7 +14,7 @@ class ListCajaChicas extends ListRecords
 {
     protected static string $resource = CajaChicaResource::class;
 
-    /* public function getTabs(): array
+    public function getTabs(): array
     {
         return collect(CajaChicaStatus::cases())->mapWithKeys(function (CajaChicaStatus $estado) {
             return [
@@ -24,7 +24,7 @@ class ListCajaChicas extends ListRecords
                     ->badgeColor($estado->getColor()),
             ];
         })->toArray();
-    } */
+    }
 
     protected function getHeaderActions(): array
     {
