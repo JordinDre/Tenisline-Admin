@@ -16,6 +16,11 @@ class Banco extends Model
 
     use LogsActivity;
 
+    public const BANCOS_DISPONIBLES = [
+        'Banco Industrial, S. A.',
+        'Banco DE América Central, S. A.'
+    ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

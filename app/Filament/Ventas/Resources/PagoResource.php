@@ -2,30 +2,31 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Filament\Ventas\Resources\PagoResource\Pages;
-use App\Http\Controllers\UserController;
-use App\Models\Compra;
-use App\Models\Orden;
-use App\Models\Pago;
-use App\Models\TipoPago;
-use App\Models\User;
-use App\Models\Venta;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\MorphToSelect;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use App\Models\Pago;
+use App\Models\User;
+use Filament\Tables;
+use App\Models\Banco;
+use App\Models\Orden;
+use App\Models\Venta;
+use App\Models\Compra;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Tables;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\MorphToSelect;
+use App\Filament\Ventas\Resources\PagoResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class PagoResource extends Resource implements HasShieldPermissions
 {
@@ -165,9 +166,15 @@ class PagoResource extends Resource implements HasShieldPermissions
                         Select::make('banco_id')
                             ->label('Banco')
                             ->required()
-                            ->relationship('banco', 'banco')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->relationship(
+                                'banco',
+                                'banco',
+                                function ($query) {
+                                    return $query->whereIn('banco', Banco::BANCOS_DISPONIBLES);
+                                    }
+                            ),
                         DatePicker::make('fecha_transaccion')
                             ->default(now())
                             ->required(),
