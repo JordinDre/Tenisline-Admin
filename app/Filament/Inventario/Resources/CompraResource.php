@@ -2,35 +2,36 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\CompraResource\Pages;
-use App\Http\Controllers\CompraController;
-use App\Http\Controllers\ProductoController;
-use App\Models\Compra;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
+use App\Models\Pago;
+use Filament\Tables;
+use App\Models\Banco;
+use App\Models\Compra;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\CompraController;
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Inventario\Resources\CompraResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class CompraResource extends Resource implements HasShieldPermissions
 {
@@ -290,7 +291,13 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
                                         ->required()
-                                        ->relationship('banco', 'banco')
+                                        ->relationship(
+                                            'banco',
+                                            'banco',
+                                            function ($query) {
+                                                return $query->whereIn('banco', Banco::BANCOS_DISPONIBLES);
+                                            }
+                                        )
                                         ->searchable()
                                         ->preload(),
                                     DatePicker::make('fecha_transaccion')

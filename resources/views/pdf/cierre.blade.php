@@ -120,6 +120,29 @@
     </table>
     <br>
 
+    {{-- <br><br>
+    <table class="table">
+        <tr>
+            <th class="descripcion">CajaChica</th>
+            <th class="precio">Autoriza</th>
+            <th class="subtotal">Usuario</th>
+            <th class="subtotal">Monto</th>
+        </tr>
+        @foreach ($cierre->datos_caja_chica as $caja_chica)
+            <tr>
+                <td colspan="4" style="border-top: 1px solid black;"><strong>Caja Chica #{{ $caja_chica->id }}</strong></td>
+            </tr>
+                <td class="descripcion">{{ $caja_chica->detalle_gasto }}</td>
+                <td class="descripcion">{{ $caja_chica->autoriza }}</td>
+                <td class="descripcion">{{ $caja_chica->usuario->name }}</td>
+            @foreach ($caja_chica->pagos as $detalle)
+                    <td class="subtotal">Q {{ number_format($detalle->monto, 2) }}</td>
+             
+            @endforeach
+        @endforeach
+    </table>
+    <br> --}}
+
     <section class="info-section">
         <div><strong>Resumen</strong></div>
         <div>Total en Ventas: Q {{ number_format($cierre->total_ventas, 2) }}</div>
@@ -133,6 +156,10 @@
                     <li>{{ $pago }}</li>
                 @endforeach
             </ul>
+            <ul style="padding-left: 15px; margin: 0;">
+                <li>Caja Chica: - Q {{ number_format($cierre->total_caja_chica, 0) }}</li>
+            </ul>
+            <div>Total General: Q {{ number_format(($cierre->total_ventas - $cierre->total_caja_chica), 2) }}</div>
         @else
             <div>No hay pagos registrados.</div>
         @endif

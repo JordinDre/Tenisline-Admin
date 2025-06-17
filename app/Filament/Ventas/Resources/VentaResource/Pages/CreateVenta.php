@@ -2,40 +2,41 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use App\Filament\Ventas\Resources\VentaResource;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\VentaController;
+use Closure;
+use App\Models\Pago;
+use App\Models\User;
+use App\Models\Banco;
+use App\Models\Venta;
 use App\Models\Cierre;
-use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
-use App\Models\Municipio;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use App\Models\User;
-use App\Models\Venta;
-use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\Municipio;
+use App\Models\Departamento;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Resources\Pages\CreateRecord;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Validation\ValidationException;
+use App\Filament\Ventas\Resources\VentaResource;
 
 class CreateVenta extends CreateRecord
 {
@@ -703,8 +704,8 @@ class CreateVenta extends CreateRecord
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
-                                                    Pago::/* where('banco_id', $get('banco_id'))
-                                                    -> */ where('fecha_transaccion', $get('fecha_transaccion'))
+                                                    Pago::where('banco_id', $get('banco_id'))
+                                                    -> where('fecha_transaccion', $get('fecha_transaccion'))
                                                         ->where('no_documento', $value)
                                                         ->exists()
                                                 ) {
@@ -730,14 +731,17 @@ class CreateVenta extends CreateRecord
                                         ->required(),
                                     TextInput::make('nombre_cuenta')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    Select::make('banco_id')
+                                        ->required(), */
+                                        Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required()
-                                        ->relationship('banco', 'banco')
-                                        ->searchable()
-                                        ->preload(), */
+                                        ->relationship(
+                                            'banco',
+                                            'banco',
+                                            function ($query) {
+                                                return $query->whereIn('banco', Banco::BANCOS_DISPONIBLES);
+                                            }
+                                        ),
                                     DatePicker::make('fecha_transaccion')
                                         ->default(now())
                                         ->required(),
