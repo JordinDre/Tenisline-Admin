@@ -20,12 +20,13 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\CajaChicaController;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Inventario\Resources\CajaChicaResource\Pages;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use App\Filament\Inventario\Resources\CajaChicaResource\RelationManagers;
 
-class CajaChicaResource extends Resource {
+class CajaChicaResource extends Resource implements HasShieldPermissions{
 
     protected static ?string $model = CajaChica::class;
 
@@ -177,15 +178,15 @@ class CajaChicaResource extends Resource {
                     ->label('Confirmar')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
-                    /* ->action(fn(Compra $record) => CompraController::confirmar($record)) */
-                    ->visible(fn($record) => auth()->user()->can('confirm', $record)),
+                    ->action(fn(CajaChica $record) => CajaChicaController::confirmar($record))
+                    ->visible(fn($record) => auth()->user()->can('annular', $record)),
                 Action::make('annular')
                     ->label('Anular')
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation()
-                   /*  ->action(fn(Compra $record) => CompraController::anular($record)) */
-                    ->visible(fn($record) => auth()->user()->can('annular', $record)),
+                    ->action(fn(CajaChica $record) => CajaChicaController::anular($record))
+                   ->visible(fn($record) => auth()->user()->can('confirm', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

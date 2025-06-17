@@ -107,19 +107,17 @@ class CajaChicaPolicy
         return /* $user->can('reorder_bodega') */ false;
     }
 
-    /* public function annular(User $user, CajaChica $compra): bool
+    public function annular(User $user, CajaChica $compra): bool
     {
-        return true;
         $estadosPermitidos = ['creada'];
 
-        return $user->can('annular_caja_chica') && in_array($compra->estado, $estadosPermitidos);
+        return $user->hasPermissionTo('annular_caja_chica') && in_array($compra->estado, $estadosPermitidos);
     }
 
     public function confirm(User $user, CajaChica $compra): bool
     {
-        return true;
         $estadosPermitidos = ['creada'];
 
-        return $user->can('confirm_caja_chica') && in_array($compra->estado, $estadosPermitidos);
-    } */
+        return $user->hasPermissionTo('confirm_caja_chica') && in_array($compra->estado, $estadosPermitidos);
+    }
 }
