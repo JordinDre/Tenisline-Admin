@@ -3,6 +3,7 @@
 namespace App\Filament\Inventario\Resources;
 
 use App\Filament\Inventario\Resources\ProductoResource\Pages;
+use App\Models\Bodega;
 use App\Models\Escala;
 use App\Models\Observacion;
 use App\Models\Producto;
@@ -282,19 +283,13 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     }),
                 FileUpload::make('imagenes')
                     ->image()
-                    ->downloadable()
                     ->label('Imágenes')
                     ->imageEditor()
                     ->multiple()
                     ->disk(config('filesystems.disks.s3.driver'))
                     ->directory(config('filesystems.default'))
                     ->visibility('public')
-                    ->panelLayout('grid')
-                    ->reorderable()
-                    ->appendFiles()
                     ->maxSize(5000)
-                    ->resize(50)
-                    ->openable()
                     ->optimize('webp')
                     ->columnSpanFull(),
                 // Grid::make(2)
@@ -360,18 +355,15 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('inventario')
-                    ->label('Existencia')
-                    ->getStateUsing(function ($record) {
-                        return $record->inventario
-                            ->map(function ($item) {
-                                return "{$item->bodega->bodega}: {$item->existencia}";
-                            })
-                            ->toArray();
-                    })
-                    ->listWithLineBreaks()
-                    ->sortable(false)
-                    ->searchable(false),
+                ...Bodega::all()->map(function ($bodega) {
+                    return Tables\Columns\TextColumn::make("bodega_{$bodega->id}")
+                        ->label($bodega->bodega)
+                        ->getStateUsing(function ($record) use ($bodega) {
+                            return optional(
+                                $record->inventario->firstWhere('bodega_id', $bodega->id)
+                            )->existencia ?? 0;
+                        });
+                })->all(),
 
                 Tables\Columns\TextColumn::make('precio_venta')
                     ->label('Precio de Venta')
