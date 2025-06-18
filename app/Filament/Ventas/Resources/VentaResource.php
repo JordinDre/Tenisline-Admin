@@ -558,9 +558,16 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('tabler-truck-return')
                         ->visible(fn ($record) => auth()->user()->can('return', $record))
                         ->fillForm(fn (Venta $record): array => [
-                            /* 'costo_envio' => $record->costo_envio, */
                             'motivo' => $record->motivo,
-                            /* 'apoyo' => $record->apoyo, */
+                            'detalles' => $record->detalles->map(function ($detalle) {
+                                return [
+                                    'id' => $detalle->id,
+                                    'producto_id' => $detalle->producto_id,
+                                    'cantidad' => $detalle->cantidad,
+                                    'devuelto' => $detalle->devuelto,
+                                    'codigo_nuevo' => '', 
+                                ];
+                            })->toArray(),
                         ])
                         ->form([
                             Grid::make(['default' => 1, 'md' => 6])
@@ -586,13 +593,19 @@ class VentaResource extends Resource implements HasShieldPermissions
                             Repeater::make('detalles')
                                 ->label('')
                                 ->collapsible()
-                                ->relationship()
                                 ->addable(false)
                                 ->deletable(false)
                                 ->schema([
                                     Select::make('producto_id')
                                         ->label('Producto')
-                                        ->relationship('producto', 'descripcion', fn ($query) => $query->with(['marca']))
+                                        ->options(function () {
+                                            return \App\Models\Producto::with('marca')
+                                                ->get()
+                                                ->mapWithKeys(fn ($producto) => [
+                                                    $producto->id => ProductoController::renderProductos($producto, 'venta', 1),
+                                                ])
+                                                ->toArray();
+                                        })
                                         ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', 1))
                                         ->allowHtml()
                                         ->searchable(['id'])
@@ -613,6 +626,11 @@ class VentaResource extends Resource implements HasShieldPermissions
                                                 ->minValue(0)
                                                 ->default(0)
                                                 ->required(),
+                                            TextInput::make('codigo_nuevo')
+                                                ->label('Nuevo Código (Marchamo)')
+                                                ->required()
+                                                ->dehydrated(true)
+                                                ->columnSpan(2),
                                             // TextInput::make('devuelto_mal')
                                             //     ->label('De lo Devuelto, Cuánto está Mal?')
                                             //     ->inputMode('decimal')
