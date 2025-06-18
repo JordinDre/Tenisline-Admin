@@ -399,6 +399,12 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                Tables\Columns\TextColumn::make('pagos.tipoPago.tipo_pago')
+                    ->label('Forma de Pago')
+                    ->searchable()
+                    ->listWithLineBreaks()
+                    ->bulleted()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('factura.fel_uuid')
                     ->label('Fel No. Autorización')
                     ->sortable()
@@ -645,11 +651,11 @@ class VentaResource extends Resource implements HasShieldPermissions
                             ->schema([
                                 Select::make('tipo_pago_id')
                                     ->label('Tipo de Pago')
-                                    
+
                                     ->preload()
                                     ->placeholder('Seleccione')
                                     ->live()
-                                    ->searchable(), 
+                                    ->searchable(),
                                 //     TextInput::make('monto')
                                 //         ->label('Monto')
                                 //         ->prefix('Q')
