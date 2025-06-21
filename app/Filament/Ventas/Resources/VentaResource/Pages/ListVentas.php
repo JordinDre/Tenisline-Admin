@@ -2,17 +2,19 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use Carbon\Carbon;
-use App\Models\Venta;
-use Filament\Actions;
-use App\Models\CierreDia;
 use App\Enums\EstadoVentaStatus;
-use Illuminate\Support\Facades\Cache;
+use App\Filament\Ventas\Resources\VentaResource;
+use App\Models\CierreDia;
+use App\Models\Venta;
+use Carbon\Carbon;
+use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Notifications\Notification;
-use App\Filament\Ventas\Resources\VentaResource;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
+use Filament\Support\Enums\MaxWidth;
 
 class ListVentas extends ListRecords
 {
@@ -34,6 +36,7 @@ class ListVentas extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            
             /* Actions\Action::make('liquidarVentas')
                 ->label('Liquidar Venta del Día')
                 ->icon('heroicon-o-check-circle')
@@ -48,7 +51,7 @@ class ListVentas extends ListRecords
                         'fecha_cierre' => $today->toDateString(),
                         'usuario_id' => auth()->user()->id,
                     ]);
-                    
+
                     Venta::whereDate('created_at', $today)
                         ->whereNull('cierre_dia_id')
                         ->update(['cierre_dia_id' => $cierreDia->id,]);

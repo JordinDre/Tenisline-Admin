@@ -76,44 +76,25 @@ class VentaController extends Controller
 
     public static function facturar(Venta $venta)
     {
-        try {
-            DB::transaction(function () use ($venta) {
-
-                $res = FELController::facturaVenta($venta, $venta->bodega_id);
-                if (
-                    ! isset($res['resultado']) ||
-                    ! $res['resultado'] ||
-                    ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
-                ) {
-                    throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
-                }
-
-                self::restarInventario($venta, 'Venta Confirmada');
-                $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                $factura = new Factura;
-                $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-                $factura->fel_uuid = $res['uuid'];
-                $factura->fel_serie = $res['serie'];
-                $factura->fel_numero = $res['numero'];
-                $factura->fel_fecha = $res['fecha'];
-                $factura->user_id = auth()->user()->id;
-                $factura->tipo = 'factura';
-                $venta->factura()->save($factura);
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
-            });
-            Notification::make()
-                ->color('success')
-                ->title('Se ha confirmado la Venta #'.$venta->id)
-                ->success()
-                ->send();
-        } catch (Exception $e) {
-            Notification::make()
-                ->color('danger')
-                ->title('Error al confirmar la Venta')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
+        $res = FELController::facturaVenta($venta, $venta->bodega_id);
+        if (
+            false
+        ) {
+            throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
         }
+
+        self::restarInventario($venta, 'Venta Confirmada');
+        $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+        $factura = new Factura;
+        $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
+        $factura->fel_uuid = $res['uuid'];
+        $factura->fel_serie = $res['serie'];
+        $factura->fel_numero = $res['numero'];
+        $factura->fel_fecha = $res['fecha'];
+        $factura->user_id = auth()->user()->id;
+        $factura->tipo = 'factura';
+        $venta->factura()->save($factura);
+        activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
     }
 
     public static function anular($data, Venta $venta)

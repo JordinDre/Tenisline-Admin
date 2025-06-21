@@ -2,62 +2,48 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use Closure;
-use App\Models\Pago;
-use App\Models\User;
+use App\Filament\Ventas\Resources\VentaResource;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VentaController;
 use App\Models\Banco;
-use App\Models\Venta;
 use App\Models\Cierre;
+use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use App\Models\Municipio;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
-use Filament\Forms\Form;
-use App\Models\Municipio;
-use App\Models\Departamento;
-use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use App\Http\Controllers\UserController;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
-use App\Http\Controllers\VentaController;
+use App\Models\User;
+use App\Models\Venta;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use App\Http\Controllers\ProductoController;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use App\Filament\Ventas\Resources\VentaResource;
 
 class CreateVenta extends CreateRecord
 {
     protected static string $resource = VentaResource::class;
 
     protected $subtotalOriginal;
-
-    protected function getRedirectUrl(): string
-    {
-        /* $clienteId = $this->record->cliente_id;
-
-        $ventasCount = Venta::where('cliente_id', $clienteId)->count();
-
-        if ($ventasCount === 1) {
-            return route('filament.ventas.resources.cards.create');
-        }
-
-        return $this->getResource()::getUrl('index'); */
-        $ventaId = $this->record->id;
-        return route('pdf.factura.venta', ['id' => $ventaId]);
-    }
 
     public function form(Form $form): Form
     {
@@ -684,7 +670,7 @@ class CreateVenta extends CreateRecord
                                         ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
                                         ->required()
                                         ->live()
-                                        ->columnSpan(['sm' => 1, 'md' => 1])
+                                        ->columnSpan(['sm' => 1, 'md' => 2])
                                         ->searchable()
                                         ->preload(),
                                     TextInput::make('monto')
@@ -701,11 +687,12 @@ class CreateVenta extends CreateRecord
                                     Hidden::make('total'),
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
+                                        ->columnSpan(['sm' => 1, 'md' => 2])
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
                                                     Pago::where('banco_id', $get('banco_id'))
-                                                    -> where('fecha_transaccion', $get('fecha_transaccion'))
+                                                        ->where('fecha_transaccion', $get('fecha_transaccion'))
                                                         ->where('no_documento', $value)
                                                         ->exists()
                                                 ) {
@@ -732,7 +719,7 @@ class CreateVenta extends CreateRecord
                                     TextInput::make('nombre_cuenta')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
                                         ->required(), */
-                                        Select::make('banco_id')
+                                    Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
                                         ->relationship(
@@ -837,22 +824,26 @@ class CreateVenta extends CreateRecord
     protected function afterCreate(): void
     {
         try {
-            if ($this->record->tipo_pago_id == 2) {
-                UserController::sumarSaldo(User::find($this->data['cliente_id']), $this->data['total']);
-            }
-            VentaController::facturar($this->record);
-            Notification::make()
-                ->title('Venta registrada correctamente')
-                ->success()
-                ->color('success')
-                ->send();
-            $this->form->fill();
+            DB::transaction(function () {
+                if ($this->record->tipo_pago_id == 2) {
+                    UserController::sumarSaldo(User::find($this->data['cliente_id']), $this->data['total']);
+                }
+                VentaController::facturar($this->record);
+                Notification::make()
+                    ->title('Venta registrada correctamente')
+                    ->success()
+                    ->color('success')
+                    ->send();
+            });
         } catch (\Exception $e) {
+            $this->record->detalles()->delete();
+            $this->record->pagos()->delete();
+            $this->record->factura()->delete();
             $this->record->delete();
             Notification::make()
-                ->warning()
-                ->color('warning')
-                ->title('Advertencia')
+                ->danger()
+                ->color('danger')
+                ->title('Error al registrar la venta')
                 ->body($e->getMessage())
                 ->persistent()
                 ->send();
