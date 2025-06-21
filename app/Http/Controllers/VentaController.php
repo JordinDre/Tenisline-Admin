@@ -149,6 +149,7 @@ class VentaController extends Controller
 
     public static function devolver($data, Venta $venta)
     {
+        
         try {
             DB::transaction(function () use ($data, $venta) {
                 $estado = 'devuelta';
@@ -156,13 +157,47 @@ class VentaController extends Controller
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
 
+                foreach ($data['detalles'] as $detalleData) {
+                    $detalle = $venta->detalles->firstWhere('id', $detalleData['id']);
+                    if (! $detalle) continue;
+                
+                    $detalle->devuelto = $detalleData['devuelto'] ?? 0;
+                    $detalle->devuelto_mal = $detalleData['devuelto_mal'] ?? 0;
+                    $detalle->save();
+
+                    $codigoNuevo = $detalleData['codigo_nuevo'] ?? null;
+                    $producto = $detalle->producto;
+                    $codigoAnterior = $producto->codigo;
+                
+                    if ($codigoNuevo && $codigoNuevo !== $codigoAnterior) {
+                        if ($producto->codigos_antiguos) {
+                            $producto->codigos_antiguos .= ',' . $codigoAnterior;
+                        } else {
+                            $producto->codigos_antiguos = $codigoAnterior;
+                        }
+                
+                        $producto->codigo = $codigoNuevo;
+                        $producto->save();
+                
+                        Kardex::registrar(
+                            $producto->id,
+                            $venta->bodega_id,
+                            0,
+                            0,
+                            0,
+                            'entrada',
+                            $producto,
+                            "Cambio de código: de {$codigoAnterior} a {$codigoNuevo} por devolución"
+                        );
+                    }
+                }
                 foreach ($venta->detalles as $detalle) {
                     $totalDevuelto = $detalle->devuelto + $detalle->devuelto_mal;
 
                     if ($totalDevuelto > $detalle->cantidad) {
                         throw new \Exception("La cantidad devuelta del producto {$detalle->producto->descripcion} excede la cantidad vendida.");
                     }
-
+                    
                     if ($detalle->devuelto > 0) {
                         $inventario = Inventario::firstOrCreate(
                             [
