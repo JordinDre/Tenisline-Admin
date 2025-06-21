@@ -10,6 +10,7 @@ enum EventoKardexStatus: string implements HasColor, HasLabel
     case Entrada = 'entrada';
     case Salida = 'salida';
     case Neutro = 'neutro';
+    case CAMBIO_CODIGO = 'cambio_codigo';
 
     public function getLabel(): ?string
     {

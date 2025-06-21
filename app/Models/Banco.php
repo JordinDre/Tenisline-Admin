@@ -18,7 +18,7 @@ class Banco extends Model
 
     public const BANCOS_DISPONIBLES = [
         'Banco Industrial, S. A.',
-        'Banco DE América Central, S. A.'
+        'Banco de América Central, S. A.'
     ];
 
     public function getActivitylogOptions(): LogOptions

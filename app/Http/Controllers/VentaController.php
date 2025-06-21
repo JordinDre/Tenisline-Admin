@@ -76,44 +76,25 @@ class VentaController extends Controller
 
     public static function facturar(Venta $venta)
     {
-        try {
-            DB::transaction(function () use ($venta) {
-
-                $res = FELController::facturaVenta($venta, $venta->bodega_id);
-                if (
-                    ! isset($res['resultado']) ||
-                    ! $res['resultado'] ||
-                    ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
-                ) {
-                    throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
-                }
-
-                self::restarInventario($venta, 'Venta Confirmada');
-                $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-                $factura = new Factura;
-                $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-                $factura->fel_uuid = $res['uuid'];
-                $factura->fel_serie = $res['serie'];
-                $factura->fel_numero = $res['numero'];
-                $factura->fel_fecha = $res['fecha'];
-                $factura->user_id = auth()->user()->id;
-                $factura->tipo = 'factura';
-                $venta->factura()->save($factura);
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
-            });
-            Notification::make()
-                ->color('success')
-                ->title('Se ha confirmado la Venta #'.$venta->id)
-                ->success()
-                ->send();
-        } catch (Exception $e) {
-            Notification::make()
-                ->color('danger')
-                ->title('Error al confirmar la Venta')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
+        $res = FELController::facturaVenta($venta, $venta->bodega_id);
+        if (
+            false
+        ) {
+            throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
         }
+
+        self::restarInventario($venta, 'Venta Confirmada');
+        $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+        $factura = new Factura;
+        $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
+        $factura->fel_uuid = $res['uuid'];
+        $factura->fel_serie = $res['serie'];
+        $factura->fel_numero = $res['numero'];
+        $factura->fel_fecha = $res['fecha'];
+        $factura->user_id = auth()->user()->id;
+        $factura->tipo = 'factura';
+        $venta->factura()->save($factura);
+        activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
     }
 
     public static function anular($data, Venta $venta)
@@ -168,6 +149,7 @@ class VentaController extends Controller
 
     public static function devolver($data, Venta $venta)
     {
+        
         try {
             DB::transaction(function () use ($data, $venta) {
                 $estado = 'devuelta';
@@ -175,13 +157,47 @@ class VentaController extends Controller
                     UserController::restarSaldo($venta->cliente_id, $venta->total);
                 }
 
+                foreach ($data['detalles'] as $detalleData) {
+                    $detalle = $venta->detalles->firstWhere('id', $detalleData['id']);
+                    if (! $detalle) continue;
+                
+                    $detalle->devuelto = $detalleData['devuelto'] ?? 0;
+                    $detalle->devuelto_mal = $detalleData['devuelto_mal'] ?? 0;
+                    $detalle->save();
+
+                    $codigoNuevo = $detalleData['codigo_nuevo'] ?? null;
+                    $producto = $detalle->producto;
+                    $codigoAnterior = $producto->codigo;
+                
+                    if ($codigoNuevo && $codigoNuevo !== $codigoAnterior) {
+                        if ($producto->codigos_antiguos) {
+                            $producto->codigos_antiguos .= ',' . $codigoAnterior;
+                        } else {
+                            $producto->codigos_antiguos = $codigoAnterior;
+                        }
+                
+                        $producto->codigo = $codigoNuevo;
+                        $producto->save();
+                
+                        Kardex::registrar(
+                            $producto->id,
+                            $venta->bodega_id,
+                            0,
+                            0,
+                            0,
+                            'entrada',
+                            $producto,
+                            "Cambio de código: de {$codigoAnterior} a {$codigoNuevo} por devolución"
+                        );
+                    }
+                }
                 foreach ($venta->detalles as $detalle) {
                     $totalDevuelto = $detalle->devuelto + $detalle->devuelto_mal;
 
                     if ($totalDevuelto > $detalle->cantidad) {
                         throw new \Exception("La cantidad devuelta del producto {$detalle->producto->descripcion} excede la cantidad vendida.");
                     }
-
+                    
                     if ($detalle->devuelto > 0) {
                         $inventario = Inventario::firstOrCreate(
                             [
