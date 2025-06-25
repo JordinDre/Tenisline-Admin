@@ -1,5 +1,5 @@
 <div style="display: flex; align-items: flex-start;">
-    <img src="{{ $imagenUrl }}" alt="Imagen del producto" style="width: 100px; height: 100px; object-fit: cover; margin-right: 10px;" />
+    {{-- <img src="{{ $imagenUrl }}" alt="Imagen del producto" style="width: 100px; height: 100px; object-fit: cover; margin-right: 10px;" /> --}}
     <div>
         <div style="font-weight: bold; color: black;">ID: {{ $producto->id }} - <span style="color: black;">{{ $producto->codigo }}</span></div>
         <div style="color: black;">Descripción: {{ $producto->descripcion }}</div>
