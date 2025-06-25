@@ -182,6 +182,22 @@ class ProductoController extends Controller
 
     }
 
+    public static function renderProductosBasico(Producto $producto, string $tipo, $bodega_id = null, $cliente_id = null): string
+    {
+        $inventario = $bodega_id
+        ? Inventario::where('producto_id', $producto->id)->where('bodega_id', $bodega_id)->first()
+        : null;
+
+        $stock = $inventario?->existencia ?? 0;
+/* 
+        $imagenUrl = isset($producto->imagenes[0])
+            ? config('filesystems.disks.s3.url') . $producto->imagenes[0]
+            : asset('images/icono.png'); */
+
+        return view('components.producto-preview', compact('producto', 'stock'))->render();
+
+    }
+
     public static function searchProductos(string $search, string $tipo, $bodega_id = null): array
     {
 
@@ -234,5 +250,44 @@ class ProductoController extends Controller
         return $productos->mapWithKeys(fn ($producto) => [
             $producto->id => self::renderProductos($producto, $tipo, $bodega),
         ])->toArray(); */
+    }
+
+    public static function searchProductosBasico(string $search, string $tipo, $bodega_id = null): array
+    {
+        $query = Producto::query()
+            ->with('marca')
+            ->when($bodega_id, fn($q) => $q->withCount(['inventario as stock' => fn($iq) => $iq->where('bodega_id', $bodega_id)]));
+
+        $terms = array_filter(explode(' ', $search));
+        foreach ($terms as $term) {
+            $query->where(fn ($q) => $q
+                ->where('descripcion', 'like', "%{$term}%")
+                ->orWhere('codigo', 'like', "%{$term}%")
+                ->orWhere('modelo', 'like', "%{$term}%")
+                ->orWhere('talla', 'like', "%{$term}%")
+                ->orWhere('genero', 'like', "%{$term}%")
+                ->orWhereHas('marca', fn ($q2) => $q2->where('marca', 'like', "%{$term}%"))
+            );
+        }
+
+        $productos = $query->limit(10)->get();
+
+        return $productos->mapWithKeys(fn (Producto $producto) =>
+            [$producto->id => self::renderProductosRow($producto)]
+        )->toArray();
+    }
+
+    protected static function renderProductosRow(Producto $producto): string
+    {
+        $marca = $producto->marca->marca ?? '';
+        $stock = $producto->stock ?? 0;
+        return "
+            <div class='producto-opcion'>
+                <div><strong>ID:</strong> {$producto->id} - {$producto->codigo}</div>
+                <div>Descripción: {$producto->descripcion}</div>
+                <div>Marca: {$marca}, Talla: {$producto->talla}, Estilo: {$producto->genero}</div>
+                <div><strong>Existencia:</strong> {$stock}</div>
+            </div>
+        ";
     }
 }
