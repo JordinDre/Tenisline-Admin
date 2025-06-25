@@ -75,7 +75,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                                 })
                             )
                             ->preload()
-                            ->live()
+                            /* ->live() */
                             ->afterStateUpdated(function (Set $set) {
                                 $set('detalles', []);
                             })
@@ -116,11 +116,11 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                             ->relationship('producto', 'descripcion', function ($query) {
                                 $query->withTrashed(); // Incluir productos eliminados
                             })
-                            ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, '', $get('../../salida_id')))
+                            ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductosBasico($record, '', $get('../../salida_id')))
                             ->allowHtml()
                             ->searchable(['id'])
                             ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                return ProductoController::searchProductos($search, '', $get('../../salida_id'));
+                                return ProductoController::searchProductosBasico($search, '', $get('../../salida_id'));
                             })
                             ->optionsLimit(20)
                             ->columnSpanFull()
