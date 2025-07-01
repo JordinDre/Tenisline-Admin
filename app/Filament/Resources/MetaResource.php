@@ -50,9 +50,10 @@ class MetaResource extends Resource implements HasShieldPermissions
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name', fn (Builder $query) => $query->role(User::ASESOR_ROLES))
+                    ->relationship('user', 'name', fn (Builder $query) => $query->role(User::VENTA_ROLES))
                     ->searchable()
                     ->optionsLimit(20)
+                    ->reactive()
                     ->rules([
                         fn (Get $get, string $operation): Closure => function (string $attribute, $value, Closure $fail) use ($get, $operation) {
                             if ($operation == 'create') {
@@ -66,6 +67,24 @@ class MetaResource extends Resource implements HasShieldPermissions
                             }
                         },
                     ])
+                    ->required(),
+                Forms\Components\Select::make('bodega_id')
+                    ->label('Bodega')
+                    ->relationship(
+                        name: 'bodega',
+                        titleAttribute: 'bodega',
+                        modifyQueryUsing: function (Builder $query, Get $get) {
+                            if ($get('user_id')) {
+                                $query->whereHas('user', function (Builder $q) use ($get) {
+                                    $q->where('users.id', $get('user_id'))
+                                    ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                                    ->where('bodega', 'not like', '%bodega%');
+                                });
+                            }
+                        }
+                    )
+                    ->optionsLimit(20)
+                    ->reactive() 
                     ->required(),
                 Forms\Components\Select::make('mes')
                     ->options(Functions::obtenerMeses())
@@ -102,6 +121,11 @@ class MetaResource extends Resource implements HasShieldPermissions
             ->extremePaginationLinks()
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
+                    ->numeric()
+                    ->searchable()
+                    ->copyable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('bodega.bodega')
                     ->numeric()
                     ->searchable()
                     ->copyable()
@@ -176,11 +200,4 @@ class MetaResource extends Resource implements HasShieldPermissions
             ]);
     }
 
-    public static function getNavigationItems(): array //  AÑADE ESTE MÉTODO
-    {
-        return [
-            parent::getNavigationItems()[0] // Obtiene el elemento de navegación por defecto
-                ->visible(false), //  Aplica ->visible(false) para ocultarlo SIEMPRE
-        ];
-    }
 }
