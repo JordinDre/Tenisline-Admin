@@ -732,7 +732,7 @@ class CreateVenta extends CreateRecord
                                     DatePicker::make('fecha_transaccion')
                                         ->default(now())
                                         ->required(),
-                                    FileUpload::make('imagen')
+                                    /* FileUpload::make('imagen')
                                         ->required()
                                         ->image()
                                         ->downloadable()
@@ -746,7 +746,7 @@ class CreateVenta extends CreateRecord
                                         ->resize(50)
                                         ->openable()
                                         ->columnSpan(['sm' => 1, 'md' => 3])
-                                        ->optimize('webp'),
+                                        ->optimize('webp'), */
                                 ])
                                 ->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                             Textarea::make('observaciones')
