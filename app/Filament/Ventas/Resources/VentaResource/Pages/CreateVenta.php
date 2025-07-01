@@ -266,7 +266,7 @@ class CreateVenta extends CreateRecord
                                         })
                                         ->label('Facturar CF')
                                         ->columnSpan(3),
-                                    Toggle::make('aplicar_descuento')
+                                    /* Toggle::make('aplicar_descuento')
                                         ->label('Promo Junio')
                                         ->inline(false)
                                         ->dehydrated(false)
@@ -330,7 +330,7 @@ class CreateVenta extends CreateRecord
                                                         ->send();
                                                 }
                                             }
-                                        }),
+                                        }), */
                                     Repeater::make('detalles')
                                         ->label('')
                                         ->relationship()
