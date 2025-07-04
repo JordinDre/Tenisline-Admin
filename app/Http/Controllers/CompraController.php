@@ -71,6 +71,35 @@ class CompraController extends Controller
         }
     }
 
+    public static function completar(Compra $compra)
+    {
+        try {
+            if (round($compra->total, 0) != round($compra->subtotal, 0)) {
+                $compra->estado = 'creada';
+                $compra->save();
+                throw new Exception('El total de la compra no coincide con la suma de los detalles');
+            }
+            DB::transaction(function () use ($compra) {
+                $compra->estado = 'completada';
+                $compra->fecha_completada = now();
+                $compra->save();
+                activity()->performedOn($compra)->causedBy(auth()->user())->withProperties($compra)->event('confirmación')->log('Compra completada');
+            });
+            Notification::make()
+                ->color('success')
+                ->title('Compra completada correctamente')
+                ->success()
+                ->send();
+        } catch (Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al completar la Compra')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
     public static function anular(Compra $compra)
     {
         try {

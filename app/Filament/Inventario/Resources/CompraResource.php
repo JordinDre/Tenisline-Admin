@@ -403,6 +403,12 @@ class CompraResource extends Resource implements HasShieldPermissions
                         ->requiresConfirmation()
                         ->action(fn(Compra $record) => CompraController::anular($record))
                         ->visible(fn($record) => auth()->user()->can('annular', $record)),
+                    Action::make('completar')
+                        ->label('Completar')
+                        ->color('secondary')
+                        ->icon('heroicon-o-check')
+                        ->action(fn(Compra $record) => CompraController::completar($record))
+                        ->visible(fn($record) => auth()->user()->can('complete', $record)),
                 ])
                     ->link()
                     ->label('Acciones'),
