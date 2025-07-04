@@ -78,7 +78,9 @@ class VentaController extends Controller
     {
         $res = FELController::facturaVenta($venta, $venta->bodega_id);
         if (
-            false
+            ! isset($res['resultado']) ||
+            ! $res['resultado'] ||
+            ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
         ) {
             throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
         }
@@ -149,7 +151,7 @@ class VentaController extends Controller
 
     public static function devolver($data, Venta $venta)
     {
-        
+
         try {
             DB::transaction(function () use ($data, $venta) {
                 $estado = 'devuelta';
@@ -159,8 +161,10 @@ class VentaController extends Controller
 
                 foreach ($data['detalles'] as $detalleData) {
                     $detalle = $venta->detalles->firstWhere('id', $detalleData['id']);
-                    if (! $detalle) continue;
-                
+                    if (! $detalle) {
+                        continue;
+                    }
+
                     $detalle->devuelto = $detalleData['devuelto'] ?? 0;
                     $detalle->devuelto_mal = $detalleData['devuelto_mal'] ?? 0;
                     $detalle->save();
@@ -168,17 +172,17 @@ class VentaController extends Controller
                     $codigoNuevo = $detalleData['codigo_nuevo'] ?? null;
                     $producto = $detalle->producto;
                     $codigoAnterior = $producto->codigo;
-                
+
                     if ($codigoNuevo && $codigoNuevo !== $codigoAnterior) {
                         if ($producto->codigos_antiguos) {
-                            $producto->codigos_antiguos .= ',' . $codigoAnterior;
+                            $producto->codigos_antiguos .= ','.$codigoAnterior;
                         } else {
                             $producto->codigos_antiguos = $codigoAnterior;
                         }
-                
+
                         $producto->codigo = $codigoNuevo;
                         $producto->save();
-                
+
                         Kardex::registrar(
                             $producto->id,
                             $venta->bodega_id,
@@ -197,7 +201,7 @@ class VentaController extends Controller
                     if ($totalDevuelto > $detalle->cantidad) {
                         throw new \Exception("La cantidad devuelta del producto {$detalle->producto->descripcion} excede la cantidad vendida.");
                     }
-                    
+
                     if ($detalle->devuelto > 0) {
                         $inventario = Inventario::firstOrCreate(
                             [

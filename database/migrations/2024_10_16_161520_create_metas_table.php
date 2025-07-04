@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        /* Schema::create('metas', function (Blueprint $table) {
+        Schema::create('metas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('bodega_id')->nullable();
             $table->integer('mes');
             $table->year('anio');
             $table->decimal('meta', 10, 2);
             $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('bodega_id')->references('id')->on('bodegas');
             $table->timestamps();
             $table->unique(['user_id', 'mes', 'anio']);
-        }); */
+        });
     }
 
     /**

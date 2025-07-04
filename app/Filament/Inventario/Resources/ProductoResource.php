@@ -358,6 +358,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 ...Bodega::all()->map(function ($bodega) {
                     return Tables\Columns\TextColumn::make("bodega_{$bodega->id}")
                         ->label($bodega->bodega)
+                        ->sortable()
                         ->getStateUsing(function ($record) use ($bodega) {
                             return optional(
                                 $record->inventario->firstWhere('bodega_id', $bodega->id)

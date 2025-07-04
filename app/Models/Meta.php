@@ -28,4 +28,9 @@ class Meta extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function bodega(): BelongsTo
+    {
+        return $this->belongsTo(Bodega::class);
+    }
 }
