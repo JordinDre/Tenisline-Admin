@@ -164,6 +164,11 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->copyable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('total_pares')
+                    ->label('Total Pares')
+                    ->getStateUsing(fn (Traslado $record) => $record->detalles->sum('cantidad_enviada'))
+                    ->sortable()
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
                     ->badge(),
@@ -201,8 +206,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                     ->label('Creado')
                     ->dateTime('d/m/Y H:i:s')
                     ->copyable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizado')
                     ->dateTime('d/m/Y H:i:s')

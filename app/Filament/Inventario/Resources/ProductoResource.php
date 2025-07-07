@@ -355,17 +355,16 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('total_existencia')
+                    ->label('Existencia')
+                    ->numeric(),
                 ...Bodega::all()->map(function ($bodega) {
-                    return Tables\Columns\TextColumn::make("bodega_{$bodega->id}")
+                    return Tables\Columns\TextColumn::make("existencia_bodega_{$bodega->id}")
                         ->label($bodega->bodega)
+                        ->numeric()
                         ->sortable()
-                        ->getStateUsing(function ($record) use ($bodega) {
-                            return optional(
-                                $record->inventario->firstWhere('bodega_id', $bodega->id)
-                            )->existencia ?? 0;
-                        });
+                        ->alignRight();
                 })->all(),
-
                 Tables\Columns\TextColumn::make('precio_venta')
                     ->label('Precio de Venta')
                     ->formatStateUsing(function ($record) {
@@ -402,8 +401,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Creado')
                     ->dateTime('d/m/Y H:i:s')
                     ->copyable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizado')
                     ->dateTime('d/m/Y H:i:s')
@@ -491,9 +489,18 @@ class ProductoResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class]);
+
+        foreach (Bodega::all() as $bodega) {
+            $query->withSum(
+                ['inventario as existencia_bodega_'.$bodega->id => fn ($q) => $q->where('bodega_id', $bodega->id)],
+                'existencia'
+            );
+        }
+
+        $query->withSum('inventario as total_existencia', 'existencia')->orderByDesc('total_existencia');
+
+        return $query;
     }
 }

@@ -121,4 +121,11 @@ class CompraPolicy
 
         return $user->can('confirm_compra') && in_array($compra->estado->value, $estadosPermitidos);
     }
+
+    public function complete(User $user, Compra $compra): bool
+    {
+        $estadosPermitidos = ['creada'];
+
+        return $user->can('confirm_compra') && in_array($compra->estado->value, $estadosPermitidos);
+    }
 }
