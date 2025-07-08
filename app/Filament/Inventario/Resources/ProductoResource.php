@@ -131,6 +131,12 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
+                        TextInput::make('precio_oferta')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
                     ]),
                 Grid::make([
                     'default' => 1,
@@ -371,6 +377,16 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         return number_format($record->precio_venta, 2);
                     })
                     ->copyable()
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('precio_oferta')
+                    ->label('Precio de Oferta')
+                    ->formatStateUsing(function ($record) {
+                        return number_format($record->precio_oferta, 2);
+                    })
+                    ->copyable()
+                    ->visible(auth()->user()->can('view_costs_producto'))
                     ->searchable()
                     ->sortable(),
                 /* Tables\Columns\TextColumn::make('escalas.dia')

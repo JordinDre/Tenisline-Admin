@@ -343,13 +343,12 @@ class CreateVenta extends CreateRecord
                                             'xl' => 3,
                                         ])
                                         ->schema([
-                                            Toggle::make('aplicar_descuento_item')
-                                                ->label('Descuento')
+                                            Toggle::make('oferta_20')
+                                                ->label('20 %')
                                                 ->inline(false)
                                                 ->live()
                                                 ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1])
                                                 ->reactive()
-                                                ->dehydrated(false)
                                                 ->visible(function (Get $get): bool {
                                                     $bodegaId = $get('../../bodega_id');
                                                     if ($bodegaId == 6) {
@@ -391,7 +390,85 @@ class CreateVenta extends CreateRecord
                                                                 ->danger()
                                                                 ->send();
 
-                                                            $set('aplicar_descuento_item', false);
+                                                            $set('oferta_20', false);
+
+                                                            return;
+                                                        }
+
+                                                        if ($get('oferta')) {
+                                                            Notification::make()
+                                                                ->title('Solo se puede aplicar un tipo de descuento a la vez.')
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('oferta_20', false);
+
+                                                            return;
+                                                        }
+                                                    }
+
+                                                    $set('precio', $precioFinal);
+                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
+
+                                                    $productos = $get('../../detalles') ?? [];
+                                                    $totalGeneral = 0;
+                                                    $subtotalGeneral = 0;
+                                                    foreach ($productos as $productoItem) {
+                                                        $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                                        $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                                    }
+                                                    $set('../../subtotal', round($subtotalGeneral, 2));
+                                                    $set('../../total', round($totalGeneral, 2));
+                                                }),
+                                            Toggle::make('oferta')
+                                                ->label('Precio Oferta')
+                                                ->inline(false)
+                                                ->live()
+                                                ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1])
+                                                ->reactive()
+                                                ->visible(function (Get $get): bool {
+
+                                                    $clienteId = $get('../../cliente_id');
+                                                    if (! $clienteId) {
+                                                        return false;
+                                                    }
+
+                                                    $cliente = \App\Models\User::with('roles')->find($clienteId);
+
+                                                    return $cliente?->roles->pluck('name')->intersect(['cliente_apertura', 'colaborador'])->isNotEmpty() ?? false;
+                                                })
+
+                                                ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
+                                                    $cantidad = $get('cantidad') ?? 1;
+                                                    $precioOriginal = $get('precio_original') ?? 0;
+                                                    $precioOferta = $get('precio_oferta') ?? 0;
+                                                    $precioFinal = $precioOriginal;
+
+                                                    $clienteId = $get('../../cliente_id');
+                                                    $cliente = User::with('roles')->find($clienteId);
+                                                    $roles = $cliente?->getRoleNames() ?? collect();
+                                                    $esClienteApertura = $roles->contains('cliente_apertura');
+                                                    $esColaborador = $roles->contains('colaborador');
+
+                                                    if ($state && $esClienteApertura) {
+                                                        $precioFinal = $precioOferta;
+                                                    }
+
+                                                    if ($state && ($precioOferta == 0 | $precioOferta == null) ) {
+                                                        $precioFinal = $precioOriginal;
+                                                    }
+
+                                                    if ($state && $esColaborador) {
+                                                        $precioFinal = $precioOferta;
+                                                    }
+                                                    if ($state) {
+                                                        if ($get('oferta_20')) {
+                                                            Notification::make()
+                                                                ->title('Solo se puede aplicar un tipo de descuento a la vez.')
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('oferta', false);
 
                                                             return;
                                                         }
@@ -438,9 +515,14 @@ class CreateVenta extends CreateRecord
 
                                                     $producto = Producto::find($state);
                                                     $precioOriginal = $producto->precio_venta;
-                                                    $set('precio_original', $precioOriginal);
+                                                    $precioOferta = $producto->precio_oferta;
 
-                                                    $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
+                                                    $set('precio_original', $precioOriginal);
+                                                    $set('precio_oferta', $precioOferta);
+
+                                                    $aplicarDescuento = $get('oferta_20') ?? false;
+                                                    $aplicarOferta = $get('oferta') ?? false;
+                                                    $precioOferta2 = $get('precio_oferta') ?? 0;
                                                     $precioFinal = $precioOriginal;
 
                                                     if ($esClienteApertura && $aplicarDescuento) {
@@ -459,6 +541,21 @@ class CreateVenta extends CreateRecord
                                                             ->body('Se ha aplicado un 25% de descuento a este producto.')
                                                             ->success()
                                                             ->send();
+                                                    }
+
+                                                    if ($aplicarOferta) {
+                                                        if ($precioOferta2 == 0 | $precioOferta2 == null ) {
+                                                            $precioFinal = $precioOriginal;
+                                                        } else {
+                                                            $precioFinal = $precioOferta2;
+
+                                                            Notification::make()
+                                                            ->title('Descuento aplicado')
+                                                            ->body('Se ha aplicado precio oferta a este producto.')
+                                                            ->success()
+                                                            ->send();
+                                                        } 
+                                                        
                                                     }
 
                                                     $set('precio', $precioFinal);
@@ -529,21 +626,31 @@ class CreateVenta extends CreateRecord
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
                                                     $esColaborador = $roles->contains('colaborador');
 
-                                                    $aplicarDescuento = $get('aplicar_descuento_item') ?? false;
+                                                    $aplicarDescuento = $get('oferta_20') ?? false;
+                                                    $aplicarOferta = $get('oferta') ?? false;
+                                                    $precioOferta = $get('precio_oferta') ?? 0;
+                                                    
                                                     $precioFinal = $precioOriginal;
 
                                                     if ($esClienteApertura && $aplicarDescuento) {
                                                         $precioFinal = round($precioOriginal * 0.8, 2);
                                                     }
 
+                                                    if ($aplicarOferta) {
+                                                        if ($precioOferta == 0 | $precioOferta == null ) {
+                                                            $precioFinal = $precioOriginal;
+                                                        } else {
+                                                            $precioFinal = $precioOferta;
+                                                        } 
+                                                    }
+
                                                     if ($esColaborador && $aplicarDescuento) {
                                                         $precioFinal = round($precioOriginal * 0.75, 2);
                                                     }
-
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
-
-                                                    $productos = $get('detalles') ?? [];
+                                                    
+                                                    $productos = $get('../../detalles') ?? [];
                                                     $totalGeneral = 0;
                                                     $subtotalGeneral = 0;
                                                     foreach ($productos as $productoItem) {
@@ -618,9 +725,10 @@ class CreateVenta extends CreateRecord
                                             $subtotalGeneral = 0;
 
                                             foreach ($productos as $productoItem) {
-                                                $subtotal = (float) ($productoItem['subtotal'] ?? 0);
-                                                $totalGeneral += $subtotal;
-                                                $subtotalGeneral += $subtotal;
+                                                $cantidad = (float) ($productoItem['cantidad'] ?? 0);
+                                                $precio = (float) ($productoItem['precio'] ?? 0);
+                                                $totalGeneral += ($cantidad * $precio);
+                                                $subtotalGeneral += ($cantidad * $precio);
                                             }
 
                                             $set('subtotal', round($subtotalGeneral, 2));
