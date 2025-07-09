@@ -149,6 +149,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->required(),
                                     TextInput::make('precio')
                                         ->required()
+                                        ->label('Precio Costo')
                                         /* ->live(onBlur: true) */
                                         ->minValue(0)
                                         ->default(0)
@@ -156,6 +157,25 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                         ->inputMode('decimal')
                                         ->rule('numeric'),
+                                    TextInput::make('precio_venta')
+                                        ->required()
+                                        ->label('Precio Venta')
+                                        /* ->live(onBlur: true) */
+                                        ->minValue(0)
+                                        ->default(0)
+                                        ->visible(auth()->user()->can('view_costs_producto'))
+                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
+                                        ->inputMode('decimal')
+                                        ->rule('numeric'),
+                                    Placeholder::make('subtotal')
+                                        ->default(0)
+                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
+                                        ->visible()
+                                        ->content(function (Get $get) {
+                                            $cantidad = (float) $get('cantidad');
+                                            $precio = (float) $get('precio');
+                                            return number_format($cantidad * $precio, 2);
+                                        }),
                                     /* TextInput::make('envio')
                                         ->label('Envío')
                                         ->inputMode('decimal')
@@ -181,15 +201,6 @@ class CompraResource extends Resource implements HasShieldPermissions
                                             $subtotal = ($precio + $envio + $envase) * $cantidad;
                                             $set('subtotal', $subtotal);
                                         }), */
-                                    Placeholder::make('subtotal')
-                                        ->default(0)
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->content(function (Get $get) {
-                                            $cantidad = (float) $get('cantidad');
-                                            $precio = (float) $get('precio');
-
-                                            return number_format($cantidad * $precio, 2);
-                                        }),
                                 ])
                                 ->collapsible()
                                 ->columnSpanFull()
