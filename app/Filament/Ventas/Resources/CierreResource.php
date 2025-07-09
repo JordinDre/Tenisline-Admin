@@ -87,16 +87,19 @@ class CierreResource extends Resource
                 Tables\Columns\TextColumn::make('bodega.bodega')
                     ->label('Bodega')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Usuario')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('apertura')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('cierre')
-                
+                    ->searchable()
                     ->dateTime()
                     ->sortable(),
                 /* Tables\Columns\TextColumn::make('ventas_ids')
@@ -104,8 +107,7 @@ class CierreResource extends Resource
                     ->listWithLineBreaks()
                     ->searchable(), */
                 Tables\Columns\TextColumn::make('total_tenis')
-                    ->label('Cantidad Tenis')
-                    ->searchable(),
+                    ->label('Cantidad Tenis'),
                 Tables\Columns\TextColumn::make('total_ventas')
                     ->label('Total')
                     ->money('GTQ') // o 'USD', o elimina si no quieres formato de moneda
