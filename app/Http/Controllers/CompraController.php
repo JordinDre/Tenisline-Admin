@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Compra;
-use App\Models\Inventario;
-use App\Models\Kardex;
 use Exception;
-use Filament\Notifications\Notification;
+use App\Models\Compra;
+use App\Models\Kardex;
+use App\Models\Producto;
+use App\Models\Inventario;
 use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 
 class CompraController extends Controller
 {
@@ -49,6 +50,14 @@ class CompraController extends Controller
             }
             DB::transaction(function () use ($compra) {
                 self::sumarInventario($compra, 'Compra confirmada');
+                
+                foreach ($compra->detalles as $detalles) {
+                    $productoId = $detalles->producto_id ?? null;
+                    $producto = Producto::find($productoId);
+                    $producto->precio_costo = $detalles->precio;
+                    $producto->precio_venta = $detalles->precio_venta;
+                    $producto->save();
+                }
                 $compra->estado = 'confirmada';
                 $compra->fecha_confirmada = now();
                 $compra->confirmo_id = auth()->user()->id;
