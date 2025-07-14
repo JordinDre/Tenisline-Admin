@@ -137,7 +137,7 @@ class TrasladoController extends Controller
         try {
             DB::transaction(function () use ($traslado) {
                 // Revertir los productos de la bodega destino a la bodega origen
-                if ($traslado->estado !== 'creado') {
+                if ($traslado->estado->value != 'creado') {
                     // Revertir inventario solo si ya se movió producto
                     self::manejarInventario($traslado, 'Traslado anulado', 'salida', Bodega::TRASLADO);
                     self::manejarInventario($traslado, 'Traslado anulado', 'entrada', $traslado->salida_id);
