@@ -428,13 +428,24 @@ class CreateVenta extends CreateRecord
                                                 ->reactive()
                                                 ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
                                                     $cantidad = $get('cantidad') ?? 1;
-
                                                     $productoId = $get('producto_id');
                                                     $producto = Producto::find($productoId);
                                                     $precioOriginal = $producto?->precio_venta ?? 0;
                                                     $precioOferta = $producto?->precio_oferta ?? 0;
                                                     $precioFinal = $precioOriginal;
 
+                                                    $productos = $get('../../detalles') ?? [];
+                                                    $totalPares = array_sum(array_column($productos, 'cantidad'));
+
+                                                    if ($state && $totalPares < 2) {
+                                                        Notification::make()
+                                                            ->title('Debes seleccionar al menos 2 pares para aplicar esta oferta.')
+                                                            ->danger()
+                                                            ->send();
+                                            
+                                                        $set('oferta', false);
+                                                        return;
+                                                    }
 
                                                     if ($state && $precioOferta > 0 ) {
                                                         $precioFinal = $precioOferta;
