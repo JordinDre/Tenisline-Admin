@@ -9,7 +9,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
 {
     case Creada = 'creada';
     case Liquidada = 'liquidada';
-    case ParcialmenteDevuelta = 'parcialmente devuelta';
+    case ParcialmenteDevuelta = 'parcialmente_devuelta';
     case Devuelta = 'devuelta';
     case Anulada = 'anulada';
 
