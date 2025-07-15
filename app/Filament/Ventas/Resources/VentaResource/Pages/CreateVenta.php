@@ -351,9 +351,6 @@ class CreateVenta extends CreateRecord
                                                 ->reactive()
                                                 ->visible(function (Get $get): bool {
                                                     $bodegaId = $get('../../bodega_id');
-                                                    if ($bodegaId == 6) {
-                                                        return false;
-                                                    }
 
                                                     $clienteId = $get('../../cliente_id');
                                                     if (! $clienteId) {
