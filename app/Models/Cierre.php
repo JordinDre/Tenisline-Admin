@@ -40,10 +40,10 @@ class Cierre extends Model
             ->where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
-                ->orWhere(function ($subQ) {
-                    $subQ->where('estado', 'parcialmente_devuelta')
-                        ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
-                });
+                    ->orWhere(function ($subQ) {
+                        $subQ->where('estado', 'parcialmente devuelta')
+                            ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
+                    });
             })
             ->where('created_at', '>=', $this->apertura)
             ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
@@ -57,10 +57,10 @@ class Cierre extends Model
             ->where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
-                ->orWhere(function ($subQ) {
-                    $subQ->where('estado', 'parcialmente_devuelta')
-                        ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
-                });
+                    ->orWhere(function ($subQ) {
+                        $subQ->where('estado', 'parcialmente devuelta')
+                            ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
+                    });
             })
             ->where('created_at', '>=', $this->apertura)
             ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
@@ -73,10 +73,10 @@ class Cierre extends Model
             ->where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
-                ->orWhere(function ($subQ) {
-                    $subQ->where('estado', 'parcialmente_devuelta')
-                        ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
-                });
+                    ->orWhere(function ($subQ) {
+                        $subQ->where('estado', 'parcialmente devuelta')
+                            ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
+                    });
             })
             ->where('created_at', '>=', $this->apertura)
             ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
@@ -91,39 +91,39 @@ class Cierre extends Model
                 ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
                 ->where(function ($q) {
                     $q->whereIn('estado', ['creada', 'liquidada'])
-                    ->orWhere(function ($subQ) {
-                        $subQ->where('estado', 'parcialmente_devuelta');
-                    });
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('estado', 'parcialmente devuelta');
+                        });
                 });
         })
-        ->where(function ($detalle) {
-            $detalle->whereHas('venta', function ($q) {
-                $q->where('estado', '!=', 'parcialmente_devuelta');
+            ->where(function ($detalle) {
+                $detalle->whereHas('venta', function ($q) {
+                    $q->where('estado', '!=', 'parcialmente devuelta');
+                })
+                    ->orWhere('devuelto', 0);
             })
-            ->orWhere('devuelto', 0);
-        })
-        ->count('producto_id');
+            ->count('producto_id');
     }
 
     public function getTotalCajaChicaAttribute()
     {
         return CajaChica::where('bodega_id', $this->bodega_id)
-        ->where('estado', 'confirmada')
-        ->where('created_at', '>=', $this->apertura)
-        ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
-        ->get()
-        ->sum(function ($caja) {
-            return $caja->pagos()->sum('monto');
-        });
+            ->where('estado', 'confirmada')
+            ->where('created_at', '>=', $this->apertura)
+            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->get()
+            ->sum(function ($caja) {
+                return $caja->pagos()->sum('monto');
+            });
     }
 
     public function getDatosCajaChicaAttribute()
     {
         return CajaChica::with('pagos', 'usuario')
-        ->where('bodega_id', $this->bodega_id)
-        ->where('created_at', '>=', $this->apertura)
-        ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
-        ->get();
+            ->where('bodega_id', $this->bodega_id)
+            ->where('created_at', '>=', $this->apertura)
+            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->get();
     }
 
     public function getResumenPagosAttribute()
@@ -132,10 +132,10 @@ class Cierre extends Model
             ->where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
-                ->orWhere(function ($subQ) {
-                    $subQ->where('estado', 'parcialmente_devuelta')
-                        ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
-                });
+                    ->orWhere(function ($subQ) {
+                        $subQ->where('estado', 'parcialmente devuelta')
+                            ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
+                    });
             })
             ->where('created_at', '>=', $this->apertura)
             ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
@@ -148,7 +148,7 @@ class Cierre extends Model
 
         return $pagos
             ->groupBy(fn ($pago) => $pago->tipoPago->tipo_pago ?? 'Desconocido')
-            ->map(fn ($group) => 'Q' . number_format($group->sum('monto'), 2))
+            ->map(fn ($group) => 'Q'.number_format($group->sum('monto'), 2))
             ->map(fn ($monto, $tipo) => "{$tipo}: {$monto}")
             ->values()
             ->toArray();
