@@ -41,7 +41,7 @@ class Cierre extends Model
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
                     ->orWhere(function ($subQ) {
-                        $subQ->where('estado', 'parcialmente devuelta')
+                        $subQ->where('estado', 'parcialmente_devuelta')
                             ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
                     });
             })
@@ -58,7 +58,7 @@ class Cierre extends Model
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
                     ->orWhere(function ($subQ) {
-                        $subQ->where('estado', 'parcialmente devuelta')
+                        $subQ->where('estado', 'parcialmente_devuelta')
                             ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
                     });
             })
@@ -74,7 +74,7 @@ class Cierre extends Model
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
                     ->orWhere(function ($subQ) {
-                        $subQ->where('estado', 'parcialmente devuelta')
+                        $subQ->where('estado', 'parcialmente_devuelta')
                             ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
                     });
             })
@@ -92,13 +92,13 @@ class Cierre extends Model
                 ->where(function ($q) {
                     $q->whereIn('estado', ['creada', 'liquidada'])
                         ->orWhere(function ($subQ) {
-                            $subQ->where('estado', 'parcialmente devuelta');
+                            $subQ->where('estado', 'parcialmente_devuelta');
                         });
                 });
         })
             ->where(function ($detalle) {
                 $detalle->whereHas('venta', function ($q) {
-                    $q->where('estado', '!=', 'parcialmente devuelta');
+                    $q->where('estado', '!=', 'parcialmente_devuelta');
                 })
                     ->orWhere('devuelto', 0);
             })
@@ -133,7 +133,7 @@ class Cierre extends Model
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
                     ->orWhere(function ($subQ) {
-                        $subQ->where('estado', 'parcialmente devuelta')
+                        $subQ->where('estado', 'parcialmente_devuelta')
                             ->whereHas('detalles.producto', fn ($q2) => $q2->where('devuelto', 0));
                     });
             })

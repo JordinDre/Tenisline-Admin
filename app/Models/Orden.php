@@ -35,7 +35,7 @@ class Orden extends Model
         'anulada',
         'devuelta',
         'cotizacion',
-        'parcialmente devuelta',
+        'parcialmente_devuelta',
     ];
 
     protected function casts(): array

@@ -16,7 +16,7 @@ enum EstadoOrdenStatus: string implements HasColor, HasLabel
     case Enviada = 'enviada';
     case Finalizada = 'finalizada';
     case Liquidada = 'liquidada';
-    case ParcialmenteDevuelta = 'parcialmente devuelta';
+    case ParcialmenteDevuelta = 'parcialmente_devuelta';
     case Devuelta = 'devuelta';
     case Anulada = 'anulada';
     case Cotizacion = 'cotizacion';

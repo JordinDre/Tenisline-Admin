@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('anulo_id')->nullable();
             $table->unsignedBigInteger('devolvio_id')->nullable();
             $table->unsignedBigInteger('liquido_id')->nullable();
-            $table->enum('estado', ['creada', 'liquidada', 'anulada', 'devuelta', 'parcialmente devuelta'])
+            $table->enum('estado', ['creada', 'liquidada', 'anulada', 'devuelta', 'parcialmente_devuelta'])
                 ->default('creada');
             /* $table->unsignedBigInteger('tipo_pago_id'); */
             $table->enum('tipo_envio', ['guatex', 'propio']);

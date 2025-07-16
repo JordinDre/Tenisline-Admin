@@ -177,7 +177,7 @@ class OrdenPolicy
 
     public function factura(User $user, Orden $orden): bool
     {
-        $estadosPermitidos = ['confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada', 'liquidada', 'parcialmente devuelta'];
+        $estadosPermitidos = ['confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada', 'liquidada', 'parcialmente_devuelta'];
 
         return $user->can('factura_orden') && in_array($orden->estado->value, $estadosPermitidos) && $orden->factura()->exists() && ! $orden->comp;
     }
@@ -250,14 +250,14 @@ class OrdenPolicy
 
     public function credit_note(User $user, Orden $orden): bool
     {
-        $estadosPermitidos = ['devuelta', 'parcialmente devuelta'];
+        $estadosPermitidos = ['devuelta', 'parcialmente_devuelta'];
 
         return $user->can('credit_note_orden') && in_array($orden->estado->value, $estadosPermitidos);
     }
 
     public function receipt(User $user, Orden $orden): bool
     {
-        $estadosPermitidos = ['confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada', 'liquidada', 'parcialmente devuelta'];
+        $estadosPermitidos = ['confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada', 'liquidada', 'parcialmente_devuelta'];
 
         return $user->can('receipt_orden') && in_array($orden->estado->value, $estadosPermitidos);
     }
