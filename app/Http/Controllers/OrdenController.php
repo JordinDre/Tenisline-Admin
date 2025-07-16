@@ -444,7 +444,7 @@ class OrdenController extends Controller
                     }
 
                     if (($detalle->cantidad) != $detalle->devuelto) {
-                        $estado = 'parcialmente devuelta';
+                        $estado = 'parcialmente_devuelta';
                     }
                 }
 

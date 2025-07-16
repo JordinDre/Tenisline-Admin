@@ -31,7 +31,7 @@ class Venta extends Model
     public const ESTADOS_EXCLUIDOS = [
         'anulada',
         'devuelta',
-        'parcialmente devuelta',
+        'parcialmente_devuelta',
     ];
 
     protected $guarded = [];

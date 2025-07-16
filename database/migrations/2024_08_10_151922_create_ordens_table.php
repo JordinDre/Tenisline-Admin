@@ -21,7 +21,7 @@ return new class extends Migration
              $table->unsignedBigInteger('recolector_id')->nullable();
              $table->unsignedBigInteger('piloto_id')->nullable();
              $table->unsignedBigInteger('liquido_id')->nullable();
-             $table->enum('estado', ['cotizacion', 'creada', 'backorder', 'completada', 'confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada', 'liquidada', 'anulada', 'parcialmente devuelta', 'devuelta'])
+             $table->enum('estado', ['cotizacion', 'creada', 'backorder', 'completada', 'confirmada', 'recolectada', 'preparada', 'enviada', 'finalizada', 'liquidada', 'anulada', 'parcialmente_devuelta', 'devuelta'])
                  ->default('creada');
              $table->enum('tipo_envio', ['guatex', 'propio']);
              $table->unsignedBigInteger('tipo_pago_id');
