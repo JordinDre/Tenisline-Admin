@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0775e2a82b7e839f9dce9326c80fbecb",
+    "content-hash": "5a3878b0514ec22127520b615f281bba",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -9351,16 +9351,16 @@
         },
         {
             "name": "spatie/laravel-backup",
-            "version": "9.2.9",
+            "version": "9.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-backup.git",
-                "reference": "997c781a38bc701ab7623954b2e0438680caa0bf"
+                "reference": "5820c1b50a8991c0c824c322c1c81f5724f4d41c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-backup/zipball/997c781a38bc701ab7623954b2e0438680caa0bf",
-                "reference": "997c781a38bc701ab7623954b2e0438680caa0bf",
+                "url": "https://api.github.com/repos/spatie/laravel-backup/zipball/5820c1b50a8991c0c824c322c1c81f5724f4d41c",
+                "reference": "5820c1b50a8991c0c824c322c1c81f5724f4d41c",
                 "shasum": ""
             },
             "require": {
@@ -9373,7 +9373,7 @@
                 "illuminate/support": "^10.10.0|^11.0|^12.0",
                 "league/flysystem": "^3.0",
                 "php": "^8.2",
-                "spatie/db-dumper": "^3.7",
+                "spatie/db-dumper": "^3.8",
                 "spatie/laravel-package-tools": "^1.6.2",
                 "spatie/laravel-signal-aware-command": "^1.2|^2.0",
                 "spatie/temporary-directory": "^2.0",
@@ -9435,7 +9435,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-backup/issues",
-                "source": "https://github.com/spatie/laravel-backup/tree/9.2.9"
+                "source": "https://github.com/spatie/laravel-backup/tree/9.3.3"
             },
             "funding": [
                 {
@@ -9447,7 +9447,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2025-03-03T12:10:03+00:00"
+            "time": "2025-05-20T15:01:22+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
