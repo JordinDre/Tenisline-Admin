@@ -45,7 +45,7 @@
         "shuvroroy/filament-spatie-laravel-backup": "^2.2",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-activitylog": "^4.9",
-        "spatie/laravel-backup": "^9.2",
+        "spatie/laravel-backup": "^9.3",
         "stechstudio/filament-impersonate": "^3.14",
         "tightenco/ziggy": "^2.0",
         "tomatophp/filament-pwa": "^1.0",
