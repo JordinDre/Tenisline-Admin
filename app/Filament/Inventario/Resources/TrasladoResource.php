@@ -2,30 +2,34 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\TrasladoResource\Pages;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\TrasladoController;
+use Filament\Tables;
 use App\Models\Bodega;
-use App\Models\Producto;
-use App\Models\Traslado;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\Producto;
+use App\Models\Traslado;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Tables\Actions\Action as TableAction;
+use Filament\Forms\Components\Actions;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\TrasladoController;
+use App\Filament\Inventario\Resources\TrasladoResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class TrasladoResource extends Resource implements HasShieldPermissions
 {
@@ -99,46 +103,73 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                     ]),
                 Textarea::make('observaciones')
                     ->columnSpanFull(),
-                Repeater::make('detalles')
-                    ->label('')
-                    ->relationship()
-                    ->defaultItems(0)
-                    ->minItems(1)
-                    ->columns(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
-                    ->grid([
-                        'default' => 1,
-                        'md' => 2,
-                        'xl' => 3,
-                    ])
+                Fieldset::make('Productos')
                     ->schema([
-                        Select::make('producto_id')
-                            ->label('Producto')
-                            ->relationship('producto', 'descripcion', function ($query) {
-                                $query->withTrashed(); // Incluir productos eliminados
-                            })
-                            ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductosBasico($record, '', $get('../../salida_id')))
-                            ->allowHtml()
-                            ->searchable(['id'])
-                            ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                return ProductoController::searchProductosBasico($search, '', $get('../../salida_id'));
-                            })
-                            ->optionsLimit(20)
-                            ->columnSpanFull()
-                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                            ->required(),
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('cantidad_enviada')
-                                    ->label('Cantidad Enviada')
-                                    ->minValue(1)
-                                    ->inputMode('decimal')
-                                    ->rule('numeric')
-                                    ->required(),
-                                TextInput::make('cantidad_recibida')
-                                    ->label('Cantidad Recibida')
-                                    ->visibleOn('view'),
-                            ]),
-                    ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto'),
+                        Placeholder::make('tabla-productos')
+                        ->content(function ($state, $livewire) {
+                            $detalles = [];
+                    
+                            // Si estamos viendo o editando un traslado ya creado, usa el record
+                            if (isset($livewire->record) && method_exists($livewire->record, 'detalles')) {
+                                $detalles = $livewire->record->detalles->map(function ($detalle) {
+                                    return [
+                                        'producto_id' => $detalle->producto_id,
+                                        'descripcion' => $detalle->producto->descripcion ?? 'N/A',
+                                        'cantidad_enviada' => $detalle->cantidad_enviada,
+                                    ];
+                                })->toArray();
+                            }
+                    
+                            // Si estamos creando, usamos el array local
+                            if (property_exists($livewire, 'detalles') && is_array($livewire->detalles)) {
+                                $detalles = $livewire->detalles;
+                            }
+                    
+                            return view('filament.partials.tabla-productos', [
+                                'detalles' => $detalles,
+                            ]);
+                        }),
+                
+                            Actions::make([
+                                FormAction::make('agregar_producto')
+                                    ->label('Agregar producto')
+                                    ->icon('heroicon-o-plus')
+                                    ->visible(fn ($livewire) => $livewire instanceof \App\Filament\Inventario\Resources\TrasladoResource\Pages\CreateTraslado
+            || $livewire instanceof \App\Filament\Inventario\Resources\TrasladoResource\Pages\EditTraslado)
+                                    ->color('primary')
+                                    ->form([
+                                        Select::make('producto_id')
+                                            ->label('Producto')
+                                            ->options(\App\Models\Producto::pluck('descripcion', 'id')->toArray())
+                                            ->required(),
+                            
+                                        TextInput::make('cantidad')
+                                            ->label('Cantidad')
+                                            ->numeric()
+                                            ->default(1)
+                                            ->minValue(1)
+                                            ->required(),
+                                    ])
+                                    ->action(function (array $data, $livewire) {
+                                        $producto = \App\Models\Producto::find($data['producto_id']);
+                            
+                                        if (! $producto) return;
+                            
+                                        $existe = collect($livewire->detalles)->contains(
+                                            fn ($item) => $item['producto_id'] === $producto->id
+                                        );
+                            
+                                        if ($existe) return;
+                            
+                                        $livewire->detalles[] = [
+                                            'producto_id' => $producto->id,
+                                            'descripcion' => $producto->descripcion,
+                                            'cantidad_enviada' => $data['cantidad'],
+                                        ];
+                                    }),
+                            ])
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -220,7 +251,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make()
                         ->visible(fn ($record) => $record->estado->value == 'creado'),
-                    Action::make('comprobante')
+                    TableAction::make('comprobante')
                         ->icon('heroicon-o-document-arrow-down')
                         ->modalContent(fn (Traslado $record): View => view(
                             'filament.pages.actions.iframe',
@@ -235,34 +266,34 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
-                    Action::make('prepare')
+                    TableAction::make('prepare')
                         ->label('Preparar')
                         ->color('success')
                         ->requiresConfirmation()
                         ->icon('tabler-packages')
                         ->action(fn (Traslado $record) => TrasladoController::preparar($record))
                         ->visible(fn ($record) => auth()->user()->can('prepare', $record)),
-                    Action::make('collect')
+                    TableAction::make('collect')
                         ->label('Recolectar')
                         ->color('warning')
                         ->requiresConfirmation()
                         ->icon('tabler-package-export')
                         ->action(fn (Traslado $record) => TrasladoController::recolectar($record))
                         ->visible(fn ($record) => auth()->user()->can('collect', $record)),
-                    Action::make('deliver')
+                    TableAction::make('deliver')
                         ->label('Entregar')
                         ->color('info')
                         ->requiresConfirmation()
                         ->icon('tabler-player-track-next-filled')
                         ->action(fn (Traslado $record) => TrasladoController::entregar($record))
                         ->visible(fn ($record) => auth()->user()->can('deliver', $record)),
-                    Action::make('confirm')
+                    TableAction::make('confirm')
                         ->label('Confirmar')
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
                         ->url(fn (Traslado $record) => TrasladoResource::getUrl('confirm', ['record' => $record]))
                         ->visible(fn ($record) => auth()->user()->can('confirm', $record)),
-                    Action::make('annular')
+                    TableAction::make('annular')
                         ->label('Anular')
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')

@@ -2,36 +2,39 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\CompraResource\Pages;
-use App\Http\Controllers\CompraController;
-use App\Http\Controllers\ProductoController;
+use Closure;
+use App\Models\Pago;
+use Filament\Tables;
 use App\Models\Banco;
 use App\Models\Compra;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\Actions;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\CompraController;
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Inventario\Resources\CompraResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class CompraResource extends Resource implements HasShieldPermissions
 {
@@ -68,23 +71,89 @@ class CompraResource extends Resource implements HasShieldPermissions
         return $form
             ->schema([
                 TextInput::make('subtotal')
+                    ->label('Subtotal')
                     ->required()
-                    ->readOnly()
-                    ->inputMode('decimal')
-                    ->rule('numeric')
-                    ->minValue(1),
+                    ->readOnly(),
                 TextInput::make('total')
+                    ->label('Total')
                     ->required()
-                    ->inputMode('decimal')
-                    ->rule('numeric')
-                    ->minValue(1),
+                    ->readOnly(),
                 Wizard::make([
+                    Wizard\Step::make('Productos')
+                        ->schema([
+                            Fieldset::make('Productos')
+                                ->schema([
+                                    Placeholder::make('tabla_productos')
+                                        ->content(fn ($livewire) => view('filament.partials.tabla-productos-compras', [
+                                            'detalles' => $livewire->detalles,
+                                            'livewire' => $livewire,
+                                        ])),
+
+                                    Actions::make([
+                                        FormAction::make('agregar_producto')
+                                            ->label('Agregar producto')
+                                            ->icon('heroicon-o-plus-circle')
+                                            ->visible(fn ($livewire) => $livewire instanceof \App\Filament\Inventario\Resources\CompraResource\Pages\CreateCompra
+            || $livewire instanceof \App\Filament\Inventario\Resources\CompraResource\Pages\EditCompra)
+                                            ->color('primary')
+                                            ->form([
+                                                Select::make('producto_id')
+                                                    ->label('Producto')
+                                                    ->options(\App\Models\Producto::pluck('descripcion', 'id')->toArray())
+                                                    ->required(),
+                                                TextInput::make('cantidad')
+                                                    ->label('Cantidad')
+                                                    ->numeric()
+                                                    ->default(1)
+                                                    ->minValue(1)
+                                                    ->required(),
+                                                TextInput::make('precio')
+                                                    ->label('Precio Costo')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->minValue(0)
+                                                    ->required()
+                                                    ->visible(auth()->user()->can('view_costs_producto')),
+                                                TextInput::make('precio_venta')
+                                                    ->label('Precio Venta')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->minValue(0)
+                                                    ->required()
+                                                    ->visible(auth()->user()->can('view_costs_producto')),
+                                            ])
+                                            ->action(function (array $data, $livewire , Set $set) {
+                                                $producto = \App\Models\Producto::find($data['producto_id']);
+                                                if (!$producto) return;
+
+                                                // Prevenir duplicados
+                                                $existe = collect($livewire->detalles)->contains('producto_id', $producto->id);
+                                                if ($existe) return;
+
+                                                $livewire->detalles[] = [
+                                                    'producto_id' => $producto->id,
+                                                    'descripcion' => $producto->descripcion,
+                                                    'cantidad' => $data['cantidad'],
+                                                    'precio' => $data['precio'],
+                                                    'precio_venta' => $data['precio_venta'],
+                                                ];
+
+                                                // Calcular subtotal y total directamente aquí
+                                                $subtotal = collect($livewire->detalles)->sum(fn ($d) => $d['cantidad'] * $d['precio']);
+                                                $total = $subtotal; 
+
+                                                $set('subtotal', round($subtotal, 2));
+                                                $set('total', round($subtotal, 2));
+                                            }),
+                                    ])->columnSpanFull(),
+                                ]),
+                        ]),
                     Wizard\Step::make('Cliente')
                         ->schema([
                             Grid::make(3)
                                 ->schema([
                                     Grid::make(3)
-                                        ->relationship('factura')
+                                        //->relationship('factura')
                                         ->schema([
                                             TextInput::make('fel_uuid')
                                                 ->required()
@@ -95,8 +164,6 @@ class CompraResource extends Resource implements HasShieldPermissions
                                             TextInput::make('fel_serie')
                                                 ->required()
                                                 ->label('No. Serie'),
-                                            Hidden::make('user_id')
-                                                ->default(auth()->user()->id),
                                         ])->columnSpan(3),
                                 ]),
                             Grid::make(2)
@@ -110,114 +177,6 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor'))
                                         ->searchable(),
                                 ]),
-                        ]),
-                    Wizard\Step::make('Productos')
-                        ->schema([
-                            Repeater::make('detalles')
-                                ->label('')
-                                ->relationship()
-                                ->defaultItems(1)
-                                ->minItems(1)
-                                ->columns(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
-                                ->grid([
-                                    'default' => 1,
-                                    'md' => 2,
-                                    'xl' => 3,
-                                ])
-                                ->schema([
-                                    Select::make('producto_id')
-                                        ->label('Producto')
-                                        ->relationship('producto', 'descripcion')
-                                        ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductosBasico($record, 'compra', null))
-                                        ->allowHtml()
-                                        ->searchable(['descripcion'])
-                                        ->getSearchResultsUsing(function (string $search, Get $get): array {
-                                            return ProductoController::searchProductosBasico($search, 'compra', null);
-                                        })
-                                        ->optionsLimit(20)
-                                        ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                        ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 4, 'xl' => 6])
-                                        ->required(),
-                                    TextInput::make('cantidad')
-                                        ->label('Cantidad')
-                                        ->default(1)
-                                        ->minValue(1)
-                                        ->inputMode('decimal')
-                                        ->rule('numeric')
-                                        /* ->live(onBlur: true) */
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->required(),
-                                    TextInput::make('precio')
-                                        ->required()
-                                        ->label('Precio Costo')
-                                        /* ->live(onBlur: true) */
-                                        ->minValue(0)
-                                        ->default(0)
-                                        ->visible(auth()->user()->can('view_costs_producto'))
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->inputMode('decimal')
-                                        ->rule('numeric'),
-                                    TextInput::make('precio_venta')
-                                        ->required()
-                                        ->label('Precio Venta')
-                                        /* ->live(onBlur: true) */
-                                        ->minValue(0)
-                                        ->default(0)
-                                        ->visible(auth()->user()->can('view_costs_producto'))
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->inputMode('decimal')
-                                        ->rule('numeric'),
-                                    Placeholder::make('subtotal')
-                                        ->default(0)
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->visible()
-                                        ->content(function (Get $get) {
-                                            $cantidad = (float) $get('cantidad');
-                                            $precio = (float) $get('precio');
-                                            return number_format($cantidad * $precio, 2);
-                                        }),
-                                    /* TextInput::make('envio')
-                                        ->label('Envío')
-                                        ->inputMode('decimal')
-                                        ->default(0)
-                                        ->rule('numeric')
-                                        ->live(onBlur: true)
-                                        ->minValue(0)
-                                        ->visible(auth()->user()->can('view_costs_producto'))
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                    TextInput::make('envase')
-                                        ->default(0)
-                                        ->inputMode('decimal')
-                                        ->rule('numeric')
-                                        ->live(onBlur: true)
-                                        ->minValue(0)
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
-                                        ->visible(auth()->user()->can('view_costs_producto'))
-                                        ->afterStateUpdated(function (Get $get, Set $set) {
-                                            $precio = floatval($get('precio'));
-                                            $envio = floatval($get('envio'));
-                                            $envase = floatval($get('envase'));
-                                            $cantidad = floatval($get('cantidad'));
-                                            $subtotal = ($precio + $envio + $envase) * $cantidad;
-                                            $set('subtotal', $subtotal);
-                                        }), */
-                                ])
-                                ->collapsible()
-                                ->columnSpanFull()
-                                ->reorderableWithButtons()
-                                ->reorderable()
-                                ->addActionLabel('Agregar Producto')
-                                /* ->live() */
-                                ->afterStateUpdated(function (Set $set, Get $get) {
-                                    $detalles = $get('detalles');
-                                    $subtotal = collect($detalles)->sum(function ($detalle) {
-                                        $precio = (float) $detalle['precio'];
-                                        $cantidad = (float) $detalle['cantidad'];
-
-                                        return $precio * $cantidad;
-                                    });
-                                    $set('subtotal', round($subtotal, 2));
-                                }),
                         ]),
                     Wizard\Step::make('Pagos')
                         ->schema([
@@ -273,7 +232,11 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->default(auth()->user()->id),
                                     TextInput::make('no_documento')
                                         ->label('No. Documento')->rules([
-                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            fn (Get $get, $livewire): Closure => function (string $attribute, $value, Closure $fail) use ($get, $livewire) {
+                                                if ($livewire instanceof \Filament\Resources\Pages\EditRecord) {
+                                                    return; 
+                                                }
+
                                                 if (
                                                     Pago::where('banco_id', $get('banco_id'))
                                                         ->where('fecha_transaccion', $get('fecha_transaccion'))
@@ -337,7 +300,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                 ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                         ]),
                 ])->skippable()->columnSpanFull(),
-            ]);
+            ])->live();
     }
 
     public static function table(Table $table): Table

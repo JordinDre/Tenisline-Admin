@@ -14,12 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class TrasladoController extends Controller
 {
-    public static function manejarInventario(
-        Traslado $traslado,
-        string $descripcion,
-        string $tipoOperacion,
-        ?int $bodegaId = null
-    ) {
+    public static function manejarInventario(Traslado $traslado, string $descripcion, string $tipoOperacion, ?int $bodegaId = null) 
+    {
         $traslado->detalles()->each(function ($detalle) use ($traslado, $descripcion, $tipoOperacion, $bodegaId) {
             $bodegaId = $bodegaId ?? ($tipoOperacion === 'entrada' ? $traslado->entrada_id : $traslado->salida_id);
             $inventario = Inventario::firstOrCreate(
