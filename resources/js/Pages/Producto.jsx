@@ -77,19 +77,18 @@ export default function Producto({ producto, marcas }) {
                                 {producto.descripcion}
                             </motion.h1>
 
-                            <div className="mt-3 flex items-center gap-2 text-sm">
-                                <span
-                                    className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${
-                                        producto.stock > 0
-                                            ? 'bg-green-100 text-green-700 ring-green-300'
-                                            : 'bg-red-100 text-red-700 ring-red-300'
-                                    }`}
-                                >
-                                    {producto.stock > 0
-                                        ? 'En existencia'
-                                        : 'Sin stock disponible'}
-                                </span>
-                            </div>
+                            {producto.bodega_destacada && (
+                                <div className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                                    <p className="mb-2 text-sm font-semibold text-green-700">
+                                        📦 Existencia:
+                                    </p>
+                                    <div className="inline-block rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-green-300">
+                                        <strong>
+                                            {producto.bodega_destacada.bodega}
+                                        </strong>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="mt-5 space-y-2 text-sm text-zinc-700">
                                 {user &&

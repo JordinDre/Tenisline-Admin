@@ -246,6 +246,8 @@ class TiendaController extends Controller
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca ?? null,
+
+                // Mostrar todas las bodegas solo si está logueado
                 'bodegas' => auth()->check()
                     ? $producto->inventario
                         ->map(fn ($inv) => [
@@ -255,9 +257,18 @@ class TiendaController extends Controller
                         ->toArray()
                     : null,
 
+                // Siempre enviar la bodega con más stock
+                'bodega_destacada' => $producto->inventario
+                    ->sortByDesc('existencia')
+                    ->map(fn ($inv) => [
+                        'bodega' => $inv->bodega->bodega ?? 'Desconocida',
+                        'existencia' => $inv->existencia,
+                    ])
+                    ->first(),
             ],
             'marcas' => $marcas,
         ]);
+
     }
 
     public function agregarCarrito(Request $request)

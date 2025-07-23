@@ -78,7 +78,11 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->maxLength(100),
                         TextInput::make('descripcion')
                             ->required()
-                            ->maxLength(250),
+                            ->maxLength(250)
+                            ->afterStateUpdated(function ($state, Set $set) {
+                                $set('descripcion', mb_strtoupper($state));
+                            }),
+
                         // TextInput::make('modelo')
                         //     ->label('Linea/Modelo')
                         //     ->required()
