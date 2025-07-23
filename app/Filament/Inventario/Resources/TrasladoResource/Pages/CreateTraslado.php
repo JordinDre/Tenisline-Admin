@@ -2,17 +2,20 @@
 
 namespace App\Filament\Inventario\Resources\TrasladoResource\Pages;
 
-use App\Filament\Inventario\Resources\TrasladoResource;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Inventario\Resources\TrasladoResource;
+use App\Filament\Inventario\Resources\TrasladoResource\Pages\FormTraslado;
 
 class CreateTraslado extends CreateRecord
 {
+    use \App\Filament\Inventario\Resources\CompraResource\Pages\InteractsWithCompraForm;
+
     protected static string $resource = TrasladoResource::class;
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    public function eliminarDetalle($index)
     {
-        $data['emisor_id'] = auth()->user()->id;
-
-        return $data;
+        unset($this->detalles[$index]);
+        $this->detalles = array_values($this->detalles); 
     }
 }
