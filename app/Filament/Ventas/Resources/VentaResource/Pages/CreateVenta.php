@@ -439,12 +439,13 @@ class CreateVenta extends CreateRecord
                                                             ->title('Debes seleccionar al menos 2 pares para aplicar esta oferta.')
                                                             ->danger()
                                                             ->send();
-                                            
+
                                                         $set('oferta', false);
+
                                                         return;
                                                     }
 
-                                                    if ($state && $precioOferta > 0 ) {
+                                                    if ($state && $precioOferta > 0) {
                                                         $precioFinal = $precioOferta;
                                                     }
 
@@ -455,9 +456,10 @@ class CreateVenta extends CreateRecord
                                                             ->send();
 
                                                         $set('oferta', false);
+
                                                         return;
                                                     }
-                                                    
+
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $cantidad, 2));
 
@@ -501,16 +503,14 @@ class CreateVenta extends CreateRecord
                                                     $producto = Producto::find($state);
                                                     $precioOriginal = $producto->precio_venta;
                                                     $precioOferta = $producto->precio_oferta;
-                                                    
 
                                                     $set('precio_original', $precioOriginal);
                                                     $set('precio_oferta', $precioOferta);
-                                                   
+
                                                     $aplicarDescuento = $get('oferta_20') ?? false;
                                                     $aplicarOferta = $get('oferta') ?? false;
                                                     $precioOferta2 = $get('precio_oferta') ?? 0;
                                                     $precioFinal = $precioOriginal;
-                                                    
 
                                                     if ($esClienteApertura && $aplicarDescuento) {
                                                         $precioFinal = round($precioOriginal * 0.8, 2);
@@ -529,21 +529,21 @@ class CreateVenta extends CreateRecord
                                                             ->success()
                                                             ->send();
                                                     }
-                                                    
+
                                                     if ($aplicarOferta) {
-                                                        
-                                                        if ($precioOferta2 == 0 | $precioOferta2 == null ) {
+
+                                                        if ($precioOferta2 == 0 | $precioOferta2 == null) {
                                                             $precioFinal = $precioOriginal;
-                                                            
+
                                                         } else {
                                                             $precioFinal = $precioOferta2;
                                                             Notification::make()
-                                                            ->title('Descuento aplicado')
-                                                            ->body('Se ha aplicado precio oferta a este producto.')
-                                                            ->success()
-                                                            ->send();
-                                                        } 
-                                                        
+                                                                ->title('Descuento aplicado')
+                                                                ->body('Se ha aplicado precio oferta a este producto.')
+                                                                ->success()
+                                                                ->send();
+                                                        }
+
                                                     }
 
                                                     $set('precio', $precioFinal);
@@ -618,7 +618,7 @@ class CreateVenta extends CreateRecord
                                                     $aplicarDescuento = $get('oferta_20') ?? false;
                                                     $aplicarOferta = $get('oferta') ?? false;
                                                     $precioOferta = $get('precio_oferta') ?? 0;
-                                                    
+
                                                     $precioFinal = $precioOriginal;
 
                                                     if ($esClienteApertura && $aplicarDescuento) {
@@ -626,11 +626,11 @@ class CreateVenta extends CreateRecord
                                                     }
 
                                                     if ($aplicarOferta) {
-                                                        if ($precioOferta == 0 | $precioOferta == null ) {
+                                                        if ($precioOferta == 0 | $precioOferta == null) {
                                                             $precioFinal = $precioOriginal;
                                                         } else {
                                                             $precioFinal = $precioOferta;
-                                                        } 
+                                                        }
                                                     }
 
                                                     if ($esColaborador && $aplicarDescuento) {
@@ -638,7 +638,7 @@ class CreateVenta extends CreateRecord
                                                     }
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
-                                                    
+
                                                     $productos = $get('../../detalles') ?? [];
                                                     $totalGeneral = 0;
                                                     $subtotalGeneral = 0;
@@ -787,6 +787,10 @@ class CreateVenta extends CreateRecord
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
+                                        ->required(fn (Get $get) => in_array(
+                                            optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago,
+                                            ['TRANSFERENCIA', 'DEPOSITO']
+                                        ))
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
@@ -799,6 +803,7 @@ class CreateVenta extends CreateRecord
                                                 }
                                             },
                                         ]),
+
                                     /* TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
