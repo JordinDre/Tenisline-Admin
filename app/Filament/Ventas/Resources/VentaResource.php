@@ -447,6 +447,30 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->sortable()
                     ->copyable()
                     ->searchable()->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('devolucion.fel_uuid')
+                    ->label('Devolución Autorización')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('devolucion.fel_numero')
+                    ->label('Devolución No. DTE')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('devolucion.fel_serie')
+                    ->label('Devolución No. Serie')
+                    ->sortable()
+                    ->copyable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('devolucion.fel_fecha')
+                    ->label('Devolución Fel Fecha')
+                    ->dateTime('d/m/Y H:i:s')
+                    ->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('devolucion.motivo')
+                    ->label('Motivo Devolución')
+                    ->sortable()
+                    ->copyable()
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
                 /* Tables\Columns\TextColumn::make('detalles.producto.presentacion.presentacion')
                     ->label('Presentación')
                     ->searchable()
