@@ -108,9 +108,7 @@
             </tr>
             @foreach ($venta->detalles as $detalle)
                 <tr>
-                    <td class="descripcion">{{ $detalle->producto?->codigo && $detalle->producto?->descripcion
-                        ? $detalle->producto->codigo . ' - ' . $detalle->producto->descripcion
-                        : 'Producto eliminado' }}</td>
+                    <td class="descripcion">{{ $detalle->producto->codigo . ' - ' . $detalle->producto->descripcion . ' - ' . $detalle->producto->marca->marca }}</td>
                     <td class="cantidad">{{ $detalle->cantidad }}</td>
                     <td class="precio">Q {{ number_format($detalle->precio, 2) }}</td>
                     <td class="subtotal">Q {{ number_format($detalle->cantidad * $detalle->precio, 2) }}</td>

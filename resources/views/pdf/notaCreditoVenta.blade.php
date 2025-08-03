@@ -116,7 +116,6 @@
         <table>
             <tr>
                 <th>Cantidad Devuelta</th>
-                <th>Código</th>
                 <th>Descripción</th>
                 <th>Precio</th>
                 <th>Sub-Total</th>
@@ -127,9 +126,7 @@
                         <td>{{ $dt->devuelto }}</td>
                         <td>{{ $dt->producto->codigo }}</td>
                         <td style="text-align: left;">
-                            {{ $dt->producto->descripcion }},
-                            {{-- {{ $dt->producto->presentacion->presentacion }}, --}}
-                            {{ $dt->producto->marca->marca }}
+                            {{ $dt->producto->codigo . ' - ' . $dt->producto->descripcion . ' - ' . $dt->producto->marca->marca }}
                         </td>
                         <td style="text-align: right;">{{ Number::currency($dt->precio, 'GTQ') }}</td>
                         <td style="text-align: right;">{{ Number::currency($dt->devuelto * $dt->precio, 'GTQ') }}
