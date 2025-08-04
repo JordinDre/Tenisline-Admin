@@ -2,42 +2,43 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use App\Filament\Ventas\Resources\VentaResource;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\VentaController;
+use Closure;
+use App\Models\Pago;
+use App\Models\User;
 use App\Models\Banco;
+use App\Models\Venta;
 use App\Models\Cierre;
-use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
-use App\Models\Municipio;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use App\Models\User;
-use App\Models\Venta;
-use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
-use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\Municipio;
+use Illuminate\Support\Str;
+use App\Models\Departamento;
 use Illuminate\Support\Facades\DB;
+use Filament\Forms\Components\Grid;
+use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Resources\Pages\CreateRecord;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Validation\ValidationException;
+use App\Filament\Ventas\Resources\VentaResource;
 
 class CreateVenta extends CreateRecord
 {
@@ -266,8 +267,8 @@ class CreateVenta extends CreateRecord
                                         })
                                         ->label('Facturar CF')
                                         ->columnSpan(3),
-                                    /* Toggle::make('aplicar_descuento')
-                                        ->label('Promo Junio')
+                                    Toggle::make('aplicar_descuento')
+                                        ->label('Promo ')
                                         ->inline(false)
                                         ->dehydrated(false)
                                         ->visible(fn (Get $get): bool => ! empty($get('bodega_id')))
@@ -290,7 +291,6 @@ class CreateVenta extends CreateRecord
                                                 }
 
                                                 $set('backup_detalles', $productosOriginales);
-                                                // Desactivar descuentos individuales
                                                 $detalles = collect($descuento)->map(function ($item) {
                                                     $item['aplicar_descuento_item'] = false;
 
@@ -308,6 +308,22 @@ class CreateVenta extends CreateRecord
                                                     ->title('Descuento aplicado a los pares más económicos')
                                                     ->success()
                                                     ->send();
+
+                                                    $detalles = $get('../../detalles') ?? [];
+
+                                                    $descuentosActivos = collect($detalles)->filter(function ($detalle) {
+                                                        return ($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false);
+                                                    })->count();
+
+                                                    if ($descuentosActivos > 0 || $get('../../aplicar_descuento')) {
+                                                        Notification::make()
+                                                            ->title('Solo se puede aplicar un tipo de descuento a la vez.')
+                                                            ->danger()
+                                                            ->send();
+                                                    
+                                                        $set('oferta_20', false); // o 'oferta' según el toggle
+                                                        return;
+                                                    }
                                             } else {
                                                 $original = $get('backup_detalles');
 
@@ -330,7 +346,7 @@ class CreateVenta extends CreateRecord
                                                         ->send();
                                                 }
                                             }
-                                        }), */
+                                        }),
                                     Repeater::make('detalles')
                                         ->label('')
                                         ->relationship()
@@ -343,6 +359,9 @@ class CreateVenta extends CreateRecord
                                             'xl' => 3,
                                         ])
                                         ->schema([
+                                            Hidden::make('uuid')
+                                                ->default(fn () => (string) Str::uuid())
+                                                ->dehydrated(false),
                                             Toggle::make('oferta_20')
                                                 ->label('20 %')
                                                 ->inline(false)
@@ -380,28 +399,30 @@ class CreateVenta extends CreateRecord
                                                     if ($state && $esColaborador) {
                                                         $precioFinal = round($precioOriginal * 0.75, 2);
                                                     }
-                                                    if ($state) {
-                                                        if ($get('../../aplicar_descuento')) {
-                                                            Notification::make()
-                                                                ->title('Solo se puede aplicar un tipo de descuento a la vez.')
-                                                                ->danger()
-                                                                ->send();
+                                                    $miUuid = $get('uuid');
+                                                    $detalles = $get('../../detalles') ?? [];
 
-                                                            $set('oferta_20', false);
-
-                                                            return;
+                                                    $hayOtroConDescuento = collect($detalles)->filter(function ($detalle) use ($miUuid) {
+                                                        if (($detalle['uuid'] ?? null) === $miUuid) {
+                                                            return false; // Soy el mismo ítem, ignorar
                                                         }
 
-                                                        if ($get('oferta')) {
-                                                            Notification::make()
-                                                                ->title('Solo se puede aplicar un tipo de descuento a la vez.')
-                                                                ->danger()
-                                                                ->send();
+                                                        return ($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false);
+                                                    })->isNotEmpty();
 
-                                                            $set('oferta_20', false);
+                                                    if ($get('../../aplicar_descuento') || $hayOtroConDescuento) {
+                                                        \Filament\Notifications\Notification::make()
+                                                            ->title('Solo se puede aplicar un tipo de descuento a la vez.')
+                                                            ->danger()
+                                                            ->send();
 
-                                                            return;
-                                                        }
+                                                        $set('oferta_20', false); // Cancelamos el cambio
+                                                        return;
+                                                    }
+
+                                                    // Si este toggle se activa, desactiva el otro
+                                                    if ($get('oferta_20')) {
+                                                        $set('oferta', false);
                                                     }
 
                                                     $set('precio', $precioFinal);
@@ -449,15 +470,30 @@ class CreateVenta extends CreateRecord
                                                         $precioFinal = $precioOferta;
                                                     }
 
-                                                    if ($state && $get('oferta_20')) {
-                                                        Notification::make()
+                                                    $miUuid = $get('uuid');
+                                                    $detalles = $get('../../detalles') ?? [];
+
+                                                    $hayOtroConDescuento = collect($detalles)->filter(function ($detalle) use ($miUuid) {
+                                                        if (($detalle['uuid'] ?? null) === $miUuid) {
+                                                            return false; // Soy el mismo ítem, ignorar
+                                                        }
+
+                                                        return ($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false);
+                                                    })->isNotEmpty();
+
+                                                    if ($get('../../aplicar_descuento') || $hayOtroConDescuento) {
+                                                        \Filament\Notifications\Notification::make()
                                                             ->title('Solo se puede aplicar un tipo de descuento a la vez.')
                                                             ->danger()
                                                             ->send();
 
-                                                        $set('oferta', false);
-
+                                                        $set('oferta', false); // Cancelamos el cambio
                                                         return;
+                                                    }
+
+                                                    // Si este toggle se activa, desactiva el otro
+                                                    if ($get('oferta')) {
+                                                        $set('oferta_20', false);
                                                     }
 
                                                     $set('precio', $precioFinal);
