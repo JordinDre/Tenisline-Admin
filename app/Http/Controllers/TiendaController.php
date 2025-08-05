@@ -257,8 +257,28 @@ class TiendaController extends Controller
                         ->toArray()
                     : null,
 
-                // Siempre enviar la bodega con más stock
+                // Siempre enviar la bodega con más stock (solo Zacapa y Chiquimula, excluyendo Mal estado y Traslado)
                 'bodega_destacada' => $producto->inventario
+                    ->filter(function ($inv) {
+                        // Excluir bodegas con ID 3 (Mal estado) y 4 (Traslado)
+                        if ($inv->bodega_id == 3 || $inv->bodega_id == 4) {
+                            return false;
+                        }
+
+                        // Solo incluir bodegas que estén en Zacapa o Chiquimula
+                        $bodega = $inv->bodega;
+                        if (! $bodega) {
+                            return false;
+                        }
+
+                        // Verificar si la bodega está en Zacapa o Chiquimula
+                        $municipio = $bodega->municipio;
+                        if (! $municipio) {
+                            return false;
+                        }
+
+                        return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula']);
+                    })
                     ->sortByDesc('existencia')
                     ->map(fn ($inv) => [
                         'bodega' => $inv->bodega->bodega ?? 'Desconocida',
