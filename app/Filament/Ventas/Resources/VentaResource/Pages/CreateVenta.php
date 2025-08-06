@@ -39,10 +39,13 @@ use Filament\Resources\Pages\CreateRecord;
 use App\Http\Controllers\ProductoController;
 use Illuminate\Validation\ValidationException;
 use App\Filament\Ventas\Resources\VentaResource;
+use App\Filament\Traits\ManageDiscountLogic;
 
 class CreateVenta extends CreateRecord
 {
     protected static string $resource = VentaResource::class;
+
+    use ManageDiscountLogic;
 
     protected $subtotalOriginal;
 
@@ -273,80 +276,7 @@ class CreateVenta extends CreateRecord
                                         ->dehydrated(false)
                                         ->visible(fn (Get $get): bool => ! empty($get('bodega_id')))
                                         ->reactive()
-                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                            if ($state) {
-                                                $productosOriginales = $get('detalles');
-
-                                                $descuento = \App\Helpers\DescuentosHelper::aplicarDescuentoMitadPorPar($productosOriginales);
-
-                                                if (empty($descuento)) {
-                                                    Notification::make()
-                                                        ->title('Debes seleccionar al menos 2 pares para aplicar el descuento')
-                                                        ->danger()
-                                                        ->send();
-
-                                                    $set('aplicar_descuento', false);
-
-                                                    return;
-                                                }
-
-                                                $set('backup_detalles', $productosOriginales);
-                                                $detalles = collect($descuento)->map(function ($item) {
-                                                    $item['aplicar_descuento_item'] = false;
-
-                                                    return $item;
-                                                })->toArray();
-
-                                                $set('backup_detalles', $productosOriginales);
-                                                $set('detalles', $detalles);
-
-                                                $subtotalGeneral = collect($descuento)->sum(fn ($item) => $item['cantidad'] * $item['precio']);
-                                                $set('subtotal', $subtotalGeneral);
-                                                $set('total', $subtotalGeneral);
-
-                                                Notification::make()
-                                                    ->title('Descuento aplicado a los pares más económicos')
-                                                    ->success()
-                                                    ->send();
-
-                                                    $detalles = $get('../../detalles') ?? [];
-
-                                                    $descuentosActivos = collect($detalles)->filter(function ($detalle) {
-                                                        return ($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false);
-                                                    })->count();
-
-                                                    if ($descuentosActivos > 0 || $get('../../aplicar_descuento')) {
-                                                        Notification::make()
-                                                            ->title('Solo se puede aplicar un tipo de descuento a la vez.')
-                                                            ->danger()
-                                                            ->send();
-                                                    
-                                                        $set('oferta_20', false); // o 'oferta' según el toggle
-                                                        return;
-                                                    }
-                                            } else {
-                                                $original = $get('backup_detalles');
-
-                                                $subtotalGeneral = collect($original)->sum(fn ($item) => $item['cantidad'] * $item['precio']);
-                                                $set('subtotal', $subtotalGeneral);
-                                                $set('total', $subtotalGeneral);
-
-                                                if ($original) {
-                                                    $original = collect($original)->map(function ($item) {
-                                                        $item['aplicar_descuento_item'] = false;
-
-                                                        return $item;
-                                                    })->toArray();
-
-                                                    $set('detalles', $original);
-
-                                                    Notification::make()
-                                                        ->title('Descuento eliminado, productos restaurados')
-                                                        ->info()
-                                                        ->send();
-                                                }
-                                            }
-                                        }),
+                                        ->afterStateUpdated(fn ($state, Get $get, Set $set) => $this->handleGlobalDiscountToggle($state, $get, $set)),
                                     Repeater::make('detalles')
                                         ->label('')
                                         ->relationship()
@@ -382,61 +312,20 @@ class CreateVenta extends CreateRecord
                                                 })
 
                                                 ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
-                                                    $cantidad = $get('cantidad') ?? 1;
-                                                    $precioOriginal = $get('precio_original') ?? 0;
-                                                    $precioFinal = $precioOriginal;
-
-                                                    $clienteId = $get('../../cliente_id');
-                                                    $cliente = User::with('roles')->find($clienteId);
-                                                    $roles = $cliente?->getRoleNames() ?? collect();
-                                                    $esClienteApertura = $roles->contains('cliente_apertura');
-                                                    $esColaborador = $roles->contains('colaborador');
-
-                                                    if ($state && $esClienteApertura) {
-                                                        $precioFinal = round($precioOriginal * 0.8, 2);
-                                                    }
-
-                                                    if ($state && $esColaborador) {
-                                                        $precioFinal = round($precioOriginal * 0.75, 2);
-                                                    }
-                                                    $miUuid = $get('uuid');
-                                                    $detalles = $get('../../detalles') ?? [];
-
-                                                    $hayOtroConDescuento = collect($detalles)->filter(function ($detalle) use ($miUuid) {
-                                                        if (($detalle['uuid'] ?? null) === $miUuid) {
-                                                            return false; // Soy el mismo ítem, ignorar
+                                                    $this->handleItemDiscountToggle(
+                                                        $state,
+                                                        $get,
+                                                        $set,
+                                                        'oferta_20',
+                                                        function ($precioOriginal) use ($get) {
+                                                            $clienteId = $get('../../cliente_id');
+                                                            $cliente = \App\Models\User::find($clienteId);
+                                                            if ($cliente?->hasRole('colaborador')) {
+                                                                return round($precioOriginal * 0.75, 2);
+                                                            }
+                                                            return round($precioOriginal * 0.80, 2);
                                                         }
-
-                                                        return ($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false);
-                                                    })->isNotEmpty();
-
-                                                    if ($get('../../aplicar_descuento') || $hayOtroConDescuento) {
-                                                        \Filament\Notifications\Notification::make()
-                                                            ->title('Solo se puede aplicar un tipo de descuento a la vez.')
-                                                            ->danger()
-                                                            ->send();
-
-                                                        $set('oferta_20', false); // Cancelamos el cambio
-                                                        return;
-                                                    }
-
-                                                    // Si este toggle se activa, desactiva el otro
-                                                    if ($get('oferta_20')) {
-                                                        $set('oferta', false);
-                                                    }
-
-                                                    $set('precio', $precioFinal);
-                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
-
-                                                    $productos = $get('../../detalles') ?? [];
-                                                    $totalGeneral = 0;
-                                                    $subtotalGeneral = 0;
-                                                    foreach ($productos as $productoItem) {
-                                                        $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
-                                                        $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
-                                                    }
-                                                    $set('../../subtotal', round($subtotalGeneral, 2));
-                                                    $set('../../total', round($totalGeneral, 2));
+                                                    );
                                                 }),
                                             Toggle::make('oferta')
                                                 ->label('Precio Oferta')
@@ -445,69 +334,20 @@ class CreateVenta extends CreateRecord
                                                 ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1])
                                                 ->reactive()
                                                 ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
-                                                    $cantidad = $get('cantidad') ?? 1;
-                                                    $productoId = $get('producto_id');
-                                                    $producto = Producto::find($productoId);
-                                                    $precioOriginal = $producto?->precio_venta ?? 0;
-                                                    $precioOferta = $producto?->precio_oferta ?? 0;
-                                                    $precioFinal = $precioOriginal;
+                                                    $totalPares = collect($get('../../detalles'))->sum('cantidad');
 
-                                                    $productos = $get('../../detalles') ?? [];
-                                                    $totalPares = array_sum(array_column($productos, 'cantidad'));
-
-                                                    if ($state && $totalPares < 2) {
-                                                        Notification::make()
-                                                            ->title('Debes seleccionar al menos 2 pares para aplicar esta oferta.')
-                                                            ->danger()
-                                                            ->send();
-
-                                                        $set('oferta', false);
-
-                                                        return;
-                                                    }
-
-                                                    if ($state && $precioOferta > 0) {
-                                                        $precioFinal = $precioOferta;
-                                                    }
-
-                                                    $miUuid = $get('uuid');
-                                                    $detalles = $get('../../detalles') ?? [];
-
-                                                    $hayOtroConDescuento = collect($detalles)->filter(function ($detalle) use ($miUuid) {
-                                                        if (($detalle['uuid'] ?? null) === $miUuid) {
-                                                            return false; // Soy el mismo ítem, ignorar
+                                                    $this->handleItemDiscountToggle(
+                                                        $state,
+                                                        $get,
+                                                        $set,
+                                                        'oferta',
+                                                        function ($precioOriginal) use ($get) {
+                                                            // Lógica de cálculo de precio específica para este toggle
+                                                            $producto = Producto::find($get('producto_id'));
+                                                            $precioOferta = $producto?->precio_oferta ?? 0;
+                                                            return ($precioOferta > 0) ? $precioOferta : $precioOriginal;
                                                         }
-
-                                                        return ($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false);
-                                                    })->isNotEmpty();
-
-                                                    if ($get('../../aplicar_descuento') || $hayOtroConDescuento) {
-                                                        \Filament\Notifications\Notification::make()
-                                                            ->title('Solo se puede aplicar un tipo de descuento a la vez.')
-                                                            ->danger()
-                                                            ->send();
-
-                                                        $set('oferta', false); // Cancelamos el cambio
-                                                        return;
-                                                    }
-
-                                                    // Si este toggle se activa, desactiva el otro
-                                                    if ($get('oferta')) {
-                                                        $set('oferta_20', false);
-                                                    }
-
-                                                    $set('precio', $precioFinal);
-                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
-
-                                                    $productos = $get('../../detalles') ?? [];
-                                                    $totalGeneral = 0;
-                                                    $subtotalGeneral = 0;
-                                                    foreach ($productos as $productoItem) {
-                                                        $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
-                                                        $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
-                                                    }
-                                                    $set('../../subtotal', round($subtotalGeneral, 2));
-                                                    $set('../../total', round($totalGeneral, 2));
+                                                    );
                                                 }),
                                             Select::make('producto_id')
                                                 ->label('Producto')
