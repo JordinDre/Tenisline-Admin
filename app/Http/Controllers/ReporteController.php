@@ -275,4 +275,55 @@ class ReporteController extends Controller
 
         return Excel::download(new ReporteResultadosExport($consulta), 'Resultados Mes: '.$request->mes.' Año: '.$request->año.'.xlsx', \Maatwebsite\Excel\Excel::XLSX);
     }
+
+    public function VentasGeneral(Request $request)
+    {
+        $fecha_incial = $request->fecha_incial;
+        $fecha_final = $request->fecha_final;
+
+        $consulta = "
+            select
+                ventas.created_at as fecha_venta,
+                facturas.fel_numero as numero_factura,
+                ventas.estado,
+                users.id,
+                users.razon_social,
+                users.nit,
+                productos.precio_oferta,
+                productos.precio_venta,
+                productos.precio_compra,
+                bodegas.bodega,
+                productos.codigo,
+                productos.descripcion,
+                marcas.marca,
+                productos.talla,
+                productos.genero,
+                (
+                    select
+                        u.name
+                    from
+                        users u
+                    where
+                        u.id = ventas.asesor_id
+                ) as asesor
+            from
+                ventas
+                inner join facturas on facturas.facturable_id = ventas.id
+                inner join users on users.id = ventas.cliente_id
+                inner join venta_detalles on venta_detalles.venta_id = ventas.id
+                inner join productos on venta_detalles.producto_id = productos.id
+                inner join marcas on productos.marca_id = marcas.id
+                inner join bodegas on ventas.bodega_id = bodegas.id
+            WHERE
+                ventas.created_at BETWEEN ?
+                AND ?
+        ";
+
+        $data = DB::select($consulta, [
+            $fecha_incial,
+            $fecha_final,
+        ]);
+        
+        return Excel::download(new ReporteVentasClientesExport($data), 'Ventas General fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
+    }
 }
