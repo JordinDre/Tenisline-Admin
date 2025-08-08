@@ -29,6 +29,17 @@ trait ManageDiscountLogic
         $activeIndividualDiscounts = $this->countActiveIndividualDiscounts($detalles);
         $availableSlots = $this->getAvailableDiscountSlots($detalles);
 
+        $totalProductos = collect($detalles)->sum('cantidad');
+        if ($totalProductos === 1) {
+            Notification::make()
+                ->title('Descuento no aplicable')
+                ->body('El descuento global solo se puede aplicar a partir de 2 productos.')
+                ->danger()
+                ->send();
+            $set('aplicar_descuento', false);
+            return;
+        }
+
         if ($state && $activeIndividualDiscounts >= $availableSlots) {
             Notification::make()
                 ->title('Límite de promociones alcanzado')
@@ -124,6 +135,28 @@ trait ManageDiscountLogic
         }
 
         $detalles = $this->getDetallesArray($get);
+        $totalProductos = collect($detalles)->sum('cantidad');
+
+        if ($totalProductos === 1) {
+            if ($toggleName === 'oferta') {
+                Notification::make()
+                    ->title('Descuento no aplicable')
+                    ->body('El descuento "oferta" requiere al menos 2 productos.')
+                    ->danger()
+                    ->send();
+                $set($toggleName, false);
+                return;
+            }
+            $precioOriginal = $get('precio_original') ?? 0;
+            $precioFinal = $priceCalculationFn($precioOriginal);
+            
+            $set('precio', $precioFinal);
+            $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
+            
+            $this->updateOrderTotals($get, $set);
+            return;
+        }
+
         $activeIndividualDiscounts = $this->countActiveIndividualDiscounts($detalles);
         $isGlobalActive = $get('aplicar_descuento') ?? $get('../../aplicar_descuento') ?? false;
 
