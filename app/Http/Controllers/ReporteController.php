@@ -291,7 +291,7 @@ class ReporteController extends Controller
                 users.nit,
                 productos.precio_oferta,
                 productos.precio_venta,
-                productos.precio_compra,
+                productos.precio_costo,
                 bodegas.bodega,
                 productos.codigo,
                 productos.descripcion,
