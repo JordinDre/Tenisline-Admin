@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ReportePagosExport;
-use App\Exports\ReporteResultadosExport;
-use App\Exports\ReporteVentasClientesExport;
-use App\Exports\ReporteVentasDetalladasExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\ReportePagosExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ReporteResultadosExport;
+use App\Exports\ReporteVentasClientesExport;
+use App\Exports\ReporteHistorialClienteExport;
+use App\Exports\ReporteVentasDetalladasExport;
 
 class ReporteController extends Controller
 {
@@ -325,5 +326,65 @@ class ReporteController extends Controller
         ]);
         
         return Excel::download(new ReporteVentasClientesExport($data), 'Ventas General fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
+    }
+
+    public function HistorialCliente(Request $request)
+    {
+        $consulta = "
+            select
+            users.name,
+            GROUP_CONCAT(roles.name SEPARATOR ', ') AS roles,
+            users.razon_social,
+            ventas.created_at as fecha_venta,
+            ventas.estado,
+            venta_detalles.cantidad,
+            venta_detalles.subtotal,
+            bodegas.bodega,
+            productos.codigo,
+            productos.descripcion,
+            marcas.marca,
+            productos.talla,
+            productos.genero,
+            (
+                select
+                    u.name
+                from
+                    users u
+                where
+                    u.id = ventas.asesor_id
+            ) as asesor
+        from
+            ventas
+            inner join model_has_roles on model_has_roles.model_id = ventas.cliente_id
+            inner join roles on roles.id = model_has_roles.role_id
+            inner join users on users.id = ventas.cliente_id
+            inner join venta_detalles on venta_detalles.venta_id = ventas.id
+            inner join productos on venta_detalles.producto_id = productos.id
+            inner join marcas on productos.marca_id = marcas.id
+            inner join bodegas on ventas.bodega_id = bodegas.id
+        WHERE
+            ventas.cliente_id = ?
+        GROUP BY
+            ventas.id,
+            users.name,
+            users.razon_social,
+            ventas.created_at,
+            ventas.estado,
+            venta_detalles.cantidad,
+            venta_detalles.subtotal,
+            bodegas.bodega,
+            productos.codigo,
+            productos.descripcion,
+            marcas.marca,
+            productos.talla,
+            productos.genero,
+            asesor
+        ";
+
+        $data = DB::select($consulta, [
+            $request->cliente_id
+        ]);
+        
+        return Excel::download(new ReporteHistorialClienteExport($data), 'Historial del cliente con id: '.$request->cliente_id.'.xlsx');
     }
 }
