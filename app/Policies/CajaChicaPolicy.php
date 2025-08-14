@@ -111,13 +111,13 @@ class CajaChicaPolicy
     {
         $estadosPermitidos = ['creada'];
 
-        return $user->hasPermissionTo('annular_caja_chica') && in_array($compra->estado, $estadosPermitidos);
+        return $user->hasPermissionTo('annular_caja::chica') && in_array($compra->estado, $estadosPermitidos);
     }
 
     public function confirm(User $user, CajaChica $compra): bool
     {
         $estadosPermitidos = ['creada'];
 
-        return $user->hasPermissionTo('confirm_caja_chica') && in_array($compra->estado, $estadosPermitidos);
+        return $user->hasPermissionTo('confirm_caja::chica') && in_array($compra->estado, $estadosPermitidos);
     }
 }
