@@ -69,11 +69,11 @@
         }
 
         /* Las columnas de cantidad, precio y subtotal tienen ancho fijo */
-        .table .cantidad,
-        .table .precio,
+        .table .cantidad { width: 10%; },
+        .table .precio { width: 25%; },
         .table .subtotal {
             text-align: center;
-            width: 20%;
+            width: 25%;
             white-space: nowrap;
         }
     </style>

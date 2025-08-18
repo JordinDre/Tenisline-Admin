@@ -75,7 +75,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->schema([
                         TextInput::make('codigo')
                             ->required()
-                            ->maxLength(100),
+                            ->maxLength(100)
+                            ->unique(table: Producto::class),
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250)
