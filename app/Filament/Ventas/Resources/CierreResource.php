@@ -2,19 +2,19 @@
 
 namespace App\Filament\Ventas\Resources;
 
+use App\Filament\Ventas\Resources\CierreResource\Pages;
+use App\Models\Cierre;
 use Closure;
 use Filament\Forms;
-use Filament\Tables;
-use App\Models\Cierre;
-use Filament\Forms\Get;
 use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\MaxWidth;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
-use App\Filament\Ventas\Resources\CierreResource\Pages;
+use Illuminate\Database\Eloquent\Builder;
 
 class CierreResource extends Resource
 {
@@ -58,7 +58,7 @@ class CierreResource extends Resource
                             }
 
                             $cierreHoy = Cierre::where('user_id', auth()->id())
-                                ->whereDate('apertura', now()->toDateString())                           
+                                ->whereDate('apertura', now()->toDateString())
                                 ->exists();
 
                             if ($cierreHoy) {
@@ -81,7 +81,7 @@ class CierreResource extends Resource
 
     public static function table(Table $table): Table
     {
-        
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('bodega.bodega')

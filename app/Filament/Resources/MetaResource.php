@@ -77,14 +77,14 @@ class MetaResource extends Resource implements HasShieldPermissions
                             if ($get('user_id')) {
                                 $query->whereHas('user', function (Builder $q) use ($get) {
                                     $q->where('users.id', $get('user_id'))
-                                    ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                                    ->where('bodega', 'not like', '%bodega%');
+                                        ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                                        ->where('bodega', 'not like', '%bodega%');
                                 });
                             }
                         }
                     )
                     ->optionsLimit(20)
-                    ->reactive() 
+                    ->reactive()
                     ->required(),
                 Forms\Components\Select::make('mes')
                     ->options(Functions::obtenerMeses())
@@ -199,5 +199,4 @@ class MetaResource extends Resource implements HasShieldPermissions
                 SoftDeletingScope::class,
             ]);
     }
-
 }

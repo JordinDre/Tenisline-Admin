@@ -65,7 +65,7 @@ class ReporteController extends Controller
             $fecha_incial,
             $fecha_final,
         ]);
-        
+
         return Excel::download(new ReporteVentasClientesExport($data), 'Ventas fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
     }
 
@@ -281,7 +281,7 @@ class ReporteController extends Controller
         $fecha_incial = $request->fecha_incial;
         $fecha_final = $request->fecha_final;
 
-        $consulta = "
+        $consulta = '
             select
                 ventas.created_at as fecha_venta,
                 facturas.fel_numero as numero_factura,
@@ -317,13 +317,13 @@ class ReporteController extends Controller
             WHERE
                 ventas.created_at BETWEEN ?
                 AND ?
-        ";
+        ';
 
         $data = DB::select($consulta, [
             $fecha_incial,
             $fecha_final,
         ]);
-        
+
         return Excel::download(new ReporteVentasClientesExport($data), 'Ventas General fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
     }
 }

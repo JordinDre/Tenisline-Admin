@@ -2,22 +2,22 @@
 
 namespace App\Filament\Inventario\Resources\InventarioResource\Pages;
 
-use App\Models\Kardex;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use App\Models\Producto;
+use App\Filament\Inventario\Resources\InventarioResource;
+use App\Http\Controllers\OrdenController;
+use App\Http\Controllers\ProductoController;
 use App\Models\Inventario;
+use App\Models\Kardex;
+use App\Models\Producto;
 use Filament\Actions\Action;
-use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use App\Http\Controllers\OrdenController;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
-use App\Http\Controllers\ProductoController;
-use App\Filament\Inventario\Resources\InventarioResource;
+use Illuminate\Support\Facades\DB;
 
 class ListInventarios extends ListRecords
 {
@@ -37,10 +37,10 @@ class ListInventarios extends ListRecords
                             'bodega',
                             'bodega',
                             fn (Builder $query) => $query
-                             ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
-                             )
-                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                             ->where('bodega', 'not like', '%bodega%')
+                                ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                                )
+                                ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                                ->where('bodega', 'not like', '%bodega%')
                         )
                         ->searchable()
                         ->preload()

@@ -2,12 +2,10 @@
 
 namespace App\Filament\Traits;
 
-use App\Helpers\DescuentosHelper; 
-use App\Models\Producto;
+use App\Helpers\DescuentosHelper;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Collection;
 
 trait ManageDiscountLogic
 {
@@ -21,7 +19,7 @@ trait ManageDiscountLogic
 
         return $detalles;
     }
-    
+
     protected function handleGlobalDiscountToggle(bool $state, Get $get, Set $set): void
     {
         $detalles = $get('detalles') ?? [];
@@ -37,6 +35,7 @@ trait ManageDiscountLogic
                 ->danger()
                 ->send();
             $set('aplicar_descuento', false);
+
             return;
         }
 
@@ -47,18 +46,20 @@ trait ManageDiscountLogic
                 ->danger()
                 ->send();
             $set('aplicar_descuento', false);
+
             return;
         }
 
         if ($state) {
             $detallesConDescuento = DescuentosHelper::aplicarDescuentoMitadPorPar($detalles);
-            
+
             if (is_null($detallesConDescuento)) {
                 Notification::make()->title('Debes seleccionar al menos 2 pares para aplicar el descuento')->danger()->send();
                 $set('aplicar_descuento', false);
+
                 return;
             }
-            
+
             $set('detalles', $detallesConDescuento);
             Notification::make()->title('Descuento global aplicado')->success()->send();
 
@@ -68,13 +69,14 @@ trait ManageDiscountLogic
                     $detalle['precio'] = $detalle['precio_original'];
                     $detalle['subtotal'] = ($detalle['precio'] ?? 0) * ($detalle['cantidad'] ?? 1);
                 }
+
                 return $detalle;
             })->toArray();
-            
+
             $set('detalles', $detalles);
             Notification::make()->title('Descuento global eliminado')->info()->send();
         }
-        
+
         $this->updateRootTotals($get, $set);
     }
 
@@ -85,6 +87,7 @@ trait ManageDiscountLogic
         $totalGeneral = collect($detalles)->sum(function ($item) {
             $precioItem = $item['precio'] ?? 0;
             $cantidadItem = $item['cantidad'] ?? 0;
+
             return round($precioItem * $cantidadItem, 2);
         });
 
@@ -99,6 +102,7 @@ trait ManageDiscountLogic
         $totalGeneral = collect($detalles)->sum(function ($item) {
             $precioItem = $item['precio'] ?? 0;
             $cantidadItem = $item['cantidad'] ?? 0;
+
             return round($precioItem * $cantidadItem, 2);
         });
 
@@ -112,25 +116,27 @@ trait ManageDiscountLogic
         $set('precio', $precioOriginal);
         $set('subtotal', round($precioOriginal * ($get('cantidad') ?? 1), 2));
     }
-    
+
     protected function getAvailableDiscountSlots(array $detalles): int
     {
         $totalProductos = collect($detalles)->sum('cantidad');
+
         return floor($totalProductos / 2);
     }
-    
+
     protected function countActiveIndividualDiscounts(array $detalles): int
     {
         return collect($detalles)
-            ->filter(fn($d) => ($d['oferta'] ?? false) || ($d['oferta_20'] ?? false))
+            ->filter(fn ($d) => ($d['oferta'] ?? false) || ($d['oferta_20'] ?? false))
             ->count();
     }
-    
+
     protected function handleItemDiscountToggle(bool $state, Get $get, Set $set, string $toggleName, callable $priceCalculationFn): void
     {
-        if (!$state) {
+        if (! $state) {
             $this->restoreOriginalPrice($get, $set);
-            $this->updateOrderTotals($get, $set); 
+            $this->updateOrderTotals($get, $set);
+
             return;
         }
 
@@ -145,15 +151,17 @@ trait ManageDiscountLogic
                     ->danger()
                     ->send();
                 $set($toggleName, false);
+
                 return;
             }
             $precioOriginal = $get('precio_original') ?? 0;
             $precioFinal = $priceCalculationFn($precioOriginal);
-            
+
             $set('precio', $precioFinal);
             $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
-            
+
             $this->updateOrderTotals($get, $set);
+
             return;
         }
 
@@ -170,18 +178,18 @@ trait ManageDiscountLogic
                 ->danger()
                 ->send();
             $set($toggleName, false);
+
             return;
         }
 
         $precioOriginal = $get('precio_original') ?? 0;
         $precioFinal = $priceCalculationFn($precioOriginal);
-        
+
         $set('precio', $precioFinal);
         $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
-        
+
         $this->updateOrderTotals($get, $set);
     }
-    
 
     protected function hasActiveConflict(Get $get, string $currentToggleName): bool
     {

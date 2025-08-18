@@ -2,44 +2,44 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
-use Closure;
-use App\Models\Pago;
-use App\Models\User;
+use App\Filament\Traits\ManageDiscountLogic;
+use App\Filament\Ventas\Resources\VentaResource;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VentaController;
 use App\Models\Banco;
-use App\Models\Venta;
 use App\Models\Cierre;
+use App\Models\Departamento;
 use App\Models\Escala;
 use App\Models\Factura;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use App\Models\Municipio;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
-use Filament\Forms\Form;
-use App\Models\Municipio;
-use Illuminate\Support\Str;
-use App\Models\Departamento;
-use Illuminate\Support\Facades\DB;
-use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use App\Http\Controllers\UserController;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
-use App\Http\Controllers\VentaController;
+use App\Models\User;
+use App\Models\Venta;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use App\Http\Controllers\ProductoController;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Filament\Ventas\Resources\VentaResource;
-use App\Filament\Traits\ManageDiscountLogic;
 
 class CreateVenta extends CreateRecord
 {
@@ -323,6 +323,7 @@ class CreateVenta extends CreateRecord
                                                             if ($cliente?->hasRole('colaborador')) {
                                                                 return round($precioOriginal * 0.75, 2);
                                                             }
+
                                                             return round($precioOriginal * 0.80, 2);
                                                         }
                                                     );
@@ -345,6 +346,7 @@ class CreateVenta extends CreateRecord
                                                             // Lógica de cálculo de precio específica para este toggle
                                                             $producto = Producto::find($get('producto_id'));
                                                             $precioOferta = $producto?->precio_oferta ?? 0;
+
                                                             return ($precioOferta > 0) ? $precioOferta : $precioOriginal;
                                                         }
                                                     );

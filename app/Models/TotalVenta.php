@@ -2,18 +2,17 @@
 
 namespace App\Models;
 
-use App\Models\Pago;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class TotalVenta extends Model
 {
-
     use HasFactory;
     use LogsActivity;
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

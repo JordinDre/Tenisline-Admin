@@ -5,7 +5,6 @@ namespace App\Policies;
 use App\Models\CajaChica;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Auth\Access\Response;
 
 class CajaChicaPolicy
 {
@@ -40,7 +39,7 @@ class CajaChicaPolicy
      */
     public function update(User $user, CajaChica $cajachica): bool
     {
-        return  false /* $user->can('update_bodega') */ /* $user->hasRole(['super_admin', 'administrador']) */;
+        return false /* $user->can('update_bodega') */ /* $user->hasRole(['super_admin', 'administrador']) */;
     }
 
     /**
@@ -48,7 +47,7 @@ class CajaChicaPolicy
      */
     public function delete(User $user, CajaChica $cajachica): bool
     {
-        return  false /* $user->can('delete_bodega') */ /* $user->hasRole(['super_admin', 'administrador']) */;
+        return false /* $user->can('delete_bodega') */ /* $user->hasRole(['super_admin', 'administrador']) */;
     }
 
     /**

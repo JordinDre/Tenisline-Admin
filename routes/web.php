@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PDFController;
-use App\Http\Controllers\TiendaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\TiendaController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
@@ -26,7 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/restar-carrito/{id}', [TiendaController::class, 'restarCarrito'])->name('restar.carrito');
     Route::post('/eliminar-carrito/{id}', [TiendaController::class, 'eliminarCarrito'])->name('eliminar.carrito'); */
 
-    #REPORTES
+    // REPORTES
     Route::get('/reporte/ventas', [ReporteController::class, 'Ventas'])->name('reporte.ventas');
     Route::get('/reporte/ventas-detallado', [ReporteController::class, 'VentasDetallado'])->name('reporte.ventas-detallado');
     Route::get('/reporte/pagos', [ReporteController::class, 'Pagos'])->name('reporte.pagos');

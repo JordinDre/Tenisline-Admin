@@ -84,7 +84,7 @@ class PDFController extends Controller
             'asesor',
             'detalles.producto.marca',
             'factura',
-            'devolucion'
+            'devolucion',
         ])->findOrFail($id);
         $emisor = $venta->bodega_id == 6 ? config('services.fel2') : config('services.fel');
         $html = view('pdf.notaCreditoVenta', compact('venta', 'emisor'))->render();

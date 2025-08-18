@@ -13,8 +13,6 @@ use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\View\View;
-use Filament\Support\Enums\MaxWidth;
 
 class ListVentas extends ListRecords
 {
@@ -36,7 +34,7 @@ class ListVentas extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
-            
+
             /* Actions\Action::make('liquidarVentas')
                 ->label('Liquidar Venta del Día')
                 ->icon('heroicon-o-check-circle')
