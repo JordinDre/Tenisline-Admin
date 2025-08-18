@@ -2,39 +2,40 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Filament\Ventas\Resources\UserResource\Pages;
-use App\Http\Controllers\UserController;
-use App\Models\Bodega;
-use App\Models\Departamento;
-use App\Models\Municipio;
-use App\Models\Observacion;
-use App\Models\Orden;
-use App\Models\TipoPago;
-use App\Models\User;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use App\Models\User;
+use Filament\Tables;
+use App\Models\Orden;
+use App\Models\Bodega;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\Municipio;
 use Filament\Tables\Table;
+use App\Models\Observacion;
+use App\Models\Departamento;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
+use Filament\Forms\Components\Grid;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use App\Http\Controllers\UserController;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Enums\ActionsPosition;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Ventas\Resources\UserResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class UserResource extends Resource implements HasShieldPermissions
 {
@@ -418,6 +419,67 @@ class UserResource extends Resource implements HasShieldPermissions
                             ['record' => $record],
                         ))
                         ->label('Desactivar'),
+                    Tables\Actions\Action::make('historial')
+                        ->icon('heroicon-o-document-text')
+                        ->modalWidth(MaxWidth::ThreeExtraLarge)
+                        ->modalContent(fn ($record): View => view(
+                            'filament.pages.actions.historial-ventas',
+                            [
+                                'ventas' => DB::select("
+                                                select
+                                                users.name,
+                                                GROUP_CONCAT(roles.name SEPARATOR ', ') AS roles,
+                                                users.razon_social,
+                                                ventas.created_at as fecha_venta,
+                                                ventas.estado,
+                                                venta_detalles.cantidad,
+                                                venta_detalles.subtotal,
+                                                bodegas.bodega,
+                                                productos.codigo,
+                                                productos.descripcion,
+                                                marcas.marca,
+                                                productos.talla,
+                                                productos.genero,
+                                                (
+                                                    select
+                                                        u.name
+                                                    from
+                                                        users u
+                                                    where
+                                                        u.id = ventas.asesor_id
+                                                ) as asesor
+                                            from
+                                                ventas
+                                                inner join model_has_roles on model_has_roles.model_id = ventas.cliente_id
+                                                inner join roles on roles.id = model_has_roles.role_id
+                                                inner join users on users.id = ventas.cliente_id
+                                                inner join venta_detalles on venta_detalles.venta_id = ventas.id
+                                                inner join productos on venta_detalles.producto_id = productos.id
+                                                inner join marcas on productos.marca_id = marcas.id
+                                                inner join bodegas on ventas.bodega_id = bodegas.id
+                                            WHERE
+                                                ventas.cliente_id = ?
+                                            GROUP BY
+                                                ventas.id,
+                                                users.name,
+                                                users.razon_social,
+                                                ventas.created_at,
+                                                ventas.estado,
+                                                venta_detalles.cantidad,
+                                                venta_detalles.subtotal,
+                                                bodegas.bodega,
+                                                productos.codigo,
+                                                productos.descripcion,
+                                                marcas.marca,
+                                                productos.talla,
+                                                productos.genero,
+                                                asesor
+                                            ", [
+                                                $record->id
+                                ]),
+                            ],
+                        ))
+                        ->label('Historial'),
                     Tables\Actions\RestoreAction::make(),
                 ])
                     ->link()
