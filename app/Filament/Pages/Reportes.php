@@ -155,6 +155,24 @@ class Reportes extends Page
 
                 return response()->redirectTo($url);
             }),
+            Action::make('VentasDiaria')
+                ->label('Venta Diaria')
+                ->icon('heroicon-o-document-text')
+                ->modalHeading('Generar Reporte Venta Diaria')
+                ->form([
+                    DatePicker::make('fecha_incial')
+                        ->required(),
+                    DatePicker::make('fecha_final')
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    $url = route('reporte.ventasdiaria', [
+                        'fecha_incial' => $data['fecha_incial'],
+                        'fecha_final' => $data['fecha_final'],
+                    ]);
+
+                return response()->redirectTo($url);
+            }),
             Action::make('HistorialCliente')
             ->label('Historial Cliente')
             ->icon('heroicon-o-document-text')

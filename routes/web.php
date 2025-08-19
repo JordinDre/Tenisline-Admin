@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/reporte/resultados', [ReporteController::class, 'Resultados'])->name('reporte.resultados');
     Route::get('/reporte/ventas-general', [ReporteController::class, 'VentasGeneral'])->name('reporte.ventasgeneral');
     Route::get('/reporte/historial-cliente', [ReporteController::class, 'HistorialCliente'])->name('reporte.historialcliente');
+    Route::get('/reporte/ventas-diaria', [ReporteController::class, 'VentasDiaria'])->name('reporte.ventasdiaria');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

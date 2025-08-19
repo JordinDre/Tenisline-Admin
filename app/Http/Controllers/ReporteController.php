@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Exports\ReporteDiarioExport;
+use App\Exports\ReporteHistorialClienteExport;
 use App\Exports\ReportePagosExport;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ReporteResultadosExport;
 use App\Exports\ReporteVentasClientesExport;
-use App\Exports\ReporteHistorialClienteExport;
 use App\Exports\ReporteVentasDetalladasExport;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReporteController extends Controller
 {
@@ -291,7 +292,7 @@ class ReporteController extends Controller
                 users.razon_social,
                 users.nit,
                 productos.precio_oferta,
-                productos.precio_venta,
+                venta_detalles.precio,
                 productos.precio_costo,
                 bodegas.bodega,
                 productos.codigo,
@@ -318,6 +319,7 @@ class ReporteController extends Controller
             WHERE
                 ventas.created_at BETWEEN ?
                 AND ?
+                AND ventas.estado NOT IN ("devuelta", "anulada", "parcialmente_devuelta", "creada")
         ';
 
         $data = DB::select($consulta, [
@@ -382,9 +384,71 @@ class ReporteController extends Controller
         ";
 
         $data = DB::select($consulta, [
-            $request->cliente_id
+            $request->cliente_id,
         ]);
-        
+
         return Excel::download(new ReporteHistorialClienteExport($data), 'Historial del cliente con id: '.$request->cliente_id.'.xlsx');
+    }
+
+    public function VentasDiaria(Request $request)
+    {
+        $fecha_inicial = $request->fecha_inicial;
+        $fecha_final = $request->fecha_final;
+
+        $consulta = "
+            SELECT
+                b.bodega                                AS Tienda,
+                va.fecha_dia                            AS Fecha,
+                COALESCE(tp.turno, '')                  AS Turno,
+                va.ventas_dia                           AS `Ventas Día`,
+                va.precio_venta                         AS `Precio Venta`,
+                va.precio_costo                         AS `Precio Costo`,
+                (va.precio_venta - va.precio_costo)     AS `Utilidad Día`,
+                ROUND(va.precio_venta * 0.025, 2)       AS `Utilidad Financista`,
+                ROUND((va.precio_venta - va.precio_costo) - (va.precio_venta * 0.025), 2) AS `Utilidad Neta`
+            FROM
+            (
+                SELECT
+                    v.bodega_id,
+                    DATE(v.created_at) AS fecha_dia,
+                    COUNT(DISTINCT v.id)                                    AS ventas_dia,
+                    SUM(vd.precio * vd.cantidad)                            AS precio_venta,
+                    SUM(COALESCE(p.precio_costo, 0) * vd.cantidad)          AS precio_costo
+                FROM ventas v
+                JOIN venta_detalles vd  ON vd.venta_id   = v.id
+                JOIN productos p        ON p.id          = vd.producto_id
+                WHERE
+                    v.estado = 'liquidada'
+                    AND v.created_at >= ?
+                    AND v.created_at <  ?
+                GROUP BY v.bodega_id, DATE(v.created_at)
+            ) va
+            JOIN bodegas b ON b.id = va.bodega_id
+            LEFT JOIN
+            (
+                SELECT
+                    c.bodega_id,
+                    DATE(c.created_at) AS fecha_dia,
+                    GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS turno
+                FROM cierres c
+                JOIN users u ON u.id = c.user_id
+                WHERE
+                    c.created_at >= ?
+                    AND c.created_at <  ?
+                GROUP BY c.bodega_id, DATE(c.created_at)
+            ) tp
+              ON tp.bodega_id = va.bodega_id
+             AND tp.fecha_dia = va.fecha_dia
+            ORDER BY va.fecha_dia ASC, b.bodega ASC
+        ";
+
+        $data = DB::select($consulta, [
+            $fecha_inicial,
+            $fecha_final,
+            $fecha_inicial,
+            $fecha_final,
+        ]);
+
+        return Excel::download(new ReporteDiarioExport($data), 'Reporte Diario: '.$fecha_inicial.' - '.$fecha_final.'.xlsx');
     }
 }
