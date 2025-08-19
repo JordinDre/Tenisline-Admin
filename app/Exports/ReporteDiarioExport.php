@@ -21,10 +21,6 @@ class ReporteDiarioExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        if ($this->data->isEmpty()) {
-            return [];
-        }
-
-        return array_keys((array) $this->data->first());
+        return ['Tienda', 'Fecha', 'Turno', 'Ventas Día', 'Precio Venta', 'Precio Costo', 'Utilidad Día', 'Utilidad Financista', 'Utilidad Neta'];
     }
 }

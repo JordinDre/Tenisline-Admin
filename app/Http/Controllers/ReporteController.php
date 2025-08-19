@@ -8,6 +8,7 @@ use App\Exports\ReportePagosExport;
 use App\Exports\ReporteResultadosExport;
 use App\Exports\ReporteVentasClientesExport;
 use App\Exports\ReporteVentasDetalladasExport;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -392,63 +393,76 @@ class ReporteController extends Controller
 
     public function VentasDiaria(Request $request)
     {
-        $fecha_inicial = $request->fecha_inicial;
-        $fecha_final = $request->fecha_final;
+        // Acepta ambos por si te quedó algo viejo en el front
+        $fecha_inicial = $request->get('fecha_inicial') ?? $request->get('fecha_incial');
+        $fecha_final = $request->get('fecha_final');
+
+        // Valida rápido
+        if (! $fecha_inicial || ! $fecha_final) {
+            abort(422, 'Debe enviar fecha_inicial y fecha_final');
+        }
+
+        // Límite superior exclusivo: día siguiente a la fecha_final
+        $inicio = Carbon::parse($fecha_inicial)->startOfDay();
+        $finExcl = Carbon::parse($fecha_final)->addDay()->startOfDay();
 
         $consulta = "
+        SELECT
+            b.bodega                                AS Tienda,
+            va.fecha_dia                            AS Fecha,
+            COALESCE(tp.turno, '')                  AS Turno,
+            va.ventas_dia                           AS `Ventas Día`,
+            va.precio_venta                         AS `Precio Venta`,
+            va.precio_costo                         AS `Precio Costo`,
+            (va.precio_venta - va.precio_costo)     AS `Utilidad Día`,
+            ROUND(va.precio_venta * 0.025, 2)       AS `Utilidad Financista`,
+            ROUND((va.precio_venta - va.precio_costo) - (va.precio_venta * 0.025), 2) AS `Utilidad Neta`
+        FROM
+        (
             SELECT
-                b.bodega                                AS Tienda,
-                va.fecha_dia                            AS Fecha,
-                COALESCE(tp.turno, '')                  AS Turno,
-                va.ventas_dia                           AS `Ventas Día`,
-                va.precio_venta                         AS `Precio Venta`,
-                va.precio_costo                         AS `Precio Costo`,
-                (va.precio_venta - va.precio_costo)     AS `Utilidad Día`,
-                ROUND(va.precio_venta * 0.025, 2)       AS `Utilidad Financista`,
-                ROUND((va.precio_venta - va.precio_costo) - (va.precio_venta * 0.025), 2) AS `Utilidad Neta`
-            FROM
-            (
-                SELECT
-                    v.bodega_id,
-                    DATE(v.created_at) AS fecha_dia,
-                    COUNT(DISTINCT v.id)                                    AS ventas_dia,
-                    SUM(vd.precio * vd.cantidad)                            AS precio_venta,
-                    SUM(COALESCE(p.precio_costo, 0) * vd.cantidad)          AS precio_costo
-                FROM ventas v
-                JOIN venta_detalles vd  ON vd.venta_id   = v.id
-                JOIN productos p        ON p.id          = vd.producto_id
-                WHERE
-                    v.estado = 'liquidada'
-                    AND v.created_at >= ?
-                    AND v.created_at <  ?
-                GROUP BY v.bodega_id, DATE(v.created_at)
-            ) va
-            JOIN bodegas b ON b.id = va.bodega_id
-            LEFT JOIN
-            (
-                SELECT
-                    c.bodega_id,
-                    DATE(c.created_at) AS fecha_dia,
-                    GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS turno
-                FROM cierres c
-                JOIN users u ON u.id = c.user_id
-                WHERE
-                    c.created_at >= ?
-                    AND c.created_at <  ?
-                GROUP BY c.bodega_id, DATE(c.created_at)
-            ) tp
-              ON tp.bodega_id = va.bodega_id
-             AND tp.fecha_dia = va.fecha_dia
-            ORDER BY va.fecha_dia ASC, b.bodega ASC
-        ";
+                v.bodega_id,
+                DATE(v.created_at) AS fecha_dia,
+                COUNT(DISTINCT v.id)                                    AS ventas_dia,
+                SUM(vd.precio * vd.cantidad)                            AS precio_venta,
+                SUM(COALESCE(p.precio_costo, 0) * vd.cantidad)          AS precio_costo
+            FROM ventas v
+            JOIN venta_detalles vd  ON vd.venta_id   = v.id
+            JOIN productos p        ON p.id          = vd.producto_id
+            WHERE
+                v.estado = 'liquidada'
+                AND v.created_at >= ?
+                AND v.created_at <  ?
+            GROUP BY v.bodega_id, DATE(v.created_at)
+        ) va
+        JOIN bodegas b ON b.id = va.bodega_id
+        LEFT JOIN
+        (
+            SELECT
+                c.bodega_id,
+                DATE(c.created_at) AS fecha_dia,
+                GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS turno
+            FROM cierres c
+            JOIN users u ON u.id = c.user_id
+            WHERE
+                c.created_at >= ?
+                AND c.created_at <  ?
+            GROUP BY c.bodega_id, DATE(c.created_at)
+        ) tp
+          ON tp.bodega_id = va.bodega_id
+         AND tp.fecha_dia = va.fecha_dia
+        ORDER BY va.fecha_dia ASC, b.bodega ASC
+    ";
 
         $data = DB::select($consulta, [
-            $fecha_inicial,
-            $fecha_final,
-            $fecha_inicial,
-            $fecha_final,
+            $inicio->toDateTimeString(),
+            $finExcl->toDateTimeString(),
+            $inicio->toDateTimeString(),
+            $finExcl->toDateTimeString(),
         ]);
 
-        return Excel::download(new ReporteDiarioExport($data), 'Reporte Diario: '.$fecha_inicial.' - '.$fecha_final.'.xlsx');
+        return Excel::download(
+            new ReporteDiarioExport($data),
+            'Reporte Diario '.$inicio->toDateString().' - '.$fecha_final.'.xlsx'
+        );
     }
 }

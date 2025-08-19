@@ -3,11 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Models\User;
-use Filament\Pages\Page;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Select;
+use Filament\Pages\Page;
 
 class Reportes extends Page
 {
@@ -153,51 +152,51 @@ class Reportes extends Page
                         'fecha_final' => $data['fecha_final'],
                     ]);
 
-                return response()->redirectTo($url);
-            }),
+                    return response()->redirectTo($url);
+                }),
             Action::make('VentasDiaria')
                 ->label('Venta Diaria')
                 ->icon('heroicon-o-document-text')
                 ->modalHeading('Generar Reporte Venta Diaria')
                 ->form([
-                    DatePicker::make('fecha_incial')
-                        ->required(),
-                    DatePicker::make('fecha_final')
-                        ->required(),
-                ])
+                        DatePicker::make('fecha_inicial')->required(),
+                        DatePicker::make('fecha_final')->required(),
+                    ])
                 ->action(function (array $data) {
                     $url = route('reporte.ventasdiaria', [
-                        'fecha_incial' => $data['fecha_incial'],
+                        'fecha_inicial' => $data['fecha_inicial'],
                         'fecha_final' => $data['fecha_final'],
                     ]);
 
-                return response()->redirectTo($url);
-            }),
-            Action::make('HistorialCliente')
-            ->label('Historial Cliente')
-            ->icon('heroicon-o-document-text')
-            ->modalHeading('Generar Reporte')
-            ->form([
-                    Select::make('cliente_id')
-                    ->label('Cliente')
-                    ->options(
-                        User::all()
-                            ->mapWithKeys(function ($user) {
-                                $label = trim(($user->name ?? '') . ' — ' . ($user->razon_social ?? ''));
-                                return [$user->id => $label];
-                            })
-                    )
-                    ->required()
-                    ->columnSpan(['sm' => 1, 'md' => 9])
-                    ->searchable(),
-            ])
-            ->action(function (array $data) {
-                $url = route('reporte.historialcliente', [
-                    'cliente_id' => $data['cliente_id'],
-                ]);
+                    return response()->redirectTo($url);
+                }),
 
-                return response()->redirectTo($url);
-            }),
+            Action::make('HistorialCliente')
+                ->label('Historial Cliente')
+                ->icon('heroicon-o-document-text')
+                ->modalHeading('Generar Reporte')
+                ->form([
+                    Select::make('cliente_id')
+                        ->label('Cliente')
+                        ->options(
+                            User::all()
+                                ->mapWithKeys(function ($user) {
+                                    $label = trim(($user->name ?? '').' — '.($user->razon_social ?? ''));
+
+                                    return [$user->id => $label];
+                                })
+                        )
+                        ->required()
+                        ->columnSpan(['sm' => 1, 'md' => 9])
+                        ->searchable(),
+                ])
+                ->action(function (array $data) {
+                    $url = route('reporte.historialcliente', [
+                        'cliente_id' => $data['cliente_id'],
+                    ]);
+
+                    return response()->redirectTo($url);
+                }),
         ];
     }
 }
