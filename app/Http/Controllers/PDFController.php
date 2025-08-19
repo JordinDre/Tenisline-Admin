@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cierre;
+use App\Models\Compra;
 use App\Models\Orden;
 use App\Models\Traslado;
 use App\Models\Venta;
@@ -38,6 +39,35 @@ class PDFController extends Controller
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
         return $pdf->stream("Cierre #{$id}.pdf");
+    }
+
+    public function compra($id)
+    {
+        $compra = Compra::with([
+            'detalles',
+            'bodega',
+            'proveedor',
+            'pagos'
+        ])->findOrFail($id);
+        $html = view('pdf.compras', compact('compra'))->render();
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
+
+        return $pdf->stream("Compra #{$id}.pdf");
+    }
+
+    public function traslado($id)
+    {
+        $traslado = Traslado::with([
+            'detalles',
+            'entrada',
+            'salida',
+            'emisor',
+            'receptor'
+        ])->findOrFail($id);
+        $html = view('pdf.traslado', compact('traslado'))->render();
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
+
+        return $pdf->stream("Traslado #{$id}.pdf");
     }
 
     public function cotizacion($id)
