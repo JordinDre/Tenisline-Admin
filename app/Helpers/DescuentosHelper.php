@@ -2,19 +2,17 @@
 
 namespace App\Helpers;
 
-use Filament\Notifications\Notification;
-
 class DescuentosHelper
 {
-    public static function aplicarDescuentoMitadPorPar(array $detalles): array|null
+    public static function aplicarDescuentoMitadPorPar(array $detalles): ?array
     {
-        $detalles = array_values($detalles); 
+        $detalles = array_values($detalles);
 
         $totalPares = collect($detalles)->sum('cantidad');
         $descuentosIndividualesActivos = collect($detalles)
-            ->filter(fn($d) => ($d['oferta'] ?? false) || ($d['oferta_20'] ?? false))
+            ->filter(fn ($d) => ($d['oferta'] ?? false) || ($d['oferta_20'] ?? false))
             ->count();
-        
+
         $slotsDisponibles = floor($totalPares / 2);
         $paresConDescuentoGlobal = $slotsDisponibles - $descuentosIndividualesActivos;
 
@@ -23,7 +21,7 @@ class DescuentosHelper
         }
 
         $sinDescuentoIndividual = collect($detalles)->filter(function ($item) {
-            return !($item['oferta'] ?? false) && !($item['oferta_20'] ?? false);
+            return ! ($item['oferta'] ?? false) && ! ($item['oferta_20'] ?? false);
         })->toArray();
 
         $paresSinDescuento = [];
@@ -35,9 +33,9 @@ class DescuentosHelper
                 ];
             }
         }
-        
-        usort($paresSinDescuento, fn($a, $b) => $a['precio'] <=> $b['precio']);
-        
+
+        usort($paresSinDescuento, fn ($a, $b) => $a['precio'] <=> $b['precio']);
+
         $descuentosAplicados = [];
         for ($i = 0; $i < $paresConDescuentoGlobal && $i < count($paresSinDescuento); $i++) {
             $index = $paresSinDescuento[$i]['original_index'];
@@ -48,6 +46,7 @@ class DescuentosHelper
         foreach ($detalles as $index => $detalle) {
             if (($detalle['oferta'] ?? false) || ($detalle['oferta_20'] ?? false)) {
                 $detallesFinales[] = $detalle;
+
                 continue;
             }
 
@@ -69,7 +68,7 @@ class DescuentosHelper
                 $detallesFinales[] = $detalleSinDescuento;
             }
         }
-        
+
         return $detallesFinales;
     }
 }

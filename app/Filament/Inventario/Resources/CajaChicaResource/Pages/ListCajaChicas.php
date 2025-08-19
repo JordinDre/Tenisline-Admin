@@ -2,12 +2,12 @@
 
 namespace App\Filament\Inventario\Resources\CajaChicaResource\Pages;
 
-use Filament\Actions;
 use App\Enums\CajaChicaStatus;
-use Filament\Resources\Pages\ListRecords;
 use App\Filament\Inventario\Resources\CajaChicaResource;
 use App\Models\CajaChica;
+use Filament\Actions;
 use Filament\Resources\Components\Tab;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListCajaChicas extends ListRecords

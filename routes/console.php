@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Orden;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('backup:clean')->daily()->at('00:20');

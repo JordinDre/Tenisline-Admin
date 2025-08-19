@@ -74,5 +74,4 @@ class Producto extends Model
     {
         return $this->morphMany(Observacion::class, 'observacionable');
     }
-
 }

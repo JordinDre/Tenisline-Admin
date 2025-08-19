@@ -189,10 +189,10 @@ class ProductoController extends Controller
         : null;
 
         $stock = $inventario?->existencia ?? 0;
-/* 
-        $imagenUrl = isset($producto->imagenes[0])
-            ? config('filesystems.disks.s3.url') . $producto->imagenes[0]
-            : asset('images/icono.png'); */
+        /*
+                $imagenUrl = isset($producto->imagenes[0])
+                    ? config('filesystems.disks.s3.url') . $producto->imagenes[0]
+                    : asset('images/icono.png'); */
 
         return view('components.producto-preview', compact('producto', 'stock'))->render();
 
@@ -256,7 +256,7 @@ class ProductoController extends Controller
     {
         $query = Producto::query()
             ->with('marca')
-            ->when($bodega_id, fn($q) => $q->withCount(['inventario as stock' => fn($iq) => $iq->where('bodega_id', $bodega_id)]));
+            ->when($bodega_id, fn ($q) => $q->withCount(['inventario as stock' => fn ($iq) => $iq->where('bodega_id', $bodega_id)]));
 
         $terms = array_filter(explode(' ', $search));
         foreach ($terms as $term) {
@@ -272,8 +272,7 @@ class ProductoController extends Controller
 
         $productos = $query->limit(10)->get();
 
-        return $productos->mapWithKeys(fn (Producto $producto) =>
-            [$producto->id => self::renderProductosRow($producto)]
+        return $productos->mapWithKeys(fn (Producto $producto) => [$producto->id => self::renderProductosRow($producto)]
         )->toArray();
     }
 
@@ -281,6 +280,7 @@ class ProductoController extends Controller
     {
         $marca = $producto->marca->marca ?? '';
         $stock = $producto->stock ?? 0;
+
         return "
             <div class='producto-opcion'>
                 <div><strong>ID:</strong> {$producto->id} - {$producto->codigo}</div>

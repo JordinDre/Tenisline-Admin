@@ -5,7 +5,7 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class ReportePagosExport implements FromCollection, WithHeadings
+class ReporteDiarioExport implements FromCollection, WithHeadings
 {
     protected $data;
 
@@ -21,10 +21,6 @@ class ReportePagosExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        if ($this->data->isEmpty()) {
-            return [];
-        }
-
-        return array_keys((array) $this->data->first());
+        return ['Tienda', 'Fecha', 'Turno', 'Ventas Día', 'Precio Venta', 'Precio Costo', 'Utilidad Día', 'Utilidad Financista', 'Utilidad Neta'];
     }
 }

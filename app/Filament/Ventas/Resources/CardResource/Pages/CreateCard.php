@@ -2,12 +2,11 @@
 
 namespace App\Filament\Ventas\Resources\CardResource\Pages;
 
+use App\Filament\Ventas\Resources\CardResource;
 use App\Models\Venta;
-use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Validation\ValidationException;
-use App\Filament\Ventas\Resources\CardResource;
 
 class CreateCard extends CreateRecord
 {
