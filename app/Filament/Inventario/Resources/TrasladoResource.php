@@ -235,6 +235,21 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
+                    Action::make('traslado')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->modalContent(fn (Traslado $record): View => view(
+                            'filament.pages.actions.iframe',
+                            [
+                                'record' => $record,
+                                'title' => 'Traslado #'.$record->id,
+                                'route' => route('pdf.traslado', ['id' => $record->id]),
+                                'open' => true,
+                            ],
+                        ))
+                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->slideOver()
+                        ->stickyModalHeader()
+                        ->modalSubmitAction(false),
                     Action::make('prepare')
                         ->label('Preparar')
                         ->color('success')
@@ -269,6 +284,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                         ->requiresConfirmation()
                         ->action(fn (Traslado $record) => TrasladoController::anular($record))
                         ->visible(fn ($record) => auth()->user()->can('annular', $record)),
+                    
                 ])
                     ->link()
                     ->label('Acciones'),
