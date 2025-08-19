@@ -2,32 +2,26 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use Filament\Forms;
-use App\Models\Pago;
-use Filament\Tables;
-use Filament\Forms\Set;
-use Filament\Forms\Form;
+use App\Filament\Inventario\Resources\CajaChicaResource\Pages;
+use App\Http\Controllers\CajaChicaController;
 use App\Models\CajaChica;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\DB;
-use Filament\Tables\Actions\Action;
+use App\Models\Pago;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Form;
+use Filament\Forms\Set;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Http\Controllers\CajaChicaController;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Inventario\Resources\CajaChicaResource\Pages;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use App\Filament\Inventario\Resources\CajaChicaResource\RelationManagers;
+use Illuminate\Support\Facades\DB;
 
-class CajaChicaResource extends Resource implements HasShieldPermissions{
-
+class CajaChicaResource extends Resource implements HasShieldPermissions
+{
     protected static ?string $model = CajaChica::class;
 
     protected static ?string $navigationIcon = 'tabler-box';
@@ -55,9 +49,9 @@ class CajaChicaResource extends Resource implements HasShieldPermissions{
     {
         return $form
             ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Select::make('bodega_id')
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Select::make('bodega_id')
                             ->relationship(
                                 'bodega',
                                 'bodega',
@@ -74,13 +68,13 @@ class CajaChicaResource extends Resource implements HasShieldPermissions{
                             })
                             ->searchable()
                             ->required(),
-                            Hidden::make('user_id')
+                        Hidden::make('user_id')
                             ->default(auth()->user()->id),
-                            Select::make('proveedor_id')
+                        Select::make('proveedor_id')
                             ->required()
                             ->searchable()
                             ->visible(auth()->user()->can('view_supplier_producto'))
-                            ->relationship('proveedor', 'name', fn(Builder $query) => $query->role('proveedor')),
+                            ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
                         Forms\Components\TextInput::make('detalle_gasto')
                             ->required()
                             ->maxLength(255),
@@ -88,7 +82,7 @@ class CajaChicaResource extends Resource implements HasShieldPermissions{
                             ->label('Quien autoriza')
                             ->required()
                             ->maxLength(255),
-                        
+
                     ]),
                 Forms\Components\Repeater::make('pagos')
                     ->relationship()
@@ -178,15 +172,15 @@ class CajaChicaResource extends Resource implements HasShieldPermissions{
                     ->label('Confirmar')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
-                    ->action(fn(CajaChica $record) => CajaChicaController::confirmar($record))
-                    ->visible(fn($record) => auth()->user()->can('annular', $record)),
+                    ->action(fn (CajaChica $record) => CajaChicaController::confirmar($record))
+                    ->visible(fn ($record) => auth()->user()->can('annular', $record)),
                 Action::make('annular')
                     ->label('Anular')
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation()
-                    ->action(fn(CajaChica $record) => CajaChicaController::anular($record))
-                   ->visible(fn($record) => auth()->user()->can('confirm', $record)),
+                    ->action(fn (CajaChica $record) => CajaChicaController::anular($record))
+                    ->visible(fn ($record) => auth()->user()->can('confirm', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

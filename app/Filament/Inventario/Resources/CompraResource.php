@@ -176,6 +176,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->content(function (Get $get) {
                                             $cantidad = (float) $get('cantidad');
                                             $precio = (float) $get('precio');
+
                                             return number_format($cantidad * $precio, 2);
                                         }),
                                     /* TextInput::make('envio')
@@ -419,8 +420,8 @@ class CompraResource extends Resource implements HasShieldPermissions
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->requiresConfirmation()
-                        ->action(fn(Compra $record) => CompraController::anular($record))
-                        ->visible(fn($record) => auth()->user()->can('annular', $record)),
+                        ->action(fn (Compra $record) => CompraController::anular($record))
+                        ->visible(fn ($record) => auth()->user()->can('annular', $record)),
                     Action::make('completar')
                         ->label('Completar')
                         ->color('secondary')
@@ -442,6 +443,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
+
                 ])
                     ->link()
                     ->label('Acciones'),

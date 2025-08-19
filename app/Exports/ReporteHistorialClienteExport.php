@@ -2,10 +2,10 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\FromCollection;
 
-class ReportePagosExport implements FromCollection, WithHeadings
+class ReporteHistorialClienteExport implements FromCollection, WithHeadings
 {
     protected $data;
 

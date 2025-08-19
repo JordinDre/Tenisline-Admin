@@ -7,7 +7,6 @@ use App\Models\Labor;
 use App\Models\Venta;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
-use Illuminate\Support\Facades\Schema;
 
 class VentasGeneral extends ChartWidget
 {
@@ -48,9 +47,9 @@ class VentasGeneral extends ChartWidget
             ->whereNotIn('estado', Venta::ESTADOS_EXCLUIDOS)
             ->get()
             ->groupBy('asesor_id')
-            ->map(function ($ordenes){
+            ->map(function ($ordenes) {
                 $total = $ordenes->sum('total');
-                //$meta = $ordenes->first()->asesor->metas->last()?->meta ?? 0;
+                // $meta = $ordenes->first()->asesor->metas->last()?->meta ?? 0;
                 $costo = $ordenes->sum(fn ($orden) => $orden->detalles->sum(
                     fn ($detalle) => $detalle->cantidad * (($detalle->producto->precio_compra ?? 0) + ($detalle->producto->envase ?? 0))
                 ));

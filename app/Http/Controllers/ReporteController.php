@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ReporteDiarioExport;
+use App\Exports\ReporteHistorialClienteExport;
 use App\Exports\ReportePagosExport;
 use App\Exports\ReporteResultadosExport;
 use App\Exports\ReporteVentasClientesExport;
 use App\Exports\ReporteVentasDetalladasExport;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -65,7 +68,7 @@ class ReporteController extends Controller
             $fecha_incial,
             $fecha_final,
         ]);
-        
+
         return Excel::download(new ReporteVentasClientesExport($data), 'Ventas fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
     }
 
@@ -281,7 +284,7 @@ class ReporteController extends Controller
         $fecha_incial = $request->fecha_incial;
         $fecha_final = $request->fecha_final;
 
-        $consulta = "
+        $consulta = '
             select
                 ventas.created_at as fecha_venta,
                 facturas.fel_numero as numero_factura,
@@ -290,7 +293,7 @@ class ReporteController extends Controller
                 users.razon_social,
                 users.nit,
                 productos.precio_oferta,
-                productos.precio_venta,
+                venta_detalles.precio,
                 productos.precio_costo,
                 bodegas.bodega,
                 productos.codigo,
@@ -317,13 +320,149 @@ class ReporteController extends Controller
             WHERE
                 ventas.created_at BETWEEN ?
                 AND ?
-        ";
+                AND ventas.estado NOT IN ("devuelta", "anulada", "parcialmente_devuelta", "creada")
+        ';
 
         $data = DB::select($consulta, [
             $fecha_incial,
             $fecha_final,
         ]);
-        
+
         return Excel::download(new ReporteVentasClientesExport($data), 'Ventas General fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
+    }
+
+    public function HistorialCliente(Request $request)
+    {
+        $consulta = "
+            select
+            users.name,
+            GROUP_CONCAT(roles.name SEPARATOR ', ') AS roles,
+            users.razon_social,
+            ventas.created_at as fecha_venta,
+            ventas.estado,
+            venta_detalles.cantidad,
+            venta_detalles.subtotal,
+            bodegas.bodega,
+            productos.codigo,
+            productos.descripcion,
+            marcas.marca,
+            productos.talla,
+            productos.genero,
+            (
+                select
+                    u.name
+                from
+                    users u
+                where
+                    u.id = ventas.asesor_id
+            ) as asesor
+        from
+            ventas
+            inner join model_has_roles on model_has_roles.model_id = ventas.cliente_id
+            inner join roles on roles.id = model_has_roles.role_id
+            inner join users on users.id = ventas.cliente_id
+            inner join venta_detalles on venta_detalles.venta_id = ventas.id
+            inner join productos on venta_detalles.producto_id = productos.id
+            inner join marcas on productos.marca_id = marcas.id
+            inner join bodegas on ventas.bodega_id = bodegas.id
+        WHERE
+            ventas.cliente_id = ?
+        GROUP BY
+            ventas.id,
+            users.name,
+            users.razon_social,
+            ventas.created_at,
+            ventas.estado,
+            venta_detalles.cantidad,
+            venta_detalles.subtotal,
+            bodegas.bodega,
+            productos.codigo,
+            productos.descripcion,
+            marcas.marca,
+            productos.talla,
+            productos.genero,
+            asesor
+        ";
+
+        $data = DB::select($consulta, [
+            $request->cliente_id,
+        ]);
+
+        return Excel::download(new ReporteHistorialClienteExport($data), 'Historial del cliente con id: '.$request->cliente_id.'.xlsx');
+    }
+
+    public function VentasDiaria(Request $request)
+    {
+        // Acepta ambos por si te quedó algo viejo en el front
+        $fecha_inicial = $request->get('fecha_inicial') ?? $request->get('fecha_incial');
+        $fecha_final = $request->get('fecha_final');
+
+        // Valida rápido
+        if (! $fecha_inicial || ! $fecha_final) {
+            abort(422, 'Debe enviar fecha_inicial y fecha_final');
+        }
+
+        // Límite superior exclusivo: día siguiente a la fecha_final
+        $inicio = Carbon::parse($fecha_inicial)->startOfDay();
+        $finExcl = Carbon::parse($fecha_final)->addDay()->startOfDay();
+
+        $consulta = "
+        SELECT
+            b.bodega                                AS Tienda,
+            va.fecha_dia                            AS Fecha,
+            COALESCE(tp.turno, '')                  AS Turno,
+            va.ventas_dia                           AS `Ventas Día`,
+            va.precio_venta                         AS `Precio Venta`,
+            va.precio_costo                         AS `Precio Costo`,
+            (va.precio_venta - va.precio_costo)     AS `Utilidad Día`,
+            ROUND(va.precio_venta * 0.025, 2)       AS `Utilidad Financista`,
+            ROUND((va.precio_venta - va.precio_costo) - (va.precio_venta * 0.025), 2) AS `Utilidad Neta`
+        FROM
+        (
+            SELECT
+                v.bodega_id,
+                DATE(v.created_at) AS fecha_dia,
+                COUNT(DISTINCT v.id)                                    AS ventas_dia,
+                SUM(vd.precio * vd.cantidad)                            AS precio_venta,
+                SUM(COALESCE(p.precio_costo, 0) * vd.cantidad)          AS precio_costo
+            FROM ventas v
+            JOIN venta_detalles vd  ON vd.venta_id   = v.id
+            JOIN productos p        ON p.id          = vd.producto_id
+            WHERE
+                v.estado = 'liquidada'
+                AND v.created_at >= ?
+                AND v.created_at <  ?
+            GROUP BY v.bodega_id, DATE(v.created_at)
+        ) va
+        JOIN bodegas b ON b.id = va.bodega_id
+        LEFT JOIN
+        (
+            SELECT
+                c.bodega_id,
+                DATE(c.created_at) AS fecha_dia,
+                GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS turno
+            FROM cierres c
+            JOIN users u ON u.id = c.user_id
+            WHERE
+                c.created_at >= ?
+                AND c.created_at <  ?
+            GROUP BY c.bodega_id, DATE(c.created_at)
+        ) tp
+          ON tp.bodega_id = va.bodega_id
+         AND tp.fecha_dia = va.fecha_dia
+        ORDER BY va.fecha_dia ASC, b.bodega ASC
+    ";
+
+        $data = DB::select($consulta, [
+            $inicio->toDateTimeString(),
+            $finExcl->toDateTimeString(),
+            $inicio->toDateTimeString(),
+            $finExcl->toDateTimeString(),
+        ]);
+
+        return Excel::download(
+            new ReporteDiarioExport($data),
+            'Reporte Diario '.$inicio->toDateString().' - '.$fecha_final.'.xlsx'
+        );
     }
 }

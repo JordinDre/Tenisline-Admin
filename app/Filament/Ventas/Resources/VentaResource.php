@@ -595,7 +595,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     'producto_id' => $detalle->producto_id,
                                     'cantidad' => $detalle->cantidad,
                                     'devuelto' => $detalle->devuelto,
-                                    'codigo_nuevo' => '', 
+                                    'codigo_nuevo' => '',
                                 ];
                             })->toArray(),
                         ])
