@@ -320,7 +320,7 @@ class ReporteController extends Controller
             WHERE
                 ventas.created_at BETWEEN ?
                 AND ?
-                AND ventas.estado NOT IN ("devuelta", "anulada", "parcialmente_devuelta", "creada")
+                AND ventas.estado IN ("liquidada", "creada")
         ';
 
         $data = DB::select($consulta, [
@@ -429,7 +429,7 @@ class ReporteController extends Controller
             JOIN venta_detalles vd  ON vd.venta_id   = v.id
             JOIN productos p        ON p.id          = vd.producto_id
             WHERE
-                v.estado = 'liquidada'
+                v.estado in ('liquidada', 'creada')
                 AND v.created_at >= ?
                 AND v.created_at <  ?
             GROUP BY v.bodega_id, DATE(v.created_at)
