@@ -393,18 +393,8 @@ class ReporteController extends Controller
 
     public function VentasDiaria(Request $request)
     {
-        // Acepta ambos por si te quedó algo viejo en el front
-        $fecha_inicial = $request->get('fecha_inicial') ?? $request->get('fecha_incial');
-        $fecha_final = $request->get('fecha_final');
-
-        // Valida rápido
-        if (! $fecha_inicial || ! $fecha_final) {
-            abort(422, 'Debe enviar fecha_inicial y fecha_final');
-        }
-
-        // Límite superior exclusivo: día siguiente a la fecha_final
-        $inicio = Carbon::parse($fecha_inicial)->startOfDay();
-        $finExcl = Carbon::parse($fecha_final)->addDay()->startOfDay();
+        $fecha_incial = $request->fecha_incial;
+        $fecha_final = $request->fecha_final;
 
         $consulta = "
         SELECT
@@ -454,15 +444,15 @@ class ReporteController extends Controller
     ";
 
         $data = DB::select($consulta, [
-            $inicio->toDateTimeString(),
-            $finExcl->toDateTimeString(),
-            $inicio->toDateTimeString(),
-            $finExcl->toDateTimeString(),
+            $fecha_incial,
+            $fecha_final,
+            $fecha_incial,
+            $fecha_final,
         ]);
 
         return Excel::download(
             new ReporteDiarioExport($data),
-            'Reporte Diario '.$inicio->toDateString().' - '.$fecha_final.'.xlsx'
+            'Reporte Diario '.$fecha_incial.' - '.$fecha_final.'.xlsx'
         );
     }
 }
