@@ -455,6 +455,7 @@ class CompraResource extends Resource implements HasShieldPermissions
         return [
             'index' => Pages\ListCompras::route('/'),
             'create' => Pages\CreateCompra::route('/create'),
+            'create-automatico' => Pages\CreateCompraAutomatico::route('/create-automatico'),
             'view' => Pages\ViewCompra::route('/{record}'),
             'edit' => Pages\EditCompra::route('/{record}/edit'),
         ];

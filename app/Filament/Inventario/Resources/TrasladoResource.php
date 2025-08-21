@@ -2,30 +2,31 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\TrasladoResource\Pages;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\TrasladoController;
+use Filament\Tables;
 use App\Models\Bodega;
-use App\Models\Producto;
-use App\Models\Traslado;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\Producto;
+use App\Models\Traslado;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
+use Pages\CreateTrasladoAutomatico;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\TrasladoController;
+use App\Filament\Inventario\Resources\TrasladoResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class TrasladoResource extends Resource implements HasShieldPermissions
 {
@@ -296,6 +297,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
         return [
             'index' => Pages\ListTraslados::route('/'),
             'create' => Pages\CreateTraslado::route('/create'),
+            'create-automatico' => Pages\CreateTrasladoAutomatico::route('/create-automatico'),
             'view' => Pages\ViewTraslado::route('/{record}'),
             'edit' => Pages\EditTraslado::route('/{record}/edit'),
             'confirm' => Pages\ConfirmTraslado::route('/{record}/confirm'),

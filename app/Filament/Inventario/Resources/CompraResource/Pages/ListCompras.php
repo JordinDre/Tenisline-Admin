@@ -30,6 +30,9 @@ class ListCompras extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            Actions\Action::make('createAutomatico')
+            ->label('Crear compra automático')
+            ->url(CompraResource::getUrl('create-automatico')),
         ];
     }
 }
