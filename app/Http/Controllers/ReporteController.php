@@ -393,9 +393,9 @@ class ReporteController extends Controller
 
     public function VentasDiaria(Request $request)
     {
-        $fecha_incial = $request->fecha_incial;
+        $fecha_inicial = $request->fecha_inicial;
         $fecha_final = $request->fecha_final;
-
+        
         $consulta = "
         SELECT
             b.bodega                                AS Tienda,
@@ -444,15 +444,15 @@ class ReporteController extends Controller
     ";
 
         $data = DB::select($consulta, [
-            $fecha_incial,
+            $fecha_inicial,
             $fecha_final,
-            $fecha_incial,
+            $fecha_inicial,
             $fecha_final,
         ]);
 
         return Excel::download(
             new ReporteDiarioExport($data),
-            'Reporte Diario '.$fecha_incial.' - '.$fecha_final.'.xlsx'
+            'Reporte Diario '.$fecha_inicial.' - '.$fecha_final.'.xlsx'
         );
     }
 }
