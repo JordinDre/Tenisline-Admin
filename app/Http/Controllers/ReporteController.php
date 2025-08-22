@@ -287,8 +287,7 @@ class ReporteController extends Controller
         $consulta = '
             select
                 ventas.created_at as fecha_venta,
-                facturas.fel_numero as numero_factura,
-                ventas.estado,
+                ventas.estado as estado_venta,
                 users.id,
                 users.razon_social,
                 users.nit,
@@ -311,7 +310,6 @@ class ReporteController extends Controller
                 ) as asesor
             from
                 ventas
-                inner join facturas on facturas.facturable_id = ventas.id
                 inner join users on users.id = ventas.cliente_id
                 inner join venta_detalles on venta_detalles.venta_id = ventas.id
                 inner join productos on venta_detalles.producto_id = productos.id
@@ -320,7 +318,8 @@ class ReporteController extends Controller
             WHERE
                 ventas.created_at BETWEEN ?
                 AND ?
-                AND ventas.estado IN ("liquidada")
+                AND ventas.estado IN ("liquidada", "creada", "parcialmente_devuelta")
+                AND venta_detalles.devuelto = 0
         ';
 
         $data = DB::select($consulta, [
@@ -419,7 +418,8 @@ class ReporteController extends Controller
             JOIN venta_detalles vd  ON vd.venta_id   = v.id
             JOIN productos p        ON p.id          = vd.producto_id
             WHERE
-                v.estado in ('liquidada')
+                v.estado in ('liquidada', 'creada', 'parcialmente_devuelta')
+                AND vd.devuelto = 0
                 AND v.created_at >= ?
                 AND v.created_at <  ?
             GROUP BY v.bodega_id, DATE(v.created_at)
