@@ -8,13 +8,13 @@ use App\Models\Venta;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
-class VentasGeneral extends ChartWidget
+class VentasBodega2 extends ChartWidget
 {
     use InteractsWithPageFilters;
 
     protected static ?string $pollingInterval = '10s';
 
-    protected static ?string $heading = 'Ventas General';
+    protected static ?string $heading = 'Ventas Chiquimula';
 
     protected static ?int $sort = 1;
 
@@ -22,7 +22,7 @@ class VentasGeneral extends ChartWidget
 
     public static function canView(): bool
     {
-        return '';
+
         return auth()->user()->can('widget_VentasGeneral');
     }
 
@@ -44,6 +44,7 @@ class VentasGeneral extends ChartWidget
         $data = Venta::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->when($day, fn ($query, $day) => $query->whereDay('created_at', $day))
+            ->where('bodega_id', 6)
             ->whereNotIn('estado', Venta::ESTADOS_EXCLUIDOS)
             ->get()
             ->groupBy('asesor_id')
