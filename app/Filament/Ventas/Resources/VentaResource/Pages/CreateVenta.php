@@ -112,7 +112,8 @@ class CreateVenta extends CreateRecord
                                                 ->afterStateUpdated(function (Set $set, $state) {
                                                     $nit = UserController::nit($state);
                                                     $set('razon_social', $nit);
-                                                }),
+                                                })
+                                                ->unique(table: User::class, column: 'nit'),
                                             TextInput::make('razon_social')
                                                 ->required()
                                                 ->readOnly()
