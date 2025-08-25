@@ -81,6 +81,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->maxLength(25)
                             ->live(onBlur: true)
+                            ->unique(table: User::class, column: 'nit', ignoreRecord: true)
                             ->afterStateUpdated(function (Set $set, $state) {
                                 $nit = UserController::nit($state);
                                 $set('razon_social', $nit);
@@ -103,7 +104,8 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->tel()
                             ->required()
                             ->minLength(8)
-                            ->maxLength(8),
+                            ->maxLength(8)
+                            ->unique(table: User::class, column: 'telefono', ignoreRecord: true),
                         TextInput::make('whatsapp')
                             ->label('WhatsApp')
                             ->tel()
