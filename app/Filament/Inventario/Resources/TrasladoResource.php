@@ -131,11 +131,13 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                                 TextInput::make('cantidad_enviada')
                                     ->label('Cantidad Enviada')
                                     ->minValue(1)
+                                    ->default(1)
                                     ->inputMode('decimal')
                                     ->rule('numeric')
                                     ->required(),
                                 TextInput::make('cantidad_recibida')
                                     ->label('Cantidad Recibida')
+                                    ->default(1)
                                     ->visibleOn('view'),
                             ]),
                     ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto'),
