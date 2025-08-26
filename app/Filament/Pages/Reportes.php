@@ -23,8 +23,8 @@ class Reportes extends Page
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('Ventas')
-                ->label('Ventas')
+            Action::make('VentasGeneral')
+                ->label('Ventas General')
                 ->icon('heroicon-o-document-text')
                 ->modalHeading('Generar Reporte')
                 ->form([
@@ -34,47 +34,27 @@ class Reportes extends Page
                         ->required(),
                 ])
                 ->action(function (array $data) {
-                    $url = route('reporte.ventas', [
+                    $url = route('reporte.ventasgeneral', [
                         'fecha_incial' => $data['fecha_incial'],
                         'fecha_final' => $data['fecha_final'],
                     ]);
 
                     return response()->redirectTo($url);
                 }),
-            Action::make('VentasDetallada')
-                ->label('Ventas Detallada')
+            Action::make('VentasDetalle')
+                ->label('Ventas Detalle')
                 ->icon('heroicon-o-document-text')
                 ->modalHeading('Generar Reporte')
                 ->form([
-                    Select::make('año')
-                        ->options([
-                            '2022' => '2022',
-                            '2023' => '2023',
-                            '2024' => '2024',
-                            '2025' => '2025',
-                        ])
+                    DatePicker::make('fecha_incial')
                         ->required(),
-                    Select::make('mes')
-                        ->options([
-                            '1' => 'Enero',
-                            '2' => 'Febrero',
-                            '3' => 'Marzo',
-                            '4' => 'Abril',
-                            '5' => 'Mayo',
-                            '6' => 'Junio',
-                            '7' => 'Julio',
-                            '8' => 'Agosto',
-                            '9' => 'Septiembre',
-                            '10' => 'Octubre',
-                            '11' => 'Noviembre',
-                            '12' => 'Diciembre',
-                        ])
+                    DatePicker::make('fecha_final')
                         ->required(),
                 ])
                 ->action(function (array $data) {
-                    $url = route('reporte.ventas-detallado', [
-                        'año' => $data['año'],
-                        'mes' => $data['mes'],
+                    $url = route('reporte.ventasdetalle', [
+                        'fecha_incial' => $data['fecha_incial'],
+                        'fecha_final' => $data['fecha_final'],
                     ]);
 
                     return response()->redirectTo($url);
@@ -136,32 +116,14 @@ class Reportes extends Page
 
                     return response()->redirectTo($url);
                 }),
-            Action::make('VentasGeneral')
-                ->label('Ventas General')
-                ->icon('heroicon-o-document-text')
-                ->modalHeading('Generar Reporte')
-                ->form([
-                    DatePicker::make('fecha_incial')
-                        ->required(),
-                    DatePicker::make('fecha_final')
-                        ->required(),
-                ])
-                ->action(function (array $data) {
-                    $url = route('reporte.ventasgeneral', [
-                        'fecha_incial' => $data['fecha_incial'],
-                        'fecha_final' => $data['fecha_final'],
-                    ]);
-
-                    return response()->redirectTo($url);
-                }),
             Action::make('VentasDiaria')
                 ->label('Venta Diaria')
                 ->icon('heroicon-o-document-text')
                 ->modalHeading('Generar Reporte Venta Diaria')
                 ->form([
-                        DatePicker::make('fecha_inicial')->required(),
-                        DatePicker::make('fecha_final')->required(),
-                    ])
+                    DatePicker::make('fecha_inicial')->required(),
+                    DatePicker::make('fecha_final')->required(),
+                ])
                 ->action(function (array $data) {
                     $url = route('reporte.ventasdiaria', [
                         'fecha_inicial' => $data['fecha_inicial'],

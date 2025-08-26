@@ -27,11 +27,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/eliminar-carrito/{id}', [TiendaController::class, 'eliminarCarrito'])->name('eliminar.carrito'); */
 
     // REPORTES
-    Route::get('/reporte/ventas', [ReporteController::class, 'Ventas'])->name('reporte.ventas');
-    Route::get('/reporte/ventas-detallado', [ReporteController::class, 'VentasDetallado'])->name('reporte.ventas-detallado');
+    Route::get('/reporte/ventas-general', [ReporteController::class, 'VentasGeneral'])->name('reporte.ventasgeneral');
+    Route::get('/reporte/ventas-detalle', [ReporteController::class, 'VentasDetalle'])->name('reporte.ventasdetalle');
     Route::get('/reporte/pagos', [ReporteController::class, 'Pagos'])->name('reporte.pagos');
     Route::get('/reporte/resultados', [ReporteController::class, 'Resultados'])->name('reporte.resultados');
-    Route::get('/reporte/ventas-general', [ReporteController::class, 'VentasGeneral'])->name('reporte.ventasgeneral');
     Route::get('/reporte/historial-cliente', [ReporteController::class, 'HistorialCliente'])->name('reporte.historialcliente');
     Route::get('/reporte/ventas-diaria', [ReporteController::class, 'VentasDiaria'])->name('reporte.ventasdiaria');
 
