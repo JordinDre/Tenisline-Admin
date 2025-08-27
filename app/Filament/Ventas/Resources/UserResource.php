@@ -79,11 +79,27 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->maxLength(25)
                             ->live(onBlur: true)
+                            ->rules([
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    // Solo validar unique si el NIT no es CF
+                                    if (strtoupper(trim($value)) !== 'CF') {
+                                        $query = User::query()->where('nit', $value);
+                                        
+                                        // Si estamos editando, ignorar el registro actual
+                                        if ($get('id')) {
+                                            $query->where('id', '!=', $get('id'));
+                                        }
+                                        
+                                        if ($query->exists()) {
+                                            $fail('El campo NIT ya ha sido registrado.');
+                                        }
+                                    }
+                                },
+                            ])
                             ->afterStateUpdated(function (Set $set, $state) {
                                 $nit = UserController::nit($state);
                                 $set('razon_social', $nit);
-                            })
-                            ->unique(table: User::class, column: 'nit', ignoreRecord: true),
+                            }),
                         /* TextInput::make('dpi')
                             ->label('DPI')
                             ->maxLength(13)

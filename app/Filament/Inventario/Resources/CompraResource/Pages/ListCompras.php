@@ -32,7 +32,8 @@ class ListCompras extends ListRecords
             Actions\CreateAction::make(),
             Actions\Action::make('createAutomatico')
             ->label('Crear compra automático')
-            ->url(CompraResource::getUrl('create-automatico')),
+            ->url(CompraResource::getUrl('create-automatico'))
+            ->visible(auth()->user()->can('view_costs_producto')),
         ];
     }
 }

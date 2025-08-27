@@ -109,11 +109,20 @@ class CreateVenta extends CreateRecord
                                                 ->required()
                                                 ->maxLength(25)
                                                 ->live(onBlur: true)
+                                                ->rules([
+                                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                        // Solo validar unique si el NIT no es CF
+                                                        if (strtoupper(trim($value)) !== 'CF') {
+                                                            if (User::where('nit', $value)->exists()) {
+                                                                $fail('El campo NIT ya ha sido registrado.');
+                                                            }
+                                                        }
+                                                    },
+                                                ])
                                                 ->afterStateUpdated(function (Set $set, $state) {
                                                     $nit = UserController::nit($state);
                                                     $set('razon_social', $nit);
-                                                })
-                                                ->unique(table: User::class, column: 'nit'),
+                                                }),
                                             TextInput::make('razon_social')
                                                 ->required()
                                                 ->readOnly()
@@ -185,6 +194,16 @@ class CreateVenta extends CreateRecord
                                                 ->required()
                                                 ->maxLength(25)
                                                 ->live(onBlur: true)
+                                                ->rules([
+                                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                        // Solo validar unique si el NIT no es CF
+                                                        if (strtoupper(trim($value)) !== 'CF') {
+                                                            if (User::where('nit', $value)->exists()) {
+                                                                $fail('El campo NIT ya ha sido registrado.');
+                                                            }
+                                                        }
+                                                    },
+                                                ])
                                                 ->afterStateUpdated(function (Set $set, $state) {
                                                     $nit = UserController::nit($state);
                                                     $set('razon_social', $nit);
