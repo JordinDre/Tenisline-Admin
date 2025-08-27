@@ -2,19 +2,20 @@
 
 namespace App\Filament\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Labor;
 use App\Models\Venta;
+use App\Models\VentaDetalle;
 use Filament\Widgets\ChartWidget;
+use App\Http\Controllers\Utils\Functions;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
-class VentasGeneral extends ChartWidget
+class VentasBodega2 extends ChartWidget
 {
     use InteractsWithPageFilters;
 
     protected static ?string $pollingInterval = '10s';
 
-    protected static ?string $heading = 'Ventas General';
+    protected static ?string $heading = 'Ventas Chiquimula';
 
     protected static ?int $sort = 1;
 
@@ -22,7 +23,7 @@ class VentasGeneral extends ChartWidget
 
     public static function canView(): bool
     {
-        return '';
+
         return auth()->user()->can('widget_VentasGeneral');
     }
 
@@ -41,22 +42,24 @@ class VentasGeneral extends ChartWidget
         //     ->whereMonth('date', $month)
         //     ->count();
 
-        $data = Venta::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->when($day, fn ($query, $day) => $query->whereDay('created_at', $day))
-            ->whereNotIn('estado', Venta::ESTADOS_EXCLUIDOS)
+        $data = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+            ->whereYear('ventas.created_at', $year)
+            ->whereMonth('ventas.created_at', $month)
+            ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
+            ->where('ventas.bodega_id', 6)
+            ->where('devuelto', 0)
             ->get()
             ->groupBy('asesor_id')
             ->map(function ($ordenes) {
-                $total = $ordenes->sum('total');
+                $total = $ordenes->sum('precio');
                 // $meta = $ordenes->first()->asesor->metas->last()?->meta ?? 0;
-                $costo = $ordenes->sum(fn ($orden) => $orden->detalles->sum(
-                    fn ($detalle) => $detalle->cantidad * (($detalle->producto->precio_compra ?? 0) + ($detalle->producto->envase ?? 0))
-                ));
-                $clientes = $ordenes->pluck('cliente_id')->unique()->count();
+                $costo = $ordenes->sum(fn ($d) =>
+                    $d->cantidad * (($d->producto->precio_compra ?? 0) + ($d->producto->envase ?? 0))
+                );
+                $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
 
                 return [
-                    'asesor' => $ordenes->first()->asesor->name ?? 'Sin Asesor',
+                    'asesor' => $ordenes->first()->venta->asesor->name ?? 'Sin Asesor',
                     'total' => $total,
                     'cantidad' => $ordenes->count(),
                     'costo' => $costo,
