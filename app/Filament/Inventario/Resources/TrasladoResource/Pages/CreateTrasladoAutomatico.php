@@ -2,6 +2,7 @@
 
 namespace App\Filament\Inventario\Resources\TrasladoResource\Pages;
 
+use Exception;
 use Filament\Actions;
 use App\Models\Bodega;
 use Filament\Forms\Get;
@@ -15,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Notifications\Notification;
 use App\Filament\Inventario\Resources\TrasladoResource;
 
 class CreateTrasladoAutomatico extends CreateRecord
@@ -56,12 +58,8 @@ class CreateTrasladoAutomatico extends CreateRecord
             Hidden::make('emisor_id')
                 ->default(auth()->user()->id)
                 ->dehydrated(true),
-            DatePicker::make('fecha_inicio')
-                ->label('Desde')
-                ->dehydrated(false)
-                ->required(),
-            DatePicker::make('fecha_fin')
-                ->label('Hasta')
+            DatePicker::make('fecha')
+                ->label('Fecha')
                 ->dehydrated(false)
                 ->required(),
             Textarea::make('observaciones')
@@ -84,12 +82,28 @@ class CreateTrasladoAutomatico extends CreateRecord
         return $data;
     }
 
+    protected function beforeCreate(): void
+    {
+        $fecha = $this->data['fecha'];
+
+        $productos = Producto::whereDate('created_at', $fecha)->get();
+
+        if ($productos->isEmpty()) {
+            Notification::make()
+                ->title('Error al crear el traslado')
+                ->body("No existe productos con esa fecha de creación")
+                ->danger()
+                ->send();
+
+            $this->halt(); 
+        }
+    }
+
     protected function afterCreate(): void
     {
-        $fechaInicio = $this->data['fecha_inicio'];
-        $fechaFin    = $this->data['fecha_fin'];
-
-        $productos = Producto::whereBetween('created_at', [$fechaInicio, $fechaFin])->get();
+        $fecha = $this->data['fecha'];
+        
+        $productos = Producto::whereDate('created_at', $fecha)->get();
 
         foreach ($productos as $p) {
             $this->record->detalles()->create([

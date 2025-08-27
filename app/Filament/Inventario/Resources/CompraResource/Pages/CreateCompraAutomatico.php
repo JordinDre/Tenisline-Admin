@@ -3,6 +3,7 @@
 namespace App\Filament\Inventario\Resources\CompraResource\Pages;
 
 use Closure;
+use Exception;
 use App\Models\Pago;
 use App\Models\Banco;
 use Filament\Actions;
@@ -23,6 +24,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Notification;
 use App\Filament\Inventario\Resources\CompraResource;
 
 class CreateCompraAutomatico extends CreateRecord
@@ -53,12 +55,8 @@ class CreateCompraAutomatico extends CreateRecord
             Select::make('proveedor_id')
                 ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor'))
                 ->searchable(),
-            DatePicker::make('fecha_inicio')
-                ->label('Desde')
-                ->dehydrated(false)
-                ->required(),
-            DatePicker::make('fecha_fin')
-                ->label('Hasta')
+            DatePicker::make('fecha')
+                ->label('Fecha')
                 ->dehydrated(false)
                 ->required(),
             Textarea::make('observaciones'),
@@ -68,9 +66,11 @@ class CreateCompraAutomatico extends CreateRecord
                 ->preload()
                 ->placeholder('Seleccione')
                 ->live()
+                ->required()
                 ->searchable(),
             Repeater::make('pagos')
                 ->relationship('pagos') 
+                ->defaultItems(0)
                 ->schema([
                 Select::make('tipo_pago_id')
                     ->label('Forma de Pago')
@@ -185,12 +185,28 @@ class CreateCompraAutomatico extends CreateRecord
             ]);
     }
 
+    protected function beforeCreate(): void
+    {
+        $fecha = $this->data['fecha'];
+
+        $productos = Producto::whereDate('created_at', $fecha)->get();
+
+        if ($productos->isEmpty()) {
+            Notification::make()
+                ->title('Error al crear la compra')
+                ->body("No existe productos con esa fecha de creación")
+                ->danger()
+                ->send();
+
+            $this->halt(); 
+        }
+    }
+
     protected function afterCreate(): void
     {
-        $fechaInicio = $this->data['fecha_inicio'];
-        $fechaFin    = $this->data['fecha_fin'];
+        $fecha = $this->data['fecha'];
         
-        $productos = Producto::whereBetween('created_at', [$fechaInicio, $fechaFin])->get();
+        $productos = Producto::whereDate('created_at', $fecha)->get();
 
         foreach ($productos as $p) {
             $this->record->detalles()->create([
