@@ -48,7 +48,8 @@ class ListTraslados extends ListRecords
             Actions\CreateAction::make(),
             Actions\Action::make('createAutomatico')
             ->label('Crear traslado automático')
-            ->url(TrasladoResource::getUrl('create-automatico')),
+            ->url(TrasladoResource::getUrl('create-automatico'))
+            ->visible(auth()->user()->can('view_costs_producto')),
         ];
     }
 }
