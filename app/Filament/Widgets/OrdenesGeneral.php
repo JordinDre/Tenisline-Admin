@@ -19,7 +19,7 @@ class OrdenesGeneral extends ChartWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 2;
 
     public static function canView(): bool
     {
@@ -145,10 +145,87 @@ class OrdenesGeneral extends ChartWidget
     protected function getOptions(): array
     {
         return [
-            'indexAxis' => 'y',
+            'indexAxis' => 'x',
             'plugins' => [
                 'legend' => [
                     'position' => 'top',
+                ],
+                'tooltip' => [
+                    'enabled' => true,
+                    'mode' => 'index',
+                    'intersect' => false,
+                    'backgroundColor' => 'rgba(0, 0, 0, 0.9)',
+                    'titleColor' => '#ffffff',
+                    'bodyColor' => '#ffffff',
+                    'borderColor' => '#ffffff',
+                    'borderWidth' => 1,
+                    'cornerRadius' => 8,
+                    'padding' => 12,
+                    'callbacks' => [
+                        'title' => 'function(context) {
+                            return "👤 " + context[0].label;
+                        }',
+                        'label' => 'function(context) {
+                            let label = context.dataset.label || "";
+                            if (label) {
+                                label += ": ";
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.datasetIndex === 0) {
+                                    label += new Intl.NumberFormat("es-GT", {
+                                        style: "currency",
+                                        currency: "GTQ"
+                                    }).format(context.parsed.y);
+                                } else if (context.datasetIndex === 1) {
+                                    label += new Intl.NumberFormat("es-GT", {
+                                        style: "currency",
+                                        currency: "GTQ"
+                                    }).format(context.parsed.y);
+                                } else if (context.datasetIndex === 2) {
+                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y);
+                                } else if (context.datasetIndex === 3) {
+                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y);
+                                } else if (context.datasetIndex === 4) {
+                                    label += context.parsed.y + "%";
+                                } else if (context.datasetIndex === 5) {
+                                    label += context.parsed.y + "%";
+                                }
+                            }
+                            return label;
+                        }',
+                        'afterBody' => 'function(context) {
+                            let asesorIndex = context[0].dataIndex;
+                            let asesorData = window.asesorDataOrdenes ? window.asesorDataOrdenes[asesorIndex] : null;
+                            if (asesorData) {
+                                return [
+                                    "",
+                                    "📊 DETALLES DEL ASESOR:",
+                                    "💰 Total: " + new Intl.NumberFormat("es-GT", {
+                                        style: "currency",
+                                        currency: "GTQ"
+                                    }).format(asesorData.total),
+                                    "🎯 Meta: " + new Intl.NumberFormat("es-GT", {
+                                        style: "currency",
+                                        currency: "GTQ"
+                                    }).format(asesorData.meta),
+                                    "📈 Alcance: " + asesorData.alcance + "%",
+                                    "📦 Cantidad: " + new Intl.NumberFormat("es-GT").format(asesorData.cantidad),
+                                    "👥 Clientes: " + new Intl.NumberFormat("es-GT").format(asesorData.clientes),
+                                    "📊 Rentabilidad: " + asesorData.rentabilidad + "%",
+                                    "🎫 Ticket Promedio: " + new Intl.NumberFormat("es-GT", {
+                                        style: "currency",
+                                        currency: "GTQ"
+                                    }).format(asesorData.ticket_promedio),
+                                    "📅 Proyección: " + asesorData.proyeccion + "%",
+                                    "💵 Cuota Diaria: " + new Intl.NumberFormat("es-GT", {
+                                        style: "currency",
+                                        currency: "GTQ"
+                                    }).format(asesorData.cuota_diaria)
+                                ];
+                            }
+                            return [];
+                        }',
+                    ],
                 ],
             ],
             'scales' => [
@@ -169,5 +246,59 @@ class OrdenesGeneral extends ChartWidget
     protected function getType(): string
     {
         return 'bar';
+    }
+
+    protected function getExtraAttributes(): array
+    {
+        if (! Schema::hasTable('ordens')) {
+            return [];
+        }
+
+        $year = $this->filters['year'] ?? now()->year;
+        $month = $this->filters['mes'] ?? now()->month;
+        $day = $this->filters['dia'] ?? null;
+
+        $diasLaborados = Labor::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->whereDate('date', '<=', now())
+            ->count();
+
+        $totalDias = Labor::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->count();
+
+        $data = Orden::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->when($day, fn ($query, $day) => $query->whereDay('created_at', $day))
+            ->whereNotIn('estado', Orden::ESTADOS_EXCLUIDOS)
+            ->get()
+            ->groupBy('asesor_id')
+            ->map(function ($ordenes) use ($diasLaborados, $totalDias) {
+                $total = $ordenes->sum('total');
+                $meta = $ordenes->first()->asesor->metas->last()?->meta ?? 0;
+                $costo = $ordenes->sum(fn ($orden) => $orden->detalles->sum(
+                    fn ($detalle) => $detalle->cantidad * (($detalle->producto->precio_compra ?? 0) + ($detalle->producto->envase ?? 0))
+                ));
+                $clientes = $ordenes->pluck('cliente_id')->unique()->count();
+
+                return [
+                    'asesor' => $ordenes->first()->asesor->name ?? 'Sin Asesor',
+                    'total' => $total,
+                    'cantidad' => $ordenes->count(),
+                    'costo' => $costo,
+                    'rentabilidad' => $costo > 0 ? round(($total - $costo) / $costo, 2) : 0,
+                    'meta' => $meta,
+                    'alcance' => $meta > 0 ? round(($total * 100) / $meta, 2) : 0,
+                    'clientes' => $clientes,
+                    'proyeccion' => ($diasLaborados > 0 && $meta > 0) ? round((($total / $diasLaborados) * $totalDias) / $meta, 2) : 0,
+                    'ticket_promedio' => $clientes > 0 ? round($total / $clientes, 2) : 0,
+                    'cuota_diaria' => $meta > 0 ? round($meta / $totalDias, 2) : 0,
+                ];
+            });
+
+        return [
+            'x-data' => '{}',
+            'x-init' => 'window.asesorDataOrdenes = '.json_encode($data->values()).';',
+        ];
     }
 }

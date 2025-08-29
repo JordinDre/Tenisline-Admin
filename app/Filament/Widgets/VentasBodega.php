@@ -4,7 +4,6 @@ namespace App\Filament\Widgets;
 
 use App\Http\Controllers\Utils\Functions;
 use App\Models\Labor;
-use App\Models\Venta;
 use App\Models\VentaDetalle;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -19,7 +18,7 @@ class VentasBodega extends ChartWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 2;
 
     public static function canView(): bool
     {
@@ -47,14 +46,14 @@ class VentasBodega extends ChartWidget
             ->whereMonth('ventas.created_at', $month)
             ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
             ->where('ventas.bodega_id', 1)
-            ->where('devuelto', 0)
+            ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
+            ->where('venta_detalles.devuelto', 0)
             ->get()
             ->groupBy('asesor_id')
             ->map(function ($ordenes) {
                 $total = $ordenes->sum('precio');
                 // $meta = $ordenes->first()->asesor->metas->last()?->meta ?? 0;
-                $costo = $ordenes->sum(fn ($d) =>
-                    $d->cantidad * (($d->producto->precio_compra ?? 0) + ($d->producto->envase ?? 0))
+                $costo = $ordenes->sum(fn ($d) => $d->cantidad * (($d->producto->precio_compra ?? 0) + ($d->producto->envase ?? 0))
                 );
                 $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
 
@@ -135,7 +134,7 @@ class VentasBodega extends ChartWidget
     protected function getOptions(): array
     {
         return [
-            'indexAxis' => 'y',
+            'indexAxis' => 'x',
             'plugins' => [
                 'legend' => [
                     'position' => 'top',
@@ -159,5 +158,42 @@ class VentasBodega extends ChartWidget
     protected function getType(): string
     {
         return 'bar';
+    }
+
+    protected function getExtraAttributes(): array
+    {
+        $year = $this->filters['year'] ?? now()->year;
+        $month = $this->filters['mes'] ?? now()->month;
+        $day = $this->filters['dia'] ?? null;
+
+        $data = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+            ->whereYear('ventas.created_at', $year)
+            ->whereMonth('ventas.created_at', $month)
+            ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
+            ->where('ventas.bodega_id', 1)
+            ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
+            ->where('venta_detalles.devuelto', 0)
+            ->get()
+            ->groupBy('asesor_id')
+            ->map(function ($ordenes) {
+                $total = $ordenes->sum('precio');
+                $costo = $ordenes->sum(fn ($d) => $d->cantidad * (($d->producto->precio_compra ?? 0) + ($d->producto->envase ?? 0)));
+                $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
+
+                return [
+                    'asesor' => $ordenes->first()->venta->asesor->name ?? 'Sin Asesor',
+                    'total' => $total,
+                    'cantidad' => $ordenes->count(),
+                    'costo' => $costo,
+                    'rentabilidad' => $costo > 0 ? round(($total - $costo) / $costo, 2) : 0,
+                    'clientes' => $clientes,
+                    'ticket_promedio' => $clientes > 0 ? round($total / $clientes, 2) : 0,
+                ];
+            });
+
+        return [
+            'x-data' => '{}',
+            'x-init' => 'window.asesorDataBodega = '.json_encode($data->values()).';',
+        ];
     }
 }
