@@ -139,64 +139,6 @@ class VentasBodega extends ChartWidget
                 'legend' => [
                     'position' => 'top',
                 ],
-                'tooltip' => [
-                    'enabled' => true,
-                    'mode' => 'index',
-                    'intersect' => false,
-                    'backgroundColor' => 'rgba(0, 0, 0, 0.9)',
-                    'titleColor' => '#ffffff',
-                    'bodyColor' => '#ffffff',
-                    'borderColor' => '#ffffff',
-                    'borderWidth' => 1,
-                    'cornerRadius' => 8,
-                    'padding' => 12,
-                    'callbacks' => [
-                        'title' => 'function(context) {
-                            return "👤 " + context[0].label;
-                        }',
-                        'label' => 'function(context) {
-                            let label = context.dataset.label || "";
-                            if (label) {
-                                label += ": ";
-                            }
-                            if (context.parsed.y !== null) {
-                                if (context.datasetIndex === 0) {
-                                    label += new Intl.NumberFormat("es-GT", {
-                                        style: "currency",
-                                        currency: "GTQ"
-                                    }).format(context.parsed.y);
-                                } else if (context.datasetIndex === 1) {
-                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y);
-                                } else if (context.datasetIndex === 2) {
-                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y);
-                                }
-                            }
-                            return label;
-                        }',
-                        'afterBody' => 'function(context) {
-                            let asesorIndex = context[0].dataIndex;
-                            let asesorData = window.asesorDataBodega ? window.asesorDataBodega[asesorIndex] : null;
-                            if (asesorData) {
-                                return [
-                                    "",
-                                    "📊 DETALLES DEL ASESOR:",
-                                    "💰 Total: " + new Intl.NumberFormat("es-GT", {
-                                        style: "currency",
-                                        currency: "GTQ"
-                                    }).format(asesorData.total),
-                                    "📦 Cantidad: " + new Intl.NumberFormat("es-GT").format(asesorData.cantidad),
-                                    "👥 Clientes: " + new Intl.NumberFormat("es-GT").format(asesorData.clientes),
-                                    "📈 Rentabilidad: " + asesorData.rentabilidad + "%",
-                                    "🎫 Ticket Promedio: " + new Intl.NumberFormat("es-GT", {
-                                        style: "currency",
-                                        currency: "GTQ"
-                                    }).format(asesorData.ticket_promedio)
-                                ];
-                            }
-                            return [];
-                        }',
-                    ],
-                ],
             ],
             'scales' => [
                 'x' => [
