@@ -227,6 +227,16 @@
         </tbody>
     </table>
 
+    <!-- QR del Catálogo -->
+    <div style="text-align: center; margin-top: 20px;">
+        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(80)->generate(route('catalogo'))) }}" 
+             alt="QR Catálogo" 
+             style="display: block; margin: 0 auto;">
+        <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">
+            CATALOGO
+        </div>
+    </div>
+
 </body>
 
 </html>
