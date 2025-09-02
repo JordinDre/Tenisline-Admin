@@ -139,14 +139,42 @@
     </table>
     <br>
 
-    <!-- QR del Catálogo -->
-    <div style="text-align: center; margin-top: 20px;">
-        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(80)->generate(route('catalogo'))) }}" 
-             alt="QR Catálogo" 
-             style="display: block; margin: 0 auto;">
-        <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">
-            CATALOGO
+    <!-- QRs del Catálogo y Bodega -->
+    <div style="margin-top: 20px; position: relative; width: 100%;">
+        <!-- QR del Catálogo - Esquina Izquierda -->
+        <div style="position: absolute; left: 0; top: 0;">
+            <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(80)->generate(route('catalogo'))) }}" 
+                 alt="QR Catálogo" 
+                 style="display: block;">
+            <div style="font-size: 10px; margin-top: 5px; font-weight: bold; text-align: center;">
+                CATALOGO
+            </div>
         </div>
+        
+        <!-- QR de la Bodega - Esquina Derecha -->
+        @php
+            $bodegaName = strtolower($venta->bodega->bodega ?? '');
+            $qrImage = '';
+            
+            if (str_contains($bodegaName, 'chiquimula')) {
+                $qrImage = 'qrChiquimula.jpeg';
+            } elseif (str_contains($bodegaName, 'esquipulas')) {
+                $qrImage = 'qrEsquipulas.jpeg';
+            } elseif (str_contains($bodegaName, 'zacapa')) {
+                $qrImage = 'qrZacapa.jpeg';
+            }
+        @endphp
+        
+        @if($qrImage)
+            <div style="position: absolute; right: 0; top: 0;">
+                <img src="{{ public_path('/images/' . $qrImage) }}" 
+                     alt="QR {{ $venta->bodega->bodega }}" 
+                     style="display: block; width: 80px; height: 80px;">
+                <div style="font-size: 10px; margin-top: 5px; font-weight: bold; text-align: center;">
+                    {{ strtoupper($venta->bodega->bodega) }}
+                </div>
+            </div>
+        @endif
     </div>
 
 </body>
