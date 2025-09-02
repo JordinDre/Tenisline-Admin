@@ -295,10 +295,11 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 FileUpload::make('imagenes')
                     ->image()
                     ->label('Imágenes')
+                    ->multiple()
                     ->disk(config('filesystems.disks.s3.driver'))
                     ->directory(config('filesystems.default'))
                     ->visibility('public')
-                    ->maxSize(5000)
+                    ->maxSize(2000)
                     ->columnSpanFull(),
                 // Grid::make(2)
                 //     ->schema([
