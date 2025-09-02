@@ -300,6 +300,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->disk(config('filesystems.disks.s3.driver'))
                     ->directory(config('filesystems.default'))
                     ->visibility('public')
+                    ->maxSize(5000)
+                    ->optimize('webp')
                     ->columnSpanFull(),
                 // Grid::make(2)
                 //     ->schema([
