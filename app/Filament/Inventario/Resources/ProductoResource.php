@@ -296,6 +296,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->image()
                     ->label('Imágenes')
                     ->imageEditor()
+                    ->multiple()
                     ->disk(config('filesystems.disks.s3.driver'))
                     ->directory(config('filesystems.default'))
                     ->visibility('public')
