@@ -75,6 +75,26 @@ return [
         'whatsapp' => env('WHATSAPP'),
     ],
 
+    'fel3' => [
+        'usuario_api' => env('FEL_USUARIO_API', 'CALIDADES_DEMO'),
+        'llave_api' => env('FEL_LLAVE_API', '5885D496FAB7DF356E09C6734E34FC04'),
+        'usuario_firma' => env('FEL_USUARIO_FIRMA', 'CALIDADES_DEMO'),
+        'identificador' => env('FEL_IDENTIFICADOR', 'CALIDADES_DEMO'),
+        'llave_firma' => env('FEL_LLAVE_FIRMA', 'f8f8afb5c114c4f5aa485c41084c092e'),
+
+        'nit' => env('NIT'),
+        'correo' => env('CORREO'),
+        'nombre_comercial' => env('NOMBRE_COMERCIAL3'),
+        'razon_social' => env('RAZON_SOCIAL'),
+        'direccion' => env('DIRECCION3'),
+        'codigo_postal' => env('CODIGO_POSTAL3'),
+        'municipio' => env('MUNICIPIO3'),
+        'departamento' => env('DEPARTAMENTO3'),
+        'pais' => env('PAIS'),
+        'pbx' => env('PBX'),
+        'whatsapp' => env('WHATSAPP'),
+    ],
+
     // Configuración de Guatex
     'guatex' => [
         'url_guias' => env('GUATEX_URL_GUIAS', 'https://guias.guatex.gt/tomarservicio/servicio'),
