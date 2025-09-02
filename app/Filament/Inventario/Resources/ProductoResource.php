@@ -301,7 +301,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->directory(config('filesystems.default'))
                     ->visibility('public')
                     ->maxSize(5000)
-                    ->optimize('webp')
+                    ->resize(50)
                     ->columnSpanFull(),
                 // Grid::make(2)
                 //     ->schema([
