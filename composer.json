@@ -19,7 +19,7 @@
         "http-interop/http-factory-guzzle": "^1.2",
         "hugomyb/filament-media-action": "^3.1",
         "inertiajs/inertia-laravel": "^2.0",
-        "joshembling/image-optimizer": "^1.4",
+        "joshembling/image-optimizer": "^1.6",
         "kainiklas/filament-scout": "^0.4.0",
         "kenepa/banner": "^0.0.9",
         "kenepa/resource-lock": "^2.1",

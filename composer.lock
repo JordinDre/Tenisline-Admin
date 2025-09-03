@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "940f38c4a999804ea0798d621ab17b09",
+    "content-hash": "6441cabdd6cca4d8ad704ff9ef06819e",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -3804,16 +3804,16 @@
         },
         {
             "name": "joshembling/image-optimizer",
-            "version": "v1.6.0",
+            "version": "v1.6.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/joshembling/image-optimizer.git",
-                "reference": "ba942b01aec16fbd2c9fdfabe239cf4c8f7ba63e"
+                "reference": "21481beeb9824fcf2d5efda00520491a41cae67b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/joshembling/image-optimizer/zipball/ba942b01aec16fbd2c9fdfabe239cf4c8f7ba63e",
-                "reference": "ba942b01aec16fbd2c9fdfabe239cf4c8f7ba63e",
+                "url": "https://api.github.com/repos/joshembling/image-optimizer/zipball/21481beeb9824fcf2d5efda00520491a41cae67b",
+                "reference": "21481beeb9824fcf2d5efda00520491a41cae67b",
                 "shasum": ""
             },
             "require": {
@@ -3876,7 +3876,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-08T16:55:23+00:00"
+            "time": "2025-08-26T09:23:27+00:00"
         },
         {
             "name": "kainiklas/filament-scout",
