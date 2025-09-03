@@ -52,6 +52,7 @@ class ListCaidos extends Component implements HasForms, HasTable
         return $table
             ->query($query)
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->searchable()
             ->poll('10s')
             ->columns([

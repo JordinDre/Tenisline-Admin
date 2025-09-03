@@ -51,6 +51,7 @@ class InventarioResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->groups([
                 'producto.id',
             ])

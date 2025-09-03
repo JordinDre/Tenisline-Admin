@@ -32,6 +32,7 @@ class ListClientes extends Component implements HasForms, HasTable
         return $table
             ->query($query)
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('ID')
                     ->searchable()

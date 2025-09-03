@@ -66,6 +66,7 @@ class DepartamentoResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')

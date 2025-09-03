@@ -57,6 +57,7 @@ class KardexResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->headerActions([
                 ExportAction::make()->exports([
                     ExcelExport::make()->withFilename('Kardex '.date('d-m-Y'))->fromTable(),
