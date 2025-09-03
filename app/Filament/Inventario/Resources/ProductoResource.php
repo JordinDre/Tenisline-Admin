@@ -76,7 +76,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         TextInput::make('codigo')
                             ->required()
                             ->maxLength(100)
-                            ->unique(table: Producto::class ,ignoreRecord: true),
+                            ->unique(table: Producto::class, ignoreRecord: true),
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250)
@@ -303,9 +303,9 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->maxSize(5000)
                     ->optimize('webp')
                     ->imageResizeMode('cover')            // recorta para encajar
-   /*  ->imageCropAspectRatio('3:4')         // o '9:16'
-    ->imageResizeTargetWidth('1080')
-    ->imageResizeTargetHeight('1440') */
+                    ->imageCropAspectRatio('3:4')         // o '9:16'
+                    ->imageResizeTargetWidth('1080')
+                    ->imageResizeTargetHeight('1440')
                     ->orientImagesFromExif(true)
                     ->columnSpanFull(),
                 // Grid::make(2)
@@ -327,7 +327,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
             ->extremePaginationLinks()
             ->headerActions([
                 ExportAction::make()->exports([
-                    ExcelExport::make()->withFilename('Productos '.date('d-m-Y'))->fromTable(),
+                    ExcelExport::make()->withFilename('Productos ' . date('d-m-Y'))->fromTable(),
                 ])->label('Exportar')->color('success'),
             ])
             ->columns([
@@ -335,7 +335,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -457,7 +457,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -480,7 +480,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn (Producto $record): View => view(
+                    ->modalContent(fn(Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))
@@ -520,7 +520,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
 
         foreach (Bodega::all() as $bodega) {
             $query->withSum(
-                ['inventario as existencia_bodega_'.$bodega->id => fn ($q) => $q->where('bodega_id', $bodega->id)],
+                ['inventario as existencia_bodega_' . $bodega->id => fn($q) => $q->where('bodega_id', $bodega->id)],
                 'existencia'
             );
         }
