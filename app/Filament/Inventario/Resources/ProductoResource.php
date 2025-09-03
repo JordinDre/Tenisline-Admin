@@ -302,10 +302,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->visibility('public')
                     ->maxSize(5000)
                     ->optimize('webp')
-                    ->imageResizeMode('cover')            // recorta para encajar
-                    ->imageCropAspectRatio('3:4')         // o '9:16'
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('9:16')
                     ->imageResizeTargetWidth('1080')
-                    ->imageResizeTargetHeight('1440')
+                    ->imageResizeTargetHeight('1920')
                     ->orientImagesFromExif(true)
                     ->columnSpanFull(),
                 // Grid::make(2)
