@@ -53,6 +53,7 @@ class OrdenDetalleResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->headerActions([
                 ExportAction::make()->exports([
                     ExcelExport::make()->withFilename('Ordenes Detalles '.date('d-m-Y'))->fromTable(),

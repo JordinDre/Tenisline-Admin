@@ -46,6 +46,7 @@ class InformacionEnvios extends BaseWidget
 
         return $table
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->query(
                 Guia::query()
                     ->selectRaw('

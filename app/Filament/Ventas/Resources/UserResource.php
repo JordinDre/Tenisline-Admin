@@ -335,6 +335,7 @@ class UserResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->extremePaginationLinks()
+            ->paginated([10, 25, 50])
             ->columns([
                 TextColumn::make('id')
                     ->searchable()
