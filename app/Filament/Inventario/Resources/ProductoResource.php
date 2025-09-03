@@ -302,6 +302,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->visibility('public')
                     ->maxSize(5000)
                     ->optimize('webp')
+                    ->orientImagesFromExif(false)
                     ->columnSpanFull(),
                 // Grid::make(2)
                 //     ->schema([
