@@ -328,7 +328,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
             ->headerActions([
                 ExportAction::make()->exports([
                     ExcelExport::make()->withFilename('Productos ' . date('d-m-Y'))->fromTable(),
-                ])->label('Exportar')->color('success'),
+                ])->label('Exportar')->color('success')->visible(auth()->user()->can('view_costs_producto')),
             ])
             ->columns([
                 Tables\Columns\TextColumn::make('imagenes')
