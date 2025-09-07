@@ -2,6 +2,7 @@
 
 namespace App\Filament\Ventas\Pages;
 
+use App\Filament\Widgets\MetasTiendaWidget;
 use App\Http\Controllers\Utils\Functions;
 use Carbon\Carbon;
 use Filament\Forms\Components\Section;
@@ -51,5 +52,12 @@ class Dashboard extends \Filament\Pages\Dashboard
     public function getColumns(): int|string|array
     {
         return 2;
+    }
+
+    public function getWidgets(): array
+    {
+        return [
+            MetasTiendaWidget::class,
+        ];
     }
 }
