@@ -185,7 +185,7 @@ class User extends Authenticatable implements FilamentUser
         return $this->morphMany(Observacion::class, 'observacionable');
     }
 
-    public function seguimientos(): HasMany
+    /* public function seguimientos(): HasMany
     {
         return $this->hasMany(Seguimiento::class, 'user_id');
     }
@@ -193,7 +193,7 @@ class User extends Authenticatable implements FilamentUser
     public function ultimoSeguimiento()
     {
         return $this->hasOne(Seguimiento::class)->latestOfMany();
-    }
+    } */
 
     public function metas(): HasMany
     {
@@ -252,5 +252,27 @@ class User extends Authenticatable implements FilamentUser
             'id',                 // Local key en `users`
             'id'                  // Local key en `ordenes`
         )->where('pagable_type', Venta::class);
+    }
+
+    public function consultas()
+    {
+        return $this->morphMany(\App\Models\Seguimiento::class, 'seguimientable')
+            ->where('tipo', 'consulta');
+    }
+
+    public function seguimientos()
+    {
+        return $this->morphMany(\App\Models\Seguimiento::class, 'seguimientable')
+            ->where('tipo', 'seguimiento');
+    }
+
+    public function ultimaConsulta()
+    {
+        return $this->consultas()->latest()->first();
+    }
+
+    public function ultimoSeguimiento()
+    {
+        return $this->seguimientos()->latest()->first();
     }
 }
