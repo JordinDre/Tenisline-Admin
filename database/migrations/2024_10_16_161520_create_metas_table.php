@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('bodega_id')->references('id')->on('bodegas');
             $table->timestamps();
-            $table->unique(['user_id', 'mes', 'anio']);
+            $table->unique(['user_id', 'bodega_id', 'mes', 'anio']);
         });
     }
 
