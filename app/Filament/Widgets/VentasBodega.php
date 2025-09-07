@@ -7,6 +7,7 @@ use App\Models\Labor;
 use App\Models\VentaDetalle;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Auth;
 
 class VentasBodega extends ChartWidget
 {
@@ -22,8 +23,7 @@ class VentasBodega extends ChartWidget
 
     public static function canView(): bool
     {
-
-        return auth()->user()->can('widget_VentasGeneral');
+        return Auth::check() && Auth::user()->can('widget_VentasGeneral');
     }
 
     protected function getData(): array
@@ -53,16 +53,17 @@ class VentasBodega extends ChartWidget
             ->map(function ($ordenes) {
                 $total = $ordenes->sum('precio');
                 // $meta = $ordenes->first()->asesor->metas->last()?->meta ?? 0;
-                $costo = $ordenes->sum(fn ($d) => $d->cantidad * (($d->producto->precio_compra ?? 0) + ($d->producto->envase ?? 0))
-                );
+                $costo = $ordenes->sum(fn ($d) => $d->cantidad * ($d->producto->precio_costo ?? 0));
                 $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
+
+                $rentabilidad = $costo > 0 ? round(($total - $costo) / $total, 4) : 0;
 
                 return [
                     'asesor' => $ordenes->first()->venta->asesor->name ?? 'Sin Asesor',
                     'total' => $total,
                     'cantidad' => $ordenes->count(),
                     'costo' => $costo,
-                    'rentabilidad' => $costo > 0 ? round(($total - $costo) / $costo, 2) : 0,
+                    'rentabilidad' => $rentabilidad,
                     // 'meta' => $meta,
                     // 'alcance' => $meta > 0 ? round(($total * 100) / $meta, 2) : 0,
                     'clientes' => $clientes,
@@ -96,6 +97,12 @@ class VentasBodega extends ChartWidget
                     'data' => $data->pluck('clientes')->toArray(),
                     'backgroundColor' => '#EF4444', // red-500
                     'borderColor' => '#DC2626', // red-600
+                ],
+                [
+                    'label' => 'Rendimiento (%) '.number_format($data->avg('rentabilidad') * 100, 2),
+                    'data' => $data->pluck('rentabilidad')->map(fn ($r) => $r * 100)->toArray(),
+                    'backgroundColor' => '#10B981', // emerald-500
+                    'borderColor' => '#059669', // emerald-600
                 ],
                 // [
                 //     'label' => 'Rentabilidad (%) '.number_format($data->sum('rentabilidad'), 2),
@@ -177,7 +184,7 @@ class VentasBodega extends ChartWidget
             ->groupBy('asesor_id')
             ->map(function ($ordenes) {
                 $total = $ordenes->sum('precio');
-                $costo = $ordenes->sum(fn ($d) => $d->cantidad * (($d->producto->precio_compra ?? 0) + ($d->producto->envase ?? 0)));
+                $costo = $ordenes->sum(fn ($d) => $d->cantidad * ($d->producto->precio_costo ?? 0));
                 $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
 
                 return [
@@ -185,7 +192,7 @@ class VentasBodega extends ChartWidget
                     'total' => $total,
                     'cantidad' => $ordenes->count(),
                     'costo' => $costo,
-                    'rentabilidad' => $costo > 0 ? round(($total - $costo) / $costo, 2) : 0,
+                    'rentabilidad' => $costo > 0 ? round(($total - $costo) / $total, 2) : 0,
                     'clientes' => $clientes,
                     'ticket_promedio' => $clientes > 0 ? round($total / $clientes, 2) : 0,
                 ];

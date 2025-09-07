@@ -5,11 +5,9 @@ namespace App\Http\Controllers;
 use App\Exports\ReporteDiarioExport;
 use App\Exports\ReporteHistorialClienteExport;
 use App\Exports\ReportePagosExport;
-use App\Exports\ReporteResultadosExport;
 use App\Exports\ReporteVentasGeneralExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReporteController extends Controller
@@ -17,7 +15,7 @@ class ReporteController extends Controller
     public function VentasGeneral(Request $request)
     {
         $fecha_inicial = $request->fecha_inicial ?? $request->fecha_incial;
-        $fecha_final   = $request->fecha_final   ?? $request->fecha_final;
+        $fecha_final = $request->fecha_final ?? $request->fecha_final;
 
         $sql = "
         WITH base AS (
@@ -77,10 +75,9 @@ class ReporteController extends Controller
 
         return Excel::download(
             new ReporteVentasGeneralExport($data),
-            'Ventas General fecha: ' . $fecha_inicial . ' - ' . $fecha_final . '.xlsx'
+            'Ventas General fecha: '.$fecha_inicial.' - '.$fecha_final.'.xlsx'
         );
     }
-
 
     public function Pagos(Request $request)
     {
@@ -137,121 +134,13 @@ class ReporteController extends Controller
             $fecha_final,
         ]);
 
-        return Excel::download(new ReportePagosExport($data), 'Pagos fecha: ' . $fecha_incial . ' - ' . $fecha_final . '.xlsx');
-    }
-
-    public function Resultados(Request $request)
-    {
-        $consulta = DB::select("
-           WITH comodin AS (
-                SELECT
-                    users.id,
-                    users.name,
-                    (
-                        SELECT
-                            COUNT(o.cliente_id)
-                        FROM
-                            ventas o
-                        WHERE
-                            o.asesor_id = ventas.asesor_id
-                            AND YEAR(o.created_at) = ?
-                            AND MONTH(o.created_at) = ?
-                            AND o.estado IN('liquidada')
-                    ) AS cantidad_pedidos,
-                    model_has_roles.role_id,
-                    SUM(
-                        (
-                            (
-                                productos.precio_costo
-                            ) * venta_detalles.cantidad
-                        )
-                    ) AS costo_compra,
-                    SUM(
-                        (
-                            venta_detalles.precio * venta_detalles.cantidad
-                        )
-                    ) AS costo_venta,
-                    SUM(
-                        venta_detalles.cantidad * venta_detalles.precio
-                    ) AS subtotal_ordenes_detalladas,
-                    (SELECT SUM(od.devuelto * od.precio) FROM venta_detalles od
-		    inner join ventas v on ventas.id = od.venta_id
-                    WHERE v.asesor_id = users.id AND YEAR(v.created_at) = ?
-                    AND MONTH(v.created_at) = ? and v.estado = 'devueltas') AS subtotal_ordenes_devueltas,
-                    (SELECT SUM(od.cantidad * od.precio) FROM venta_detalles od
-                    INNER JOIN ventas o ON o.id = od.venta_id
-                    WHERE o.estado NOT IN ('anuladas', 'devueltas') AND o.asesor_id = users.id AND YEAR(o.created_at) = ?
-                    AND MONTH(o.created_at) = ?) AS subtotal_ordenes_todas,
-                    (SELECT COUNT(DISTINCT(o.cliente_id)) FROM ventas o 
-                    inner join users u on o.cliente_id = u.id WHERE o.asesor_id = users.id 
-                    AND o.estado IN('liquidada') AND YEAR(o.created_at) = ?
-                    AND MONTH(o.created_at) = ? and year(u.created_at) != ? and month(u.created_at) != ?  ) AS cobertura_clientes,
-                    IFNULL((
-                        SELECT
-                            SUM(o.total)
-                            FROM ventas o
-                        WHERE
-                            asesor_id = users.id
-                            AND YEAR(o.created_at) = ?
-                            AND MONTH(o.created_at) = ?
-                            AND o.estado NOT IN('anuladas', 'devueltas')), 0) AS total
-                FROM
-                    venta_detalles
-                    INNER JOIN ventas ON ventas.id = venta_detalles.venta_id
-                    INNER JOIN productos ON venta_detalles.producto_id = productos.id
-                    INNER JOIN users ON ventas.asesor_id = users.id
-                    LEFT JOIN model_has_roles ON model_has_roles.model_id = users.id
-                WHERE
-                    YEAR(ventas.created_at) = ?
-                    AND MONTH(ventas.created_at) = ?
-                    AND ventas.estado IN('liquidada')
-                GROUP BY
-                    users.id, role_id, users.name, ventas.asesor_id, ventas.id
-                HAVING
-                    model_has_roles.role_id IN (5)
-            )
-            SELECT
-                id,
-                name,
-                ROUND(subtotal_ordenes_detalladas, 2) AS venta_mes,
-                round(((total - costo_compra) / total)* 100 / 2,2) as rendimiento,
-                cobertura_clientes as clientes_cartera_vendidos,
-                ROUND((subtotal_ordenes_detalladas/cobertura_clientes),2) AS ticket_promedio,
-                cantidad_pedidos,
-                ROUND(costo_compra, 2) AS costo_compra,
-                ROUND((costo_venta-costo_compra), 2) AS utilidad_bruta,
-                ROUND(((subtotal_ordenes_detalladas-costo_compra)/subtotal_ordenes_detalladas) * 100, 2) AS margen_bruto,
-                CASE
-                    WHEN role_id = 5 THEN 'vendedor'
-                    ELSE ''
-                END AS Contrato, 
-                ifnull(subtotal_ordenes_devueltas,0) AS devoluciones
-            FROM
-                comodin;
-        ", [
-            $request->año,
-            $request->mes,
-            $request->año,
-            $request->mes,
-            $request->año,
-            $request->mes,
-            $request->año,
-            $request->mes,
-            $request->año,
-            $request->mes,
-            $request->año,
-            $request->mes,
-            $request->año,
-            $request->mes,
-        ]);
-
-        return Excel::download(new ReporteResultadosExport($consulta), 'Resultados Mes: ' . $request->mes . ' Año: ' . $request->año . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+        return Excel::download(new ReportePagosExport($data), 'Pagos fecha: '.$fecha_incial.' - '.$fecha_final.'.xlsx');
     }
 
     public function VentasDetalle(Request $request)
     {
         $fecha_inicial = $request->fecha_inicial ?? $request->fecha_incial;
-        $fecha_final   = $request->fecha_final   ?? $request->fecha_final;
+        $fecha_final = $request->fecha_final ?? $request->fecha_final;
 
         $sql = "
         WITH base AS (
@@ -305,10 +194,9 @@ class ReporteController extends Controller
 
         return Excel::download(
             new ReporteVentasGeneralExport($data),
-            'Ventas Detalle fecha: ' . $fecha_inicial . ' - ' . $fecha_final . '.xlsx'
+            'Ventas Detalle fecha: '.$fecha_inicial.' - '.$fecha_final.'.xlsx'
         );
     }
-
 
     public function HistorialCliente(Request $request)
     {
@@ -373,13 +261,13 @@ class ReporteController extends Controller
             $request->cliente_id,
         ]);
 
-        return Excel::download(new ReporteHistorialClienteExport($data), 'Historial del cliente con id: ' . $request->cliente_id . '.xlsx');
+        return Excel::download(new ReporteHistorialClienteExport($data), 'Historial del cliente con id: '.$request->cliente_id.'.xlsx');
     }
 
-    public function VentasDiaria(Request $request)
+    public function Resultados(Request $request)
     {
         $fecha_inicial = $request->fecha_inicial;
-        $fecha_final   = $request->fecha_final;
+        $fecha_final = $request->fecha_final;
 
         $sql = "
         WITH base AS (
@@ -439,7 +327,7 @@ class ReporteController extends Controller
 
         return Excel::download(
             new ReporteDiarioExport($data),
-            'Reporte Diario ' . $fecha_inicial . ' - ' . $fecha_final . '.xlsx'
+            'Reporte Resultados '.$fecha_inicial.' - '.$fecha_final.'.xlsx'
         );
     }
 }
