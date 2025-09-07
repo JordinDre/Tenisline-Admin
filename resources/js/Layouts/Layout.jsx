@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import Footer from '@/Components/Footer';
 import Header from '@/Components/Header';
 import Navigation from '@/Components/Navigation';
+import WhatsAppModal from '@/Components/WhatsAppModal';
 
 export default function Layout({ children }) {
+    const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+
     return (
         <div className="relative flex min-h-screen flex-col">
             <Header />
@@ -18,10 +22,8 @@ export default function Layout({ children }) {
                 </div>
 
                 {/* Botón de WhatsApp */}
-                <a
-                    href="https://wa.me/50239901122"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <button
+                    onClick={() => setShowWhatsAppModal(true)}
                     className="transition-transform hover:scale-110"
                 >
                     <svg
@@ -50,10 +52,16 @@ export default function Layout({ children }) {
                             fillRule="evenodd"
                             clipRule="evenodd"
                             d="M19.3,16c-0.4-0.8-0.7-0.8-1.1-0.8c-0.3,0-0.6,0-0.9,0	s-0.8,0.1-1.3,0.6c-0.4,0.5-1.7,1.6-1.7,4s1.7,4.6,1.9,4.9s3.3,5.3,8.1,7.2c4,1.6,4.8,1.3,5.7,1.2c0.9-0.1,2.8-1.1,3.2-2.3	c0.4-1.1,0.4-2.1,0.3-2.3c-0.1-0.2-0.4-0.3-0.9-0.6s-2.8-1.4-3.2-1.5c-0.4-0.2-0.8-0.2-1.1,0.2c-0.3,0.5-1.2,1.5-1.5,1.9	c-0.3,0.3-0.6,0.4-1,0.1c-0.5-0.2-2-0.7-3.8-2.4c-1.4-1.3-2.4-2.8-2.6-3.3c-0.3-0.5,0-0.7,0.2-1c0.2-0.2,0.5-0.6,0.7-0.8	c0.2-0.3,0.3-0.5,0.5-0.8c0.2-0.3,0.1-0.6,0-0.8C20.6,19.3,19.7,17,19.3,16z"
-                        ></path>
+                        >                        </path>
                     </svg>
-                </a>
+                </button>
             </div>
+
+            {/* Modal de selección de bodega WhatsApp */}
+            <WhatsAppModal 
+                isOpen={showWhatsAppModal} 
+                onClose={() => setShowWhatsAppModal(false)} 
+            />
         </div>
     );
 }
