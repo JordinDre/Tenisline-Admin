@@ -17,7 +17,7 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return $form
             ->schema([
-                Section::make()
+                Section::make('Filtros de Tiempo')
                     ->schema([
                         Select::make('year')
                             ->label('Año')
@@ -41,6 +41,28 @@ class Dashboard extends \Filament\Pages\Dashboard
                             ->default(now()->day),
                     ])
                     ->columns(3),
+                Section::make('Filtros de Datos')
+                    ->schema([
+                        Select::make('bodega')
+                            ->label('Bodega')
+                            ->options([
+                                '' => 'Todas las Bodegas',
+                                'Zacapa' => 'Zacapa',
+                                'Chiquimula' => 'Chiquimula',
+                            ])
+                            ->default('')
+                            ->reactive(),
+                        Select::make('genero')
+                            ->label('Género')
+                            ->options([
+                                '' => 'Todos los Géneros',
+                                'Dama' => 'Dama',
+                                'Caballero' => 'Caballero',
+                            ])
+                            ->default('')
+                            ->reactive(),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -52,9 +74,9 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return [
             'sm' => 1,
-            'md' => 2,
-            'lg' => 3,
-            'xl' => 4,
+            'md' => 1,
+            'lg' => 2,
+            'xl' => 2,
         ];
     }
 }

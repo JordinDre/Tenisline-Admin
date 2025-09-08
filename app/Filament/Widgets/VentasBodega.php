@@ -15,15 +15,15 @@ class VentasBodega extends ChartWidget
 
     protected static ?string $pollingInterval = '10s';
 
-    protected static ?string $heading = 'Ventas Zacapa';
+    protected static ?string $heading = 'Ventas por Bodega';
 
     protected static ?int $sort = 1;
 
     protected int|string|array $columnSpan = [
         'sm' => 'full',
         'md' => 'full',
-        'lg' => 2,
-        'xl' => 2,
+        'lg' => 1,
+        'xl' => 1,
     ];
 
     public static function canView(): bool
@@ -36,6 +36,8 @@ class VentasBodega extends ChartWidget
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;
+        $bodegaFilter = $this->filters['bodega'] ?? '';
+        $generoFilter = $this->filters['genero'] ?? '';
 
         // $diasLaborados = Labor::whereYear('date', $year)
         //     ->whereMonth('date', $month)
@@ -47,10 +49,13 @@ class VentasBodega extends ChartWidget
         //     ->count();
 
         $data = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+            ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
+            ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
             ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
-            ->where('ventas.bodega_id', 1)
+            ->when($bodegaFilter, fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega))
+            ->when($generoFilter, fn ($query, $genero) => $query->where('productos.genero', $genero))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
             ->get()
@@ -177,12 +182,17 @@ class VentasBodega extends ChartWidget
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;
+        $bodegaFilter = $this->filters['bodega'] ?? '';
+        $generoFilter = $this->filters['genero'] ?? '';
 
         $data = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+            ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
+            ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
             ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
-            ->where('ventas.bodega_id', 1)
+            ->when($bodegaFilter, fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega))
+            ->when($generoFilter, fn ($query, $genero) => $query->where('productos.genero', $genero))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
             ->get()
