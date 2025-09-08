@@ -19,7 +19,12 @@ class OrdenesGeneral extends ChartWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 2;
+    protected int|string|array $columnSpan = [
+        'sm' => 'full',
+        'md' => 'full',
+        'lg' => 2,
+        'xl' => 2,
+    ];
 
     public static function canView(): bool
     {

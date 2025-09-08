@@ -17,7 +17,12 @@ class VentasPorTallaChiquimula extends ChartWidget
 
     protected static ?int $sort = 4;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'sm' => 'full',
+        'md' => 'full',
+        'lg' => 1,
+        'xl' => 1,
+    ];
 
     public static function canView(): bool
     {
@@ -42,8 +47,10 @@ class VentasPorTallaChiquimula extends ChartWidget
             ->where('productos.talla', '!=', '')
             ->selectRaw('productos.talla, SUM(venta_detalles.cantidad) as total_cantidad, SUM(venta_detalles.precio) as total_precio')
             ->groupBy('productos.talla')
-            ->orderBy('productos.talla')
-            ->get();
+            ->get()
+            ->sortBy(function ($item) {
+                return $this->getTallaNumericValue($item->talla);
+            });
 
         $labels = $data->pluck('talla')->map(function ($talla) {
             return "Talla {$talla}";
@@ -101,6 +108,49 @@ class VentasPorTallaChiquimula extends ChartWidget
     protected function getType(): string
     {
         return 'bar';
+    }
+
+    private function getTallaNumericValue(string $talla): float
+    {
+        // Limpiar la talla y convertir a número
+        $talla = trim($talla);
+
+        // Si es un número directo, devolverlo
+        if (is_numeric($talla)) {
+            return (float) $talla;
+        }
+
+        // Si contiene fracciones como "1/2", "1/3", etc.
+        if (strpos($talla, '/') !== false) {
+            $parts = explode('/', $talla);
+            if (count($parts) === 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
+                return (float) $parts[0] / (float) $parts[1];
+            }
+        }
+
+        // Si contiene números con letras como "XS", "S", "M", "L", "XL", "XXL"
+        $talla = strtoupper($talla);
+        $tallaMap = [
+            'XS' => 0.5,
+            'S' => 1,
+            'M' => 2,
+            'L' => 3,
+            'XL' => 4,
+            'XXL' => 5,
+            'XXXL' => 6,
+        ];
+
+        if (isset($tallaMap[$talla])) {
+            return $tallaMap[$talla];
+        }
+
+        // Si contiene números con letras, extraer el número
+        if (preg_match('/(\d+(?:\.\d+)?)/', $talla, $matches)) {
+            return (float) $matches[1];
+        }
+
+        // Si no se puede convertir, devolver un valor alto para que aparezca al final
+        return 999;
     }
 
     private function generateColors(int $count): array

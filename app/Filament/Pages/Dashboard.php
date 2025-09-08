@@ -50,6 +50,11 @@ class Dashboard extends \Filament\Pages\Dashboard
 
     public function getColumns(): int|string|array
     {
-        return 4;
+        return [
+            'sm' => 1,
+            'md' => 2,
+            'lg' => 3,
+            'xl' => 4,
+        ];
     }
 }

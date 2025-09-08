@@ -20,7 +20,12 @@ class OrdenesEmpaquetadas extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = [
+        'sm' => 'full',
+        'md' => 'full',
+        'lg' => 1,
+        'xl' => 1,
+    ];
 
     public static function canView(): bool
     {

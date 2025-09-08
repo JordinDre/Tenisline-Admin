@@ -14,7 +14,12 @@ class MetasTiendaWidget extends BaseWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = [
+        'sm' => 'full',
+        'md' => 'full',
+        'lg' => 'full',
+        'xl' => 'full',
+    ];
 
     public static function canView(): bool
     {
