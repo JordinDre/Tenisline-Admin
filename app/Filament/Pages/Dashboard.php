@@ -49,6 +49,7 @@ class Dashboard extends \Filament\Pages\Dashboard
                                 '' => 'Todas las Bodegas',
                                 'Zacapa' => 'Zacapa',
                                 'Chiquimula' => 'Chiquimula',
+                                'Esquipulas' => 'Esquipulas',
                             ])
                             ->default('')
                             ->reactive(),
