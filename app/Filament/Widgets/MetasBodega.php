@@ -3,6 +3,8 @@
 namespace App\Filament\Widgets;
 
 use App\Http\Controllers\Utils\Functions;
+use App\Models\Bodega;
+use App\Models\Meta;
 use App\Models\VentaDetalle;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -37,7 +39,8 @@ class MetasBodega extends ChartWidget
         $day = $this->filters['dia'] ?? null;
         $bodegaFilter = $this->filters['bodega'] ?? '';
 
-        $data = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+        // Obtener datos de ventas por bodega
+        $ventasData = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
@@ -46,23 +49,32 @@ class MetasBodega extends ChartWidget
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
             ->selectRaw('
+                bodegas.id as bodega_id,
                 bodegas.bodega as bodega_nombre,
                 SUM(venta_detalles.precio) as total
             ')
-            ->groupBy('bodegas.bodega')
-            ->get()
-            ->map(function ($item) {
-                $total = $item->total;
-                $meta = 50000; // Meta fija por bodega - puedes ajustar esto
-                $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
+            ->groupBy('bodegas.id', 'bodegas.bodega')
+            ->get();
 
-                return [
-                    'bodega' => $item->bodega_nombre,
-                    'total' => $total,
-                    'meta' => $meta,
-                    'alcance' => $alcance,
-                ];
-            });
+        // Obtener metas por bodega para el mes y año actual
+        $metas = Meta::where('mes', $month)
+            ->where('anio', $year)
+            ->whereNotNull('bodega_id')
+            ->pluck('meta', 'bodega_id')
+            ->toArray();
+
+        $data = $ventasData->map(function ($item) use ($metas) {
+            $total = $item->total;
+            $meta = $metas[$item->bodega_id] ?? 0; // Si no hay meta, usar 0
+            $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
+
+            return [
+                'bodega' => $item->bodega_nombre,
+                'total' => $total,
+                'meta' => $meta,
+                'alcance' => $alcance,
+            ];
+        });
 
         // Crear título dinámico basado en filtros
         $titulo = 'Metas por Bodega';
