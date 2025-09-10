@@ -19,6 +19,11 @@ class EditProducto extends EditRecord
 {
     protected static string $resource = ProductoResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [
