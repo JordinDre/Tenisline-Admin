@@ -46,16 +46,13 @@ class CaidosResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return Venta::query()
-            ->select('ventas.*')
-            ->join(
-                DB::raw('(SELECT cliente_id, MAX(created_at) as ultima_fecha FROM ventas GROUP BY cliente_id) v2'),
-                function ($join) {
-                    $join->on('ventas.cliente_id', '=', 'v2.cliente_id')
-                         ->on('ventas.created_at', '=', 'v2.ultima_fecha');
-                }
-            )
-            ->with(['cliente', 'asesor'])
-            ->orderBy('ventas.created_at', 'asc');
+            ->fromSub(function ($query) {
+                $query->selectRaw('ventas.*, ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY created_at DESC) as rn')
+                    ->from('ventas');
+            }, 'ventas')
+            ->where('rn', 1)
+            ->with(['cliente'])
+            ->orderBy('created_at', 'asc');
     }
 
     public static function table(Table $table): Table
@@ -86,11 +83,6 @@ class CaidosResource extends Resource
                 Tables\Columns\TextColumn::make('cliente.nit')
                     ->label('NIT')
                     ->searchable()
-                    ->copyable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('asesor.name')
-                    ->searchable()
-                    ->label('Vendedor')
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('id')
