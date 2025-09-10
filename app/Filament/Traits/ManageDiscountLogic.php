@@ -143,7 +143,7 @@ trait ManageDiscountLogic
         $detalles = $this->getDetallesArray($get);
         $totalProductos = collect($detalles)->sum('cantidad');
 
-        if ($totalProductos === 1) {
+      /*   if ($totalProductos === 1) {
             if ($toggleName === 'oferta') {
                 Notification::make()
                     ->title('Descuento no aplicable')
@@ -163,7 +163,7 @@ trait ManageDiscountLogic
             $this->updateOrderTotals($get, $set);
 
             return;
-        }
+        } */
 
         $activeIndividualDiscounts = $this->countActiveIndividualDiscounts($detalles);
         $isGlobalActive = $get('aplicar_descuento') ?? $get('../../aplicar_descuento') ?? false;
