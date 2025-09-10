@@ -39,7 +39,7 @@ trait ManageDiscountLogic
             return;
         }
 
-        if ($state && $activeIndividualDiscounts >= $availableSlots) {
+        /* if ($state && $activeIndividualDiscounts >= $availableSlots) {
             Notification::make()
                 ->title('Límite de promociones alcanzado')
                 ->body('Ya has aplicado el máximo de descuentos permitidos en esta venta. Para aplicar el descuento global, desactiva los descuentos individuales.')
@@ -48,7 +48,7 @@ trait ManageDiscountLogic
             $set('aplicar_descuento', false);
 
             return;
-        }
+        } */
 
         if ($state) {
             $detallesConDescuento = DescuentosHelper::aplicarDescuentoMitadPorPar($detalles);
@@ -171,7 +171,7 @@ trait ManageDiscountLogic
         $totalActiveDiscounts = $activeIndividualDiscounts + ($isGlobalActive ? 1 : 0);
         $availableSlots = $this->getAvailableDiscountSlots($detalles);
 
-        if ($totalActiveDiscounts > $availableSlots) {
+        /* if ($totalActiveDiscounts > $availableSlots) {
             Notification::make()
                 ->title('Límite de promociones alcanzado')
                 ->body('Ya has aplicado el máximo de descuentos permitidos en esta venta. Para aplicar uno nuevo, desactiva uno existente o agrega más productos.')
@@ -180,7 +180,7 @@ trait ManageDiscountLogic
             $set($toggleName, false);
 
             return;
-        }
+        } */
 
         $precioOriginal = $get('precio_original') ?? 0;
         $precioFinal = $priceCalculationFn($precioOriginal);
