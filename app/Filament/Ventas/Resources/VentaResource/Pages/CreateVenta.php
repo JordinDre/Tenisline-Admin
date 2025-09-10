@@ -291,10 +291,10 @@ class CreateVenta extends CreateRecord
                                         ->label('Facturar CF')
                                         ->columnSpan(3),
                                     Toggle::make('aplicar_descuento')
-                                        ->label('Promo ')
+                                        ->label('Promo 50%')
                                         ->inline(false)
                                         ->dehydrated(false)
-                                        ->visible(fn (Get $get): bool => ! empty($get('bodega_id')))
+                                        ->visible(fn (Get $get): bool => ! empty($get('bodega_id')) && $get('bodega_id') != 8)
                                         ->reactive()
                                         ->afterStateUpdated(fn ($state, Get $get, Set $set) => $this->handleGlobalDiscountToggle($state, $get, $set)),
                                     Repeater::make('detalles')
