@@ -101,7 +101,17 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0);
 
                 if ($bodega) {
-                    $query->where('bodega_id', $bodega);
+                    // Si se selecciona una bodega, buscar en todas las bodegas de ese municipio
+                    $bodegaSeleccionada = Bodega::with('municipio')->find($bodega);
+                    if ($bodegaSeleccionada && $bodegaSeleccionada->municipio) {
+                        $municipioId = $bodegaSeleccionada->municipio_id;
+                        $query->whereHas('bodega', function ($q) use ($municipioId) {
+                            $q->where('municipio_id', $municipioId)
+                                ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
+                        });
+                    } else {
+                        $query->where('bodega_id', $bodega);
+                    }
                 }
             });
 
@@ -180,21 +190,81 @@ class TiendaController extends Controller
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
 
-                    // ✅ Agregar detalle de bodegas solo si está logueado
+                    // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Precio Ofertado por Apertura"
+                    'es_precio_ofertado' => $producto->inventario
+                        ->filter(function ($inv) {
+                            $bodega = $inv->bodega;
+                            if (! $bodega) {
+                                return false;
+                            }
+
+                            $municipio = $bodega->municipio;
+                            if (! $municipio) {
+                                return false;
+                            }
+
+                            return strtolower($municipio->municipio) === 'esquipulas' && $inv->existencia > 0;
+                        })
+                        ->isNotEmpty(),
+
+                    // ✅ Agregar detalle de bodegas solo si está logueado, agrupadas por municipio
                     'bodegas' => $user
                         ? $producto->inventario
-                            ->map(fn ($inv) => [
-                                'bodega' => $inv->bodega->bodega ?? 'Desconocida',
-                                'existencia' => $inv->existencia,
-                            ])
+                            ->filter(function ($inv) {
+                                $bodega = $inv->bodega;
+                                if (! $bodega) {
+                                    return false;
+                                }
+
+                                // Excluir bodegas específicas que no deben mostrar existencia
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                                    return false;
+                                }
+
+                                // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                                $municipio = $bodega->municipio;
+                                if (! $municipio) {
+                                    return false;
+                                }
+
+                                return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
+                            })
+                            ->groupBy(function ($inv) {
+                                return $inv->bodega->municipio->municipio ?? 'Desconocida';
+                            })
+                            ->map(function ($inventarios, $municipio) {
+                                $totalExistencia = $inventarios->sum('existencia');
+
+                                return [
+                                    'bodega' => $municipio,
+                                    'existencia' => $totalExistencia,
+                                ];
+                            })
+                            ->values()
                             ->toArray()
                         : null,
                 ];
             });
 
-        $bodegas = Bodega::whereNotIn('bodega', ['Mal estado', 'Traslado'])
-            ->where('bodega', 'not like', '%bodega%')
-            ->get(['id', 'bodega']);
+        // Obtener bodegas agrupadas por municipio, excluyendo las que no deben mostrar existencia
+        $bodegas = Bodega::with('municipio')
+            ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
+            ->whereHas('municipio', function ($query) {
+                $query->whereIn('municipio', ['Zacapa', 'Chiquimula', 'Esquipulas']);
+            })
+            ->get(['id', 'bodega', 'municipio_id'])
+            ->groupBy('municipio.municipio')
+            ->map(function ($bodegasDelMunicipio, $municipio) {
+                // Tomar la primera bodega del municipio como representante
+                $primeraBodega = $bodegasDelMunicipio->first();
+
+                return [
+                    'id' => $primeraBodega->id,
+                    'bodega' => $municipio,
+                    'municipio_id' => $primeraBodega->municipio_id,
+                ];
+            })
+            ->values();
 
         $tallasDisponibles = Producto::select('talla')->distinct()->pluck('talla');
         $marcasDisponibles = Marca::select('marca')->distinct()->pluck('marca');
@@ -247,41 +317,84 @@ class TiendaController extends Controller
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca ?? null,
 
-                // Mostrar todas las bodegas solo si está logueado
-                'bodegas' => auth()->check()
-                    ? $producto->inventario
-                        ->map(fn ($inv) => [
-                            'bodega' => $inv->bodega->bodega ?? 'Desconocida',
-                            'existencia' => $inv->existencia,
-                        ])
-                        ->toArray()
-                    : null,
-
-                // Siempre enviar la bodega con más stock (solo Zacapa y Chiquimula, excluyendo Mal estado y Traslado)
-                'bodega_destacada' => $producto->inventario
+                // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Precio Ofertado por Apertura"
+                'es_precio_ofertado' => $producto->inventario
                     ->filter(function ($inv) {
-                        // Excluir bodegas con ID 3 (Mal estado) y 4 (Traslado)
-                        if ($inv->bodega_id == 3 || $inv->bodega_id == 4) {
-                            return false;
-                        }
-
-                        // Solo incluir bodegas que estén en Zacapa o Chiquimula
                         $bodega = $inv->bodega;
                         if (! $bodega) {
                             return false;
                         }
 
-                        // Verificar si la bodega está en Zacapa o Chiquimula
                         $municipio = $bodega->municipio;
                         if (! $municipio) {
                             return false;
                         }
 
-                        return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula']);
+                        return strtolower($municipio->municipio) === 'esquipulas' && $inv->existencia > 0;
+                    })
+                    ->isNotEmpty(),
+
+                // Mostrar todas las bodegas solo si está logueado, agrupadas por municipio
+                'bodegas' => auth()->check()
+                    ? $producto->inventario
+                        ->filter(function ($inv) {
+                            $bodega = $inv->bodega;
+                            if (! $bodega) {
+                                return false;
+                            }
+
+                            // Excluir bodegas específicas que no deben mostrar existencia
+                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                                return false;
+                            }
+
+                            // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                            $municipio = $bodega->municipio;
+                            if (! $municipio) {
+                                return false;
+                            }
+
+                            return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
+                        })
+                        ->groupBy(function ($inv) {
+                            return $inv->bodega->municipio->municipio ?? 'Desconocida';
+                        })
+                        ->map(function ($inventarios, $municipio) {
+                            $totalExistencia = $inventarios->sum('existencia');
+
+                            return [
+                                'bodega' => $municipio,
+                                'existencia' => $totalExistencia,
+                            ];
+                        })
+                        ->values()
+                        ->toArray()
+                    : null,
+
+                // Siempre enviar la bodega con más stock (Zacapa, Chiquimula y Esquipulas, excluyendo Mal estado, Traslado y Central Bodega)
+                'bodega_destacada' => $producto->inventario
+                    ->filter(function ($inv) {
+                        $bodega = $inv->bodega;
+                        if (! $bodega) {
+                            return false;
+                        }
+
+                        // Excluir bodegas específicas que no deben mostrar existencia
+                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                            return false;
+                        }
+
+                        // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                        $municipio = $bodega->municipio;
+                        if (! $municipio) {
+                            return false;
+                        }
+
+                        return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                     })
                     ->sortByDesc('existencia')
                     ->map(fn ($inv) => [
-                        'bodega' => $inv->bodega->bodega ?? 'Desconocida',
+                        'bodega' => $inv->bodega->municipio->municipio ?? 'Desconocida', // Mostrar el municipio en lugar del nombre de la bodega
                         'existencia' => $inv->existencia,
                     ])
                     ->first(),

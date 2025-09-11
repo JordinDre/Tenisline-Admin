@@ -11,6 +11,11 @@ export default function WhatsAppModal({ isOpen, onClose }) {
             nombre: 'Chiquimula',
             telefono: '+50239910917',
             descripcion: 'Bodega de Chiquimula'
+        },
+        {
+            nombre: 'Esquipulas',
+            telefono: '+50239999952',
+            descripcion: 'Bodega de Esquipulas'
         }
     ];
 
