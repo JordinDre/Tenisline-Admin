@@ -1,5 +1,5 @@
 import Layout from '@/Layouts/Layout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
@@ -8,6 +8,33 @@ import 'react-medium-image-zoom/dist/styles.css';
 export default function Producto({ producto, marcas }) {
     const user = usePage().props.auth.user;
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Función para volver al catálogo preservando los filtros
+    const handleVolverCatalogo = () => {
+        const filtrosGuardados = sessionStorage.getItem('catalogo_filtros');
+        if (filtrosGuardados) {
+            const filtros = JSON.parse(filtrosGuardados);
+            // Construir la URL con los parámetros de filtros
+            const params = new URLSearchParams();
+            if (filtros.search) params.append('search', filtros.search);
+            if (filtros.bodega) params.append('bodega', filtros.bodega);
+            if (filtros.marca) params.append('marca', filtros.marca);
+            if (filtros.genero) params.append('genero', filtros.genero);
+            if (filtros.tallas && filtros.tallas.length > 0) {
+                filtros.tallas.forEach((talla) =>
+                    params.append('tallas[]', talla),
+                );
+            }
+
+            const queryString = params.toString();
+            const url = queryString
+                ? `${route('catalogo')}?${queryString}`
+                : route('catalogo');
+            router.visit(url);
+        } else {
+            router.visit(route('catalogo'));
+        }
+    };
 
     return (
         <Layout>
@@ -146,12 +173,12 @@ export default function Producto({ producto, marcas }) {
                                     ))}
                                 </div>
                                 <div className="mt-4">
-                                    <Link
-                                        href={route('catalogo')}
+                                    <button
+                                        onClick={handleVolverCatalogo}
                                         className="inline-block text-sm font-medium text-blue-600 hover:underline"
                                     >
                                         ← Volver al catálogo
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
 
