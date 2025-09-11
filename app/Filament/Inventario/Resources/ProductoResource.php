@@ -328,7 +328,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
             ->paginated([10, 25, 50])
             ->headerActions([
                 ExportAction::make()->exports([
-                    ExcelExport::make()->withFilename('Productos ' . date('d-m-Y'))->fromTable(),
+                    ExcelExport::make()->withFilename('Productos '.date('d-m-Y'))->fromTable(),
                 ])->label('Exportar')->color('success')->visible(auth()->user()->can('view_costs_producto')),
             ])
             ->columns([
@@ -336,7 +336,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Imágen')
                     ->formatStateUsing(function ($record): View {
                         return view('filament.tables.columns.image', [
-                            'url' => config('filesystems.disks.s3.url') . $record->imagenes[0],
+                            'url' => config('filesystems.disks.s3.url').$record->imagenes[0],
                             'alt' => $record->descripcion,
                         ]);
                     }),
@@ -372,9 +372,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('total_existencia')
-                    ->label('Existencia')
-                    ->numeric(),
                 ...Bodega::all()->map(function ($bodega) {
                     return Tables\Columns\TextColumn::make("existencia_bodega_{$bodega->id}")
                         ->label($bodega->bodega)
@@ -438,16 +435,67 @@ class ProductoResource extends Resource implements HasShieldPermissions
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
+
+                // Filtro por bodegas
+                SelectFilter::make('bodegas')
+                    ->label('Bodegas')
+                    ->multiple()
+                    ->searchable()
+                    ->options(Bodega::all()->pluck('bodega', 'id'))
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['values'])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('inventario', function (Builder $query) use ($data) {
+                            $query->whereIn('bodega_id', $data['values'])
+                                ->where('existencia', '>', 0);
+                        });
+                    }),
+
+                // Filtro por marca
                 SelectFilter::make('marca_id')
                     ->relationship('marca', 'marca')
                     ->multiple()
                     ->searchable()
                     ->label('Marca'),
-                /* SelectFilter::make('presentacion_id')
-                    ->relationship('presentacion', 'presentacion')
+
+                // Filtro por género
+                SelectFilter::make('genero')
+                    ->label('Género')
+                    ->options([
+                        'CABALLERO' => 'CABALLERO',
+                        'DAMA' => 'DAMA',
+                    ])
+                    ->multiple(),
+
+                // Filtro por color
+                SelectFilter::make('color')
+                    ->label('Color')
+                    ->options(function () {
+                        return Producto::whereNotNull('color')
+                            ->where('color', '!=', '')
+                            ->distinct()
+                            ->pluck('color', 'color')
+                            ->sort();
+                    })
                     ->multiple()
-                    ->searchable()
-                    ->label('Presentación'), */
+                    ->searchable(),
+
+                // Filtro por talla
+                SelectFilter::make('talla')
+                    ->label('Talla')
+                    ->options(function () {
+                        return Producto::whereNotNull('talla')
+                            ->where('talla', '!=', '')
+                            ->distinct()
+                            ->pluck('talla', 'talla')
+                            ->sort();
+                    })
+                    ->multiple()
+                    ->searchable(),
+
+                // Filtro por proveedor
                 SelectFilter::make('proveedor_id')
                     ->relationship('proveedor', 'name')
                     ->multiple()
@@ -458,7 +506,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('Desactivar')
-                    ->visible(fn($record) => auth()->user()->can('delete', $record))
+                    ->visible(fn ($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
@@ -481,7 +529,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
-                    ->modalContent(fn(Producto $record): View => view(
+                    ->modalContent(fn (Producto $record): View => view(
                         'filament.pages.actions.observaciones',
                         ['record' => $record],
                     ))
@@ -521,7 +569,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
 
         foreach (Bodega::all() as $bodega) {
             $query->withSum(
-                ['inventario as existencia_bodega_' . $bodega->id => fn($q) => $q->where('bodega_id', $bodega->id)],
+                ['inventario as existencia_bodega_'.$bodega->id => fn ($q) => $q->where('bodega_id', $bodega->id)],
                 'existencia'
             );
         }
