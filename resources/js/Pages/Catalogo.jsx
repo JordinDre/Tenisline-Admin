@@ -186,6 +186,13 @@ export default function Catalogo({
                                                 className="h-52 w-full object-contain p-4"
                                             />
                                             <div className="px-4 pb-4">
+                                                {/* Identificador de Precio Ofertado por Apertura */}
+                                                {producto.es_precio_ofertado && (
+                                                    <div className="mb-2 inline-block rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
+                                                        🎉 Precio Ofertado por Apertura
+                                                    </div>
+                                                )}
+                                                
                                                 <h3 className="text-md whitespace-normal font-semibold text-zinc-800">
                                                     {producto.descripcion}
                                                 </h3>

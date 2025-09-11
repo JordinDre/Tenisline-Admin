@@ -7,16 +7,7 @@ import 'react-medium-image-zoom/dist/styles.css';
 
 export default function Producto({ producto, marcas }) {
     const user = usePage().props.auth.user;
-    const { data, post } = useForm({
-        producto_id: producto.id,
-    });
-
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    function submit(e) {
-        e.preventDefault();
-        post('/agregar-carrito', data);
-    }
 
     return (
         <Layout>
@@ -68,6 +59,13 @@ export default function Producto({ producto, marcas }) {
 
                         {/* Información del producto */}
                         <div>
+                            {/* Identificador de Precio Ofertado por Apertura */}
+                            {producto.es_precio_ofertado && (
+                                <div className="mb-4 inline-block rounded-full bg-orange-100 px-4 py-2 text-sm font-semibold text-orange-800">
+                                    🎉 Precio Ofertado por Apertura
+                                </div>
+                            )}
+
                             <motion.h1
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -131,20 +129,6 @@ export default function Producto({ producto, marcas }) {
                             <div className="mt-4 text-xl font-bold text-green-600">
                                 Q{producto.precio}
                             </div>
-
-                            {user && producto.precio && (
-                                <form
-                                    onSubmit={submit}
-                                    className="mt-6 sm:flex sm:items-center sm:gap-4"
-                                >
-                                    <button
-                                        type="submit"
-                                        className="w-full rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700"
-                                    >
-                                        Añadir al carrito
-                                    </button>
-                                </form>
-                            )}
 
                             <div className="mt-8">
                                 <h2 className="mb-2 text-sm font-semibold text-zinc-500">
