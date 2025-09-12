@@ -33,7 +33,12 @@ class ListVentas extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+            ->visible(function () {
+                return \App\Models\Cierre::whereNotNull('apertura')
+                    ->whereNull('cierre')
+                    ->exists();
+            }),
 
             /* Actions\Action::make('liquidarVentas')
                 ->label('Liquidar Venta del Día')
