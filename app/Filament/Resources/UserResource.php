@@ -86,12 +86,12 @@ class UserResource extends Resource implements HasShieldPermissions
                                     // Solo validar unique si el NIT no es CF
                                     if (strtoupper(trim($value)) !== 'CF') {
                                         $query = User::query()->where('nit', $value);
-                                        
+
                                         // Si estamos editando, ignorar el registro actual
                                         if ($get('id')) {
                                             $query->where('id', '!=', $get('id'));
                                         }
-                                        
+
                                         if ($query->exists()) {
                                             $fail('El campo NIT ya ha sido registrado.');
                                         }
@@ -120,8 +120,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->tel()
                             ->required()
                             ->minLength(8)
-                            ->maxLength(8)
-                            ->unique(table: User::class, column: 'telefono', ignoreRecord: true),
+                            ->maxLength(8),
                         TextInput::make('whatsapp')
                             ->label('WhatsApp')
                             ->tel()
@@ -476,7 +475,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                                 productos.genero,
                                                 asesor
                                             ", [
-                                                $record->id
+                                    $record->id,
                                 ]),
                             ],
                         ))

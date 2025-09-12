@@ -2,40 +2,40 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use Closure;
-use App\Models\User;
-use Filament\Tables;
-use App\Models\Orden;
-use App\Models\Bodega;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use App\Models\TipoPago;
-use Filament\Forms\Form;
-use App\Models\Municipio;
-use Filament\Tables\Table;
-use App\Models\Observacion;
-use App\Models\Departamento;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\DB;
-use Filament\Forms\Components\Grid;
-use Illuminate\Contracts\View\View;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
+use App\Filament\Ventas\Resources\UserResource\Pages;
 use App\Http\Controllers\UserController;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
-use Filament\Tables\Actions\ActionGroup;
+use App\Models\Bodega;
+use App\Models\Departamento;
+use App\Models\Municipio;
+use App\Models\Observacion;
+use App\Models\Orden;
+use App\Models\TipoPago;
+use App\Models\User;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\ActionsPosition;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Ventas\Resources\UserResource\Pages;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Illuminate\Support\Facades\DB;
 
 class UserResource extends Resource implements HasShieldPermissions
 {
@@ -84,12 +84,12 @@ class UserResource extends Resource implements HasShieldPermissions
                                     // Solo validar unique si el NIT no es CF
                                     if (strtoupper(trim($value)) !== 'CF') {
                                         $query = User::query()->where('nit', $value);
-                                        
+
                                         // Si estamos editando, ignorar el registro actual
                                         if ($get('id')) {
                                             $query->where('id', '!=', $get('id'));
                                         }
-                                        
+
                                         if ($query->exists()) {
                                             $fail('El campo NIT ya ha sido registrado.');
                                         }
@@ -111,15 +111,13 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->label('Razón Social'),
                         TextInput::make('name')
                             ->required()
-                            ->unique(table: User::class, ignorable: fn ($record) => $record)
                             ->label('Nombre/Nombre Comercial'),
                         TextInput::make('telefono')
                             ->label('Teléfono')
                             ->tel()
                             ->required()
                             ->minLength(8)
-                            ->maxLength(8)
-                            ->unique(table: User::class, column: 'telefono', ignoreRecord: true),
+                            ->maxLength(8),
                         TextInput::make('whatsapp')
                             ->label('WhatsApp')
                             ->tel()
@@ -494,7 +492,7 @@ class UserResource extends Resource implements HasShieldPermissions
                                                 productos.genero,
                                                 asesor
                                             ", [
-                                                $record->id
+                                    $record->id,
                                 ]),
                             ],
                         ))
