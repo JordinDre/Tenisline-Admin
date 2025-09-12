@@ -90,11 +90,6 @@ class CaidosResource extends Resource
                     ->searchable()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('asesor.name')
-                    ->searchable()
-                    ->label('Vendedor')
-                    ->copyable()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('id')
                     ->label('Venta ID')
                     ->copyable()
