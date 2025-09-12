@@ -21,8 +21,6 @@ class VehiculoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Vehículos';
 
-    protected static ?string $recordTitleAttribute = 'placa';
-
     protected static ?string $navigationLabel = 'Vehículos';
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

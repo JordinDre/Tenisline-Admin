@@ -44,9 +44,7 @@ class VentaResource extends Resource implements HasShieldPermissions
     protected static ?string $modelLabel = 'Venta';
 
     protected static ?string $pluralModelLabel = 'Ventas';
-
-    protected static ?string $recordTitleAttribute = 'id';
-
+    
     protected static ?string $navigationIcon = 'heroicon-s-shopping-bag';
 
     protected static ?string $navigationLabel = 'Ventas';

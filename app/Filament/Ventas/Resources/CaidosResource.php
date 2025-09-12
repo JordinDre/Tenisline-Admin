@@ -23,8 +23,6 @@ class CaidosResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Usuarios Caidos';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'heroicon-o-user-minus';
 
     protected static ?int $navigationSort = 4;

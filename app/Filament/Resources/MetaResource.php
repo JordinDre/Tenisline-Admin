@@ -24,8 +24,6 @@ class MetaResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Metas';
 
-    protected static ?string $recordTitleAttribute = 'meta';
-
     protected static ?string $navigationIcon = 'tabler-file-text';
 
     protected static ?string $navigationLabel = 'Metas';

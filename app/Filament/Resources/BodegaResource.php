@@ -27,8 +27,6 @@ class BodegaResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Bodegas';
 
-    protected static ?string $recordTitleAttribute = 'bodega';
-
     protected static ?string $navigationLabel = 'Bodegas';
 
     protected static ?string $navigationIcon = 'tabler-building-warehouse';

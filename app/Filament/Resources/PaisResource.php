@@ -21,8 +21,6 @@ class PaisResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Países';
 
-    protected static ?string $recordTitleAttribute = 'pais';
-
     protected static ?string $navigationLabel = 'Países';
 
     protected static ?string $navigationIcon = 'heroicon-o-globe-americas';

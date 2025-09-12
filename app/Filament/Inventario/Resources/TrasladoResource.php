@@ -35,8 +35,6 @@ class TrasladoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Traslados';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationLabel = 'Traslados';
 
     protected static ?string $navigationIcon = 'tabler-transfer-out';

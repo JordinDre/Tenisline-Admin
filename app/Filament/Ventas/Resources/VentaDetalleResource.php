@@ -31,8 +31,6 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Ventas Detalles';
 
-    protected static ?string $recordTitleAttribute = 'venta_id';
-
     protected static ?string $navigationIcon = 'tabler-list-letters';
 
     protected static ?string $navigationLabel = 'Ventas Detalles';

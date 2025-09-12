@@ -39,8 +39,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Productos';
 
-    protected static ?string $recordTitleAttribute = 'descripcion';
-
     protected static ?string $navigationIcon = 'tabler-layout-bottombar-filled';
 
     protected static ?string $navigationLabel = 'Productos';

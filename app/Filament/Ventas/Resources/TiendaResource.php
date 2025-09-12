@@ -23,8 +23,6 @@ class TiendaResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Tienda';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'tabler-world-www';
 
     protected static ?string $navigationLabel = 'Tienda';

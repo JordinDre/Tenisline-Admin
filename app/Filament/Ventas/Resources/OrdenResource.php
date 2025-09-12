@@ -40,9 +40,6 @@ class OrdenResource extends Resource implements HasShieldPermissions
     protected static ?string $modelLabel = 'Orden';
 
     protected static ?string $pluralModelLabel = 'Ordenes';
-
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'tabler-square-chevrons-down';
 
     protected static ?string $navigationLabel = 'Ordenes';

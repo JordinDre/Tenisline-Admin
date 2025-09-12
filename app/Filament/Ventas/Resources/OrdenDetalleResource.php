@@ -31,8 +31,6 @@ class OrdenDetalleResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Ordenes Detalles';
 
-    protected static ?string $recordTitleAttribute = 'orden_id';
-
     protected static ?string $navigationIcon = 'tabler-list-details';
 
     protected static ?string $navigationLabel = 'Ordenes Detalle';

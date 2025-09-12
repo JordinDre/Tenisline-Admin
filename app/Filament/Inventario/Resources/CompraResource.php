@@ -43,8 +43,6 @@ class CompraResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Compras';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationLabel = 'Compras';
 
     protected static ?string $navigationIcon = 'tabler-shopping-cart-down';

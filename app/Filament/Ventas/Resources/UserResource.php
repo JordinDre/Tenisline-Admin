@@ -45,8 +45,6 @@ class UserResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Usuarios';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     public static function getPermissionPrefixes(): array
