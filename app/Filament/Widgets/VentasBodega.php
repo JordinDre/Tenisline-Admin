@@ -15,7 +15,7 @@ class VentasBodega extends ChartWidget
 
     protected static ?string $pollingInterval = '10s';
 
-    protected static ?string $heading = 'Ventas por Bodega';
+    protected static ?string $heading = 'Ventas por Empleado';
 
     protected static ?int $sort = 1;
 

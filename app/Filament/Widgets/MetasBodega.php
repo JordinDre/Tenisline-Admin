@@ -63,16 +63,24 @@ class MetasBodega extends ChartWidget
             ->pluck('meta', 'bodega_id')
             ->toArray();
 
-        $data = $ventasData->map(function ($item) use ($metas) {
+        // Calcular días transcurridos y total de días del mes
+        $diasTranscurridos = $day ? (int)$day : now()->day;
+        $totalDiasMes = now()->setYear((int)$year)->setMonth((int)$month)->daysInMonth;
+
+        $data = $ventasData->map(function ($item) use ($metas, $diasTranscurridos, $totalDiasMes) {
             $total = $item->total;
             $meta = $metas[$item->bodega_id] ?? 0; // Si no hay meta, usar 0
             $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
+            
+            // Calcular proyección: (ventas actuales / días transcurridos) * total de días del mes
+            $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
 
             return [
                 'bodega' => $item->bodega_nombre,
                 'total' => $total,
                 'meta' => $meta,
                 'alcance' => $alcance,
+                'proyeccion' => $proyeccion,
             ];
         });
 
@@ -94,6 +102,12 @@ class MetasBodega extends ChartWidget
                     'data' => $data->pluck('meta')->toArray(),
                     'backgroundColor' => '#10B981', // emerald-500
                     'borderColor' => '#34D399', // emerald-400
+                ],
+                [
+                    'label' => 'Proyección '.Functions::money($data->sum('proyeccion')),
+                    'data' => $data->pluck('proyeccion')->toArray(),
+                    'backgroundColor' => '#F59E0B', // amber-500
+                    'borderColor' => '#D97706', // amber-600
                 ],
                 [
                     'label' => 'Ventas '.Functions::money($data->sum('total')),
@@ -127,7 +141,7 @@ class MetasBodega extends ChartWidget
                                 label += ": ";
                             }
                             if (context.parsed.y !== null) {
-                                if (label.includes("Meta") || label.includes("Ventas")) {
+                                if (label.includes("Meta") || label.includes("Ventas") || label.includes("Proyección")) {
                                     label += "Q" + new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(context.parsed.y);
                                 } else {
                                     label += new Intl.NumberFormat("es-GT").format(context.parsed.y) + "%";
