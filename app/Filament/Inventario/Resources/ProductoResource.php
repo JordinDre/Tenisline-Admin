@@ -336,10 +336,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             'alt' => $record->descripcion,
                         ]);
                     }),
-                Tables\Columns\TextColumn::make('id')
-                    ->searchable()
-                    ->copyable()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('codigo')
                     ->copyable()
                     ->searchable()
