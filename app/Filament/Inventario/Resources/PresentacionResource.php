@@ -21,8 +21,6 @@ class PresentacionResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Presentaciones';
 
-    protected static ?string $recordTitleAttribute = 'presentacion';
-
     protected static ?string $navigationLabel = 'Presentaciones';
 
     protected static ?string $navigationIcon = 'tabler-brand-databricks';

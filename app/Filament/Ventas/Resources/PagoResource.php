@@ -36,8 +36,6 @@ class PagoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Pagos';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'tabler-credit-card';
 
     protected static ?string $navigationLabel = 'Pagos';

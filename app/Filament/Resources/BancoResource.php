@@ -21,8 +21,6 @@ class BancoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Bancos';
 
-    protected static ?string $recordTitleAttribute = 'banco';
-
     protected static ?string $navigationLabel = 'Bancos';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';

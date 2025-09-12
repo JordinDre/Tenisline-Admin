@@ -311,11 +311,10 @@ class ReporteController extends Controller
             bo.bodega                                         AS Tienda,
             d.fecha_dia                                       AS Fecha,
             COALESCE(t.turno, '')                             AS Turno,
-            d.ventas_dia                                      AS Ventas_Dia,
+            d.ventas_dia                                      AS Facturas,
             d.precio_venta                                    AS Precio_Venta,
             d.precio_costo                                    AS Precio_Costo,
             (d.precio_venta - d.precio_costo)                 AS Utilidad_Dia,
-            ROUND(d.precio_venta * 0.025, 2)                  AS Utilidad_Financista,
             ROUND((d.precio_venta - d.precio_costo) - (d.precio_venta * 0.025), 2) AS Utilidad_Neta
         FROM diario d
         JOIN bodegas bo ON bo.id = d.bodega_id

@@ -21,8 +21,6 @@ class ComercioResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Comercios';
 
-    protected static ?string $recordTitleAttribute = 'comercio';
-
     protected static ?string $navigationLabel = 'Tipos de Comercio';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-storefront';

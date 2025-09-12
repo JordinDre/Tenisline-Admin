@@ -21,6 +21,6 @@ class ReporteDiarioExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['Tienda', 'Fecha', 'Turno', 'Ventas Día', 'Precio Venta', 'Precio Costo', 'Utilidad Día', 'Utilidad Financista', 'Utilidad Neta'];
+        return ['Tienda', 'Fecha', 'Turno', 'Ventas Día', 'Precio Venta', 'Precio Costo', 'Utilidad Día', 'Utilidad Neta'];
     }
 }

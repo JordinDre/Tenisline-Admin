@@ -35,7 +35,7 @@ class ViewVenta extends ViewRecord
                         'open' => true,
                     ],
                 ))
-                ->modalWidth(MaxWidth::FiveExtraLarge)
+                ->modalWidth(MaxWidth::SevenExtraLarge)
                 ->slideOver()
                 ->color('orange')
                 ->stickyModalHeader()
@@ -52,7 +52,7 @@ class ViewVenta extends ViewRecord
                         'open' => true,
                     ],
                 ))
-                ->modalWidth(MaxWidth::FiveExtraLarge)
+                ->modalWidth(MaxWidth::SevenExtraLarge)
                 ->color('success')
                 ->slideOver()
                 ->stickyModalHeader()

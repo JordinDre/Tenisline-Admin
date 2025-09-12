@@ -22,9 +22,7 @@ use Illuminate\Support\Str;
 class RoleResource extends Resource implements HasShieldPermissions
 {
     use HasShieldFormComponents;
-
-    protected static ?string $recordTitleAttribute = 'name';
-
+    
     public static function getPermissionPrefixes(): array
     {
         return [

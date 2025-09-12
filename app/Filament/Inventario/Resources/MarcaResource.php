@@ -21,8 +21,6 @@ class MarcaResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Marcas';
 
-    protected static ?string $recordTitleAttribute = 'marca';
-
     protected static ?string $navigationLabel = 'Marcas';
 
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';

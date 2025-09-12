@@ -40,9 +40,6 @@ class OrdenResource extends Resource implements HasShieldPermissions
     protected static ?string $modelLabel = 'Orden';
 
     protected static ?string $pluralModelLabel = 'Ordenes';
-
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'tabler-square-chevrons-down';
 
     protected static ?string $navigationLabel = 'Ordenes';
@@ -313,7 +310,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                             'open' => false,
                         ]
                     ))
-                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->slideOver()
                     ->stickyModalHeader()
                     ->modalSubmitAction(false)
@@ -324,7 +321,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                     ->color('info')
                     ->icon('heroicon-o-document-text')
                     ->url(fn (Orden $record) => route('pdf.guias', ['id' => $record->id]), shouldOpenInNewTab: true)
-                    /*  ->modalWidth(MaxWidth::FiveExtraLarge)
+                    /*  ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->slideOver()
                     ->stickyModalHeader()
                     ->modalSubmitAction(false)
@@ -376,7 +373,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -392,7 +389,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -413,7 +410,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -429,7 +426,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -445,7 +442,7 @@ class OrdenResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),

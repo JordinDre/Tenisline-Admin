@@ -2,24 +2,18 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use Filament\Forms;
-use App\Models\User;
-use Filament\Tables;
-use App\Models\Venta;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\DB;
-use Filament\Tables\Actions\Action;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Notifications\Notification;
-use Filament\Tables\Actions\ActionGroup;
-use App\Http\Controllers\VentaController;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Ventas\Resources\CaidosResource\Pages;
-use App\Filament\Ventas\Resources\CaidosResource\RelationManagers;
+use App\Models\Venta;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class CaidosResource extends Resource
 {
@@ -28,8 +22,6 @@ class CaidosResource extends Resource
     protected static ?string $modelLabel = 'Usuario Caido';
 
     protected static ?string $pluralModelLabel = 'Usuarios Caidos';
-
-    protected static ?string $recordTitleAttribute = 'id';
 
     protected static ?string $navigationIcon = 'heroicon-o-user-minus';
 
@@ -46,13 +38,26 @@ class CaidosResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return Venta::query()
-            ->fromSub(function ($query) {
-                $query->selectRaw('ventas.*, ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY created_at DESC) as rn')
-                    ->from('ventas');
-            }, 'ventas')
-            ->where('rn', 1)
-            ->with(['cliente'])
-            ->orderBy('created_at', 'asc');
+            ->select('ventas.*')
+            ->join(
+                DB::raw('(SELECT cliente_id, MAX(created_at) as ultima_fecha FROM ventas GROUP BY cliente_id) v2'),
+                function ($join) {
+                    $join->on('ventas.cliente_id', '=', 'v2.cliente_id')
+                        ->on('ventas.created_at', '=', 'v2.ultima_fecha');
+                }
+            )
+            ->leftJoin(
+                DB::raw('(SELECT seguimientable_id, MIN(created_at) as primer_seguimiento FROM seguimientos WHERE seguimientable_type = ? AND tipo = ? GROUP BY seguimientable_id) s'),
+                's.seguimientable_id',
+                '=',
+                'ventas.cliente_id'
+            )
+            ->addBinding(\App\Models\User::class, 'join')
+            ->addBinding('seguimiento', 'join')
+            ->selectRaw('ventas.*, s.primer_seguimiento')
+            ->with(['cliente', 'asesor'])
+            ->orderByRaw('CASE WHEN s.primer_seguimiento IS NULL THEN 0 ELSE 1 END')
+            ->orderByRaw('CASE WHEN s.primer_seguimiento IS NULL THEN ventas.created_at ELSE s.primer_seguimiento END');
     }
 
     public static function table(Table $table): Table
@@ -103,7 +108,7 @@ class CaidosResource extends Resource
                     ->label('Última consulta')
                     ->getStateUsing(fn ($record) => $record->cliente?->ultimaConsulta()?->seguimiento ?? '—')
                     ->description(fn ($record) => $record->cliente?->ultimaConsulta()?->created_at?->format('d/m/Y H:i') ?? ''),
-                
+
                 Tables\Columns\TextColumn::make('ultimo_seguimiento')
                     ->label('Último seguimiento')
                     ->getStateUsing(fn ($record) => $record->cliente?->ultimoSeguimiento()?->seguimiento ?? '—')
@@ -129,17 +134,17 @@ class CaidosResource extends Resource
                     ])
                     ->action(function (Venta $record, array $data): void {
                         \App\Models\Seguimiento::create([
-                            'seguimiento'          => $data['seguimiento'],
-                            'user_id'              => auth()->id(),
-                            'seguimientable_id'    => $record->cliente_id,
-                            'seguimientable_type'  => \App\Models\User::class,
-                            'tipo'                 => 'consulta', 
+                            'seguimiento' => $data['seguimiento'],
+                            'user_id' => auth()->id(),
+                            'seguimientable_id' => $record->cliente_id,
+                            'seguimientable_type' => \App\Models\User::class,
+                            'tipo' => 'consulta',
                         ]);
 
                         Notification::make()
-                        ->title('Consulta registrada')
-                        ->success()
-                        ->send();
+                            ->title('Consulta registrada')
+                            ->success()
+                            ->send();
                     })
                     ->modalHeading('Nueva consulta')
                     ->modalSubmitActionLabel('Guardar'),
@@ -154,20 +159,82 @@ class CaidosResource extends Resource
                     ])
                     ->action(function (Venta $record, array $data): void {
                         \App\Models\Seguimiento::create([
-                            'seguimiento'          => $data['seguimiento'],
-                            'user_id'              => auth()->id(),
-                            'seguimientable_id'    => $record->cliente_id,
-                            'seguimientable_type'  => \App\Models\User::class,
-                            'tipo'                 => 'seguimiento', 
+                            'seguimiento' => $data['seguimiento'],
+                            'user_id' => auth()->id(),
+                            'seguimientable_id' => $record->cliente_id,
+                            'seguimientable_type' => \App\Models\User::class,
+                            'tipo' => 'seguimiento',
                         ]);
 
                         Notification::make()
-                        ->title('Seguimiento registrado')
-                        ->success()
-                        ->send();
+                            ->title('Seguimiento registrado')
+                            ->success()
+                            ->send();
                     })
                     ->modalHeading('Nuevo seguimiento')
                     ->modalSubmitActionLabel('Guardar'),
+
+                Tables\Actions\Action::make('historial')
+                    ->icon('heroicon-o-document-text')
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
+                    ->modalContent(fn ($record): View => view(
+                        'filament.pages.actions.historial-ventas',
+                        [
+                            'ventas' => DB::select("
+                                            select
+                                            users.name,
+                                            GROUP_CONCAT(roles.name SEPARATOR ', ') AS roles,
+                                            users.razon_social,
+                                            ventas.created_at as fecha_venta,
+                                            ventas.estado,
+                                            venta_detalles.cantidad,
+                                            venta_detalles.subtotal,
+                                            bodegas.bodega,
+                                            productos.codigo,
+                                            productos.descripcion,
+                                            marcas.marca,
+                                            productos.talla,
+                                            productos.genero,
+                                            (
+                                                select
+                                                    u.name
+                                                from
+                                                    users u
+                                                where
+                                                    u.id = ventas.asesor_id
+                                            ) as asesor
+                                        from
+                                            ventas
+                                            inner join model_has_roles on model_has_roles.model_id = ventas.cliente_id
+                                            inner join roles on roles.id = model_has_roles.role_id
+                                            inner join users on users.id = ventas.cliente_id
+                                            inner join venta_detalles on venta_detalles.venta_id = ventas.id
+                                            inner join productos on venta_detalles.producto_id = productos.id
+                                            inner join marcas on productos.marca_id = marcas.id
+                                            inner join bodegas on ventas.bodega_id = bodegas.id
+                                        WHERE
+                                            ventas.cliente_id = ?
+                                        GROUP BY
+                                            ventas.id,
+                                            users.name,
+                                            users.razon_social,
+                                            ventas.created_at,
+                                            ventas.estado,
+                                            venta_detalles.cantidad,
+                                            venta_detalles.subtotal,
+                                            bodegas.bodega,
+                                            productos.codigo,
+                                            productos.descripcion,
+                                            marcas.marca,
+                                            productos.talla,
+                                            productos.genero,
+                                            asesor
+                                        ", [
+                                $record->cliente_id,
+                            ]),
+                        ],
+                    ))
+                    ->label('Historial'),
 
             ])
             ->bulkActions([

@@ -44,9 +44,7 @@ class VentaResource extends Resource implements HasShieldPermissions
     protected static ?string $modelLabel = 'Venta';
 
     protected static ?string $pluralModelLabel = 'Ventas';
-
-    protected static ?string $recordTitleAttribute = 'id';
-
+    
     protected static ?string $navigationIcon = 'heroicon-s-shopping-bag';
 
     protected static ?string $navigationLabel = 'Ventas';
@@ -517,7 +515,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -533,7 +531,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -549,7 +547,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),

@@ -25,8 +25,6 @@ class MunicipioResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Municipios';
 
-    protected static ?string $recordTitleAttribute = 'municipio';
-
     protected static ?string $navigationLabel = 'Municipios';
 
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';

@@ -39,8 +39,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Productos';
 
-    protected static ?string $recordTitleAttribute = 'descripcion';
-
     protected static ?string $navigationIcon = 'tabler-layout-bottombar-filled';
 
     protected static ?string $navigationLabel = 'Productos';
@@ -120,8 +118,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->searchable()
                             ->relationship('presentacion', 'presentacion'), */
-                        DatePicker::make('fecha_ingreso')
-                            ->label('Fecha de Ingreso'),
                         TextInput::make('precio_venta')
                             ->required()
                             ->live(onBlur: true)
@@ -352,15 +348,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                /* Tables\Columns\TextColumn::make('presentacion.presentacion')
-                    ->copyable()
-                    ->searchable()
-                    ->sortable(), */
-                Tables\Columns\TextColumn::make('color')
-                    ->copyable()
-                    ->searchable()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('marca.marca')
+                    ->label('Marca')
                     ->copyable()
                     ->searchable()
                     ->sortable(),
@@ -372,24 +361,21 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-                ...Bodega::all()->map(function ($bodega) {
-                    return Tables\Columns\TextColumn::make("existencia_bodega_{$bodega->id}")
-                        ->label($bodega->bodega)
-                        ->numeric()
-                        ->sortable()
-                        ->alignRight();
-                })->all(),
-                Tables\Columns\TextColumn::make('precio_venta')
-                    ->label('Precio de Venta')
-                    ->formatStateUsing(function ($record) {
-                        return number_format($record->precio_venta, 2);
-                    })
+                Tables\Columns\TextColumn::make('color')
                     ->copyable()
                     ->searchable()
                     ->sortable(),
-
+                Tables\Columns\TextColumn::make('precio_costo')
+                    ->label('Costo')
+                    ->formatStateUsing(function ($record) {
+                        return number_format($record->precio_costo, 2);
+                    })
+                    ->copyable()
+                    ->visible(auth()->user()->can('view_costs_producto'))
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('precio_oferta')
-                    ->label('Precio de Oferta')
+                    ->label('Oferta')
                     ->formatStateUsing(function ($record) {
                         return number_format($record->precio_oferta, 2);
                     })
@@ -397,24 +383,32 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->visible(auth()->user()->can('view_costs_producto'))
                     ->searchable()
                     ->sortable(),
-                /* Tables\Columns\TextColumn::make('escalas.dia')
-                    ->label('Escalas Dias')
-                    ->copyable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('escalas.porcentaje')
-                    ->label('Escalas Procentajes')
-                    ->copyable()
-                    ->sortable(), */
-                /* Tables\Columns\TextColumn::make('proveedor.name')
+                Tables\Columns\TextColumn::make('precio_venta')
+                    ->label('Venta')
+                    ->formatStateUsing(function ($record) {
+                        return number_format($record->precio_venta, 2);
+                    })
                     ->copyable()
                     ->searchable()
-                    ->sortable(), */
-                Tables\Columns\TextColumn::make('fecha_ingreso')
-                    ->label('Fecha de Ingreso')
-                    ->dateTime('d/m/Y')
-                    ->copyable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
+                ...Bodega::whereNotIn('bodega', Bodega::TRASLADO_NAME)->orderByRaw('FIELD(id, 1, 5, 6, 7, 8, 9, 2, 3)')->get()->map(function ($bodega) {
+                    $bodegaShort = match ($bodega->bodega) {
+                        'Zacapa' => 'ZAC',
+                        'Zacapa Bodega' => 'ZAC B.',
+                        'Central Bodega' => 'CENTRAL',
+                        'Mal estado' => 'MAL ESTADO',
+                        'Chiquimula' => 'CHI',
+                        'Chiquimula Bodega' => 'CHI B.',
+                        'Esquipulas' => 'ESQ',
+                        'Esquipulas Bodega' => 'ESQ B.',
+                        default => self::acortarBodega($bodega->bodega)
+                    };
+
+                    return Tables\Columns\TextColumn::make("existencia_bodega_{$bodega->id}")
+                        ->label($bodegaShort)
+                        ->numeric()
+                        ->sortable();
+                })->all(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime('d/m/Y H:i:s')
@@ -441,7 +435,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Bodegas')
                     ->multiple()
                     ->searchable()
-                    ->options(Bodega::all()->pluck('bodega', 'id'))
+                    ->options(Bodega::whereNotIn('bodega', Bodega::TRASLADO_NAME)->orderByRaw('FIELD(id, 1, 5, 6, 7, 8, 9, 2)')->get()->pluck('bodega', 'id'))
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['values'])) {
                             return $query;
@@ -509,7 +503,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->visible(fn ($record) => auth()->user()->can('delete', $record))
                     ->color('danger')
                     ->icon('heroicon-o-trash')
-                    ->modalWidth(MaxWidth::ThreeExtraLarge)
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->form([
                         Textarea::make('observacion')
                             ->label('Observación')
@@ -567,7 +561,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
         $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class]);
 
-        foreach (Bodega::all() as $bodega) {
+        foreach (Bodega::whereNotIn('bodega', Bodega::TRASLADO_NAME)->orderByRaw('FIELD(id, 1, 5, 6, 7, 8, 9, 2)')->get() as $bodega) {
             $query->withSum(
                 ['inventario as existencia_bodega_'.$bodega->id => fn ($q) => $q->where('bodega_id', $bodega->id)],
                 'existencia'
@@ -577,5 +571,27 @@ class ProductoResource extends Resource implements HasShieldPermissions
         $query->withSum('inventario as total_existencia', 'existencia')->orderByDesc('total_existencia');
 
         return $query;
+    }
+
+    private static function acortarBodega(string $bodega): string
+    {
+        // Si contiene "BODEGA", lo reemplazamos por "B."
+        $bodega = str_replace(' BODEGA', ' B.', $bodega);
+
+        // Dividir en palabras y tomar las primeras letras de cada palabra
+        $palabras = explode(' ', $bodega);
+        $acortado = '';
+
+        foreach ($palabras as $palabra) {
+            if (strlen($palabra) > 3) {
+                // Tomar las primeras 3 letras de palabras largas
+                $acortado .= strtoupper(substr($palabra, 0, 3)).' ';
+            } else {
+                // Mantener palabras cortas como están
+                $acortado .= strtoupper($palabra).' ';
+            }
+        }
+
+        return trim($acortado);
     }
 }

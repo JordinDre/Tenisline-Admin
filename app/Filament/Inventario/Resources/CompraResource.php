@@ -25,15 +25,15 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\ActionsPosition;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Support\Enums\MaxWidth;
-use Illuminate\Contracts\View\View;
 
 class CompraResource extends Resource implements HasShieldPermissions
 {
@@ -42,8 +42,6 @@ class CompraResource extends Resource implements HasShieldPermissions
     protected static ?string $modelLabel = 'Compra';
 
     protected static ?string $pluralModelLabel = 'Compras';
-
-    protected static ?string $recordTitleAttribute = 'id';
 
     protected static ?string $navigationLabel = 'Compras';
 
@@ -427,8 +425,8 @@ class CompraResource extends Resource implements HasShieldPermissions
                         ->label('Completar')
                         ->color('secondary')
                         ->icon('heroicon-o-check')
-                        ->action(fn(Compra $record) => CompraController::completar($record))
-                        ->visible(fn($record) => auth()->user()->can('complete', $record)),
+                        ->action(fn (Compra $record) => CompraController::completar($record))
+                        ->visible(fn ($record) => auth()->user()->can('complete', $record)),
                     Action::make('compra')
                         ->icon('heroicon-o-document-arrow-down')
                         ->modalContent(fn (Compra $record): View => view(
@@ -440,7 +438,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),

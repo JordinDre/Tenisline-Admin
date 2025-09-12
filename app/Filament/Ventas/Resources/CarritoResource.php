@@ -19,8 +19,6 @@ class CarritoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Carritos';
 
-    protected static ?string $recordTitleAttribute = 'id';
-
     protected static ?string $navigationIcon = 'tabler-shopping-cart-search';
 
     protected static ?string $navigationLabel = 'Carrito';

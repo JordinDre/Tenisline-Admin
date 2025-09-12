@@ -72,7 +72,7 @@ class ListClientes extends Component implements HasForms, HasTable
             ->actions([
                 RelationManagerAction::make('historial')
                     ->label('Historial')
-                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->icon('tabler-history')
                     ->slideOver()
                     ->modalSubmitAction(false)

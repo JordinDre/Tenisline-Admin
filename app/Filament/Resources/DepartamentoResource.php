@@ -22,8 +22,6 @@ class DepartamentoResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Departamentos';
 
-    protected static ?string $recordTitleAttribute = 'departamento';
-
     protected static ?string $navigationLabel = 'Departamentos';
 
     protected static ?string $navigationIcon = 'heroicon-o-map';
