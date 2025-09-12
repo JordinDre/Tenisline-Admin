@@ -23,7 +23,7 @@ class EditUser extends EditRecord
                 ->visible(fn ($record) => auth()->user()->can('delete', $record))
                 ->color('danger')
                 ->icon('heroicon-o-trash')
-                ->modalWidth(MaxWidth::ThreeExtraLarge)
+                ->modalWidth(MaxWidth::SevenExtraLarge)
                 ->form([
                     Textarea::make('observacion')
                         ->label('Observación')

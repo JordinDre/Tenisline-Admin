@@ -2,31 +2,30 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use Filament\Tables;
-use App\Models\Bodega;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use App\Models\Producto;
-use App\Models\Traslado;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Grid;
-use Filament\Tables\Actions\Action;
-use Illuminate\Contracts\View\View;
-use Pages\CreateTrasladoAutomatico;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\ActionGroup;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Filament\Inventario\Resources\TrasladoResource\Pages;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\TrasladoController;
-use App\Filament\Inventario\Resources\TrasladoResource\Pages;
+use App\Models\Bodega;
+use App\Models\Producto;
+use App\Models\Traslado;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Enums\ActionsPosition;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 
 class TrasladoResource extends Resource implements HasShieldPermissions
 {
@@ -235,7 +234,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -250,7 +249,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -288,7 +287,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                         ->requiresConfirmation()
                         ->action(fn (Traslado $record) => TrasladoController::anular($record))
                         ->visible(fn ($record) => auth()->user()->can('annular', $record)),
-                    
+
                 ])
                     ->link()
                     ->label('Acciones'),

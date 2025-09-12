@@ -412,7 +412,7 @@ class UserResource extends Resource implements HasShieldPermissions
                         ->visible(fn ($record) => auth()->user()->can('delete', $record))
                         ->color('danger')
                         ->icon('heroicon-o-trash')
-                        ->modalWidth(MaxWidth::ThreeExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->form([
                             Textarea::make('observacion')
                                 ->label('Observación')
@@ -438,7 +438,7 @@ class UserResource extends Resource implements HasShieldPermissions
                         ->label('Desactivar'),
                     Tables\Actions\Action::make('historial')
                         ->icon('heroicon-o-document-text')
-                        ->modalWidth(MaxWidth::ThreeExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->modalContent(fn ($record): View => view(
                             'filament.pages.actions.historial-ventas',
                             [

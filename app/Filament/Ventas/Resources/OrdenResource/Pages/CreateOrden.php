@@ -310,7 +310,7 @@ class CreateOrden extends CreateRecord
                                 ->suffixAction(
                                     Action::make('historial')
                                         ->label('Historial')
-                                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                                        ->modalWidth(MaxWidth::SevenExtraLarge)
                                         ->icon('tabler-history')
                                         ->slideOver()
                                         ->modalSubmitAction(false)

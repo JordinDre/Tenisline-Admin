@@ -178,7 +178,7 @@ class ListCaidos extends Component implements HasForms, HasTable
                     ->icon('tabler-address-book'),
                 RelationManagerAction::make('historial')
                     ->label('Historial')
-                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->icon('tabler-history')
                     ->slideOver()
                     ->modalSubmitAction(false)

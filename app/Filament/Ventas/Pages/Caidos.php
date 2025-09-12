@@ -21,6 +21,6 @@ class Caidos extends Page
             return false; // Si la tabla 'ordens' NO existe, NO permitir el acceso a la página
         }
 
-        return auth()->user()->can('view_any_caidos');
+        return true;
     }
 }

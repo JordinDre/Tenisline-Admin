@@ -141,7 +141,7 @@ class CierreResource extends Resource
                             'open' => true,
                         ],
                     ))
-                    ->modalWidth(MaxWidth::FiveExtraLarge)
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->slideOver()
                     ->stickyModalHeader()
                     ->modalSubmitAction(false),

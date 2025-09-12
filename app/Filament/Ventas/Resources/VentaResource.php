@@ -517,7 +517,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -533,7 +533,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
@@ -549,7 +549,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 'open' => true,
                             ],
                         ))
-                        ->modalWidth(MaxWidth::FiveExtraLarge)
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
