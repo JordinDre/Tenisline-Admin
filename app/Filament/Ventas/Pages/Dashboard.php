@@ -41,6 +41,29 @@ class Dashboard extends \Filament\Pages\Dashboard
                             ->default(now()->day),
                     ])
                     ->columns(3),
+                Section::make('Filtros de Datos')
+                    ->schema([
+                        Select::make('bodega')
+                            ->label('Bodega')
+                            ->options([
+                                '' => 'Todas las Bodegas',
+                                'Zacapa' => 'Zacapa',
+                                'Chiquimula' => 'Chiquimula',
+                                'Esquipulas' => 'Esquipulas',
+                            ])
+                            ->default('')
+                            ->reactive(),
+                        Select::make('genero')
+                            ->label('Género')
+                            ->options([
+                                '' => 'Todos los Géneros',
+                                'Dama' => 'Dama',
+                                'Caballero' => 'Caballero',
+                            ])
+                            ->default('')
+                            ->reactive(),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -53,9 +76,4 @@ class Dashboard extends \Filament\Pages\Dashboard
         return 2;
     }
 
-    public function getWidgets(): array
-    {
-        return [
-        ];
-    }
 }
