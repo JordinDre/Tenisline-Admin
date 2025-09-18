@@ -5,6 +5,7 @@ namespace App\Filament\Ventas\Resources;
 use App\Filament\Ventas\Resources\CardResource\Pages;
 use App\Models\Card;
 use App\Models\User;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -16,8 +17,9 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
-class CardResource extends Resource
+class CardResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Card::class;
 
@@ -26,6 +28,19 @@ class CardResource extends Resource
     protected static ?string $pluralModelLabel = 'Tarjetas %';
 
     protected static ?string $navigationIcon = 'heroicon-o-percent-badge';
+
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view_any',
+            'view',
+            'create',
+            'update',
+            'delete',
+            'restore',
+            'force_delete',
+        ];
+    }
 
     public static function form(Form $form): Form
     {
@@ -49,7 +64,7 @@ class CardResource extends Resource
                             ->required()
                             ->searchable(),
                         Hidden::make('user_id')
-                            ->default(auth()->user()->id),
+                            ->default(Auth::user()?->id),
                         TextInput::make('dpi')
                             ->label('DPI')
                             ->maxLength(13)
@@ -94,9 +109,18 @@ class CardResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->visible(fn ($record) => Auth::user()?->can('view', $record)),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn ($record) => Auth::user()?->can('update', $record)),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn ($record) => Auth::user()?->can('delete', $record)),
             ])
             ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn () => Auth::user()?->can('delete_any_card')),
+                ]),
             ]);
     }
 
