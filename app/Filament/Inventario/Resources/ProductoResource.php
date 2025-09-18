@@ -8,7 +8,6 @@ use App\Models\Escala;
 use App\Models\Observacion;
 use App\Models\Producto;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;

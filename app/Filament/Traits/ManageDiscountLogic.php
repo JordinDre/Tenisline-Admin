@@ -19,7 +19,6 @@ trait ManageDiscountLogic
         return $detalles;
     }
 
-
     protected function updateOrderTotals(Get $get, Set $set): void
     {
         $detalles = $this->getDetallesArray($get);
@@ -83,27 +82,27 @@ trait ManageDiscountLogic
         $detalles = $this->getDetallesArray($get);
         $totalProductos = collect($detalles)->sum('cantidad');
 
-      /*   if ($totalProductos === 1) {
-            if ($toggleName === 'oferta') {
-                Notification::make()
-                    ->title('Descuento no aplicable')
-                    ->body('El descuento "oferta" requiere al menos 2 productos.')
-                    ->danger()
-                    ->send();
-                $set($toggleName, false);
+        /*   if ($totalProductos === 1) {
+              if ($toggleName === 'oferta') {
+                  Notification::make()
+                      ->title('Descuento no aplicable')
+                      ->body('El descuento "oferta" requiere al menos 2 productos.')
+                      ->danger()
+                      ->send();
+                  $set($toggleName, false);
 
-                return;
-            }
-            $precioOriginal = $get('precio_original') ?? 0;
-            $precioFinal = $priceCalculationFn($precioOriginal);
+                  return;
+              }
+              $precioOriginal = $get('precio_original') ?? 0;
+              $precioFinal = $priceCalculationFn($precioOriginal);
 
-            $set('precio', $precioFinal);
-            $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
+              $set('precio', $precioFinal);
+              $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
 
-            $this->updateOrderTotals($get, $set);
+              $this->updateOrderTotals($get, $set);
 
-            return;
-        } */
+              return;
+          } */
 
         $activeIndividualDiscounts = $this->countActiveIndividualDiscounts($detalles);
 

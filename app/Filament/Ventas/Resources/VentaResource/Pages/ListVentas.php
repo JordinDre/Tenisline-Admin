@@ -24,15 +24,15 @@ class ListVentas extends ListRecords
     public function mount(): void
     {
         parent::mount();
-        
+
         // Verificar si el usuario actual tiene al menos un cierre abierto
         $userId = Auth::user()?->id;
         $tieneCierreAbierto = $userId ? Cierre::where('user_id', $userId)
             ->whereNull('cierre')
             ->exists() : false;
-        
+
         // Mostrar notificación si no tiene cierre abierto
-        if (!$tieneCierreAbierto) {
+        if (! $tieneCierreAbierto) {
             Notification::make()
                 ->warning()
                 ->title('Sin cierre abierto')
@@ -57,13 +57,13 @@ class ListVentas extends ListRecords
     protected function getHeaderActions(): array
     {
         $actions = [];
-        
+
         // Verificar si el usuario actual tiene al menos un cierre abierto
         $userId = Auth::user()?->id;
         $tieneCierreAbierto = $userId ? Cierre::where('user_id', $userId)
             ->whereNull('cierre')
             ->exists() : false;
-        
+
         // Solo mostrar el botón de crear si el usuario tiene un cierre abierto
         if ($tieneCierreAbierto) {
             $actions[] = Actions\CreateAction::make();
@@ -96,7 +96,7 @@ class ListVentas extends ListRecords
                     ->success()
                     ->send();
             }), */
-        
+
         return $actions;
     }
 }

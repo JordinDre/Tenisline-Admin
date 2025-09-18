@@ -33,15 +33,15 @@ class VentaPolicy
     public function create(User $user): bool
     {
         // Verificar que el usuario tenga los roles necesarios
-        if (!$user->hasAnyRole(User::VENTA_ROLES)) {
+        if (! $user->hasAnyRole(User::VENTA_ROLES)) {
             return false;
         }
-        
+
         // Verificar que el usuario tenga al menos un cierre abierto
         $tieneCierreAbierto = Cierre::where('user_id', $user->id)
             ->whereNull('cierre')
             ->exists();
-            
+
         return $tieneCierreAbierto;
     }
 

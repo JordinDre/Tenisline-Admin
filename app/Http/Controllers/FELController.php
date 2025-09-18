@@ -371,12 +371,12 @@ class FELController extends Controller
         $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name;
         $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
 
-        $emisor = $bodega == 6 ? config('services.fel2') 
-        : ($bodega == 1 ? config('services.fel') 
+        $emisor = $bodega == 6 ? config('services.fel2')
+        : ($bodega == 1 ? config('services.fel')
         : ($bodega == 8 ? config('services.fel3') : config('services.fel')));
 
         $codigo = $bodega == 6 ? 4
-        : ($bodega == 1 ? 2 
+        : ($bodega == 1 ? 2
         : ($bodega == 8 ? 5 : 2));
 
         $totalMontoImpuesto = 0;
@@ -560,12 +560,12 @@ class FELController extends Controller
 
         $asesor = User::withTrashed()->find($venta->asesor_id);
 
-        $emisor = $bodega == 6 ? config('services.fel2') 
-        : ($bodega == 1 ? config('services.fel') 
+        $emisor = $bodega == 6 ? config('services.fel2')
+        : ($bodega == 1 ? config('services.fel')
         : ($bodega == 8 ? config('services.fel3') : config('services.fel')));
 
         $codigo = $bodega == 6 ? 4
-        : ($bodega == 1 ? 2 
+        : ($bodega == 1 ? 2
         : ($bodega == 8 ? 5 : 2));
 
         $totalMontoImpuesto = 0;

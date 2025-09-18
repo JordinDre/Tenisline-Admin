@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
 class RoleResource extends Resource implements HasShieldPermissions
 {
     use HasShieldFormComponents;
-    
+
     public static function getPermissionPrefixes(): array
     {
         return [

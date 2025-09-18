@@ -17,7 +17,6 @@ use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
 use App\Models\User;
-use App\Models\Venta;
 use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -54,79 +53,85 @@ class CreateVenta extends CreateRecord
     {
         return $form
             ->schema([
-                Select::make('bodega_id')
-                    ->relationship(
-                        'bodega',
-                        'bodega',
-                        fn (Builder $query) => $query
-                            ->whereHas('user', fn ($q) => $q->where('user_id', Auth::user()?->id)
+                Grid::make([
+                    'default' => 1,
+                    'md' => 2,
+                ])
+                    ->schema([
+                        Select::make('bodega_id')
+                            ->relationship(
+                                'bodega',
+                                'bodega',
+                                fn (Builder $query) => $query
+                                    ->whereHas('user', fn ($q) => $q->where('user_id', Auth::user()?->id)
+                                    )
+                                    ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+                                    ->where('bodega', 'not like', '%bodega%')
                             )
-                            ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                            ->where('bodega', 'not like', '%bodega%')
-                    )
-                    ->preload()
-                    ->columnSpanFull()
-                    ->live()
-                    ->afterStateUpdated(function (Set $set) {
-                        $set('detalles', []);
-                    })
-                    ->searchable()
-                    ->required()
-                    ->rules([
-                        fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
-                            if ($value) {
-                                $userId = Auth::user()?->id;
-                                $cierreAbierto = Cierre::where('bodega_id', $value)
-                                    ->where('user_id', $userId)
-                                    ->whereNull('cierre')
-                                    ->exists();
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set) {
+                                $set('detalles', []);
+                            })
+                            ->searchable()
+                            ->required()
+                            ->rules([
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
+                                    if ($value) {
+                                        $userId = Auth::user()?->id;
+                                        $cierreAbierto = Cierre::where('bodega_id', $value)
+                                            ->where('user_id', $userId)
+                                            ->whereNull('cierre')
+                                            ->exists();
 
-                                if (!$cierreAbierto) {
-                                    $fail('No tienes un cierre abierto en esta bodega. Debes aperturar un cierre antes de realizar ventas.');
+                                        if (! $cierreAbierto) {
+                                            $fail('No tienes un cierre abierto en esta bodega. Debes aperturar un cierre antes de realizar ventas.');
+                                        }
+                                    }
+                                },
+                            ]),
+                        Select::make('asesor_id')
+                            ->label('Vendedor')
+                            ->relationship(
+                                'asesor',
+                                'name',
+                                fn (Builder $query) => $query->role(['vendedor', 'telemarketing'])
+                            )
+                            ->options(function () {
+                                $currentUser = Auth::user();
+                                $options = [];
+
+                                // Si el usuario actual es vendedor o telemarketing, lo agregamos primero
+                                if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                                    $options[$currentUser->id] = $currentUser->name.' (Usuario actual)';
                                 }
-                            }
-                        },
-                    ]),
-                Select::make('asesor_id')
-                    ->label('Vendedor')
-                    ->relationship(
-                        'asesor',
-                        'name',
-                        fn (Builder $query) => $query->role(['vendedor', 'telemarketing'])
-                    )
-                    ->options(function () {
-                        $currentUser = Auth::user();
-                        $options = [];
-                        
-                        // Si el usuario actual es vendedor o telemarketing, lo agregamos primero
-                        if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
-                            $options[$currentUser->id] = $currentUser->name . ' (Usuario actual)';
-                        }
-                        
-                        // Agregamos otros vendedores y telemarketing
-                        $query = User::role(['vendedor', 'telemarketing']);
-                        if ($currentUser) {
-                            $query->where('id', '!=', $currentUser->id);
-                        }
-                        $otherVendedores = $query->get();
-                            
-                        foreach ($otherVendedores as $vendedor) {
-                            $options[$vendedor->id] = $vendedor->name;
-                        }
-                        
-                        return $options;
-                    })
-                    ->default(function () {
-                        $currentUser = Auth::user();
-                        // Si el usuario actual es vendedor o telemarketing, lo seleccionamos por defecto
-                        if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
-                            return $currentUser->id;
-                        }
-                        return null;
-                    })
-                    ->searchable()
-                    ->preload()
-                    ->required()
+
+                                // Agregamos otros vendedores y telemarketing
+                                $query = User::role(['vendedor', 'telemarketing']);
+                                if ($currentUser) {
+                                    $query->where('id', '!=', $currentUser->id);
+                                }
+                                $otherVendedores = $query->get();
+
+                                foreach ($otherVendedores as $vendedor) {
+                                    $options[$vendedor->id] = $vendedor->name;
+                                }
+
+                                return $options;
+                            })
+                            ->default(function () {
+                                $currentUser = Auth::user();
+                                // Si el usuario actual es vendedor o telemarketing, lo seleccionamos por defecto
+                                if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                                    return $currentUser->id;
+                                }
+
+                                return null;
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])
                     ->columnSpanFull(),
                 Wizard::make([
                     Wizard\Step::make('Cliente y Productos')
@@ -167,7 +172,7 @@ class CreateVenta extends CreateRecord
                                                 ->maxLength(25)
                                                 ->live(onBlur: true)
                                                 ->rules([
-                                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
                                                         // Solo validar unique si el NIT no es CF
                                                         if (strtoupper(trim($value)) !== 'CF') {
                                                             if (User::where('nit', $value)->exists()) {
@@ -839,7 +844,7 @@ class CreateVenta extends CreateRecord
 
             $bodegaId = $this->data['bodega_id'] ?? null;
             $userId = Auth::user()?->id;
-            
+
             // Verificar que el usuario actual tenga un cierre abierto en la bodega seleccionada
             $cierreAbierto = Cierre::where('bodega_id', $bodegaId)
                 ->where('user_id', $userId)
