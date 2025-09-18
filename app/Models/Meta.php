@@ -82,4 +82,65 @@ class Meta extends Model
     {
         return $this->alcance >= 100;
     }
+
+    public function getProyeccionAttribute(): float
+    {
+        $year = $this->anio;
+        $month = $this->mes;
+        $bodegaId = $this->bodega_id;
+
+        $hoy = now();
+        $diasTranscurridos = ($year == $hoy->year && $month == $hoy->month)
+            ? $hoy->day
+            : $hoy->setYear($year)->setMonth($month)->daysInMonth; 
+
+        $totalDiasMes = $hoy->setYear($year)->setMonth($month)->daysInMonth;
+
+        $totalVentas = \App\Models\VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+            ->where('ventas.bodega_id', $bodegaId)
+            ->whereYear('ventas.created_at', $year)
+            ->whereMonth('ventas.created_at', $month)
+            ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
+            ->where('venta_detalles.devuelto', 0)
+            ->sum('venta_detalles.precio');
+
+        return $diasTranscurridos > 0
+            ? ($totalVentas / $diasTranscurridos) * $totalDiasMes
+            : 0;
+    }
+
+    public function getProyeccion2Attribute(): float
+    {
+        if ($this->meta <= 0) {
+            return 0;
+        }
+
+        $proyeccion = $this->proyeccion; 
+        return round(($proyeccion * 100) / $this->meta, 2);
+    }
+
+    public function getRendimientoAttribute(): float
+    {
+        $year = $this->anio;
+        $month = $this->mes;
+        $bodegaId = $this->bodega_id;
+
+        $detalles = \App\Models\VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+            ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
+            ->whereYear('ventas.created_at', $year)
+            ->whereMonth('ventas.created_at', $month)
+            ->where('ventas.bodega_id', $bodegaId)
+            ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
+            ->where('venta_detalles.devuelto', 0)
+            ->get();
+
+        $total = $detalles->sum('precio');
+        $costo = $detalles->sum(fn ($d) => $d->cantidad * ($d->producto->precio_costo ?? 0));
+
+        if ($total <= 0) {
+            return 0;
+        }
+
+        return round((($total - $costo) / $total) * 100, 2); // porcentaje
+    }
 }

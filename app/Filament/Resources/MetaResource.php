@@ -97,30 +97,61 @@ class MetaResource extends Resource implements HasShieldPermissions
             ->extremePaginationLinks()
             ->paginated([10, 25, 50])
             ->columns([
+                Tables\Columns\TextColumn::make('mes_anio')
+                    ->label('Mes y Año')
+                    ->getStateUsing(function ($record) {
+                        return Functions::nombreMes($record->mes) . ', ' . $record->anio;
+                    })
+                    ->searchable()
+                    ->copyable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('bodega.bodega')
                     ->numeric()
                     ->searchable()
-                    ->copyable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('mes')
-                    ->searchable()
-                    ->getStateUsing(function ($record) {
-                        return Functions::nombreMes($record->mes);
-                    })
-                    ->copyable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('anio')
-                    ->label('Año')
-                    ->numeric()
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('meta')
                     ->label('Meta (Q)')
                     ->money('GTQ')
                     ->copyable()
-                    ->sortable(),
+                    ->sortable()
+                    ->color(function ($record) {
+                        $porcentaje = $record->meta > 0 
+                            ? ($record->proyeccion / $record->meta) * 100 
+                            : 0;
+
+                        if ($porcentaje >= 100) return 'success';
+                        if ($porcentaje >= 75) return 'warning';
+                        return 'danger';
+                    }),
+                Tables\Columns\TextColumn::make('proyeccion')
+                    ->label('Proyección (Q)')
+                    ->money('GTQ')
+                    ->color(function ($record) {
+                        $porcentaje = $record->meta > 0 
+                            ? ($record->proyeccion / $record->meta) * 100 
+                            : 0;
+
+                        if ($porcentaje >= 100) return 'success';
+                        if ($porcentaje >= 75) return 'warning';
+                        return 'danger';
+                    }),
+                Tables\Columns\TextColumn::make('proyeccion2')
+                    ->label('Proyección (%)')
+                    ->formatStateUsing(fn ($state) => $state.'%')
+                    ->copyable()
+                    ->sortable()
+                    ->color(function ($record) {
+                        $porcentaje = $record->meta > 0 
+                            ? ($record->proyeccion / $record->meta) * 100 
+                            : 0;
+
+                        if ($porcentaje >= 100) return 'success';
+                        if ($porcentaje >= 75) return 'warning';
+                        return 'danger';
+                    }),
                 Tables\Columns\TextColumn::make('ventas_reales')
-                    ->label('Ventas Reales (Q)')
+                    ->label('Alcance (Q)')
                     ->money('GTQ')
                     ->copyable()
                     ->sortable(),
@@ -129,7 +160,19 @@ class MetaResource extends Resource implements HasShieldPermissions
                     ->formatStateUsing(fn ($state) => $state.'%')
                     ->copyable()
                     ->sortable()
-                    ->color(fn ($state) => $state >= 100 ? 'success' : ($state >= 75 ? 'warning' : 'danger')),
+                    ->color(function ($record) {
+                        $porcentaje = $record->meta > 0 
+                            ? ($record->proyeccion / $record->meta) * 100 
+                            : 0;
+
+                        if ($porcentaje >= 100) return 'success';
+                        if ($porcentaje >= 75) return 'warning';
+                        return 'danger';
+                    }),
+                Tables\Columns\TextColumn::make('rendimiento')
+                    ->label('Rendimiento (%)')
+                    ->formatStateUsing(fn ($state) => $state.'%')
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('cumplida')
                     ->label('Cumplida')
                     ->boolean()

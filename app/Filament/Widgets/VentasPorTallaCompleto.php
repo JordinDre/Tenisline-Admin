@@ -13,7 +13,9 @@ class VentasPorTallaCompleto extends ChartWidget
     use InteractsWithPageFilters;
 
     protected static ?string $pollingInterval = '10s';
+
     protected static ?string $heading = 'Ventas por Talla - Todas las Bodegas y Géneros';
+
     protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = [
@@ -30,9 +32,9 @@ class VentasPorTallaCompleto extends ChartWidget
 
     protected function getData(): array
     {
-        $year         = $this->filters['year']   ?? now()->year;
-        $month        = $this->filters['mes']    ?? now()->month;
-        $day          = $this->filters['dia']    ?? '';      // '' = todos
+        $year = $this->filters['year'] ?? now()->year;
+        $month = $this->filters['mes'] ?? now()->month;
+        $day = $this->filters['dia'] ?? '';      // '' = todos
         $bodegaFilter = $this->filters['bodega'] ?? '';
         $generoFilter = $this->filters['genero'] ?? '';
 
@@ -43,20 +45,20 @@ class VentasPorTallaCompleto extends ChartWidget
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
-            ->when($day !== '', fn($q) => $q->whereDay('ventas.created_at', $day))
-            ->when($bodegaFilter !== '', fn($q) => $q->where('bodegas.bodega', $bodegaFilter))
-            ->when($generoFilter !== '', fn($q) => $q->where('productos.genero', $generoFilter))
+            ->when($day !== '', fn ($q) => $q->whereDay('ventas.created_at', $day))
+            ->when($bodegaFilter !== '', fn ($q) => $q->where('bodegas.bodega', $bodegaFilter))
+            ->when($generoFilter !== '', fn ($q) => $q->where('productos.genero', $generoFilter))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
             ->whereNotNull('productos.talla')
             ->where('productos.talla', '!=', '')
             ->groupBy('productos.talla')
-            ->selectRaw("
+            ->selectRaw('
                 productos.talla                                   as talla,
                 SUM(venta_detalles.cantidad)                      as cantidad,
                 SUM(venta_detalles.precio * venta_detalles.cantidad) as total,
                 SUM(venta_detalles.cantidad * COALESCE(productos.precio_costo,0)) as costo
-            ")
+            ')
             ->get();
 
         // Ordena por valor numérico de talla
@@ -71,24 +73,24 @@ class VentasPorTallaCompleto extends ChartWidget
         static::$heading = $titulo;
 
         // Labels
-        $labels = $sorted->pluck('talla')->map(fn($t) => "Talla {$t}")->toArray();
+        $labels = $sorted->pluck('talla')->map(fn ($t) => "Talla {$t}")->toArray();
 
         // Data arrays
-        $cantidades = $sorted->pluck('cantidad')->map(fn($v) => (int)$v)->toArray();
-        $totales    = $sorted->pluck('total')->map(fn($v) => (float)$v)->toArray();
-        $clientes   = $sorted->pluck('clientes')->map(fn($v) => (int)$v)->toArray();
+        $cantidades = $sorted->pluck('cantidad')->map(fn ($v) => (int) $v)->toArray();
+        $totales = $sorted->pluck('total')->map(fn ($v) => (float) $v)->toArray();
+        $clientes = $sorted->pluck('clientes')->map(fn ($v) => (int) $v)->toArray();
 
         return [
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'Cantidad ' . number_format(array_sum($cantidades)),
+                    'label' => 'Cantidad '.number_format(array_sum($cantidades)),
                     'data' => $cantidades,
                     'backgroundColor' => '#3B82F6',
-                    'borderWidth' => 0, 
+                    'borderWidth' => 0,
                 ],
                 [
-                    'label' => 'Total ' . Functions::money(array_sum($totales)),
+                    'label' => 'Total '.Functions::money(array_sum($totales)),
                     'data' => $totales,
                     'backgroundColor' => '#10B981',
                     'borderWidth' => 0,
@@ -127,7 +129,6 @@ class VentasPorTallaCompleto extends ChartWidget
         ];
     }
 
-
     protected function getType(): string
     {
         return 'bar';
@@ -136,7 +137,9 @@ class VentasPorTallaCompleto extends ChartWidget
     private function getTallaNumericValue(string $talla): float
     {
         $talla = trim($talla);
-        if (is_numeric($talla)) return (float) $talla;
+        if (is_numeric($talla)) {
+            return (float) $talla;
+        }
 
         if (strpos($talla, '/') !== false) {
             $p = explode('/', $talla);
@@ -147,9 +150,13 @@ class VentasPorTallaCompleto extends ChartWidget
 
         $map = ['XS' => 0.5, 'S' => 1, 'M' => 2, 'L' => 3, 'XL' => 4, 'XXL' => 5, 'XXXL' => 6];
         $up = strtoupper($talla);
-        if (isset($map[$up])) return $map[$up];
+        if (isset($map[$up])) {
+            return $map[$up];
+        }
 
-        if (preg_match('/(\d+(?:\.\d+)?)/', $talla, $m)) return (float)$m[1];
+        if (preg_match('/(\d+(?:\.\d+)?)/', $talla, $m)) {
+            return (float) $m[1];
+        }
 
         return 999;
     }

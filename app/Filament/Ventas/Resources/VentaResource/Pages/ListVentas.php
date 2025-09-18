@@ -4,19 +4,43 @@ namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
 use App\Enums\EstadoVentaStatus;
 use App\Filament\Ventas\Resources\VentaResource;
+use App\Models\Cierre;
 use App\Models\CierreDia;
 use App\Models\Venta;
 use Carbon\Carbon;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class ListVentas extends ListRecords
 {
     protected static string $resource = VentaResource::class;
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        // Verificar si el usuario actual tiene al menos un cierre abierto
+        $userId = Auth::user()?->id;
+        $tieneCierreAbierto = $userId ? Cierre::where('user_id', $userId)
+            ->whereNull('cierre')
+            ->exists() : false;
+
+        // Mostrar notificación si no tiene cierre abierto
+        if (! $tieneCierreAbierto) {
+            Notification::make()
+                ->warning()
+                ->title('Sin cierre abierto')
+                ->body('No tienes un cierre abierto. Debes aperturar un cierre antes de poder crear ventas.')
+                ->persistent()
+                ->send();
+        }
+    }
 
     /* public function getTabs(): array
     {

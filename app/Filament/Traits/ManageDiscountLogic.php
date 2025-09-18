@@ -2,7 +2,6 @@
 
 namespace App\Filament\Traits;
 
-use App\Helpers\DescuentosHelper;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
@@ -18,66 +17,6 @@ trait ManageDiscountLogic
         }
 
         return $detalles;
-    }
-
-    protected function handleGlobalDiscountToggle(bool $state, Get $get, Set $set): void
-    {
-        $detalles = $get('detalles') ?? [];
-
-        $activeIndividualDiscounts = $this->countActiveIndividualDiscounts($detalles);
-        $availableSlots = $this->getAvailableDiscountSlots($detalles);
-
-        $totalProductos = collect($detalles)->sum('cantidad');
-        if ($totalProductos === 1) {
-            Notification::make()
-                ->title('Descuento no aplicable')
-                ->body('El descuento global solo se puede aplicar a partir de 2 productos.')
-                ->danger()
-                ->send();
-            $set('aplicar_descuento', false);
-
-            return;
-        }
-
-        /* if ($state && $activeIndividualDiscounts >= $availableSlots) {
-            Notification::make()
-                ->title('Límite de promociones alcanzado')
-                ->body('Ya has aplicado el máximo de descuentos permitidos en esta venta. Para aplicar el descuento global, desactiva los descuentos individuales.')
-                ->danger()
-                ->send();
-            $set('aplicar_descuento', false);
-
-            return;
-        } */
-
-        if ($state) {
-            $detallesConDescuento = DescuentosHelper::aplicarDescuentoMitadPorPar($detalles);
-
-            if (is_null($detallesConDescuento)) {
-                Notification::make()->title('Debes seleccionar al menos 2 pares para aplicar el descuento')->danger()->send();
-                $set('aplicar_descuento', false);
-
-                return;
-            }
-
-            $set('detalles', $detallesConDescuento);
-            Notification::make()->title('Descuento global aplicado')->success()->send();
-
-        } else {
-            $detalles = collect($get('detalles'))->map(function ($detalle) {
-                if (isset($detalle['precio_original'])) {
-                    $detalle['precio'] = $detalle['precio_original'];
-                    $detalle['subtotal'] = ($detalle['precio'] ?? 0) * ($detalle['cantidad'] ?? 1);
-                }
-
-                return $detalle;
-            })->toArray();
-
-            $set('detalles', $detalles);
-            Notification::make()->title('Descuento global eliminado')->info()->send();
-        }
-
-        $this->updateRootTotals($get, $set);
     }
 
     protected function updateOrderTotals(Get $get, Set $set): void
@@ -143,32 +82,31 @@ trait ManageDiscountLogic
         $detalles = $this->getDetallesArray($get);
         $totalProductos = collect($detalles)->sum('cantidad');
 
-      /*   if ($totalProductos === 1) {
-            if ($toggleName === 'oferta') {
-                Notification::make()
-                    ->title('Descuento no aplicable')
-                    ->body('El descuento "oferta" requiere al menos 2 productos.')
-                    ->danger()
-                    ->send();
-                $set($toggleName, false);
+        /*   if ($totalProductos === 1) {
+              if ($toggleName === 'oferta') {
+                  Notification::make()
+                      ->title('Descuento no aplicable')
+                      ->body('El descuento "oferta" requiere al menos 2 productos.')
+                      ->danger()
+                      ->send();
+                  $set($toggleName, false);
 
-                return;
-            }
-            $precioOriginal = $get('precio_original') ?? 0;
-            $precioFinal = $priceCalculationFn($precioOriginal);
+                  return;
+              }
+              $precioOriginal = $get('precio_original') ?? 0;
+              $precioFinal = $priceCalculationFn($precioOriginal);
 
-            $set('precio', $precioFinal);
-            $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
+              $set('precio', $precioFinal);
+              $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
 
-            $this->updateOrderTotals($get, $set);
+              $this->updateOrderTotals($get, $set);
 
-            return;
-        } */
+              return;
+          } */
 
         $activeIndividualDiscounts = $this->countActiveIndividualDiscounts($detalles);
-        $isGlobalActive = $get('aplicar_descuento') ?? $get('../../aplicar_descuento') ?? false;
 
-        $totalActiveDiscounts = $activeIndividualDiscounts + ($isGlobalActive ? 1 : 0);
+        $totalActiveDiscounts = $activeIndividualDiscounts;
         $availableSlots = $this->getAvailableDiscountSlots($detalles);
 
         /* if ($totalActiveDiscounts > $availableSlots) {
