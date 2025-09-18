@@ -37,6 +37,7 @@ use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -58,7 +59,7 @@ class CreateVenta extends CreateRecord
                         'bodega',
                         'bodega',
                         fn (Builder $query) => $query
-                            ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                            ->whereHas('user', fn ($q) => $q->where('user_id', Auth::user()?->id)
                             )
                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
                             ->where('bodega', 'not like', '%bodega%')
@@ -70,7 +71,63 @@ class CreateVenta extends CreateRecord
                         $set('detalles', []);
                     })
                     ->searchable()
-                    ->required(),
+                    ->required()
+                    ->rules([
+                        fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
+                            if ($value) {
+                                $userId = Auth::user()?->id;
+                                $cierreAbierto = Cierre::where('bodega_id', $value)
+                                    ->where('user_id', $userId)
+                                    ->whereNull('cierre')
+                                    ->exists();
+
+                                if (!$cierreAbierto) {
+                                    $fail('No tienes un cierre abierto en esta bodega. Debes aperturar un cierre antes de realizar ventas.');
+                                }
+                            }
+                        },
+                    ]),
+                Select::make('asesor_id')
+                    ->label('Vendedor')
+                    ->relationship(
+                        'asesor',
+                        'name',
+                        fn (Builder $query) => $query->role(['vendedor', 'telemarketing'])
+                    )
+                    ->options(function () {
+                        $currentUser = Auth::user();
+                        $options = [];
+                        
+                        // Si el usuario actual es vendedor o telemarketing, lo agregamos primero
+                        if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                            $options[$currentUser->id] = $currentUser->name . ' (Usuario actual)';
+                        }
+                        
+                        // Agregamos otros vendedores y telemarketing
+                        $query = User::role(['vendedor', 'telemarketing']);
+                        if ($currentUser) {
+                            $query->where('id', '!=', $currentUser->id);
+                        }
+                        $otherVendedores = $query->get();
+                            
+                        foreach ($otherVendedores as $vendedor) {
+                            $options[$vendedor->id] = $vendedor->name;
+                        }
+                        
+                        return $options;
+                    })
+                    ->default(function () {
+                        $currentUser = Auth::user();
+                        // Si el usuario actual es vendedor o telemarketing, lo seleccionamos por defecto
+                        if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                            return $currentUser->id;
+                        }
+                        return null;
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->columnSpanFull(),
                 Wizard::make([
                     Wizard\Step::make('Cliente y Productos')
                         ->schema([
@@ -781,13 +838,17 @@ class CreateVenta extends CreateRecord
             $totalPagos = collect($this->data['pagos'] ?? [])->sum('monto');
 
             $bodegaId = $this->data['bodega_id'] ?? null;
+            $userId = Auth::user()?->id;
+            
+            // Verificar que el usuario actual tenga un cierre abierto en la bodega seleccionada
             $cierreAbierto = Cierre::where('bodega_id', $bodegaId)
+                ->where('user_id', $userId)
                 ->whereNull('cierre')
                 ->exists();
 
             if (! $cierreAbierto) {
                 throw ValidationException::withMessages([
-                    'bodega_id' => 'No hay un cierre abierto para la bodega seleccionada.',
+                    'bodega_id' => 'No tienes un cierre abierto en la bodega seleccionada. Debes aperturar un cierre antes de realizar ventas.',
                 ]);
             }
 
@@ -810,7 +871,10 @@ class CreateVenta extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['asesor_id'] = auth()->user()->id;
+        // Si no se seleccionó un asesor, usar el usuario actual como fallback
+        if (empty($data['asesor_id'])) {
+            $data['asesor_id'] = Auth::user()?->id;
+        }
         $data['estado'] = 'creada';
 
         return $data;
