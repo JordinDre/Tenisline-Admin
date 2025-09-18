@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Cierre;
 use App\Models\User;
 use App\Models\Venta;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -31,7 +32,17 @@ class VentaPolicy
      */
     public function create(User $user): bool
     {
-        return /* $user->can('create_venta') */ $user->hasAnyRole(User::VENTA_ROLES);
+        // Verificar que el usuario tenga los roles necesarios
+        if (! $user->hasAnyRole(User::VENTA_ROLES)) {
+            return false;
+        }
+
+        // Verificar que el usuario tenga al menos un cierre abierto
+        $tieneCierreAbierto = Cierre::where('user_id', $user->id)
+            ->whereNull('cierre')
+            ->exists();
+
+        return $tieneCierreAbierto;
     }
 
     /**

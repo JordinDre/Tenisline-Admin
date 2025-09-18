@@ -46,9 +46,9 @@ class VentasPorMarca extends ChartWidget
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
-            ->when($day !== '', fn($q) => $q->whereDay('ventas.created_at', $day))
-            ->when($bodegaFilter !== '', fn($q) => $q->where('bodegas.bodega', $bodegaFilter))
-            ->when($generoFilter !== '', fn($q) => $q->where('productos.genero', $generoFilter))
+            ->when($day !== '', fn ($q) => $q->whereDay('ventas.created_at', $day))
+            ->when($bodegaFilter !== '', fn ($q) => $q->where('bodegas.bodega', $bodegaFilter))
+            ->when($generoFilter !== '', fn ($q) => $q->where('productos.genero', $generoFilter))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
             ->whereNotNull('marcas.marca')
@@ -73,28 +73,29 @@ class VentasPorMarca extends ChartWidget
         $labels = $rows->pluck('marca')->toArray();
 
         // Data arrays
-        $cantidades = $rows->pluck('cantidad')->map(fn($v) => (int) $v)->toArray();
-        $totales = $rows->pluck('total')->map(fn($v) => (float) $v)->toArray();
-        $clientes = $rows->pluck('clientes')->map(fn($v) => (int) $v)->toArray();
+        $cantidades = $rows->pluck('cantidad')->map(fn ($v) => (int) $v)->toArray();
+        $totales = $rows->pluck('total')->map(fn ($v) => (float) $v)->toArray();
+        $clientes = $rows->pluck('clientes')->map(fn ($v) => (int) $v)->toArray();
 
         return [
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'Cantidad ' . number_format(array_sum($cantidades)),
+                    'label' => 'Cantidad '.number_format(array_sum($cantidades)),
                     'data' => $cantidades,
                     'backgroundColor' => '#8B5CF6', // violet
                     'borderWidth' => 0,
                 ],
                 [
-                    'label' => 'Total ' . Functions::money(array_sum($totales)),
+                    'label' => 'Total '.Functions::money(array_sum($totales)),
                     'data' => $totales,
                     'backgroundColor' => '#F59E0B', // amber
                     'borderWidth' => 0,
-                ]
+                ],
             ],
         ];
     }
+
     protected function getOptions(): array
     {
         return [

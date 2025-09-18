@@ -64,14 +64,14 @@ class MetasBodega extends ChartWidget
             ->toArray();
 
         // Calcular días transcurridos y total de días del mes
-        $diasTranscurridos = $day ? (int)$day : now()->day;
-        $totalDiasMes = now()->setYear((int)$year)->setMonth((int)$month)->daysInMonth;
+        $diasTranscurridos = $day ? (int) $day : now()->day;
+        $totalDiasMes = now()->setYear((int) $year)->setMonth((int) $month)->daysInMonth;
 
         $data = $ventasData->map(function ($item) use ($metas, $diasTranscurridos, $totalDiasMes) {
             $total = $item->total;
             $meta = $metas[$item->bodega_id] ?? 0; // Si no hay meta, usar 0
             $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
-            
+
             // Calcular proyección: (ventas actuales / días transcurridos) * total de días del mes
             $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
 
