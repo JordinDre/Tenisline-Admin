@@ -56,47 +56,41 @@ class ListVentas extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        $actions = [];
+        return [
+            Actions\CreateAction::make()
+            ->visible(function () {
+                return \App\Models\Cierre::whereNotNull('apertura')
+                    ->whereNull('cierre')
+                    ->exists();
+            }),
 
-        // Verificar si el usuario actual tiene al menos un cierre abierto
-        $userId = Auth::user()?->id;
-        $tieneCierreAbierto = $userId ? Cierre::where('user_id', $userId)
-            ->whereNull('cierre')
-            ->exists() : false;
+            /* Actions\Action::make('liquidarVentas')
+                ->label('Liquidar Venta del Día')
+                ->icon('heroicon-o-check-circle')
+                ->requiresConfirmation()
+                ->modalHeading('Liquidar Ventas del Día')
+                ->modalDescription('¿Estás seguro de que deseas liquidar las ventas del día actual? Esta acción marcará el final del día de ventas actual.')
+                ->modalSubmitActionLabel('Liquidar')
+                ->action(function () {
+                    $today = Carbon::today();
 
-        // Solo mostrar el botón de crear si el usuario tiene un cierre abierto
-        if ($tieneCierreAbierto) {
-            $actions[] = Actions\CreateAction::make();
-        }
+                    $cierreDia = CierreDia::create([
+                        'fecha_cierre' => $today->toDateString(),
+                        'usuario_id' => auth()->user()->id,
+                    ]);
 
-        /* Actions\Action::make('liquidarVentas')
-            ->label('Liquidar Venta del Día')
-            ->icon('heroicon-o-check-circle')
-            ->requiresConfirmation()
-            ->modalHeading('Liquidar Ventas del Día')
-            ->modalDescription('¿Estás seguro de que deseas liquidar las ventas del día actual? Esta acción marcará el final del día de ventas actual.')
-            ->modalSubmitActionLabel('Liquidar')
-            ->action(function () {
-                $today = Carbon::today();
+                    Venta::whereDate('created_at', $today)
+                        ->whereNull('cierre_dia_id')
+                        ->update(['cierre_dia_id' => $cierreDia->id,]);
 
-                $cierreDia = CierreDia::create([
-                    'fecha_cierre' => $today->toDateString(),
-                    'usuario_id' => auth()->user()->id,
-                ]);
+                    Cache::put('dia_liquidado', true, now()->addDay());
 
-                Venta::whereDate('created_at', $today)
-                    ->whereNull('cierre_dia_id')
-                    ->update(['cierre_dia_id' => $cierreDia->id,]);
-
-                Cache::put('dia_liquidado', true, now()->addDay());
-
-                Notification::make()
-                    ->title('Ventas del día liquidadas')
-                    ->color('success')
-                    ->success()
-                    ->send();
-            }), */
-
-        return $actions;
+                    Notification::make()
+                        ->title('Ventas del día liquidadas')
+                        ->color('success')
+                        ->success()
+                        ->send();
+                }), */
+        ];
     }
 }
