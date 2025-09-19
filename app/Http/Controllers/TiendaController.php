@@ -190,7 +190,7 @@ class TiendaController extends Controller
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
 
-                    // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Precio Ofertado por Apertura"
+                    // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Oferta Especial - Solo en Tienda Física"
                     'es_precio_ofertado' => $producto->inventario
                         ->filter(function ($inv) {
                             $bodega = $inv->bodega;
@@ -317,7 +317,7 @@ class TiendaController extends Controller
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca ?? null,
 
-                // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Precio Ofertado por Apertura"
+                // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Oferta Especial - Solo en Tienda Física"
                 'es_precio_ofertado' => $producto->inventario
                     ->filter(function ($inv) {
                         $bodega = $inv->bodega;

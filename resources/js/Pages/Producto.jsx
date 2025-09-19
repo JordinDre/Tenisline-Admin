@@ -92,7 +92,7 @@ export default function Producto({ producto, marcas }) {
                                 </div>
                                 {producto.es_precio_ofertado && (
                                     <div className="mt-1 text-sm text-orange-600">
-                                        🎉 Precio Ofertado por Apertura
+                                        🎉 Oferta Especial - Solo en Tienda Física
                                     </div>
                                 )}
                             </div>
