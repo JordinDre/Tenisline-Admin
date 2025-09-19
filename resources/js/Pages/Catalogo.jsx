@@ -90,9 +90,24 @@ export default function Catalogo({
                 />
             </Head>
             <div className="container mx-auto px-4 py-6">
-                <h2 className="mb-6 text-center text-3xl font-bold text-zinc-800">
-                    Catálogo de Productos
-                </h2>
+                <div className="mb-6 flex flex-col items-center gap-4 md:flex-row md:justify-between">
+                    <h2 className="text-3xl font-bold text-zinc-800">
+                        Catálogo de Productos
+                    </h2>
+                    
+                    {/* Botón de exportar PDF */}
+                    <a
+                        href={route('pdf.catalogo')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
+                    >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Exportar PDF
+                    </a>
+                </div>
 
                 {/* Botón para móviles */}
                 <button
