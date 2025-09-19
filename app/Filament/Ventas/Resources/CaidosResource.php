@@ -147,6 +147,7 @@ class CaidosResource extends Resource
                 Tables\Actions\Action::make('historial')
                     ->icon('heroicon-o-document-text')
                     ->modalWidth(MaxWidth::SevenExtraLarge)
+                    ->modalSubmitAction(false)
                     ->modalContent(fn ($record): View => view(
                         'filament.pages.actions.historial-ventas',
                         [
