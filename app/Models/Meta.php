@@ -92,7 +92,7 @@ class Meta extends Model
         $hoy = now();
         $diasTranscurridos = ($year == $hoy->year && $month == $hoy->month)
             ? $hoy->day
-            : $hoy->setYear($year)->setMonth($month)->daysInMonth; 
+            : $hoy->setYear($year)->setMonth($month)->daysInMonth;
 
         $totalDiasMes = $hoy->setYear($year)->setMonth($month)->daysInMonth;
 
@@ -115,7 +115,8 @@ class Meta extends Model
             return 0;
         }
 
-        $proyeccion = $this->proyeccion; 
+        $proyeccion = $this->proyeccion;
+
         return round(($proyeccion * 100) / $this->meta, 2);
     }
 

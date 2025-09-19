@@ -58,11 +58,11 @@ class ListVentas extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-            ->visible(function () {
-                return \App\Models\Cierre::whereNotNull('apertura')
-                    ->whereNull('cierre')
-                    ->exists();
-            }),
+                ->visible(function () {
+                    return \App\Models\Cierre::whereNotNull('apertura')
+                        ->whereNull('cierre')
+                        ->exists();
+                }),
 
             /* Actions\Action::make('liquidarVentas')
                 ->label('Liquidar Venta del Día')

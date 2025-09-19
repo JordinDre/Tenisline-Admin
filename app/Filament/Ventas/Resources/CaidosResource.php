@@ -155,7 +155,7 @@ class CaidosResource extends Resource
                     ->modalContent(fn ($record): View => view(
                         'filament.pages.actions.historial-ventas',
                         [
-                            'ventas' => DB::select("
+                            'ventas' => DB::select('
                                                 select
                                                 ventas.id as venta_id,
                                                 users.name,
@@ -185,7 +185,7 @@ class CaidosResource extends Resource
                                                 ventas.cliente_id = ?
                                             ORDER BY
                                                 ventas.created_at DESC
-                                        ", [
+                                        ', [
                                 $record->cliente_id,
                             ]),
                         ],

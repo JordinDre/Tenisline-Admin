@@ -100,7 +100,7 @@ class MetaResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('mes_anio')
                     ->label('Mes y Año')
                     ->getStateUsing(function ($record) {
-                        return Functions::nombreMes($record->mes) . ', ' . $record->anio;
+                        return Functions::nombreMes($record->mes).', '.$record->anio;
                     })
                     ->searchable()
                     ->copyable()
@@ -116,24 +116,34 @@ class MetaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable()
                     ->color(function ($record) {
-                        $porcentaje = $record->meta > 0 
-                            ? ($record->proyeccion / $record->meta) * 100 
+                        $porcentaje = $record->meta > 0
+                            ? ($record->proyeccion / $record->meta) * 100
                             : 0;
 
-                        if ($porcentaje >= 100) return 'success';
-                        if ($porcentaje >= 75) return 'warning';
+                        if ($porcentaje >= 100) {
+                            return 'success';
+                        }
+                        if ($porcentaje >= 75) {
+                            return 'warning';
+                        }
+
                         return 'danger';
                     }),
                 Tables\Columns\TextColumn::make('proyeccion')
                     ->label('Proyección (Q)')
                     ->money('GTQ')
                     ->color(function ($record) {
-                        $porcentaje = $record->meta > 0 
-                            ? ($record->proyeccion / $record->meta) * 100 
+                        $porcentaje = $record->meta > 0
+                            ? ($record->proyeccion / $record->meta) * 100
                             : 0;
 
-                        if ($porcentaje >= 100) return 'success';
-                        if ($porcentaje >= 75) return 'warning';
+                        if ($porcentaje >= 100) {
+                            return 'success';
+                        }
+                        if ($porcentaje >= 75) {
+                            return 'warning';
+                        }
+
                         return 'danger';
                     }),
                 Tables\Columns\TextColumn::make('proyeccion2')
@@ -142,12 +152,17 @@ class MetaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable()
                     ->color(function ($record) {
-                        $porcentaje = $record->meta > 0 
-                            ? ($record->proyeccion / $record->meta) * 100 
+                        $porcentaje = $record->meta > 0
+                            ? ($record->proyeccion / $record->meta) * 100
                             : 0;
 
-                        if ($porcentaje >= 100) return 'success';
-                        if ($porcentaje >= 75) return 'warning';
+                        if ($porcentaje >= 100) {
+                            return 'success';
+                        }
+                        if ($porcentaje >= 75) {
+                            return 'warning';
+                        }
+
                         return 'danger';
                     }),
                 Tables\Columns\TextColumn::make('ventas_reales')
@@ -161,12 +176,17 @@ class MetaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable()
                     ->color(function ($record) {
-                        $porcentaje = $record->meta > 0 
-                            ? ($record->proyeccion / $record->meta) * 100 
+                        $porcentaje = $record->meta > 0
+                            ? ($record->proyeccion / $record->meta) * 100
                             : 0;
 
-                        if ($porcentaje >= 100) return 'success';
-                        if ($porcentaje >= 75) return 'warning';
+                        if ($porcentaje >= 100) {
+                            return 'success';
+                        }
+                        if ($porcentaje >= 75) {
+                            return 'warning';
+                        }
+
                         return 'danger';
                     }),
                 Tables\Columns\TextColumn::make('rendimiento')
