@@ -2,13 +2,14 @@
 
 namespace App\Filament\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
-use App\Models\Bodega;
 use App\Models\Meta;
+use App\Models\Bodega;
+use Illuminate\Support\Js;
 use App\Models\VentaDetalle;
 use Filament\Widgets\ChartWidget;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Utils\Functions;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class MetasBodega extends ChartWidget
 {
@@ -119,57 +120,61 @@ class MetasBodega extends ChartWidget
         ];
     }
 
-    protected function getOptions(): array
-    {
-        return [
-            'indexAxis' => 'x',
-            'plugins' => [
-                'legend' => [
-                    'position' => 'top',
-                ],
-                'tooltip' => [
-                    'enabled' => true,
-                    'mode' => 'index',
-                    'intersect' => false,
-                    'callbacks' => [
-                        'title' => 'function(context) {
-                            return "🏪 " + context[0].label;
-                        }',
-                        'label' => 'function(context) {
-                            let label = context.dataset.label || "";
-                            if (label) {
-                                label += ": ";
-                            }
-                            if (context.parsed.y !== null) {
-                                if (label.includes("Meta") || label.includes("Ventas") || label.includes("Proyección")) {
-                                    label += "Q" + new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(context.parsed.y);
-                                } else {
-                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y) + "%";
-                                }
-                            }
-                            return label;
-                        }',
-                    ],
-                ],
+protected function getOptions(): array
+{
+    return [
+        'indexAxis' => 'x',
+        'plugins' => [
+            'legend' => ['position' => 'top'],
+            'tooltip' => [
+                'enabled' => true,
+                'mode' => 'index',
+                'intersect' => false,
+                // ❌ quitar 'callbacks' de aquí
             ],
-            'scales' => [
-                'x' => [
-                    'stacked' => false,
-                ],
-                'y' => [
-                    'stacked' => false,
-                    'beginAtZero' => true,
-                ],
-            ],
-            'animation' => [
-                'duration' => 1000,
-                'easing' => 'easeOutQuart',
-            ],
-        ];
-    }
+        ],
+        'scales' => [
+            'x' => ['stacked' => false],
+            'y' => ['stacked' => false, 'beginAtZero' => true],
+        ],
+        'animation' => ['duration' => 1000, 'easing' => 'easeOutQuart'],
+    ];
+}
 
     protected function getType(): string
     {
         return 'bar';
     }
+
+protected function getExtraAttributes(): array
+{
+    return [
+        'x-data' => '{}',
+        'x-init' => <<<JS
+            (el) => {
+                const ctx = el.querySelector('canvas').getContext('2d');
+                if (ctx && el.__chart) { // __chart es la referencia al chart de Filament
+                    el.__chart.options.plugins.tooltip.callbacks = {
+                        title: function(context) {
+                            return "👟 " + context[0].label;
+                        },
+                        label: function(context) {
+                            let label = context.dataset.label || "";
+                            if (label) label += ": ";
+                            if (context.parsed.y !== null) {
+                                if (label.includes("Total")) {
+                                    label += "Q" + new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(context.parsed.y);
+                                } else {
+                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y);
+                                }
+                            }
+                            return label;
+                        }
+                    };
+                    el.__chart.update();
+                }
+            }
+        JS,
+    ];
+}
 }

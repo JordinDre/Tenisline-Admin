@@ -156,14 +156,20 @@ class VentasBodega extends ChartWidget
                 'legend' => [
                     'position' => 'top',
                 ],
+                'tooltip' => [
+                    'enabled'   => true,
+                    'mode'      => 'index',   // muestra todos los datasets para esa X
+                    'intersect' => false,     // no exige que el puntero esté exactamente sobre la barra
+                ],
+            ],
+            // interaction ayuda a Chart.js a decidir la forma de activación del tooltip
+            'interaction' => [
+                'mode' => 'index',
+                'intersect' => false,
             ],
             'scales' => [
-                'x' => [
-                    'stacked' => true,
-                ],
-                'y' => [
-                    'stacked' => true,
-                ],
+                'x' => ['stacked' => true],
+                'y' => ['stacked' => true],
             ],
             'animation' => [
                 'duration' => 1000,

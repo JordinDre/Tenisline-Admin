@@ -95,38 +95,68 @@ class VentasPorMarca extends ChartWidget
             ],
         ];
     }
+
     protected function getOptions(): array
-    {
-        return [
-            'indexAxis' => 'x',
-            'plugins' => [
-                'legend' => [
-                    'position' => 'top',
-                ],
+{
+    return [
+        'indexAxis' => 'x',
+        'plugins' => [
+            'legend' => ['position' => 'top'],
+            'tooltip' => [
+                'enabled' => true,
+                'mode' => 'index',
+                'intersect' => false,
+                // ❌ No JS aquí
             ],
-            'scales' => [
-                'x' => [
-                    'stacked' => true,
-                    'grid' => [
-                        'display' => false, // 👈 quita las líneas verticales
-                    ],
-                ],
-                'y' => [
-                    'stacked' => true,
-                    'grid' => [
-                        'display' => false, // 👈 quita las líneas horizontales
-                    ],
-                ],
+        ],
+        'scales' => [
+            'x' => [
+                'stacked' => true,
+                'grid' => ['display' => false],
             ],
-            'animation' => [
-                'duration' => 1000,
-                'easing' => 'easeOutQuart',
+            'y' => [
+                'stacked' => true,
+                'grid' => ['display' => false],
             ],
-        ];
-    }
+        ],
+        'animation' => ['duration' => 1000, 'easing' => 'easeOutQuart'],
+    ];
+}
 
     protected function getType(): string
     {
         return 'bar';
     }
+
+    protected function getExtraAttributes(): array
+{
+    return [
+        'x-data' => '{}',
+        'x-init' => <<<JS
+            (el) => {
+                const ctx = el.querySelector('canvas').getContext('2d');
+                if (ctx && el.__chart) { // __chart es la referencia al chart de Filament
+                    el.__chart.options.plugins.tooltip.callbacks = {
+                        title: function(context) {
+                            return "👟 " + context[0].label;
+                        },
+                        label: function(context) {
+                            let label = context.dataset.label || "";
+                            if (label) label += ": ";
+                            if (context.parsed.y !== null) {
+                                if (label.includes("Total")) {
+                                    label += "Q" + new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(context.parsed.y);
+                                } else {
+                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y);
+                                }
+                            }
+                            return label;
+                        }
+                    };
+                    el.__chart.update();
+                }
+            }
+        JS,
+    ];
+}
 }
