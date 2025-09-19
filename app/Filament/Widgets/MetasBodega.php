@@ -2,15 +2,14 @@
 
 namespace App\Filament\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Bodega;
 use App\Models\Meta;
 use App\Models\VentaDetalle;
-use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
-class MetasBodega extends ChartWidget
+class MetasBodega extends Widget
 {
     use InteractsWithPageFilters;
 
@@ -20,11 +19,13 @@ class MetasBodega extends ChartWidget
 
     protected static ?int $sort = 2;
 
+    protected static string $view = 'filament.widgets.metas-bodega-table';
+
     protected int|string|array $columnSpan = [
         'sm' => 'full',
         'md' => 'full',
-        'lg' => 1,
-        'xl' => 1,
+        'lg' => 2,
+        'xl' => 2,
     ];
 
     public static function canView(): bool
@@ -32,7 +33,7 @@ class MetasBodega extends ChartWidget
         return Auth::check() && Auth::user()->can('widget_VentasGeneral');
     }
 
-    protected function getData(): array
+    protected function getViewData(): array
     {
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
@@ -51,7 +52,9 @@ class MetasBodega extends ChartWidget
             ->selectRaw('
                 bodegas.id as bodega_id,
                 bodegas.bodega as bodega_nombre,
-                SUM(venta_detalles.precio) as total
+                SUM(venta_detalles.precio) as total,
+                COUNT(DISTINCT ventas.cliente_id) as clientes,
+                SUM(venta_detalles.cantidad) as cantidad_productos
             ')
             ->groupBy('bodegas.id', 'bodegas.bodega')
             ->get();
@@ -69,18 +72,23 @@ class MetasBodega extends ChartWidget
 
         $data = $ventasData->map(function ($item) use ($metas, $diasTranscurridos, $totalDiasMes) {
             $total = $item->total;
-            $meta = $metas[$item->bodega_id] ?? 0; // Si no hay meta, usar 0
+            $meta = $metas[$item->bodega_id] ?? 0;
             $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
-
-            // Calcular proyección: (ventas actuales / días transcurridos) * total de días del mes
             $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
+            $diferencia = $total - $meta;
+            $eficiencia = ($diasTranscurridos > 0 && $meta > 0) ? ($total / $meta) * ($totalDiasMes / $diasTranscurridos) : 0;
 
             return [
+                'bodega_id' => $item->bodega_id,
                 'bodega' => $item->bodega_nombre,
                 'total' => $total,
                 'meta' => $meta,
                 'alcance' => $alcance,
                 'proyeccion' => $proyeccion,
+                'diferencia' => $diferencia,
+                'eficiencia' => $eficiencia,
+                'clientes' => $item->clientes,
+                'cantidad_productos' => $item->cantidad_productos,
             ];
         });
 
@@ -95,81 +103,13 @@ class MetasBodega extends ChartWidget
         static::$heading = $titulo;
 
         return [
-            'labels' => $data->pluck('bodega')->toArray(),
-            'datasets' => [
-                [
-                    'label' => 'Meta '.Functions::money($data->sum('meta')),
-                    'data' => $data->pluck('meta')->toArray(),
-                    'backgroundColor' => '#10B981', // emerald-500
-                    'borderColor' => '#34D399', // emerald-400
-                ],
-                [
-                    'label' => 'Proyección '.Functions::money($data->sum('proyeccion')),
-                    'data' => $data->pluck('proyeccion')->toArray(),
-                    'backgroundColor' => '#F59E0B', // amber-500
-                    'borderColor' => '#D97706', // amber-600
-                ],
-                [
-                    'label' => 'Ventas '.Functions::money($data->sum('total')),
-                    'data' => $data->pluck('total')->toArray(),
-                    'backgroundColor' => '#3B82F6', // blue-500
-                    'borderColor' => '#1D4ED8', // blue-700
-                ],
-            ],
+            'data' => $data,
+            'totalVentas' => $data->sum('total'),
+            'totalMeta' => $data->sum('meta'),
+            'totalAlcance' => $data->avg('alcance'),
+            'totalProyeccion' => $data->sum('proyeccion'),
+            'totalClientes' => $data->sum('clientes'),
+            'totalProductos' => $data->sum('cantidad_productos'),
         ];
-    }
-
-    protected function getOptions(): array
-    {
-        return [
-            'indexAxis' => 'x',
-            'plugins' => [
-                'legend' => [
-                    'position' => 'top',
-                ],
-                'tooltip' => [
-                    'enabled' => true,
-                    'mode' => 'index',
-                    'intersect' => false,
-                    'callbacks' => [
-                        'title' => 'function(context) {
-                            return "🏪 " + context[0].label;
-                        }',
-                        'label' => 'function(context) {
-                            let label = context.dataset.label || "";
-                            if (label) {
-                                label += ": ";
-                            }
-                            if (context.parsed.y !== null) {
-                                if (label.includes("Meta") || label.includes("Ventas") || label.includes("Proyección")) {
-                                    label += "Q" + new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(context.parsed.y);
-                                } else {
-                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y) + "%";
-                                }
-                            }
-                            return label;
-                        }',
-                    ],
-                ],
-            ],
-            'scales' => [
-                'x' => [
-                    'stacked' => false,
-                ],
-                'y' => [
-                    'stacked' => false,
-                    'beginAtZero' => true,
-                ],
-            ],
-            'animation' => [
-                'duration' => 1000,
-                'easing' => 'easeOutQuart',
-            ],
-        ];
-    }
-
-    protected function getType(): string
-    {
-        return 'bar';
     }
 }
