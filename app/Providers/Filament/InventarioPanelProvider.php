@@ -45,7 +45,6 @@ class InventarioPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Inventario/Pages'), for: 'App\\Filament\\Inventario\\Pages')
             ->pages([])
             ->discoverWidgets(in: app_path('Filament/Inventario/Widgets'), for: 'App\\Filament\\Inventario\\Widgets')
-            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

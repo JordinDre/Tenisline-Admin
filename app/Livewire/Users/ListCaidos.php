@@ -21,6 +21,7 @@ use Filament\Tables\Table;
 use Guava\FilamentModalRelationManagers\Actions\Table\RelationManagerAction;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class ListCaidos extends Component implements HasForms, HasTable
@@ -177,12 +178,54 @@ class ListCaidos extends Component implements HasForms, HasTable
                     })
                     ->icon('tabler-address-book'),
                 RelationManagerAction::make('historial')
-                    ->label('Historial')
+                    ->label('Historial Órdenes')
                     ->modalWidth(MaxWidth::SevenExtraLarge)
                     ->icon('tabler-history')
                     ->slideOver()
                     ->modalSubmitAction(false)
                     ->relationManager(OrdenesRelationManager::make()),
+                Tables\Actions\Action::make('historial-ventas')
+                    ->label('Historial Ventas')
+                    ->icon('heroicon-o-document-text')
+                    ->modalWidth(MaxWidth::SevenExtraLarge)
+                    ->modalContent(fn ($record): View => view(
+                        'filament.pages.actions.historial-ventas',
+                        [
+                            'ventas' => DB::select('
+                                                select
+                                                ventas.id as venta_id,
+                                                users.name,
+                                                ventas.created_at as fecha_venta,
+                                                productos.codigo,
+                                                productos.descripcion,
+                                                marcas.marca,
+                                                productos.talla,
+                                                productos.genero,
+                                                venta_detalles.cantidad,
+                                                venta_detalles.subtotal,
+                                                (
+                                                    select
+                                                        u.name
+                                                    from
+                                                        users u
+                                                    where
+                                                        u.id = ventas.asesor_id
+                                                ) as asesor
+                                            from
+                                                ventas
+                                                inner join users on users.id = ventas.cliente_id
+                                                inner join venta_detalles on venta_detalles.venta_id = ventas.id
+                                                inner join productos on venta_detalles.producto_id = productos.id
+                                                inner join marcas on productos.marca_id = marcas.id
+                                            WHERE
+                                                ventas.cliente_id = ?
+                                            ORDER BY
+                                                ventas.created_at DESC
+                                            ', [
+                                $record->id,
+                            ]),
+                        ],
+                    )),
                 Tables\Actions\Action::make('Seguimiento')
                     ->color('orange')
                     ->icon('heroicon-o-folder-arrow-down')

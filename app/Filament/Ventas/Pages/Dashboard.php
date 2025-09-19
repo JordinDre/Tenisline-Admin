@@ -75,5 +75,4 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return 2;
     }
-
 }

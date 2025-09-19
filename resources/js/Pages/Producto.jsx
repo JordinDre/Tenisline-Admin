@@ -70,29 +70,79 @@ export default function Producto({ producto, marcas }) {
                         className="grid gap-8 md:grid-cols-2 md:items-start"
                     >
                         {/* Imagen con click para abrir modal */}
-                        <div
-                            className="cursor-zoom-in rounded-xl bg-zinc-50 p-4 shadow-md"
-                            onClick={() => setIsModalOpen(true)}
-                        >
-                            <img
-                                className="max-h-[400px] w-full object-contain"
-                                src={producto.imagen}
-                                alt={producto.descripcion}
-                            />
-                            <p className="mt-2 text-center text-xs text-zinc-500">
-                                Haz clic para ampliar
-                            </p>
+                        <div className="space-y-4">
+                            <div
+                                className="cursor-zoom-in rounded-xl bg-zinc-50 p-4 shadow-md"
+                                onClick={() => setIsModalOpen(true)}
+                            >
+                                <img
+                                    className="max-h-[400px] w-full object-contain"
+                                    src={producto.imagen}
+                                    alt={producto.descripcion}
+                                />
+                                <p className="mt-2 text-center text-xs text-zinc-500">
+                                    Haz clic para ampliar
+                                </p>
+                            </div>
+
+                            {/* Precio debajo de la imagen */}
+                            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
+                                <div className="text-3xl font-extrabold text-green-600">
+                                    Q{producto.precio}
+                                </div>
+                                {producto.es_precio_ofertado && (
+                                    <div className="mt-1 text-sm text-orange-600">
+                                        🎉 Oferta Especial - Solo en Tienda Física
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Existencia destacada debajo del precio */}
+                            {producto.bodega_destacada && (
+                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                    <p className="mb-2 text-sm font-semibold text-blue-700">
+                                        📦 Existencia:
+                                    </p>
+                                    <div className="inline-block rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-blue-300">
+                                        <strong className="text-blue-800">
+                                            {producto.bodega_destacada.bodega}
+                                        </strong>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bodegas disponibles debajo del precio */}
+                            {user &&
+                                producto.bodegas &&
+                                producto.bodegas.length > 0 && (
+                                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                        <p className="mb-3 text-sm font-semibold text-zinc-700">
+                                            🏬 Disponible en:
+                                        </p>
+                                        <div className="space-y-2">
+                                            {producto.bodegas.map(
+                                                (bodega, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex justify-between rounded-md bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-300"
+                                                    >
+                                                        <span className="font-medium text-zinc-800">
+                                                            {bodega.bodega}
+                                                        </span>
+                                                        <span className="text-sm text-zinc-600">
+                                                            {bodega.existencia}{' '}
+                                                            unidades
+                                                        </span>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                         </div>
 
                         {/* Información del producto */}
                         <div>
-                            {/* Identificador de Precio Ofertado por Apertura */}
-                            {producto.es_precio_ofertado && (
-                                <div className="mb-4 inline-block rounded-full bg-orange-100 px-4 py-2 text-sm font-semibold text-orange-800">
-                                    🎉 Precio Ofertado por Apertura
-                                </div>
-                            )}
-
                             <motion.h1
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -102,45 +152,7 @@ export default function Producto({ producto, marcas }) {
                                 {producto.descripcion}
                             </motion.h1>
 
-                            {producto.bodega_destacada && (
-                                <div className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                                    <p className="mb-2 text-sm font-semibold text-green-700">
-                                        📦 Existencia:
-                                    </p>
-                                    <div className="inline-block rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-green-300">
-                                        <strong>
-                                            {producto.bodega_destacada.bodega}
-                                        </strong>
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="mt-5 space-y-2 text-sm text-zinc-700">
-                                {user &&
-                                    producto.bodegas &&
-                                    producto.bodegas.length > 0 && (
-                                        <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
-                                            <p className="mb-2 text-sm font-semibold text-zinc-700">
-                                                🏬 Ubicación en bodegas:
-                                            </p>
-                                            <ul className="flex flex-wrap gap-2 text-sm text-zinc-700">
-                                                {producto.bodegas.map(
-                                                    (b, i) => (
-                                                        <li
-                                                            key={i}
-                                                            className="rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-zinc-300"
-                                                        >
-                                                            <strong>
-                                                                {b.bodega}
-                                                            </strong>
-                                                            : {b.existencia}
-                                                        </li>
-                                                    ),
-                                                )}
-                                            </ul>
-                                        </div>
-                                    )}
-
                                 <p>
                                     <strong>Código:</strong> {producto.codigo}
                                 </p>
@@ -151,10 +163,6 @@ export default function Producto({ producto, marcas }) {
                                     <strong>Talla:</strong> US {producto.talla}{' '}
                                     ({producto.genero})
                                 </p>
-                            </div>
-
-                            <div className="mt-4 text-xl font-bold text-green-600">
-                                Q{producto.precio}
                             </div>
 
                             <div className="mt-8">

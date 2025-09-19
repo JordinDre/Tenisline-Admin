@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cierre;
 use App\Models\Compra;
 use App\Models\Orden;
+use App\Models\Producto;
 use App\Models\Traslado;
 use App\Models\Venta;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -206,5 +207,117 @@ class PDFController extends Controller
         $pdf = Pdf::loadHTML($html);
 
         return $pdf->stream("Recibo Orden #{$id}.pdf");
+    }
+
+    public function catalogo()
+    {
+        // Obtener máximo 10 productos con sus relaciones
+        $productos = Producto::with(['marca', 'inventario.bodega.municipio'])
+            ->whereHas('inventario', function ($query) {
+                $query->where('existencia', '>', 0);
+            })
+            ->limit(10)
+            ->get()
+            ->map(function ($producto) {
+                $user = auth()->user();
+
+                return [
+                    'id' => $producto->id,
+                    'codigo' => $producto->codigo,
+                    'descripcion' => $producto->descripcion,
+                    'precio' => $producto->precio_venta ?? null,
+                    'talla' => $producto->talla ?? null,
+                    'color' => $producto->color ?? null,
+                    'genero' => $producto->genero ?? null,
+                    'imagen' => $this->getImageAsBase64($producto),
+                    'marca' => $producto->marca->marca ?? null,
+                    'bodegas' => $user
+                        ? $producto->inventario
+                            ->filter(function ($inv) {
+                                $bodega = $inv->bodega;
+                                if (! $bodega) {
+                                    return false;
+                                }
+
+                                // Excluir bodegas específicas que no deben mostrar existencia
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                                    return false;
+                                }
+
+                                // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                                $municipio = $bodega->municipio;
+                                if (! $municipio) {
+                                    return false;
+                                }
+
+                                return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
+                            })
+                            ->groupBy(function ($inv) {
+                                return $inv->bodega->municipio->municipio ?? 'Desconocida';
+                            })
+                            ->map(function ($inventarios, $municipio) {
+                                $totalExistencia = $inventarios->sum('existencia');
+
+                                return [
+                                    'bodega' => $municipio,
+                                    'existencia' => $totalExistencia,
+                                ];
+                            })
+                            ->values()
+                            ->toArray()
+                        : null,
+                ];
+            });
+
+        $html = view('pdf.catalogo', compact('productos'))->render();
+        $pdf = Pdf::loadHTML($html)->setPaper('letter', 'portrait');
+
+        return $pdf->stream('Catalogo_'.date('Y-m-d').'.pdf');
+    }
+
+    private function getImageAsBase64($producto)
+    {
+        try {
+            $imageUrl = isset($producto->imagenes[0])
+                ? config('filesystems.disks.s3.url').$producto->imagenes[0]
+                : public_path('images/icono.png');
+
+            // Si es una URL externa, intentar obtener el contenido
+            if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                $imageContent = @file_get_contents($imageUrl);
+                if ($imageContent !== false) {
+                    $mimeType = $this->getMimeTypeFromContent($imageContent);
+
+                    return 'data:'.$mimeType.';base64,'.base64_encode($imageContent);
+                }
+            } else {
+                // Si es una ruta local
+                if (file_exists($imageUrl)) {
+                    $imageContent = file_get_contents($imageUrl);
+                    $mimeType = $this->getMimeTypeFromContent($imageContent);
+
+                    return 'data:'.$mimeType.';base64,'.base64_encode($imageContent);
+                }
+            }
+        } catch (\Exception $e) {
+            // En caso de error, usar imagen por defecto
+        }
+
+        // Fallback a imagen por defecto
+        $defaultImagePath = public_path('images/icono.png');
+        if (file_exists($defaultImagePath)) {
+            $imageContent = file_get_contents($defaultImagePath);
+
+            return 'data:image/png;base64,'.base64_encode($imageContent);
+        }
+
+        return '';
+    }
+
+    private function getMimeTypeFromContent($content)
+    {
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+
+        return $finfo->buffer($content);
     }
 }

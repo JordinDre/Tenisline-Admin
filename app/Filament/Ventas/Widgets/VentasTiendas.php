@@ -2,15 +2,14 @@
 
 namespace App\Filament\Ventas\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
 use App\Models\Bodega;
 use App\Models\Meta;
 use App\Models\VentaDetalle;
-use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
-class VentasTiendas extends ChartWidget
+class VentasTiendas extends Widget
 {
     use InteractsWithPageFilters;
 
@@ -19,6 +18,8 @@ class VentasTiendas extends ChartWidget
     protected static ?string $heading = 'Ventas por Tienda';
 
     protected static ?int $sort = 2;
+
+    protected static string $view = 'filament.ventas.widgets.ventas-tiendas-table';
 
     protected int|string|array $columnSpan = [
         'sm' => 'full',
@@ -32,7 +33,7 @@ class VentasTiendas extends ChartWidget
         return Auth::check() && Auth::user()->can('widget_VentasGeneral');
     }
 
-    protected function getData(): array
+    protected function getViewData(): array
     {
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
@@ -65,8 +66,8 @@ class VentasTiendas extends ChartWidget
             ->toArray();
 
         // Días transcurridos y total de días del mes
-        $diasTranscurridos = $day ? (int)$day : now()->day;
-        $totalDiasMes = now()->setYear((int)$year)->setMonth((int)$month)->daysInMonth;
+        $diasTranscurridos = $day ? (int) $day : now()->day;
+        $totalDiasMes = now()->setYear((int) $year)->setMonth((int) $month)->daysInMonth;
 
         // Preparar datos para la gráfica
         $data = $ventasData->map(function ($item) use ($metas, $diasTranscurridos, $totalDiasMes) {
@@ -75,7 +76,7 @@ class VentasTiendas extends ChartWidget
             $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
             $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
             $rendimiento = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
-            $uni_proyectadas = (($item->unidades_vendidas/$diasTranscurridos )* $totalDiasMes);
+            $uni_proyectadas = (($item->unidades_vendidas / $diasTranscurridos) * $totalDiasMes);
 
             return [
                 'bodega' => $item->bodega_nombre,
@@ -89,105 +90,26 @@ class VentasTiendas extends ChartWidget
             ];
         });
 
-        // Título dinámico
-        $titulo = 'Ventas por tienda' . ($bodegaFilter ? " - {$bodegaFilter}" : ' - Todas las Bodegas');
-        static::$heading = $titulo;
+        // Calcular totales generales
+        $totalVentas = $data->sum('total');
+        $totalMeta = $data->sum('meta');
+        $totalProyeccion = $data->sum('proyeccion');
+        $totalUnidadesVendidas = $data->sum('unidades_vendidas');
+        $totalUnidadesProyectadas = $data->sum('unidades_proyectadas');
+        $rendimientoPromedio = $data->avg('rendimiento');
 
         return [
-            'labels' => $data->pluck('bodega')->toArray(),
-            'datasets' => [
-                [
-                    'label' => 'Meta '.Functions::money($data->sum('meta')),
-                    'data' => $data->pluck('meta')->toArray(),
-                    'backgroundColor' => '#10B981',
-                    'borderColor' => '#34D399',
-                ],
-                [
-                    'label' => 'Proyección '.Functions::money($data->sum('proyeccion')),
-                    'data' => $data->pluck('proyeccion')->toArray(),
-                    'backgroundColor' => '#F59E0B',
-                    'borderColor' => '#D97706',
-                ],
-                [
-                    'label' => 'Ventas '.Functions::money($data->sum('total')),
-                    'data' => $data->pluck('total')->toArray(),
-                    'backgroundColor' => '#3B82F6',
-                    'borderColor' => '#1D4ED8',
-                ],
-                [
-                    'label' => 'Unidades Proyectadas '.$data->sum('unidades_proyectadas'),
-                    'data' => $data->pluck('unidades_proyectadas')->toArray(),
-                    'backgroundColor' => '#87674a',
-                    'borderColor' => '#87674a',
-                ],
-                [
-                    'label' => 'Unidades Vendidas '.$data->sum('unidades_vendidas'),
-                    'data' => $data->pluck('unidades_vendidas')->toArray(),
-                    'backgroundColor' => '#f2d8cd',
-                    'borderColor' => '#f2d8cd',
-                ],
-                [
-                    'label' => 'Rendimiento (%) '.number_format($data->avg('rendimiento'), 2),
-                    'data' => $data->pluck('rendimiento')->toArray(),
-                    'backgroundColor' => '#653952',
-                    'borderColor' => '#653952',
-                ],
-            ],
+            'data' => $data,
+            'totalVentas' => $totalVentas,
+            'totalMeta' => $totalMeta,
+            'totalProyeccion' => $totalProyeccion,
+            'totalUnidadesVendidas' => $totalUnidadesVendidas,
+            'totalUnidadesProyectadas' => $totalUnidadesProyectadas,
+            'rendimientoPromedio' => $rendimientoPromedio,
+            'year' => $year,
+            'month' => $month,
+            'day' => $day,
+            'bodegaFilter' => $bodegaFilter,
         ];
-    }
-
-
-    protected function getOptions(): array
-    {
-        return [
-            'indexAxis' => 'x',
-            'plugins' => [
-                'legend' => [
-                    'position' => 'top',
-                ],
-                'tooltip' => [
-                    'enabled' => true,
-                    'mode' => 'index',
-                    'intersect' => false,
-                    'callbacks' => [
-                        'title' => 'function(context) {
-                            return "🏪 " + context[0].label;
-                        }',
-                        'label' => 'function(context) {
-                            let label = context.dataset.label || "";
-                            if (label) {
-                                label += ": ";
-                            }
-                            if (context.parsed.y !== null) {
-                                if (label.includes("Meta") || label.includes("Ventas") || label.includes("Proyección")) {
-                                    label += "Q" + new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(context.parsed.y);
-                                } else {
-                                    label += new Intl.NumberFormat("es-GT").format(context.parsed.y) + "%";
-                                }
-                            }
-                            return label;
-                        }',
-                    ],
-                ],
-            ],
-            'scales' => [
-                'x' => [
-                    'stacked' => false,
-                ],
-                'y' => [
-                    'stacked' => false,
-                    'beginAtZero' => true,
-                ],
-            ],
-            'animation' => [
-                'duration' => 1000,
-                'easing' => 'easeOutQuart',
-            ],
-        ];
-    }
-
-    protected function getType(): string
-    {
-        return 'bar';
     }
 }

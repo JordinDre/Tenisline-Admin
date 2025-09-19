@@ -90,17 +90,42 @@ export default function Catalogo({
                 />
             </Head>
             <div className="container mx-auto px-4 py-6">
-                <h2 className="mb-6 text-center text-3xl font-bold text-zinc-800">
-                    Catálogo de Productos
-                </h2>
+                <div className="mb-6 flex flex-col items-center gap-4 md:flex-row md:justify-between">
+                    <h2 className="text-3xl font-bold text-zinc-800">
+                        Catálogo de Productos
+                    </h2>
+
+                    {/* Botón de exportar PDF */}
+                    {/*  <a
+                        href={route('pdf.catalogo')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
+                    >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Exportar PDF
+                    </a> */}
+                </div>
 
                 {/* Botón para móviles */}
                 <button
                     onClick={() => setMostrarFiltros(true)}
                     className="mb-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-zinc-800 to-zinc-900 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-zinc-900 hover:to-black hover:shadow-xl md:hidden"
                 >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                        />
                     </svg>
                     Mostrar filtros
                 </button>
@@ -112,17 +137,37 @@ export default function Catalogo({
                             <div className="sticky top-0 border-b border-zinc-200 bg-gradient-to-r from-zinc-50 to-zinc-100 px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-800">
-                                        <svg className="h-5 w-5 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        <svg
+                                            className="h-5 w-5 text-zinc-600"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                                            />
                                         </svg>
                                         Filtros
                                     </h3>
                                     <button
-                                        className="rounded-full p-2 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 transition-colors"
+                                        className="rounded-full p-2 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-700"
                                         onClick={() => setMostrarFiltros(false)}
                                     >
-                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        <svg
+                                            className="h-5 w-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M6 18L18 6M6 6l12 12"
+                                            />
                                         </svg>
                                     </button>
                                 </div>
@@ -171,8 +216,18 @@ export default function Catalogo({
                         <div className="rounded-2xl border border-zinc-200 bg-white shadow-lg">
                             <div className="border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-zinc-100 px-6 py-4">
                                 <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-800">
-                                    <svg className="h-5 w-5 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    <svg
+                                        className="h-5 w-5 text-zinc-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                                        />
                                     </svg>
                                     Filtros
                                 </h3>
@@ -217,13 +272,14 @@ export default function Catalogo({
                                                 className="h-52 w-full object-contain p-4"
                                             />
                                             <div className="px-4 pb-4">
-                                                {/* Identificador de Precio Ofertado por Apertura */}
+                                                {/* Identificador de Oferta Especial - Solo en Tienda Física */}
                                                 {producto.es_precio_ofertado && (
                                                     <div className="mb-2 inline-block rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
-                                                        🎉 Precio Ofertado por Apertura
+                                                        🎉 Oferta Especial -
+                                                        Solo en Tienda Física
                                                     </div>
                                                 )}
-                                                
+
                                                 <h3 className="text-md whitespace-normal font-semibold text-zinc-800">
                                                     {producto.descripcion}
                                                 </h3>
@@ -320,8 +376,18 @@ function Filtros({
             {/* Campo de búsqueda */}
             <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg className="h-4 w-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                        className="h-4 w-4 text-zinc-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
                     </svg>
                     Buscar producto
                 </label>
@@ -334,8 +400,18 @@ function Filtros({
                         onChange={(e) => setData('search', e.target.value)}
                         className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder-zinc-500 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
-                    <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
                     </svg>
                 </div>
             </div>
@@ -343,8 +419,18 @@ function Filtros({
             {/* Género */}
             <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg className="h-4 w-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    <svg
+                        className="h-4 w-4 text-zinc-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
                     </svg>
                     Género
                 </label>
@@ -366,8 +452,18 @@ function Filtros({
             {/* Bodega */}
             <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg className="h-4 w-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <svg
+                        className="h-4 w-4 text-zinc-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
                     </svg>
                     Bodega
                 </label>
@@ -389,8 +485,18 @@ function Filtros({
             {/* Marca */}
             <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg className="h-4 w-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    <svg
+                        className="h-4 w-4 text-zinc-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                        />
                     </svg>
                     Marca
                 </label>
@@ -412,8 +518,18 @@ function Filtros({
             {/* Tallas */}
             <div className="space-y-3">
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg className="h-4 w-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+                    <svg
+                        className="h-4 w-4 text-zinc-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
+                        />
                     </svg>
                     Tallas US
                 </label>
@@ -431,7 +547,9 @@ function Filtros({
                                     onChange={handleCheckboxChange}
                                     className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500/20"
                                 />
-                                <span className="text-zinc-700 group-hover:text-zinc-900">{t}</span>
+                                <span className="text-zinc-700 group-hover:text-zinc-900">
+                                    {t}
+                                </span>
                             </label>
                         ))}
                     </div>
@@ -443,11 +561,21 @@ function Filtros({
                 <button
                     type="button"
                     onClick={handleReset}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm transition-all duration-200 hover:bg-zinc-50 hover:border-zinc-400 hover:shadow-md"
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-400 hover:bg-zinc-50 hover:shadow-md"
                 >
                     <div className="flex items-center justify-center gap-2">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
                         </svg>
                         Limpiar filtros
                     </div>

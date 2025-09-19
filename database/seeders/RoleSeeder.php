@@ -135,6 +135,8 @@ class RoleSeeder extends Seeder
         Permission::create(['name' => 'widget_RecoleccionEmpaquetado']);
         Permission::create(['name' => 'widget_ComisionesOrdenes']);
         Permission::create(['name' => 'widget_ComisionesVentas']);
+        Permission::create(['name' => 'widget_ExistenciaPorBodega']);
+        Permission::create(['name' => 'widget_VentasPorBodega']);
 
         /* PAGES */
         Permission::create(['name' => 'widget_Cartera']);

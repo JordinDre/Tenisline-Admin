@@ -2,13 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use App\Http\Controllers\Utils\Functions;
-use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class VentasPorMarca extends ChartWidget
+class VentasPorMarca extends Widget
 {
     use InteractsWithPageFilters;
 
@@ -18,11 +17,13 @@ class VentasPorMarca extends ChartWidget
 
     protected static ?int $sort = 4;
 
+    protected static string $view = 'filament.widgets.ventas-por-marca-table';
+
     protected int|string|array $columnSpan = [
         'sm' => 'full',
         'md' => 'full',
-        'lg' => 1,
-        'xl' => 1,
+        'lg' => 2,
+        'xl' => 2,
     ];
 
     public static function canView(): bool
@@ -30,7 +31,7 @@ class VentasPorMarca extends ChartWidget
         return Auth::check() && Auth::user()->can('widget_VentasGeneral');
     }
 
-    protected function getData(): array
+    protected function getViewData(): array
     {
         $year = $this->filters['year'] ?? now()->year;
         $month = $this->filters['mes'] ?? now()->month;
@@ -38,8 +39,14 @@ class VentasPorMarca extends ChartWidget
         $bodegaFilter = $this->filters['bodega'] ?? '';
         $generoFilter = $this->filters['genero'] ?? '';
 
-        // Agregación directa en SQL por marca
-        $rows = DB::table('venta_detalles')
+        // Título dinámico según filtros
+        $titulo = 'Ventas por Marca';
+        $titulo .= $bodegaFilter ? " - {$bodegaFilter}" : ' - Todas las Bodegas';
+        $titulo .= $generoFilter ? " - {$generoFilter}" : ' - Todos los Géneros';
+        static::$heading = $titulo;
+
+        // Obtener datos agrupados
+        $data = DB::table('venta_detalles')
             ->join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
             ->join('marcas', 'marcas.id', '=', 'productos.marca_id')
@@ -57,77 +64,23 @@ class VentasPorMarca extends ChartWidget
                 marcas.marca as marca,
                 SUM(venta_detalles.cantidad) as cantidad,
                 SUM(venta_detalles.precio * venta_detalles.cantidad) as total,
-                COUNT(DISTINCT ventas.cliente_id) as clientes
+                COUNT(DISTINCT ventas.cliente_id) as clientes,
+                AVG(venta_detalles.precio) as precio_promedio,
+                SUM(venta_detalles.cantidad * COALESCE(productos.precio_costo, 0)) as costo_total
             ')
             ->groupBy('marcas.marca')
             ->orderBy('total', 'desc')
             ->get();
 
-        // Título dinámico según filtros
-        $titulo = 'Ventas por Marca';
-        $titulo .= $bodegaFilter ? " - {$bodegaFilter}" : ' - Todas las Bodegas';
-        $titulo .= $generoFilter ? " - {$generoFilter}" : ' - Todos los Géneros';
-        static::$heading = $titulo;
-
-        // Labels
-        $labels = $rows->pluck('marca')->toArray();
-
-        // Data arrays
-        $cantidades = $rows->pluck('cantidad')->map(fn ($v) => (int) $v)->toArray();
-        $totales = $rows->pluck('total')->map(fn ($v) => (float) $v)->toArray();
-        $clientes = $rows->pluck('clientes')->map(fn ($v) => (int) $v)->toArray();
-
         return [
-            'labels' => $labels,
-            'datasets' => [
-                [
-                    'label' => 'Cantidad '.number_format(array_sum($cantidades)),
-                    'data' => $cantidades,
-                    'backgroundColor' => '#8B5CF6', // violet
-                    'borderWidth' => 0,
-                ],
-                [
-                    'label' => 'Total '.Functions::money(array_sum($totales)),
-                    'data' => $totales,
-                    'backgroundColor' => '#F59E0B', // amber
-                    'borderWidth' => 0,
-                ],
-            ],
+            'data' => $data,
+            'totalVentas' => $data->sum('total'),
+            'totalCantidad' => $data->sum('cantidad'),
+            'totalClientes' => $data->sum('clientes'),
+            'totalMarcas' => $data->count(),
+            'rentabilidadPromedio' => $data->avg(function ($item) {
+                return $item->costo_total > 0 ? (($item->total - $item->costo_total) / $item->total) * 100 : 0;
+            }),
         ];
-    }
-
-    protected function getOptions(): array
-    {
-        return [
-            'indexAxis' => 'x',
-            'plugins' => [
-                'legend' => [
-                    'position' => 'top',
-                ],
-            ],
-            'scales' => [
-                'x' => [
-                    'stacked' => true,
-                    'grid' => [
-                        'display' => false, // 👈 quita las líneas verticales
-                    ],
-                ],
-                'y' => [
-                    'stacked' => true,
-                    'grid' => [
-                        'display' => false, // 👈 quita las líneas horizontales
-                    ],
-                ],
-            ],
-            'animation' => [
-                'duration' => 1000,
-                'easing' => 'easeOutQuart',
-            ],
-        ];
-    }
-
-    protected function getType(): string
-    {
-        return 'bar';
     }
 }
