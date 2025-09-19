@@ -442,19 +442,16 @@ class UserResource extends Resource implements HasShieldPermissions
                             [
                                 'ventas' => DB::select("
                                                 select
+                                                ventas.id as venta_id,
                                                 users.name,
-                                                GROUP_CONCAT(roles.name SEPARATOR ', ') AS roles,
-                                                users.razon_social,
                                                 ventas.created_at as fecha_venta,
-                                                ventas.estado,
-                                                venta_detalles.cantidad,
-                                                venta_detalles.subtotal,
-                                                bodegas.bodega,
                                                 productos.codigo,
                                                 productos.descripcion,
                                                 marcas.marca,
                                                 productos.talla,
                                                 productos.genero,
+                                                venta_detalles.cantidad,
+                                                venta_detalles.subtotal,
                                                 (
                                                     select
                                                         u.name
@@ -465,30 +462,14 @@ class UserResource extends Resource implements HasShieldPermissions
                                                 ) as asesor
                                             from
                                                 ventas
-                                                inner join model_has_roles on model_has_roles.model_id = ventas.cliente_id
-                                                inner join roles on roles.id = model_has_roles.role_id
                                                 inner join users on users.id = ventas.cliente_id
                                                 inner join venta_detalles on venta_detalles.venta_id = ventas.id
                                                 inner join productos on venta_detalles.producto_id = productos.id
                                                 inner join marcas on productos.marca_id = marcas.id
-                                                inner join bodegas on ventas.bodega_id = bodegas.id
                                             WHERE
                                                 ventas.cliente_id = ?
-                                            GROUP BY
-                                                ventas.id,
-                                                users.name,
-                                                users.razon_social,
-                                                ventas.created_at,
-                                                ventas.estado,
-                                                venta_detalles.cantidad,
-                                                venta_detalles.subtotal,
-                                                bodegas.bodega,
-                                                productos.codigo,
-                                                productos.descripcion,
-                                                marcas.marca,
-                                                productos.talla,
-                                                productos.genero,
-                                                asesor
+                                            ORDER BY
+                                                ventas.created_at DESC
                                             ", [
                                     $record->id,
                                 ]),

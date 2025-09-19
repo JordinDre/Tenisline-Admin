@@ -109,11 +109,6 @@ class CaidosResource extends Resource
                     ->dateTime('d/m/Y H:i:s')
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('ultima_consulta')
-                    ->label('Última consulta')
-                    ->getStateUsing(fn ($record) => $record->cliente?->ultimaConsulta()?->seguimiento ?? '—')
-                    ->description(fn ($record) => $record->cliente?->ultimaConsulta()?->created_at?->format('d/m/Y H:i') ?? ''),
-
                 Tables\Columns\TextColumn::make('ultimo_seguimiento')
                     ->label('Último seguimiento')
                     ->getStateUsing(fn ($record) => $record->cliente?->ultimoSeguimiento()?->seguimiento ?? '—')
@@ -129,31 +124,6 @@ class CaidosResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('consulta')
-                    ->label('Consulta')
-                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
-                    ->form([
-                        Forms\Components\Textarea::make('seguimiento')
-                            ->label('Nota de consulta')
-                            ->required(),
-                    ])
-                    ->action(function (Venta $record, array $data): void {
-                        \App\Models\Seguimiento::create([
-                            'seguimiento' => $data['seguimiento'],
-                            'user_id' => auth()->id(),
-                            'seguimientable_id' => $record->cliente_id,
-                            'seguimientable_type' => \App\Models\User::class,
-                            'tipo' => 'consulta',
-                        ]);
-
-                        Notification::make()
-                            ->title('Consulta registrada')
-                            ->success()
-                            ->send();
-                    })
-                    ->modalHeading('Nueva consulta')
-                    ->modalSubmitActionLabel('Guardar'),
-
                 Tables\Actions\Action::make('seguimiento')
                     ->label('Seguimiento')
                     ->icon('heroicon-o-phone')
@@ -186,54 +156,35 @@ class CaidosResource extends Resource
                         'filament.pages.actions.historial-ventas',
                         [
                             'ventas' => DB::select("
-                                            select
-                                            users.name,
-                                            GROUP_CONCAT(roles.name SEPARATOR ', ') AS roles,
-                                            users.razon_social,
-                                            ventas.created_at as fecha_venta,
-                                            ventas.estado,
-                                            venta_detalles.cantidad,
-                                            venta_detalles.subtotal,
-                                            bodegas.bodega,
-                                            productos.codigo,
-                                            productos.descripcion,
-                                            marcas.marca,
-                                            productos.talla,
-                                            productos.genero,
-                                            (
                                                 select
-                                                    u.name
-                                                from
-                                                    users u
-                                                where
-                                                    u.id = ventas.asesor_id
-                                            ) as asesor
-                                        from
-                                            ventas
-                                            inner join model_has_roles on model_has_roles.model_id = ventas.cliente_id
-                                            inner join roles on roles.id = model_has_roles.role_id
-                                            inner join users on users.id = ventas.cliente_id
-                                            inner join venta_detalles on venta_detalles.venta_id = ventas.id
-                                            inner join productos on venta_detalles.producto_id = productos.id
-                                            inner join marcas on productos.marca_id = marcas.id
-                                            inner join bodegas on ventas.bodega_id = bodegas.id
-                                        WHERE
-                                            ventas.cliente_id = ?
-                                        GROUP BY
-                                            ventas.id,
-                                            users.name,
-                                            users.razon_social,
-                                            ventas.created_at,
-                                            ventas.estado,
-                                            venta_detalles.cantidad,
-                                            venta_detalles.subtotal,
-                                            bodegas.bodega,
-                                            productos.codigo,
-                                            productos.descripcion,
-                                            marcas.marca,
-                                            productos.talla,
-                                            productos.genero,
-                                            asesor
+                                                ventas.id as venta_id,
+                                                users.name,
+                                                ventas.created_at as fecha_venta,
+                                                productos.codigo,
+                                                productos.descripcion,
+                                                marcas.marca,
+                                                productos.talla,
+                                                productos.genero,
+                                                venta_detalles.cantidad,
+                                                venta_detalles.subtotal,
+                                                (
+                                                    select
+                                                        u.name
+                                                    from
+                                                        users u
+                                                    where
+                                                        u.id = ventas.asesor_id
+                                                ) as asesor
+                                            from
+                                                ventas
+                                                inner join users on users.id = ventas.cliente_id
+                                                inner join venta_detalles on venta_detalles.venta_id = ventas.id
+                                                inner join productos on venta_detalles.producto_id = productos.id
+                                                inner join marcas on productos.marca_id = marcas.id
+                                            WHERE
+                                                ventas.cliente_id = ?
+                                            ORDER BY
+                                                ventas.created_at DESC
                                         ", [
                                 $record->cliente_id,
                             ]),
