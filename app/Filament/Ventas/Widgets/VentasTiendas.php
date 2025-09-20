@@ -28,11 +28,6 @@ class VentasTiendas extends Widget
         'xl' => 1,
     ];
 
-    public static function canView(): bool
-    {
-        return Auth::check() && Auth::user()->can('widget_VentasGeneral');
-    }
-
     protected function getViewData(): array
     {
         $year = $this->filters['year'] ?? now()->year;

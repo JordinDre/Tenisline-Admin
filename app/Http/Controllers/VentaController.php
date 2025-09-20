@@ -13,6 +13,8 @@ use Exception;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class VentaController extends Controller
 {
@@ -76,27 +78,43 @@ class VentaController extends Controller
 
     public static function facturar(Venta $venta)
     {
-        $res = FELController::facturaVenta($venta, $venta->bodega_id);
-        if (
-            ! isset($res['resultado']) ||
-            ! $res['resultado'] ||
-            ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
-        ) {
-            throw new Exception($res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.');
-        }
+        try {
+            $res = FELController::facturaVenta($venta, $venta->bodega_id);
+            
+            if (
+                ! isset($res['resultado']) ||
+                ! $res['resultado'] ||
+                ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
+            ) {
+                $errorMessage = $res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.';
+                \Log::error('Error en facturación FEL', [
+                    'venta_id' => $venta->id,
+                    'error' => $errorMessage,
+                    'response' => $res
+                ]);
+                throw new Exception($errorMessage);
+            }
 
-        self::restarInventario($venta, 'Venta Confirmada');
-        $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
-        $factura = new Factura;
-        $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-        $factura->fel_uuid = $res['uuid'];
-        $factura->fel_serie = $res['serie'];
-        $factura->fel_numero = $res['numero'];
-        $factura->fel_fecha = $res['fecha'];
-        $factura->user_id = auth()->user()->id;
-        $factura->tipo = 'factura';
-        $venta->factura()->save($factura);
-        activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
+            self::restarInventario($venta, 'Venta Confirmada');
+            $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
+            $factura = new Factura;
+            $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
+            $factura->fel_uuid = $res['uuid'];
+            $factura->fel_serie = $res['serie'];
+            $factura->fel_numero = $res['numero'];
+            $factura->fel_fecha = $res['fecha'];
+            $factura->user_id = Auth::user()->id;
+            $factura->tipo = 'factura';
+            $venta->factura()->save($factura);
+            activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
+        } catch (\Exception $e) {
+            \Log::error('Error en facturación', [
+                'venta_id' => $venta->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     public static function anular($data, Venta $venta)
@@ -118,7 +136,7 @@ class VentaController extends Controller
                     $factura->fel_serie = $res['serie'];
                     $factura->fel_numero = $res['numero'];
                     $factura->fel_fecha = $res['fecha'];
-                    $factura->user_id = auth()->user()->id;
+                    $factura->user_id = Auth::user()->id;
                     $factura->tipo = 'anulacion';
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
@@ -127,11 +145,11 @@ class VentaController extends Controller
                 $venta->estado = 'anulada';
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();
-                $venta->anulo_id = auth()->user()->id;
+                $venta->anulo_id = Auth::user()->id;
                 $pago = Pago::where('pagable_id', $venta->id);
                 $pago->delete();
                 $venta->save();
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('anulación')->log('Venta anulada');
+                activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('anulación')->log('Venta anulada');
             });
             Notification::make()
                 ->color('success')
@@ -265,7 +283,7 @@ class VentaController extends Controller
                     $factura->fel_serie = $res['serie'];
                     $factura->fel_numero = $res['numero'];
                     $factura->fel_fecha = $res['fecha'];
-                    $factura->user_id = auth()->user()->id;
+                    $factura->user_id = Auth::user()->id;
                     $factura->tipo = 'devolucion';
                     $factura->motivo = $data['motivo'];
                     $venta->factura()->save($factura);
@@ -276,10 +294,10 @@ class VentaController extends Controller
                 $venta->motivo = $data['motivo'];
                 /* $venta->apoyo = $data['apoyo']; */
                 $venta->fecha_devuelta = now();
-                $venta->devolvio_id = auth()->user()->id;
+                $venta->devolvio_id = Auth::user()->id;
                 $venta->save();
 
-                activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('devolución')->log('Venta devuelta');
+                activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('devolución')->log('Venta devuelta');
             });
 
             Notification::make()
@@ -305,11 +323,11 @@ class VentaController extends Controller
                     throw new Exception('No se ha completado el proceso de pago de la Venta');
                 }
                 $venta->fecha_liquidada = now();
-                $venta->liquido_id = auth()->user()->id;
+                $venta->liquido_id = Auth::user()->id;
                 $venta->estado = 'liquidada';
                 $venta->save();
             });
-            activity()->performedOn($venta)->causedBy(auth()->user())->withProperties($venta)->event('liquidación')->log('Venta liquidada');
+            activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('liquidación')->log('Venta liquidada');
             Notification::make()
                 ->color('success')
                 ->title('Se ha liquidado la Venta #'.$venta->id)
@@ -343,7 +361,7 @@ class VentaController extends Controller
                         Pago::create([
                             'pagable_id' => $venta->id,
                             'pagable_type' => Venta::class,
-                            'user_id' => auth()->id(),
+                            'user_id' => Auth::id(),
                             'tipo_pago_id' => $data['tipo_pago_id'],
                             'no_documento' => $data['no_documento'],
                         ]);

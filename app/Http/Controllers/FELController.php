@@ -488,7 +488,8 @@ class FELController extends Controller
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 30, // 30 segundos de timeout
+            CURLOPT_CONNECTTIMEOUT => 10, // 10 segundos para conectar
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
@@ -504,9 +505,37 @@ class FELController extends Controller
         ]);
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $error = curl_error($curl);
         curl_close($curl);
 
-        return json_decode($response, true);
+        // Si hay error en cURL o el código HTTP no es exitoso
+        if ($response === false || !empty($error) || $httpCode >= 400) {
+            return [
+                'resultado' => false,
+                'descripcion_errores' => [
+                    [
+                        'mensaje_error' => $error ?: "Error HTTP {$httpCode} al conectar con el servicio de facturación"
+                    ]
+                ]
+            ];
+        }
+
+        $decodedResponse = json_decode($response, true);
+        
+        // Si no se puede decodificar la respuesta
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                'resultado' => false,
+                'descripcion_errores' => [
+                    [
+                        'mensaje_error' => 'Error al procesar la respuesta del servicio de facturación'
+                    ]
+                ]
+            ];
+        }
+
+        return $decodedResponse;
     }
 
     public static function anularFacturaVenta($venta, $motivo)
