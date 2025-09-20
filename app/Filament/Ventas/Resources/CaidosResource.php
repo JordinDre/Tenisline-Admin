@@ -12,6 +12,7 @@ use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -37,7 +38,7 @@ class CaidosResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return Venta::query()
+        $query = Venta::query()
             ->select('ventas.*')
             ->join(
                 DB::raw('(SELECT cliente_id, MAX(created_at) as ultima_fecha FROM ventas GROUP BY cliente_id) v2'),
@@ -55,7 +56,20 @@ class CaidosResource extends Resource
             ->addBinding(\App\Models\User::class, 'join')
             ->addBinding('seguimiento', 'join')
             ->selectRaw('ventas.*, s.primer_seguimiento')
-            ->with(['cliente', 'asesor'])
+            ->with(['cliente', 'asesor']);
+
+        // Filtrar por bodega del vendedor si es vendedor
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user && method_exists($user, 'hasRole') && $user->hasRole('vendedor')) {
+                $bodegaIds = $user->bodegas()->pluck('bodegas.id')->toArray();
+                if (!empty($bodegaIds)) {
+                    $query->whereIn('ventas.bodega_id', $bodegaIds);
+                }
+            }
+        }
+
+        return $query
             ->orderByRaw('CASE WHEN s.primer_seguimiento IS NULL THEN 0 ELSE 1 END')
             ->orderByRaw('CASE WHEN s.primer_seguimiento IS NULL THEN ventas.created_at ELSE s.primer_seguimiento END');
     }
@@ -95,6 +109,18 @@ class CaidosResource extends Resource
                     ->label('Vendedor')
                     ->copyable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('bodega.bodega')
+                    ->label('Bodega')
+                    ->searchable()
+                    ->copyable()
+                    ->sortable()
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Zacapa' => 'success',
+                        'Chiquimula' => 'info',
+                        'Esquipulas' => 'warning',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('id')
                     ->label('Venta ID')
                     ->copyable()
@@ -121,7 +147,17 @@ class CaidosResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('bodega_id')
+                    ->label('Bodega')
+                    ->relationship('bodega', 'bodega')
+                    ->searchable()
+                    ->preload()
+                    ->multiple()
+                    ->visible(function () {
+                        if (!Auth::check()) return false;
+                        $user = Auth::user();
+                        return method_exists($user, 'hasRole') && $user->hasRole(['admin', 'super_admin']);
+                    }),
             ])
             ->actions([
                 Tables\Actions\Action::make('seguimiento')
@@ -135,7 +171,7 @@ class CaidosResource extends Resource
                     ->action(function (Venta $record, array $data): void {
                         \App\Models\Seguimiento::create([
                             'seguimiento' => $data['seguimiento'],
-                            'user_id' => auth()->id(),
+                            'user_id' => Auth::id() ?: 1,
                             'seguimientable_id' => $record->cliente_id,
                             'seguimientable_type' => \App\Models\User::class,
                             'tipo' => 'seguimiento',
