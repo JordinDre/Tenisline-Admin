@@ -1,28 +1,28 @@
 <div>
     <!-- Resumen General -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Ventas</div>
             <div class="text-base font-bold text-blue-900 dark:text-blue-100">
                 Q{{ number_format($totalVentas, 2) }}
             </div>
         </div>
         
-        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-green-600 dark:text-green-400">Total Productos</div>
             <div class="text-base font-bold text-green-900 dark:text-green-100">
                 {{ number_format($totalCantidad, 0) }}
             </div>
         </div>
         
-        <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+        <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-purple-600 dark:text-purple-400">Total Clientes</div>
             <div class="text-base font-bold text-purple-900 dark:text-purple-100">
                 {{ number_format($totalClientes, 0) }}
             </div>
         </div>
         
-        <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+        <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-red-600 dark:text-red-400">Rentabilidad Promedio</div>
             <div class="text-base font-bold text-red-900 dark:text-red-100">
                 {{ number_format($rentabilidadPromedio, 2) }}%

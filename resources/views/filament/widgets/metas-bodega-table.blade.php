@@ -1,21 +1,21 @@
 <div class="space-y-6">
     <!-- Resumen General -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Ventas</div>
             <div class="text-base font-bold text-blue-900 dark:text-blue-100">
                 Q{{ number_format($this->getViewData()['totalVentas'], 2) }}
             </div>
         </div>
         
-        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-green-600 dark:text-green-400">Total Meta</div>
             <div class="text-base font-bold text-green-900 dark:text-green-100">
                 Q{{ number_format($this->getViewData()['totalMeta'], 2) }}
             </div>
         </div>
         
-        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-orange-600 dark:text-orange-400">Total Proyección</div>
             <div class="text-base font-bold text-orange-900 dark:text-orange-100">
                 Q{{ number_format($this->getViewData()['totalProyeccion'], 2) }}
