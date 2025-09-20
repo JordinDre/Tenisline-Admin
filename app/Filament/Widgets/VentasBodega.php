@@ -68,7 +68,8 @@ class VentasBodega extends Widget
                     'clientes' => $clientes,
                     'ticket_promedio' => $clientes > 0 ? round($total / $clientes, 2) : 0,
                 ];
-            });
+            })
+            ->sortByDesc('total'); // Ordenar por total de ventas de mayor a menor
 
         // Calcular totales generales
         $totalVentas = $dataAgrupada->sum('total');

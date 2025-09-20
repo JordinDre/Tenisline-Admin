@@ -88,7 +88,7 @@ class VentasTiendas extends Widget
                 'unidades_proyectadas' => $uni_proyectadas,
                 'rendimiento' => $rendimiento,
             ];
-        });
+        })->sortByDesc('total'); // Ordenar por total de ventas de mayor a menor
 
         // Calcular totales generales
         $totalVentas = $data->sum('total');
