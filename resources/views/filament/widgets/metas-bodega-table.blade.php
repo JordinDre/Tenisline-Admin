@@ -1,24 +1,31 @@
 <div class="space-y-6">
     <!-- Resumen General -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Ventas</div>
             <div class="text-base font-bold text-blue-900 dark:text-blue-100">
                 Q{{ number_format($this->getViewData()['totalVentas'], 2) }}
             </div>
         </div>
         
-        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-green-600 dark:text-green-400">Total Meta</div>
             <div class="text-base font-bold text-green-900 dark:text-green-100">
                 Q{{ number_format($this->getViewData()['totalMeta'], 2) }}
             </div>
         </div>
         
-        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+        <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
             <div class="text-sm font-medium text-orange-600 dark:text-orange-400">Total Proyección</div>
             <div class="text-base font-bold text-orange-900 dark:text-orange-100">
                 Q{{ number_format($this->getViewData()['totalProyeccion'], 2) }}
+            </div>
+        </div>
+        
+        <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg text-center">
+            <div class="text-sm font-medium text-purple-600 dark:text-purple-400">Proyección % Promedio</div>
+            <div class="text-base font-bold text-purple-900 dark:text-purple-100">
+                {{ number_format($this->getViewData()['proyeccionPorcentajePromedio'], 2) }}%
             </div>
         </div>
     </div>
@@ -27,6 +34,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Metas por Bodega</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Ordenado por proyección en porcentaje (mayor a menor)</p>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -36,6 +44,12 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ventas</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Meta</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Proyección</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Proyección %
+                            <svg class="inline-block w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -59,6 +73,17 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span class="font-medium text-orange-600">Q{{ number_format($item['proyeccion'], 2) }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            @php
+                                $proyeccionPorcentaje = $item['proyeccion_porcentaje'];
+                                $colorClass = $proyeccionPorcentaje >= 100 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
+                                            ($proyeccionPorcentaje >= 80 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 
+                                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200');
+                            @endphp
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $colorClass }}">
+                                {{ number_format($proyeccionPorcentaje, 2) }}%
+                            </span>
                         </td>
                     </tr>
                     @endforeach

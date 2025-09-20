@@ -77,6 +77,7 @@ class MetasBodega extends Widget
             $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
             $diferencia = $total - $meta;
             $eficiencia = ($diasTranscurridos > 0 && $meta > 0) ? ($total / $meta) * ($totalDiasMes / $diasTranscurridos) : 0;
+            $proyeccion_porcentaje = $total > 0 ? round(($proyeccion / $total) * 100, 2) : 0;
 
             return [
                 'bodega_id' => $item->bodega_id,
@@ -85,12 +86,13 @@ class MetasBodega extends Widget
                 'meta' => $meta,
                 'alcance' => $alcance,
                 'proyeccion' => $proyeccion,
+                'proyeccion_porcentaje' => $proyeccion_porcentaje,
                 'diferencia' => $diferencia,
                 'eficiencia' => $eficiencia,
                 'clientes' => $item->clientes,
                 'cantidad_productos' => $item->cantidad_productos,
             ];
-        });
+        })->sortByDesc('proyeccion_porcentaje'); // Ordenar por proyección en porcentaje de mayor a menor
 
         // Crear título dinámico basado en filtros
         $titulo = 'Metas por Bodega';
@@ -108,6 +110,7 @@ class MetasBodega extends Widget
             'totalMeta' => $data->sum('meta'),
             'totalAlcance' => $data->avg('alcance'),
             'totalProyeccion' => $data->sum('proyeccion'),
+            'proyeccionPorcentajePromedio' => $data->avg('proyeccion_porcentaje'),
             'totalClientes' => $data->sum('clientes'),
             'totalProductos' => $data->sum('cantidad_productos'),
         ];

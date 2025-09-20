@@ -128,7 +128,8 @@ class MetaVendedor extends Widget
                     'unidades_proyectadas' => $unidadesProyectadas,
                     'rentabilidad' => $rentabilidad, // decimal (0.25 = 25%)
                 ];
-            });
+            })
+            ->sortByDesc('proyeccion'); // Ordenar por proyección de mayor a menor
 
         // Calcular totales generales
         $totalVentas = $data->sum('total');

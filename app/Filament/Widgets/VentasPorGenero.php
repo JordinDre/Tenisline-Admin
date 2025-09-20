@@ -7,17 +7,17 @@ use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
-class VentasBodega extends Widget
+class VentasPorGenero extends Widget
 {
     use InteractsWithPageFilters;
 
     protected static ?string $pollingInterval = '10s';
 
-    protected static ?string $heading = 'Ventas por Empleado';
+    protected static ?string $heading = 'Ventas por Género';
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 6;
 
-    protected static string $view = 'filament.widgets.ventas-bodega-table';
+    protected static string $view = 'filament.widgets.ventas-por-genero-table';
 
     protected int|string|array $columnSpan = [
         'sm' => 'full',
@@ -39,11 +39,10 @@ class VentasBodega extends Widget
         $bodegaFilter = $this->filters['bodega'] ?? '';
         $generoFilter = $this->filters['genero'] ?? '';
 
-        // Obtener datos agrupados por asesor para mostrar totales
+        // Obtener datos agrupados por género
         $dataAgrupada = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
-            ->join('users', 'ventas.asesor_id', '=', 'users.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
             ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
@@ -51,33 +50,28 @@ class VentasBodega extends Widget
             ->when($generoFilter, fn ($query, $genero) => $query->where('productos.genero', $genero))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
-            ->get()
-            ->groupBy('asesor_id')
-            ->map(function ($ordenes) {
-                $total = $ordenes->sum('precio');
-                $costo = $ordenes->sum(fn ($d) => $d->cantidad * ($d->producto->precio_costo ?? 0));
-                $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
-                $rentabilidad = $costo > 0 ? round(($total - $costo) / $total, 4) : 0;
-
-                return [
-                    'asesor' => $ordenes->first()->venta->asesor->name ?? 'Sin Asesor',
-                    'total' => $total,
-                    'cantidad' => $ordenes->count(),
-                    'costo' => $costo,
-                    'rentabilidad' => $rentabilidad,
-                    'clientes' => $clientes,
-                    'ticket_promedio' => $clientes > 0 ? round($total / $clientes, 2) : 0,
-                ];
-            })
-            ->sortByDesc('total'); // Ordenar por total de ventas de mayor a menor
+            ->whereNotNull('productos.genero')
+            ->where('productos.genero', '!=', '')
+            ->selectRaw('
+                productos.genero as genero,
+                SUM(venta_detalles.precio) as total,
+                SUM(venta_detalles.cantidad) as cantidad,
+                COUNT(DISTINCT ventas.cliente_id) as clientes,
+                AVG(venta_detalles.precio) as precio_promedio,
+                SUM(venta_detalles.cantidad * COALESCE(productos.precio_costo, 0)) as costo_total,
+                COUNT(DISTINCT productos.id) as productos_unicos
+            ')
+            ->groupBy('productos.genero')
+            ->orderByRaw('SUM(venta_detalles.precio) DESC')
+            ->get();
 
         // Calcular totales generales
         $totalVentas = $dataAgrupada->sum('total');
         $totalCantidad = $dataAgrupada->sum('cantidad');
         $totalClientes = $dataAgrupada->sum('clientes');
-        $totalCosto = $dataAgrupada->sum('costo');
-        $rentabilidadPromedio = $dataAgrupada->avg('rentabilidad') * 100;
-        $ticketPromedio = $totalClientes > 0 ? $totalVentas / $totalClientes : 0;
+        $totalCosto = $dataAgrupada->sum('costo_total');
+        $rentabilidadPromedio = $totalVentas > 0 ? round((($totalVentas - $totalCosto) / $totalVentas) * 100, 2) : 0;
+        $ticketPromedio = $totalClientes > 0 ? round($totalVentas / $totalClientes, 2) : 0;
 
         return [
             'data' => $dataAgrupada,
@@ -87,6 +81,8 @@ class VentasBodega extends Widget
             'totalCosto' => $totalCosto,
             'rentabilidadPromedio' => $rentabilidadPromedio,
             'ticketPromedio' => $ticketPromedio,
+            'totalGeneros' => $dataAgrupada->count(),
+            'totalProductosUnicos' => $dataAgrupada->sum('productos_unicos'),
             'year' => $year,
             'month' => $month,
             'day' => $day,

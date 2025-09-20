@@ -69,20 +69,7 @@ class VentasPorTallaCompleto extends Widget
                 COUNT(DISTINCT productos.id) as productos_unicos
             ')
             ->groupBy('productos.talla')
-            ->orderByRaw('
-                CASE 
-                    WHEN productos.talla REGEXP "^[0-9]+$" THEN CAST(productos.talla AS UNSIGNED)
-                    WHEN productos.talla REGEXP "^[0-9]+/[0-9]+$" THEN CAST(SUBSTRING_INDEX(productos.talla, "/", 1) AS UNSIGNED) / CAST(SUBSTRING_INDEX(productos.talla, "/", -1) AS UNSIGNED)
-                    WHEN productos.talla = "XS" THEN 0.5
-                    WHEN productos.talla = "S" THEN 1
-                    WHEN productos.talla = "M" THEN 2
-                    WHEN productos.talla = "L" THEN 3
-                    WHEN productos.talla = "XL" THEN 4
-                    WHEN productos.talla = "XXL" THEN 5
-                    WHEN productos.talla = "XXXL" THEN 6
-                    ELSE 999
-                END
-            ')
+            ->orderByRaw('SUM(venta_detalles.precio * venta_detalles.cantidad) DESC')
             ->get();
 
         return [
