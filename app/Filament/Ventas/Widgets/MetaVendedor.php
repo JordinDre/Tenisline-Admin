@@ -5,7 +5,6 @@ namespace App\Filament\Ventas\Widgets;
 use Carbon\Carbon;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
-use Illuminate\Support\Facades\Auth;
 
 class MetaVendedor extends Widget
 {
@@ -25,11 +24,6 @@ class MetaVendedor extends Widget
         'lg' => 1,
         'xl' => 1,
     ];
-
-    public static function canView(): bool
-    {
-        return Auth::check() && Auth::user()->can('widget_VentasGeneral');
-    }
 
     protected function getViewData(): array
     {
