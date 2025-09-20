@@ -54,12 +54,12 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span class="font-bold text-green-600">Q{{ number_format($item->total, 2) }}</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white ">
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                 {{ number_format($item->cantidad, 0) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white ">
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
                                 {{ number_format($item->clientes, 0) }}
                             </span>

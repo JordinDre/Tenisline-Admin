@@ -70,10 +70,10 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     Q{{ number_format($item['total'], 2) }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 ">
                                     {{ number_format($item['cantidad'], 0) }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 ">
                                     {{ number_format($item['clientes'], 0) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

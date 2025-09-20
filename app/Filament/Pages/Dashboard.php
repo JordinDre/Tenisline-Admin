@@ -2,6 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\MetasBodega;
+use App\Filament\Widgets\VentasBodega;
+use App\Filament\Widgets\VentasPorGenero;
+use App\Filament\Widgets\VentasPorMarca;
+use App\Filament\Widgets\VentasPorTallaCompleto;
 use App\Http\Controllers\Utils\Functions;
 use Carbon\Carbon;
 use Filament\Forms\Components\Section;
@@ -78,6 +83,17 @@ class Dashboard extends \Filament\Pages\Dashboard
             'md' => 1,
             'lg' => 2,
             'xl' => 2,
+        ];
+    }
+
+    public function getWidgets(): array
+    {
+        return [
+            VentasBodega::class,
+            MetasBodega::class,
+            VentasPorTallaCompleto::class,
+            VentasPorMarca::class,
+            VentasPorGenero::class,
         ];
     }
 }
