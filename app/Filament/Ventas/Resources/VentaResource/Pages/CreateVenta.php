@@ -144,6 +144,9 @@ class CreateVenta extends CreateRecord
                                     Select::make('cliente_id')
                                         ->label('Cliente')
                                         ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'cliente_apertura', 'colaborador']))
+                                        ->getOptionLabelFromRecordUsing(
+                                                fn ($record) => "{$record->id} - {$record->nit} - {$record->razon_social} - {$record->name}"
+                                            )
                                         ->optionsLimit(20)
                                         ->required()
                                         ->live()
@@ -340,7 +343,12 @@ class CreateVenta extends CreateRecord
 
                                             return $user->id; // Devuelve el ID para que se seleccione en el campo
                                         })
-                                        ->searchable(),
+                                        ->searchable([
+                                            'id',
+                                            'nit',
+                                            'name',
+                                            'razon_social'
+                                        ]),
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
