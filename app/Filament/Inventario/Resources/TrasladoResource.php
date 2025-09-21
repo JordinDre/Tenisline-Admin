@@ -117,12 +117,14 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                             ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductosBasico($record, '', $get('../../salida_id')))
                             ->allowHtml()
                             ->searchable(['id'])
+                            ->searchDebounce(500) // Agregar debounce de 500ms
                             ->getSearchResultsUsing(function (string $search, Get $get): array {
                                 return ProductoController::searchProductosBasico($search, '', $get('../../salida_id'));
                             })
-                            ->optionsLimit(20)
+                            ->optionsLimit(10) // Reducir de 20 a 10
                             ->columnSpanFull()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->live() // Agregar live para mejor rendimiento
                             ->required(),
                         Grid::make(2)
                             ->schema([

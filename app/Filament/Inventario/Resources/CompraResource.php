@@ -131,11 +131,13 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->getOptionLabelFromRecordUsing(fn (Producto $record) => ProductoController::renderProductosBasico($record, 'compra', null))
                                         ->allowHtml()
                                         ->searchable(['descripcion'])
+                                        ->searchDebounce(500) // Agregar debounce de 500ms
                                         ->getSearchResultsUsing(function (string $search, Get $get): array {
                                             return ProductoController::searchProductosBasico($search, 'compra', null);
                                         })
-                                        ->optionsLimit(20)
+                                        ->optionsLimit(10) // Reducir de 20 a 10
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                        ->live() // Agregar live para mejor rendimiento
                                         ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 4, 'xl' => 6])
                                         ->required(),
                                     TextInput::make('cantidad')
