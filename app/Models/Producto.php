@@ -65,6 +65,11 @@ class Producto extends Model
         return $this->hasMany(Inventario::class);
     }
 
+    public function ventaDetalles(): HasMany
+    {
+        return $this->hasMany(VentaDetalle::class);
+    }
+
     /*  public function comercios(): BelongsToMany
      {
          return $this->belongsToMany(Comercio::class)->using(ComercioProducto::class);

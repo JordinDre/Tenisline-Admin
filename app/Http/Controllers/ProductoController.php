@@ -25,6 +25,22 @@ class ProductoController extends Controller
         return $escala;
     }
 
+    /**
+     * Obtener productos de una venta específica de forma optimizada
+     */
+    public static function getProductosDeVenta($ventaId): array
+    {
+        return Producto::whereHas('ventaDetalles', function ($query) use ($ventaId) {
+            $query->where('venta_id', $ventaId);
+        })
+        ->with('marca')
+        ->get()
+        ->mapWithKeys(fn ($producto) => [
+            $producto->id => self::renderProductos($producto, 'venta', 1),
+        ])
+        ->toArray();
+    }
+
     public static function renderProductos(Producto $record, string $tipo, $bodega_id = null, $cliente_id = null): string
     {
 
