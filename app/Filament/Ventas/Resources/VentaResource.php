@@ -36,6 +36,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class VentaResource extends Resource implements HasShieldPermissions
 {
@@ -78,7 +79,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         'bodega',
                         'bodega',
                         fn (Builder $query) => $query->whereHas('user', function ($query) {
-                            $query->where('user_id', auth()->user()->id);
+                            $query->where('user_id', Auth::user()->id);
                         })
                     )
                     ->preload()
@@ -142,7 +143,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         /* ->live(onBlur: true) */
                                         /* ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
-                                                $userRoles = auth()->user()->roles->pluck('name');
+                                                $userRoles = Auth::user()->roles->pluck('name');
                                                 $role = collect(User::VENTA_ROLES)->first(fn ($r) => $userRoles->contains($r));
                                                 $escala = Escala::where('precio', '<', $state)
                                                     ->where('producto_id', $get('producto_id'))
@@ -166,7 +167,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->inputMode('decimal')
                                         ->rule('numeric')
                                         /* ->minValue(function (Get $get) {
-                                            $userRoles = auth()->user()->roles->pluck('name');
+                                            $userRoles = Auth::user()->roles->pluck('name');
                                             $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
 
                                             return Escala::where('producto_id', $get('producto_id'))
@@ -521,7 +522,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalSubmitAction(false),
                     Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->visible(fn ($record) => auth()->user()->can('factura', $record))
+                        ->visible(fn ($record) => Auth::user()->can('factura', $record))
                         ->modalContent(fn (Venta $record): View => view(
                             'filament.pages.actions.iframe',
                             [
@@ -537,7 +538,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->modalSubmitAction(false),
                     Action::make('nota_credito')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->visible(fn ($record) => auth()->user()->can('credit_note', $record))
+                        ->visible(fn ($record) => Auth::user()->can('credit_note', $record))
                         ->modalContent(fn (Venta $record): View => view(
                             'filament.pages.actions.iframe',
                             [
@@ -557,14 +558,14 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('heroicon-o-document-text')
                         ->color('indigo')
                         ->action(fn (Venta $record) => VentaController::facturar($record))
-                        ->visible(fn ($record) => auth()->user()->can('facturar', $record)), */
+                        ->visible(fn ($record) => Auth::user()->can('facturar', $record)), */
                     Action::make('liquidate')
                         ->label('Liquidar')
                         ->color('success')
                         ->requiresConfirmation()
                         ->icon('heroicon-o-clipboard-document-check')
                         ->action(fn (Venta $record) => VentaController::liquidar($record))
-                        ->visible(fn ($record) => auth()->user()->can('liquidate', $record)),
+                        ->visible(fn ($record) => Auth::user()->can('liquidate', $record)),
                     Action::make('annular')
                         ->label('Anular')
                         ->color('danger')
@@ -577,7 +578,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->minLength(10)
                                 ->required(),
                         ])
-                        ->visible(fn ($record) => auth()->user()->can('annular', $record)),
+                        ->visible(fn ($record) => Auth::user()->can('annular', $record)),
                     Action::make('return')
                         ->label('Devolver')
                         ->color('orange')
@@ -585,7 +586,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->closeModalByClickingAway(false)
                         ->modalWidth(MaxWidth::SixExtraLarge)
                         ->icon('tabler-truck-return')
-                        ->visible(fn ($record) => auth()->user()->can('return', $record))
+                        ->visible(fn ($record) => Auth::user()->can('return', $record))
                         ->fillForm(fn (Venta $record): array => [
                             'motivo' => $record->motivo,
                             'detalles' => $record->detalles->map(function ($detalle) {
@@ -594,7 +595,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     'producto_id' => $detalle->producto_id,
                                     'cantidad' => $detalle->cantidad,
                                     'devuelto' => $detalle->devuelto,
-                                    'codigo_nuevo' => '',
+                                    'codigo_nuevo' => $detalle->producto->codigo ?? '', // Usar el código actual del producto
                                 ];
                             })->toArray(),
                         ])
@@ -627,21 +628,15 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('producto_id')
                                         ->label('Producto')
-                                        ->options(function () {
-                                            return \App\Models\Producto::with('marca')
-                                                ->get()
-                                                ->mapWithKeys(fn ($producto) => [
-                                                    $producto->id => ProductoController::renderProductos($producto, 'venta', 1),
-                                                ])
-                                                ->toArray();
+                                        ->options(function (Get $get, $record) {
+                                            // Solo cargar los productos que están en esta venta específica
+                                            if (!$record) return [];
+                                            
+                                            return ProductoController::getProductosDeVenta($record->id);
                                         })
                                         ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', 1))
                                         ->allowHtml()
-                                        ->searchable(['id'])
-                                        ->getSearchResultsUsing(function (string $search): array {
-                                            return ProductoController::searchProductos($search, 'venta', 1);
-                                        })
-                                        ->optionsLimit(12)
+                                        ->disabled() // Deshabilitado porque ya está pre-seleccionado
                                         ->required(),
                                     Grid::make(4)
                                         ->schema([
@@ -737,6 +732,15 @@ class VentaResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->orderByDesc('created_at');
+        return parent::getEloquentQuery()
+            ->with([
+                'detalles.producto',
+                'cliente',
+                'asesor',
+                'bodega',
+                'pagos.tipoPago',
+                'factura'
+            ])
+            ->orderByDesc('created_at');
     }
 }

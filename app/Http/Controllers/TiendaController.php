@@ -11,6 +11,7 @@ use App\Models\OrdenDetalle;
 use App\Models\Producto;
 use App\Models\Tienda;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -27,8 +28,8 @@ class TiendaController extends Controller
     public function orden()
     {
         return Inertia::render('CrearOrden', [
-            'direcciones' => auth()->user()->direcciones()->with(['municipio', 'departamento'])->get(),
-            'tipoPagos' => auth()->user()->tipo_pagos,
+            'direcciones' => Auth::user()->direcciones()->with(['municipio', 'departamento'])->get(),
+            'tipoPagos' => Auth::user()->tipo_pagos,
         ]);
     }
 
@@ -40,7 +41,7 @@ class TiendaController extends Controller
                 'tipoPago' => 'required',
             ]);
 
-            $carrito = Carrito::where('user_id', auth()->user()->id)->get();
+            $carrito = Carrito::where('user_id', Auth::user()->id)->get();
 
             if ($carrito->isEmpty()) {
                 throw new \Exception('El carrito está vacío.');
@@ -57,8 +58,8 @@ class TiendaController extends Controller
             }
 
             $orden = Orden::create([
-                'asesor_id' => auth()->user()->id,
-                'cliente_id' => auth()->user()->id,
+                'asesor_id' => Auth::user()->id,
+                'cliente_id' => Auth::user()->id,
                 'direccion_id' => $request->direccion,
                 'tipo_pago_id' => $request->tipoPago,
                 'subtotal' => $subtotal,
@@ -69,7 +70,7 @@ class TiendaController extends Controller
                 'facturar_cf' => $request->facturar_cf ? true : false,
                 'enlinea' => 1,
             ]);
-            activity()->performedOn($orden)->causedBy(auth()->user())->withProperties($orden)->event('created')->log('Orden creada en línea');
+            activity()->performedOn($orden)->causedBy(Auth::user())->withProperties($orden)->event('created')->log('Orden creada en línea');
 
             foreach ($carrito as $item) {
                 $detalle = OrdenDetalle::create([
@@ -78,10 +79,10 @@ class TiendaController extends Controller
                     'orden_id' => $orden->id,
                     'producto_id' => $item->producto_id,
                 ]);
-                activity()->performedOn($detalle)->causedBy(auth()->user())->withProperties($detalle)->event('created')->log('Detalle de Orden en línea');
+                activity()->performedOn($detalle)->causedBy(Auth::user())->withProperties($detalle)->event('created')->log('Detalle de Orden en línea');
             }
-            Carrito::where('user_id', auth()->user()->id)->delete();
-            activity()->performedOn($orden)->causedBy(auth()->user())->withProperties($orden)->event('deleted')->log('Carrito Eliminado');
+            Carrito::where('user_id', Auth::user()->id)->delete();
+            activity()->performedOn($orden)->causedBy(Auth::user())->withProperties($orden)->event('deleted')->log('Carrito Eliminado');
         });
     }
 
@@ -172,7 +173,7 @@ class TiendaController extends Controller
             ->paginate(20)
             ->withQueryString()
             ->through(function ($producto) {
-                $user = auth()->user();
+                $user = Auth::user();
 
                 return [
                     'id' => $producto->id,
@@ -184,7 +185,7 @@ class TiendaController extends Controller
                     'talla' => $producto->talla ?? null,
                     'color' => $producto->color ?? null,
                     'genero' => $producto->genero ?? null,
-                    'stock' => $producto->inventario->sum('existencia'),
+                    'stock' => $producto->inventario ? $producto->inventario->sum('existencia') : 0,
                     'imagen' => isset($producto->imagenes[0])
                         ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                         : asset('images/icono.png'),
@@ -192,7 +193,7 @@ class TiendaController extends Controller
 
                     // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Oferta Especial - Solo en Tienda Física"
                     'es_precio_ofertado' => $producto->inventario
-                        ->filter(function ($inv) {
+                        ? $producto->inventario->filter(function ($inv) {
                             $bodega = $inv->bodega;
                             if (! $bodega) {
                                 return false;
@@ -205,12 +206,13 @@ class TiendaController extends Controller
 
                             return strtolower($municipio->municipio) === 'esquipulas' && $inv->existencia > 0;
                         })
-                        ->isNotEmpty(),
+                        ->isNotEmpty()
+                        : false,
 
                     // ✅ Agregar detalle de bodegas solo si está logueado, agrupadas por municipio
                     'bodegas' => $user
-                        ? $producto->inventario
-                            ->filter(function ($inv) {
+                        ? ($producto->inventario
+                            ? $producto->inventario->filter(function ($inv) {
                                 $bodega = $inv->bodega;
                                 if (! $bodega) {
                                     return false;
@@ -242,6 +244,7 @@ class TiendaController extends Controller
                             })
                             ->values()
                             ->toArray()
+                            : null)
                         : null,
                 ];
             });
@@ -311,7 +314,7 @@ class TiendaController extends Controller
                 'genero' => $producto->genero ?? null,
                 'modelo' => $producto->modelo ?? null,
                 'talla' => $producto->talla ?? null,
-                'stock' => $producto->inventario->sum('existencia'),
+                'stock' => $producto->inventario ? $producto->inventario->sum('existencia') : 0,
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
@@ -319,7 +322,7 @@ class TiendaController extends Controller
 
                 // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Oferta Especial - Solo en Tienda Física"
                 'es_precio_ofertado' => $producto->inventario
-                    ->filter(function ($inv) {
+                    ? $producto->inventario->filter(function ($inv) {
                         $bodega = $inv->bodega;
                         if (! $bodega) {
                             return false;
@@ -332,12 +335,13 @@ class TiendaController extends Controller
 
                         return strtolower($municipio->municipio) === 'esquipulas' && $inv->existencia > 0;
                     })
-                    ->isNotEmpty(),
+                    ->isNotEmpty()
+                    : false,
 
                 // Mostrar todas las bodegas solo si está logueado, agrupadas por municipio
-                'bodegas' => auth()->check()
-                    ? $producto->inventario
-                        ->filter(function ($inv) {
+                'bodegas' => Auth::check()
+                    ? ($producto->inventario
+                        ? $producto->inventario->filter(function ($inv) {
                             $bodega = $inv->bodega;
                             if (! $bodega) {
                                 return false;
@@ -369,11 +373,12 @@ class TiendaController extends Controller
                         })
                         ->values()
                         ->toArray()
+                        : null)
                     : null,
 
                 // Siempre enviar la bodega con más stock (Zacapa, Chiquimula y Esquipulas, excluyendo Mal estado, Traslado y Central Bodega)
                 'bodega_destacada' => $producto->inventario
-                    ->filter(function ($inv) {
+                    ? $producto->inventario->filter(function ($inv) {
                         $bodega = $inv->bodega;
                         if (! $bodega) {
                             return false;
@@ -397,7 +402,8 @@ class TiendaController extends Controller
                         'bodega' => $inv->bodega->municipio->municipio ?? 'Desconocida', // Mostrar el municipio en lugar del nombre de la bodega
                         'existencia' => $inv->existencia,
                     ])
-                    ->first(),
+                    ->first()
+                    : null,
             ],
             'marcas' => $marcas,
         ]);
@@ -407,7 +413,7 @@ class TiendaController extends Controller
     public function agregarCarrito(Request $request)
     {
         $producto = Producto::findOrFail($request->producto_id);
-        $carritoItem = Carrito::where('user_id', auth()->user()->id)
+        $carritoItem = Carrito::where('user_id', Auth::user()->id)
             ->where('producto_id', $producto->id)
             ->first();
 
@@ -416,7 +422,7 @@ class TiendaController extends Controller
             $carritoItem->save();
         } else {
             Carrito::create([
-                'user_id' => auth()->user()->id,
+                'user_id' => Auth::user()->id,
                 'producto_id' => $producto->id,
                 'precio' => $producto->enlinea->precio ?? null,
                 'cantidad' => 1,
@@ -430,7 +436,7 @@ class TiendaController extends Controller
 
     public function sumarCarrito($id)
     {
-        $carritoItem = Carrito::where('user_id', auth()->user()->id)
+        $carritoItem = Carrito::where('user_id', Auth::user()->id)
             ->where('producto_id', $id)
             ->first();
 
@@ -440,7 +446,7 @@ class TiendaController extends Controller
         } else {
             $producto = Producto::findOrFail($id);
             Carrito::create([
-                'user_id' => auth()->user()->id,
+                'user_id' => Auth::user()->id,
                 'producto_id' => $producto->id,
                 'cantidad' => 1,
             ]);
@@ -449,7 +455,7 @@ class TiendaController extends Controller
 
     public function restarCarrito($id)
     {
-        $carritoItem = Carrito::where('user_id', auth()->user()->id)
+        $carritoItem = Carrito::where('user_id', Auth::user()->id)
             ->where('producto_id', $id)
             ->first();
 
@@ -463,7 +469,7 @@ class TiendaController extends Controller
 
     public function eliminarCarrito($id)
     {
-        $carritoItem = Carrito::where('user_id', auth()->user()->id)
+        $carritoItem = Carrito::where('user_id', Auth::user()->id)
             ->where('producto_id', $id)
             ->first();
 
