@@ -191,23 +191,6 @@ class TiendaController extends Controller
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
 
-                    // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Oferta Especial - Solo en Tienda Física"
-                    'es_precio_ofertado' => $producto->inventario
-                        ? $producto->inventario->filter(function ($inv) {
-                            $bodega = $inv->bodega;
-                            if (! $bodega) {
-                                return false;
-                            }
-
-                            $municipio = $bodega->municipio;
-                            if (! $municipio) {
-                                return false;
-                            }
-
-                            return strtolower($municipio->municipio) === 'esquipulas' && $inv->existencia > 0;
-                        })
-                        ->isNotEmpty()
-                        : false,
 
                     // ✅ Agregar detalle de bodegas solo si está logueado, agrupadas por municipio
                     'bodegas' => $user
@@ -320,23 +303,6 @@ class TiendaController extends Controller
                     : asset('images/icono.png'),
                 'marca' => $producto->marca->marca ?? null,
 
-                // ✅ Verificar si el producto tiene existencia en Esquipulas para mostrar "Oferta Especial - Solo en Tienda Física"
-                'es_precio_ofertado' => $producto->inventario
-                    ? $producto->inventario->filter(function ($inv) {
-                        $bodega = $inv->bodega;
-                        if (! $bodega) {
-                            return false;
-                        }
-
-                        $municipio = $bodega->municipio;
-                        if (! $municipio) {
-                            return false;
-                        }
-
-                        return strtolower($municipio->municipio) === 'esquipulas' && $inv->existencia > 0;
-                    })
-                    ->isNotEmpty()
-                    : false,
 
                 // Mostrar todas las bodegas solo si está logueado, agrupadas por municipio
                 'bodegas' => Auth::check()

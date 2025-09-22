@@ -90,11 +90,6 @@ export default function Producto({ producto, marcas }) {
                                 <div className="text-3xl font-extrabold text-green-600">
                                     Q{producto.precio}
                                 </div>
-                                {producto.es_precio_ofertado && (
-                                    <div className="mt-1 text-sm text-orange-600">
-                                        🎉 Oferta Especial - Solo en Tienda Física
-                                    </div>
-                                )}
                             </div>
 
                             {/* Existencia destacada debajo del precio */}
