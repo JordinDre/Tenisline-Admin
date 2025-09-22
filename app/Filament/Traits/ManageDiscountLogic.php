@@ -66,7 +66,7 @@ trait ManageDiscountLogic
     protected function countActiveIndividualDiscounts(array $detalles): int
     {
         return collect($detalles)
-            ->filter(fn ($d) => ($d['oferta'] ?? false) || ($d['oferta_20'] ?? false))
+            ->filter(fn ($d) => ($d['oferta'] ?? false))
             ->count();
     }
 

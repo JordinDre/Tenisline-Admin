@@ -9,6 +9,7 @@ use App\Models\Producto;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Role;
 
 class ProductoController extends Controller
@@ -270,26 +271,35 @@ class ProductoController extends Controller
 
     public static function searchProductosBasico(string $search, string $tipo, $bodega_id = null): array
     {
-        $query = Producto::query()
-            ->with('marca')
-            ->when($bodega_id, fn ($q) => $q->withCount(['inventario as stock' => fn ($iq) => $iq->where('bodega_id', $bodega_id)]));
+        // Cache key para evitar consultas repetidas
+        $cacheKey = "search_productos_basico_" . md5($search . $tipo . $bodega_id);
+        
+        return Cache::remember($cacheKey, 60, function () use ($search, $tipo, $bodega_id) {
+            $query = Producto::query()
+                ->with('marca')
+                ->when($bodega_id, fn ($q) => $q->withCount(['inventario as stock' => fn ($iq) => $iq->where('bodega_id', $bodega_id)]));
 
-        $terms = array_filter(explode(' ', $search));
-        foreach ($terms as $term) {
-            $query->where(fn ($q) => $q
-                ->where('descripcion', 'like', "%{$term}%")
-                ->orWhere('codigo', 'like', "%{$term}%")
-                ->orWhere('modelo', 'like', "%{$term}%")
-                ->orWhere('talla', 'like', "%{$term}%")
-                ->orWhere('genero', 'like', "%{$term}%")
-                ->orWhereHas('marca', fn ($q2) => $q2->where('marca', 'like', "%{$term}%"))
-            );
-        }
+            // Optimizar búsqueda - solo buscar si hay al menos 2 caracteres
+            if (strlen($search) >= 2) {
+                $terms = array_filter(explode(' ', $search));
+                foreach ($terms as $term) {
+                    $query->where(fn ($q) => $q
+                        ->where('descripcion', 'like', "%{$term}%")
+                        ->orWhere('codigo', 'like', "%{$term}%")
+                        ->orWhere('modelo', 'like', "%{$term}%")
+                        ->orWhere('talla', 'like', "%{$term}%")
+                        ->orWhere('genero', 'like', "%{$term}%")
+                        ->orWhereHas('marca', fn ($q2) => $q2->where('marca', 'like', "%{$term}%"))
+                    );
+                }
+            }
 
-        $productos = $query->limit(10)->get();
+            $productos = $query->limit(8)->get(); // Reducir de 10 a 8
 
-        return $productos->mapWithKeys(fn (Producto $producto) => [$producto->id => self::renderProductosRow($producto)]
-        )->toArray();
+            return $productos->mapWithKeys(fn (Producto $producto) => [
+                $producto->id => self::renderProductosRow($producto)
+            ])->toArray();
+        });
     }
 
     protected static function renderProductosRow(Producto $producto): string
