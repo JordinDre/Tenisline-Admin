@@ -244,7 +244,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
+                                        ->relationship('tipo_pago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
                                         ->required()
                                         ->live()
                                         ->columnSpan(['sm' => 1, 'md' => 1])
@@ -687,11 +687,11 @@ class VentaResource extends Resource implements HasShieldPermissions
                             ->schema([
                                 Select::make('tipo_pago_id')
                                     ->label('Tipo de Pago')
-
+                                    ->relationship('tipo_pago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
+                                    ->required()
                                     ->preload()
                                     ->placeholder('Seleccione')
-                                    ->live()
-                                    ->searchable(),
+                                    ->live(),
                                 //     TextInput::make('monto')
                                 //         ->label('Monto')
                                 //         ->prefix('Q')

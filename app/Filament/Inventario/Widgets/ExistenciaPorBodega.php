@@ -44,9 +44,18 @@ class ExistenciaPorBodega extends BaseWidget
             })
             ->get();
 
+        // Orden personalizado de bodegas: 1, 5, 6, 7, 8, 9, 2, 3
+        $ordenBodegas = [1, 5, 6, 7, 8, 9, 2, 3];
+        
+        // Ordenar las bodegas según el orden personalizado
+        $bodegasOrdenadas = $bodegas->sortBy(function ($bodega) use ($ordenBodegas) {
+            $posicion = array_search($bodega->id, $ordenBodegas);
+            return $posicion !== false ? $posicion : 999; // Las bodegas no en la lista van al final
+        });
+
         $stats = [];
 
-        foreach ($bodegas as $bodega) {
+        foreach ($bodegasOrdenadas as $bodega) {
             $existencia = Inventario::where('bodega_id', $bodega->id)
                 ->sum('existencia');
 
