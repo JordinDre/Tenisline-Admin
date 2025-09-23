@@ -95,19 +95,19 @@ class CreateVenta extends CreateRecord
                             ->relationship(
                                 'asesor',
                                 'name',
-                                fn (Builder $query) => $query->role(['vendedor', 'telemarketing'])
+                                fn (Builder $query) => $query->role(['vendedor'])
                             )
                             ->options(function () {
                                 $currentUser = Auth::user();
                                 $options = [];
 
                                 // Si el usuario actual es vendedor o telemarketing, lo agregamos primero
-                                if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                                if ($currentUser && $currentUser->hasAnyRole(['vendedor'])) {
                                     $options[$currentUser->id] = $currentUser->name.' (Usuario actual)';
                                 }
 
                                 // Agregamos otros vendedores y telemarketing
-                                $query = User::role(['vendedor', 'telemarketing']);
+                                $query = User::role(['vendedor']);
                                 if ($currentUser) {
                                     $query->where('id', '!=', $currentUser->id);
                                 }
@@ -122,7 +122,7 @@ class CreateVenta extends CreateRecord
                             ->default(function () {
                                 $currentUser = Auth::user();
                                 // Si el usuario actual es vendedor o telemarketing, lo seleccionamos por defecto
-                                if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                                if ($currentUser && $currentUser->hasAnyRole(['vendedor'])) {
                                     return $currentUser->id;
                                 }
 
@@ -369,71 +369,12 @@ class CreateVenta extends CreateRecord
                                         ->grid([
                                             'default' => 1,
                                             'md' => 2,
-                                            'xl' => 3,
+                                            'xl' => 2,
                                         ])
                                         ->schema([
                                             Hidden::make('uuid')
                                                 ->default(fn () => (string) Str::uuid())
                                                 ->dehydrated(false),
-                                            Toggle::make('oferta_20')
-                                                ->label('20 %')
-                                                ->inline(false)
-                                                ->live()
-                                                ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1])
-                                                ->reactive()
-                                                ->visible(function (Get $get): bool {
-                                                    $bodegaId = $get('../../bodega_id');
-
-                                                    $clienteId = $get('../../cliente_id');
-                                                    if (! $clienteId) {
-                                                        return false;
-                                                    }
-
-                                                    $cliente = \App\Models\User::with('roles')->find($clienteId);
-
-                                                    return $cliente?->roles->pluck('name')->intersect(['cliente_apertura', 'colaborador'])->isNotEmpty() ?? false;
-                                                })
-
-                                                ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
-                                                    $this->handleItemDiscountToggle(
-                                                        $state,
-                                                        $get,
-                                                        $set,
-                                                        'oferta_20',
-                                                        function ($precioOriginal) use ($get) {
-                                                            $clienteId = $get('../../cliente_id');
-                                                            $cliente = \App\Models\User::find($clienteId);
-                                                            if ($cliente?->hasRole('colaborador')) {
-                                                                return round($precioOriginal * 0.75, 2);
-                                                            }
-
-                                                            return round($precioOriginal * 0.80, 2);
-                                                        }
-                                                    );
-                                                }),
-                                            Toggle::make('oferta')
-                                                ->label('Precio Oferta')
-                                                ->inline(false)
-                                                ->live()
-                                                ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1])
-                                                ->reactive()
-                                                ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
-                                                    $totalPares = collect($get('../../detalles'))->sum('cantidad');
-
-                                                    $this->handleItemDiscountToggle(
-                                                        $state,
-                                                        $get,
-                                                        $set,
-                                                        'oferta',
-                                                        function ($precioOriginal) use ($get) {
-                                                            // Lógica de cálculo de precio específica para este toggle
-                                                            $producto = Producto::find($get('producto_id'));
-                                                            $precioOferta = $producto?->precio_oferta ?? 0;
-
-                                                            return ($precioOferta > 0) ? $precioOferta : $precioOriginal;
-                                                        }
-                                                    );
-                                                }),
                                             Select::make('producto_id')
                                                 ->label('Producto')
                                                 ->relationship('producto', 'descripcion')
@@ -536,6 +477,107 @@ class CreateVenta extends CreateRecord
                                                 ->modalWidth(MaxWidth::Screen)
                                         ) */
                                                 ->required(),
+                                            Select::make('tipo_precio')
+                                                ->label('Tipo de precio')
+                                                ->options(function (Get $get) {
+                                                    $productoId = $get('producto_id');
+                                                    if (! $productoId) {
+                                                        return [];
+                                                    }
+
+                                                    $producto = \App\Models\Producto::find($productoId);
+                                                    if (! $producto) {
+                                                        return [];
+                                                    }
+
+                                                    $clienteId = $get('../../cliente_id');
+                                                    $cliente = \App\Models\User::with('roles')->find($clienteId);
+                                                    $roles = $cliente?->getRoleNames() ?? collect();
+
+                                                    $precios = [
+                                                        'normal' => 'Precio Normal (Q'.$producto->precio_venta.')',
+                                                    ];
+
+                                                    if ($producto->precio_oferta > 0) {
+                                                        $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
+                                                    }
+
+                                                    if ($producto->precio_liquidacion > 0) {
+                                                        $precios['liquidacion'] = 'Precio Liquidación (Q'.$producto->precio_liquidacion.')';
+                                                    }
+
+                                                    if ($producto->precio_segundo_par > 0) {
+                                                        $precios['segundo_par'] = 'Segundo Par (Q'.$producto->precio_segundo_par.')';
+                                                    }
+
+                                                    if ($producto->precio_descuento > 0) {
+                                                        $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
+                                                    }
+
+                                                    return $precios;
+                                                })
+                                                ->reactive()
+                                                ->dehydrated(false)
+                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                    $productoId = $get('producto_id');
+                                                    $cantidad = $get('cantidad') ?? 1;
+
+                                                    if (! $productoId) return;
+
+                                                    $producto = \App\Models\Producto::find($productoId);
+                                                    if (! $producto) return;
+
+                                                    $precio = $producto->precio_venta;
+
+                                                    switch ($state) {
+                                                        case 'oferta':
+                                                            $precio = ($producto->precio_oferta > 0) ? $producto->precio_oferta : $producto->precio_venta;
+                                                            break;
+
+                                                        case 'liquidacion':
+                                                            $precio = ($producto->precio_liquidacion > 0) ? $producto->precio_liquidacion : $producto->precio_venta;
+                                                            break;
+
+                                                        case 'segundo_par':
+                                                            $detalles = $get('../../detalles') ?? [];
+                                                            $totalPares = collect($detalles)->sum('cantidad');
+
+                                                            if ($totalPares < 2 || $producto->precio_segundo_par <= 0) {
+                                                                Notification::make()
+                                                                    ->title('Descuento no aplicable')
+                                                                    ->body('El precio de Segundo Par requiere al menos 2 pares y que exista un precio válido.')
+                                                                    ->danger()
+                                                                    ->send();
+
+                                                                $set('tipo_precio', 'normal');
+                                                                $precio = $producto->precio_venta;
+                                                                break;
+                                                            }
+
+                                                            $precio = $producto->precio_segundo_par;
+                                                            break;
+
+                                                        case 'descuento':
+                                                            if ($producto->precio_descuento > 0) {
+                                                                $precio = round($producto->precio_venta * (1 - ($producto->precio_descuento / 100)), 2);
+                                                            } else {
+                                                                Notification::make()
+                                                                    ->title('Descuento no aplicable')
+                                                                    ->body('No hay porcentaje de descuento disponible para este producto.')
+                                                                    ->danger()
+                                                                    ->send();
+                                                                $set('tipo_precio', 'normal');
+                                                                $precio = $producto->precio_venta;
+                                                            }
+                                                            break;
+                                                    }
+
+                                                    $set('precio', $precio);
+                                                    $set('subtotal', round($precio * $cantidad, 2));
+                                                    $this->updateOrderTotals($get, $set);
+                                                })
+                                                ->required()
+                                                ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 2]),
                                             TextInput::make('cantidad')
                                                 ->label('Cantidad')
                                                 ->default(1)
