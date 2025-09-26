@@ -90,12 +90,18 @@ class Meta extends Model
         $bodegaId = $this->bodega_id;
 
         $hoy = now();
-        $diasTranscurridos = ($year == $hoy->year && $month == $hoy->month)
-            ? $hoy->day
-            : $hoy->setYear($year)->setMonth($month)->daysInMonth;
+        
+        // Si es el mes y año actual, usar los días transcurridos reales
+        if ($year == $hoy->year && $month == $hoy->month) {
+            $diasTranscurridos = $hoy->day;
+        } else {
+            // Para meses pasados o futuros, usar todos los días del mes
+            $diasTranscurridos = $hoy->setYear($year)->setMonth($month)->daysInMonth;
+        }
 
         $totalDiasMes = $hoy->setYear($year)->setMonth($month)->daysInMonth;
 
+        // Obtener el total de ventas reales para el período
         $totalVentas = \App\Models\VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->where('ventas.bodega_id', $bodegaId)
             ->whereYear('ventas.created_at', $year)
@@ -104,6 +110,7 @@ class Meta extends Model
             ->where('venta_detalles.devuelto', 0)
             ->sum('venta_detalles.precio');
 
+        // Proyectar basándose en el promedio diario de ventas
         return $diasTranscurridos > 0
             ? ($totalVentas / $diasTranscurridos) * $totalDiasMes
             : 0;
