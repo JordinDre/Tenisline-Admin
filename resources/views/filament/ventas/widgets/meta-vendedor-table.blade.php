@@ -25,7 +25,7 @@
         <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
             <div class="text-xs font-medium text-orange-600 dark:text-orange-400">Total Proyección %</div>
             <div class="text-sm font-bold text-orange-900 dark:text-orange-100">
-                {{ $this->getViewData()['totalVentas'] > 0 ? number_format($this->getViewData()['totalProyeccion'] / $this->getViewData()['totalVentas'], 2) : '0.00' }}%
+                {{ $this->getViewData()['totalMeta'] > 0 ? number_format(($this->getViewData()['totalVentas'] / $this->getViewData()['totalMeta']) * 100, 2) : '0.00' }}%
             </div>
         </div>
         
@@ -92,7 +92,7 @@
                             <span class="font-medium text-orange-600">Q{{ number_format($item['proyeccion'], 2) }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            <span class="font-medium text-orange-600">{{ $item['total'] > 0 ? number_format($item['proyeccion'] / $item['total'], 2) : '0.00' }}%</span>
+                            <span class="font-medium text-orange-600">{{ $item['meta'] > 0 ? number_format(($item['total'] / $item['meta']) * 100, 2) : '0.00' }}%</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
