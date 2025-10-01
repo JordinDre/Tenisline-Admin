@@ -145,25 +145,28 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 ])
                     ->schema([
 
-                        // TextInput::make('precio_vendedores')
-                        //     ->required()
-                        //     ->live(onBlur: true)
-                        //     ->minValue(0)
-                        //     ->visible(auth()->user()->can('view_costs_producto'))
-                        //     ->inputMode('decimal')
-                        //     ->rule('numeric'),
-                        // TextInput::make('precio_mayorista')
-                        //     ->live(onBlur: true)
-                        //     ->minValue(0)
-                        //     ->visible(auth()->user()->can('view_costs_producto'))
-                        //     ->inputMode('decimal')
-                        //     ->rule('numeric'),
-                        // TextInput::make('precio_compra')
-                        //     ->live(onBlur: true)
-                        //     ->minValue(0)
-                        //     ->visible(auth()->user()->can('view_costs_producto'))
-                        //     ->inputMode('decimal')
-                        //     ->rule('numeric'),
+                        TextInput::make('precio_descuento')
+                            ->label('Descuento %')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
+                        TextInput::make('precio_liquidacion')
+                            ->label('Precio Liquidación')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
+                        TextInput::make('precio_segundo_par')
+                            ->label('Precio Segundo Par')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
                         // TextInput::make('envio')
                         //     ->live(onBlur: true)
                         //     ->minValue(0)

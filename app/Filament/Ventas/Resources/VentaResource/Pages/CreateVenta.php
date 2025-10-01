@@ -95,19 +95,19 @@ class CreateVenta extends CreateRecord
                             ->relationship(
                                 'asesor',
                                 'name',
-                                fn (Builder $query) => $query->role(['vendedor', 'telemarketing'])
+                                fn (Builder $query) => $query->role(['vendedor'])
                             )
                             ->options(function () {
                                 $currentUser = Auth::user();
                                 $options = [];
 
                                 // Si el usuario actual es vendedor o telemarketing, lo agregamos primero
-                                if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                                if ($currentUser && $currentUser->hasAnyRole(['vendedor'])) {
                                     $options[$currentUser->id] = $currentUser->name.' (Usuario actual)';
                                 }
 
                                 // Agregamos otros vendedores y telemarketing
-                                $query = User::role(['vendedor', 'telemarketing']);
+                                $query = User::role(['vendedor']);
                                 if ($currentUser) {
                                     $query->where('id', '!=', $currentUser->id);
                                 }
@@ -122,7 +122,7 @@ class CreateVenta extends CreateRecord
                             ->default(function () {
                                 $currentUser = Auth::user();
                                 // Si el usuario actual es vendedor o telemarketing, lo seleccionamos por defecto
-                                if ($currentUser && $currentUser->hasAnyRole(['vendedor', 'telemarketing'])) {
+                                if ($currentUser && $currentUser->hasAnyRole(['vendedor'])) {
                                     return $currentUser->id;
                                 }
 
@@ -369,35 +369,12 @@ class CreateVenta extends CreateRecord
                                         ->grid([
                                             'default' => 1,
                                             'md' => 2,
-                                            'xl' => 3,
+                                            'xl' => 2,
                                         ])
                                         ->schema([
                                             Hidden::make('uuid')
                                                 ->default(fn () => (string) Str::uuid())
                                                 ->dehydrated(false),
-                                            Toggle::make('oferta')
-                                                ->label('Precio Oferta')
-                                                ->inline(false)
-                                                ->live()
-                                                ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 1])
-                                                ->reactive()
-                                                ->afterStateUpdated(function ($state, $record, Set $set, Get $get) {
-                                                    $totalPares = collect($get('../../detalles'))->sum('cantidad');
-
-                                                    $this->handleItemDiscountToggle(
-                                                        $state,
-                                                        $get,
-                                                        $set,
-                                                        'oferta',
-                                                        function ($precioOriginal) use ($get) {
-                                                            // Lógica de cálculo de precio específica para este toggle
-                                                            $producto = Producto::find($get('producto_id'));
-                                                            $precioOferta = $producto?->precio_oferta ?? 0;
-
-                                                            return ($precioOferta > 0) ? $precioOferta : $precioOriginal;
-                                                        }
-                                                    );
-                                                }),
                                             Select::make('producto_id')
                                                 ->label('Producto')
                                                 ->relationship('producto', 'descripcion')
@@ -481,6 +458,195 @@ class CreateVenta extends CreateRecord
                                                 ->modalWidth(MaxWidth::Screen)
                                         ) */
                                                 ->required(),
+                                            Select::make('tipo_precio')
+                                                ->label('Tipo de precio')
+                                                ->options(function (Get $get) {
+                                                    $productoId = $get('producto_id');
+                                                    if (! $productoId) {
+                                                        return [];
+                                                    }
+
+                                                    $producto = \App\Models\Producto::find($productoId);
+                                                    if (! $producto) {
+                                                        return [];
+                                                    }
+
+                                                    $clienteId = $get('../../cliente_id');
+                                                    $cliente = \App\Models\User::with('roles')->find($clienteId);
+                                                    $roles = $cliente?->getRoleNames() ?? collect();
+
+                                                    $precios = [
+                                                        'normal' => 'Precio Normal (Q'.$producto->precio_venta.')',
+                                                    ];
+
+                                                    if ($producto->precio_oferta > 0) {
+                                                        $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
+                                                    }
+
+                                                    if ($producto->precio_liquidacion > 0) {
+                                                        $precios['liquidacion'] = 'Precio Liquidación (Q'.$producto->precio_liquidacion.')';
+                                                    }
+
+                                                    if ($producto->precio_segundo_par > 0) {
+                                                        $precios['segundo_par'] = 'Segundo Par (Q'.$producto->precio_segundo_par.')';
+                                                    }
+
+                                                    if ($producto->precio_descuento > 0) {
+                                                        $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
+                                                    }
+
+                                                    return $precios;
+                                                })
+                                                ->reactive()
+                                                ->dehydrated(false)
+                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                    $productoId = $get('producto_id');
+                                                    if (! $productoId) return;
+
+                                                    $producto = \App\Models\Producto::find($productoId);
+                                                    if (! $producto) return;
+
+                                                    $detalles = $get('../../detalles') ?? [];
+                                                    $currentUuid = $get('uuid') ?? null;
+                                                    $cantidadActual = (int) ($get('cantidad') ?? 1);
+
+                                                    // total pares en toda la orden (suma de cantidades)
+                                                    $totalPares = collect($detalles)->sum(fn($i) => (int) ($i['cantidad'] ?? 0));
+
+                                                    $precio = $producto->precio_venta;
+
+                                                    // Si intentan elegir 'segundo_par'
+                                                    if ($state === 'segundo_par') {
+                                                        // 1) requisitos mínimos
+                                                        if ($producto->precio_segundo_par <= 0 || $totalPares < 2) {
+                                                            Notification::make()
+                                                                ->title('Descuento no aplicable')
+                                                                ->body('El precio de Segundo Par requiere al menos 2 pares en total y que exista precio válido.')
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $this->updateOrderTotals($get, $set);
+                                                            return;
+                                                        }
+
+                                                        // 2) comprobar que NO haya otras ofertas (oferta/liquidacion/descuento) en *otros* ítems
+                                                        $hayOtrasOfertasEnOtros = collect($detalles)
+                                                            ->contains(function ($item) use ($currentUuid) {
+                                                                return (($item['uuid'] ?? null) !== $currentUuid)
+                                                                    && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento']);
+                                                            });
+
+                                                        if ($hayOtrasOfertasEnOtros) {
+                                                            Notification::make()
+                                                                ->title('Oferta no combinable')
+                                                                ->body('La oferta de Segundo Par no se puede combinar con otras ofertas en la orden.')
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $this->updateOrderTotals($get, $set);
+                                                            return;
+                                                        }
+
+                                                        // 3) límite de pares: calcula pares permitidos y cuántos pares ya tienen segundo_par (excluyendo el actual)
+                                                        $paresPermitidos = intdiv($totalPares, 2);
+
+                                                        $paresConSegundoParExclCurrent = collect($detalles)
+                                                            ->filter(fn($item) => ($item['uuid'] ?? null) !== $currentUuid && ($item['tipo_precio'] ?? null) === 'segundo_par')
+                                                            ->sum(fn($i) => (int) ($i['cantidad'] ?? 0));
+
+                                                        $paresConSegundoParDespues = $paresConSegundoParExclCurrent + $cantidadActual;
+
+                                                        if ($paresConSegundoParDespues > $paresPermitidos) {
+                                                            Notification::make()
+                                                                ->title('Límite alcanzado')
+                                                                ->body("Solo se puede aplicar Segundo Par a {$paresPermitidos} pares en total.")
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $this->updateOrderTotals($get, $set);
+                                                            return;
+                                                        }
+
+                                                        // ✅ todo OK: aplicamos precio segundo par
+                                                        $precio = $producto->precio_segundo_par;
+                                                        $set('precio', $precio);
+                                                        $set('subtotal', round($precio * $cantidadActual, 2));
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // Si seleccionan alguna oferta distinta a segundo_par (oferta, liquidacion, descuento)
+                                                    if (in_array($state, ['oferta', 'liquidacion', 'descuento'])) {
+                                                        // 1) validar que NO exista ningún otro ítem con segundo_par (excluyendo el actual).
+                                                        $haySegundoParEnOtros = collect($detalles)
+                                                            ->contains(function ($item) use ($currentUuid) {
+                                                                return (($item['uuid'] ?? null) !== $currentUuid)
+                                                                    && ($item['tipo_precio'] ?? null) === 'segundo_par';
+                                                            });
+
+                                                        if ($haySegundoParEnOtros) {
+                                                            Notification::make()
+                                                                ->title('Oferta no combinable')
+                                                                ->body('No puede aplicar esta oferta: ya hay ítems con "Segundo Par" en la orden.')
+                                                                ->danger()
+                                                                ->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $this->updateOrderTotals($get, $set);
+                                                            return;
+                                                        }
+
+                                                        // 2) si es oferta/liquidacion/descuento, calcula el precio como antes
+                                                        switch ($state) {
+                                                            case 'oferta':
+                                                                $precio = ($producto->precio_oferta > 0) ? $producto->precio_oferta : $producto->precio_venta;
+                                                                break;
+                                                            case 'liquidacion':
+                                                                $precio = ($producto->precio_liquidacion > 0) ? $producto->precio_liquidacion : $producto->precio_venta;
+                                                                break;
+                                                            case 'descuento':
+                                                                if ($producto->precio_descuento > 0) {
+                                                                    $precio = round($producto->precio_venta * (1 - ($producto->precio_descuento / 100)), 2);
+                                                                } else {
+                                                                    Notification::make()
+                                                                        ->title('Descuento no aplicable')
+                                                                        ->body('No hay porcentaje de descuento disponible para este producto.')
+                                                                        ->danger()
+                                                                        ->send();
+
+                                                                    $set('tipo_precio', 'normal');
+                                                                    $set('precio', $producto->precio_venta);
+                                                                    $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                                    $this->updateOrderTotals($get, $set);
+                                                                    return;
+                                                                }
+                                                                break;
+                                                        }
+
+                                                        $set('precio', $precio);
+                                                        $set('subtotal', round($precio * $cantidadActual, 2));
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // si es 'normal' u otro, dejar precio por defecto
+                                                    $set('precio', $producto->precio_venta);
+                                                    $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                    $this->updateOrderTotals($get, $set);
+                                                })
+                                                ->required()
+                                                ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 2]),
                                             TextInput::make('cantidad')
                                                 ->label('Cantidad')
                                                 ->default(1)
