@@ -109,13 +109,13 @@ export default function Catalogo({
                     <h2 className="text-3xl font-bold text-zinc-800">
                         Catálogo de Productos
                     </h2>
-                        <button
+                    {/* <button
                         type="button"
                         onClick={handleExportPdf}
                         className="flex items-center gap-2 rounded-lg bg-red-500 px-6 py-3 font-medium text-white shadow-lg transition hover:bg-red-600"
                     >
                         Exportar PDF
-                    </button>
+                    </button> */}
                     {/* Botón de exportar PDF */}
                     {/*  <a
                         href={route('pdf.catalogo')}
