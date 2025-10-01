@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('productos', function (Blueprint $table) {
-            $table->decimal('precio_oferta', 10, 2)->nullable()->default(0);
+            $table->decimal('precio_liquidacion', 10, 2)->nullable()->default(0);
+            $table->decimal('precio_segundo_par', 10, 2)->nullable()->default(0);
+            $table->decimal('precio_descuento', 10, 2)->nullable()->default(0);
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('productos', function (Blueprint $table) {
-            $table->dropColumn('precio_oferta');
+            $table->dropColumn('precio_liquidacion');
+            $table->dropColumn('precio_segundo_par');
+            $table->dropColumn('precio_descuento');
         });
     }
 };
