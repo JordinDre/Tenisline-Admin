@@ -409,28 +409,9 @@ class CreateVenta extends CreateRecord
                                                     $set('precio_original', $precioOriginal);
                                                     $set('precio_oferta', $precioOferta);
 
-                                                    $aplicarDescuento = $get('oferta_20') ?? false;
                                                     $aplicarOferta = $get('oferta') ?? false;
                                                     $precioOferta2 = $get('precio_oferta') ?? 0;
                                                     $precioFinal = $precioOriginal;
-
-                                                    if ($esClienteApertura && $aplicarDescuento) {
-                                                        $precioFinal = round($precioOriginal * 0.8, 2);
-                                                        Notification::make()
-                                                            ->title('Descuento aplicado')
-                                                            ->body('Se ha aplicado un 20% de descuento a este producto.')
-                                                            ->success()
-                                                            ->send();
-                                                    }
-
-                                                    if ($esColaborador && $aplicarDescuento) {
-                                                        $precioFinal = round($precioOriginal * 0.75, 2);
-                                                        Notification::make()
-                                                            ->title('Descuento aplicado')
-                                                            ->body('Se ha aplicado un 25% de descuento a este producto.')
-                                                            ->success()
-                                                            ->send();
-                                                    }
 
                                                     if ($aplicarOferta) {
 
@@ -706,15 +687,10 @@ class CreateVenta extends CreateRecord
                                                     $esClienteApertura = $roles->contains('cliente_apertura');
                                                     $esColaborador = $roles->contains('colaborador');
 
-                                                    $aplicarDescuento = $get('oferta_20') ?? false;
                                                     $aplicarOferta = $get('oferta') ?? false;
                                                     $precioOferta = $get('precio_oferta') ?? 0;
 
                                                     $precioFinal = $precioOriginal;
-
-                                                    if ($esClienteApertura && $aplicarDescuento) {
-                                                        $precioFinal = round($precioOriginal * 0.8, 2);
-                                                    }
 
                                                     if ($aplicarOferta) {
                                                         if ($precioOferta == 0 | $precioOferta == null) {
@@ -722,10 +698,6 @@ class CreateVenta extends CreateRecord
                                                         } else {
                                                             $precioFinal = $precioOferta;
                                                         }
-                                                    }
-
-                                                    if ($esColaborador && $aplicarDescuento) {
-                                                        $precioFinal = round($precioOriginal * 0.75, 2);
                                                     }
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
