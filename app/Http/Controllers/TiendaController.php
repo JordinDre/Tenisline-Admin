@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Carrito;
 use App\Models\Guia;
+use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\OrdenDetalle;
-use App\Models\Producto;
+use App\Models\Bodega;
 use App\Models\Tienda;
+use App\Models\Carrito;
+use App\Models\Producto;
+use App\Models\OrdenDetalle;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class TiendaController extends Controller
 {
@@ -442,5 +443,40 @@ class TiendaController extends Controller
         if ($carritoItem) {
             $carritoItem->delete();
         }
+    }
+
+    public function exportarPdf(Request $request)
+    {
+        $query = Producto::query();
+
+        if ($request->filled('search')) {
+            $query->where('descripcion', 'like', "%{$request->search}%");
+        }
+        if ($request->filled('bodega')) {
+            $query->whereHas('inventario', function ($q) use ($request) {
+                $q->where('bodega_id', $request->bodega);
+            });
+        }
+        if ($request->filled('marca')) {
+            $query->whereHas('marca', function ($q) use ($request) {
+                $q->where('marca', $request->marca);
+            });
+        }
+        if ($request->filled('genero')) {
+            $query->where('genero', $request->genero);
+        }
+        if ($request->filled('tallas')) {
+            $query->whereIn('talla', (array) $request->tallas);
+        }
+
+        $productos = $query->get();
+
+        $html = view('pdf.catalogo-filtro', compact('productos'))->render();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+            ->setPaper([0, 0, 227, 842], 'portrait');
+
+        // Abrir en navegador
+        return $pdf->stream("Catalogo.pdf");
     }
 }
