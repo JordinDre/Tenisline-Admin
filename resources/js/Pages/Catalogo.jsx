@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
+import { router } from '@inertiajs/react';
 
 export default function Catalogo({
     productos,
@@ -75,6 +76,20 @@ export default function Catalogo({
         (4 + i * 0.5).toFixed(1),
     );
 
+    const handleExportPdf = () => {
+        const query = new URLSearchParams();
+
+        if (data.search) query.append("search", data.search);
+        if (data.bodega) query.append("bodega", data.bodega);
+        if (data.marca) query.append("marca", data.marca);
+        if (data.genero) query.append("genero", data.genero);
+        if (data.tallas?.length) {
+            data.tallas.forEach(t => query.append("tallas[]", t));
+        }
+
+        window.open(route("catalogo.pdf") + "?" + query.toString(), "_blank");
+    };
+
     return (
         <Layout>
             <Head>
@@ -94,7 +109,13 @@ export default function Catalogo({
                     <h2 className="text-3xl font-bold text-zinc-800">
                         Catálogo de Productos
                     </h2>
-
+                    {/* <button
+                        type="button"
+                        onClick={handleExportPdf}
+                        className="flex items-center gap-2 rounded-lg bg-red-500 px-6 py-3 font-medium text-white shadow-lg transition hover:bg-red-600"
+                    >
+                        Exportar PDF
+                    </button> */}
                     {/* Botón de exportar PDF */}
                     {/*  <a
                         href={route('pdf.catalogo')}
@@ -183,6 +204,7 @@ export default function Catalogo({
                                     marcasDisponibles={marcasDisponibles}
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
+                                    handleExportPdf={handleExportPdf} 
                                 />
 
                                 {/* Botones de acción */}
@@ -349,6 +371,15 @@ export default function Catalogo({
                     </div>
                 </div>
             </div>
+            <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          Exportar PDF
+        </button>
+      </div>
         </Layout>
     );
 }
@@ -362,6 +393,7 @@ function Filtros({
     bodegas,
     marcasDisponibles,
     generosDisponibles,
+    handleExportPdf,
     tallasRango,
 }) {
     return (

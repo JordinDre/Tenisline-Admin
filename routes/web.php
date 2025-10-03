@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/factura-venta/{id}', [PDFController::class, 'facturaVenta'])->name('pdf.factura.venta');
         Route::get('/nota-credito-venta/{id}', [PDFController::class, 'notaCreditoVenta'])->name('pdf.nota-credito.venta');
         Route::get('/catalogo', [PDFController::class, 'catalogo'])->name('pdf.catalogo');
+
+        Route::get('/catalogo/pdf', [TiendaController::class, 'exportarPdf'])->name('catalogo.pdf');
     });
 });
 

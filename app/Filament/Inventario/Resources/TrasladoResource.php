@@ -86,7 +86,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                                 'entrada',
                                 'bodega',
                                 fn (Builder $query) => $query->whereHas('user', function ($query) {
-                                    $query->whereNotIn('bodega_id', [Bodega::TRASLADO, Bodega::MAL_ESTADO]);
+                                    $query->whereNotIn('bodega_id', [Bodega::TRASLADO]);
                                 })
                             )
                             ->preload()
