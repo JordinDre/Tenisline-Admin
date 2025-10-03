@@ -24,6 +24,19 @@ class Cierre extends Model
 
     protected $guarded = [];
 
+    public function pagos()
+    {
+        return $this->morphMany(Pago::class, 'pagable');
+    }
+
+    /**
+     * Ventas asociadas al cierre
+     */
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class);
+    }
+
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class);

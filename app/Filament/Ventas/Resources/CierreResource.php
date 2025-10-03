@@ -2,19 +2,33 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Filament\Ventas\Resources\CierreResource\Pages;
-use App\Models\Cierre;
 use Closure;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
+use App\Models\Pago;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use App\Models\Banco;
+use App\Models\Cierre;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Ventas\Resources\CierreResource\Pages;
 
 class CierreResource extends Resource
 {
@@ -145,6 +159,57 @@ class CierreResource extends Resource
                     ->slideOver()
                     ->stickyModalHeader()
                     ->modalSubmitAction(false),
+                Action::make('liquidar')
+                    ->label('Liquidar')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->visible(auth()->user()->can('view_costs_producto'))
+                    ->color('warning')
+                    ->form([
+                        Select::make('tipo_pago_id')
+                            ->label('Forma de Pago')
+                            ->options(fn() => TipoPago::whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA)->pluck('tipo_pago', 'id')->toArray())
+                            ->required()
+                            ->live()
+                            ->columnSpan(['sm' => 1, 'md' => 1])
+                            ->searchable()
+                            ->preload(),
+                        Select::make('banco_id')
+                            ->label('Banco')
+                            ->options(fn() => Banco::whereIn('banco', Banco::BANCOS_DISPONIBLES)->pluck('banco', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->columnSpan(['sm' => 1, 'md' => 2]),
+                        TextInput::make('monto')
+                            ->label('Monto')
+                            ->prefix('Q')
+                            ->inputMode('decimal')
+                            ->rule('numeric')
+                            ->minValue(1)
+                            ->required(),
+                        TextInput::make('no_documento')
+                            ->label('No. Documento o Autorización'),
+                        DatePicker::make('fecha_transaccion')
+                            ->default(now())
+                            ->required(),
+                        FileUpload::make('imagen')
+                            ->required()
+                            ->image()
+                            ->downloadable()
+                            ->label('Imágen')
+                            ->imageEditor()
+                            ->disk(config('filesystems.disks.s3.driver'))
+                            ->directory(config('filesystems.default'))
+                            ->visibility('public')
+                            ->appendFiles()
+                            ->maxSize(5000)
+                            ->resize(50)
+                            ->openable()
+                            ->columnSpan(['sm' => 1, 'md' => 3])
+                            ->optimize('webp'),
+                        ])
+                        ->action(function (array $data, Cierre $record): void {
+                            VentaController::liquidar_cierre($data, $record);
+                        })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
