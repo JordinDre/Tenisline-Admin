@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Factura;
-use App\Models\Inventario;
-use App\Models\Kardex;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\Venta;
 use Exception;
-use Filament\Notifications\Notification;
+use App\Models\Pago;
+use App\Models\Venta;
+use App\Models\Bodega;
+use App\Models\Cierre;
+use App\Models\Kardex;
+use App\Models\Factura;
+use App\Models\Producto;
+use App\Models\Inventario;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification;
 
 class VentaController extends Controller
 {
@@ -388,5 +389,68 @@ class VentaController extends Controller
                 ->send();
         }
 
+    }
+
+    public static function liquidar_cierre(array $data, Cierre $cierre)
+    {
+        try {
+            DB::transaction(function () use ($data, $cierre) {
+                $pagoData = [
+                    'tipo_pago_id'          => $data['tipo_pago_id'] ?? null,
+                    'banco_id'          => $data['banco_id'] ?? null,
+                    'fecha_transaccion' => $data['fecha_transaccion'],
+                    'no_documento'      => $data['no_documento'] ?? null,
+                    'monto'             => $data['monto'],
+                    'tipo_pago_id'      => $data['tipo_pago_id'] ?? null,
+                    'user_id'           => auth()->id(),
+                ];
+
+                if (!empty($data['imagen'])) {
+                    $pagoData['imagen'] = $data['imagen'];
+                }
+
+                $cierre->pagos()->create($pagoData);
+
+                $ventasPendientes = Venta::where('bodega_id', $cierre->bodega_id)
+                ->whereIn('estado', ['creada']) 
+                ->get();
+
+                $totalVentas = $ventasPendientes->sum('total');
+
+                $totalPagos = $cierre->pagos()->sum('monto');
+
+                if (round(floatval($totalPagos), 0) < round(floatval($totalVentas), 0)) {
+                    throw new Exception("El total de pagos ({$totalPagos}) no cubre el total de ventas ({$totalVentas}).");
+                }
+
+                foreach ($ventasPendientes as $venta) {
+                    $venta->update([
+                        'fecha_liquidada' => now(),
+                        'liquido_id'      => auth()->id(),
+                        'estado'          => 'liquidada',
+                    ]);
+
+                    activity()
+                        ->performedOn($venta)
+                        ->causedBy(auth()->user())
+                        ->withProperties($venta)
+                        ->event('liquidación')
+                        ->log("Venta #{$venta->id} liquidada desde cierre #{$cierre->id}");
+                }
+            });
+
+            Notification::make()
+                ->color('success')
+                ->title("Cierre #{$cierre->id} liquidado correctamente")
+                ->success()
+                ->send();
+        } catch (Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al liquidar el cierre')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 }
