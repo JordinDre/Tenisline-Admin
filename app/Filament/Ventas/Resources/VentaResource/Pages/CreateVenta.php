@@ -95,7 +95,7 @@ class CreateVenta extends CreateRecord
                             ->relationship(
                                 'asesor',
                                 'name',
-                                fn (Builder $query) => $query->role(['vendedor'])
+                                fn (Builder $query) => $query->role(['telemarketing'])
                             )
                             ->options(function () {
                                 $currentUser = Auth::user();
@@ -107,7 +107,7 @@ class CreateVenta extends CreateRecord
                                 }
 
                                 // Agregamos otros vendedores y telemarketing
-                                $query = User::role(['vendedor']);
+                                $query = User::role(['telemarketing']);
                                 if ($currentUser) {
                                     $query->where('id', '!=', $currentUser->id);
                                 }
