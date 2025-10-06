@@ -280,6 +280,11 @@ class TiendaController extends Controller
     {
         $producto = Producto::where('slug', $slug)->first();
 
+        // Verificar si el producto existe, si no existe devolver 404
+        if (!$producto) {
+            abort(404, 'Producto no encontrado');
+        }
+
         $marcas = Marca::whereHas('productos', function ($q) {
             $q->whereHas('inventario', function ($q2) {
                 $q2->where('existencia', '>', 0);
@@ -290,19 +295,19 @@ class TiendaController extends Controller
 
         return Inertia::render('Producto', [
             'producto' => [
-                'id' => $producto->id ?? null,
-                'codigo' => $producto->codigo ?? null,
-                'slug' => $producto->slug ?? null,
-                'descripcion' => $producto->descripcion ?? null,
-                'precio' => $producto->precio_venta ?? null,
-                'genero' => $producto->genero ?? null,
-                'modelo' => $producto->modelo ?? null,
-                'talla' => $producto->talla ?? null,
+                'id' => $producto->id,
+                'codigo' => $producto->codigo,
+                'slug' => $producto->slug,
+                'descripcion' => $producto->descripcion,
+                'precio' => $producto->precio_venta,
+                'genero' => $producto->genero,
+                'modelo' => $producto->modelo,
+                'talla' => $producto->talla,
                 'stock' => $producto->inventario ? $producto->inventario->sum('existencia') : 0,
                 'imagen' => isset($producto->imagenes[0])
                     ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                     : asset('images/icono.png'),
-                'marca' => $producto->marca->marca ?? null,
+                'marca' => $producto->marca?->marca,
 
 
                 // Mostrar todas las bodegas solo si está logueado, agrupadas por municipio
