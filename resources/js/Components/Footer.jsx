@@ -20,7 +20,7 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 <li>
                                     <a
-                                        href="https://www.facebook.com/share/16Sa9BWJbs/"
+                                        href="https://www.facebook.com/profile.php?id=61573374843930"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center hover:underline"
@@ -30,7 +30,7 @@ export default function Footer() {
                                 </li>
                                 <li>
                                     <a
-                                        href="https://www.tiktok.com/@tenisline.gt?_t=ZM-8vXGCraMk9m&_r=1"
+                                        href="https://www.tiktok.com/@tenisline.gt?is_from_webapp=1&sender_device=pc"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center hover:underline"
@@ -40,7 +40,7 @@ export default function Footer() {
                                 </li>
                                 <li>
                                     <a
-                                        href="https://www.instagram.com/tenisline_gt?igsh=MWs3bDl3bzBxMzFncg=="
+                                        href="https://www.instagram.com/tenisline_gt/"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center hover:underline"
@@ -83,12 +83,73 @@ export default function Footer() {
                                 </li> */}
                                 <li>
                                     <a
-                                        href="https://wa.me/50231136836"
+                                        href="https://wa.me/50239900606"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="hover:underline"
                                     >
-                                        WhatsApp: +502 39900606
+                                        Tienda Zacapa: +502 39900606
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="https://wa.me/50239910917"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                    >
+                                        Tienda Chiquimula: +502 39910917
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="https://wa.me/50239999952"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                    >
+                                        Tienda Esquipulas: +502 39999952
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h6 className="mb-4 text-sm font-semibold uppercase">
+                                Ventas en línea 
+                            </h6>
+                            <ul className="space-y-3">
+                                {/* <li>
+                                    <span className="block">
+                                        PBX: +502 23158518
+                                    </span>
+                                </li> */}
+                                {/* <li>
+                                    <a
+                                        href="mailto:info@example.com"
+                                        className="hover:underline"
+                                    >
+                                        Correo: info@example.com
+                                    </a>
+                                </li> */}
+                                <li>
+                                    <a
+                                        href="https://wa.me/50241490090"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                    >
+                                        Ventas en Línea 01: +502 41490090
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="https://wa.me/50239901122"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline"
+                                    >
+                                        Ventas en Línea 02: +502 39901122
                                     </a>
                                 </li>
                             </ul>
