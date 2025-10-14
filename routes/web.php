@@ -44,7 +44,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/guias/{id}', [PDFController::class, 'guias'])->name('pdf.guias');
         Route::get('/factura-orden/{id}', [PDFController::class, 'facturaOrden'])->name('pdf.factura.orden');
         Route::get('/nota-credito-orden/{id}', [PDFController::class, 'notaCreditoOrden'])->name('pdf.nota-credito.orden');
-        Route::get('/comprobante-traslado/{id}', [PDFController::class, 'comprobanteTraslado'])->name('pdf.comprobante.traslado');
 
         Route::get('/venta/{id}', [PDFController::class, 'venta'])->name('pdf.venta');
         Route::get('/cierre/{id}', [PDFController::class, 'cierre'])->name('pdf.cierre');

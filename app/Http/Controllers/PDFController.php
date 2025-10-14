@@ -128,15 +128,6 @@ class PDFController extends Controller
         return $pdf->stream("Nota Credito Venta #{$id}.pdf");
     }
 
-    public function comprobanteTraslado($id)
-    {
-        $traslado = Traslado::find($id);
-        $html = view('pdf.comprobanteTraslado', compact('traslado'))->render();
-        $pdf = Pdf::loadHTML($html);
-
-        return $pdf->stream("Comprobante Traslado #{$id}.pdf");
-    }
-
     public function guias($id)
     {
         try {

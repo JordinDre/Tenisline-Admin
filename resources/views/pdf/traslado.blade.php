@@ -118,6 +118,16 @@
     </section>
 
     <section class="info-section">
+        <div><strong>Bodega de Salida</strong></div>
+        <div>{{ $traslado->salida->bodega ?? 'No disponible' }}</div>
+    </section>
+
+    <section class="info-section">
+        <div><strong>Bodega de Entrada</strong></div>
+        <div>{{ $traslado->entrada->bodega ?? 'No disponible' }}</div>
+    </section>
+
+    <section class="info-section">
         <div><strong>Emisor</strong></div>
         <div>Nombre: {{ $traslado->emisor->name ?? 'No disponible'}}</div>
         <div>Teléfono: {{ $traslado->emisor->telefono ?? 'No disponible'}}</div>
