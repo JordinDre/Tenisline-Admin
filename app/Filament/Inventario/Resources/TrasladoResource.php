@@ -223,21 +223,6 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make()
                         ->visible(fn ($record) => $record->estado->value == 'creado'),
-                    Action::make('comprobante')
-                        ->icon('heroicon-o-document-arrow-down')
-                        ->modalContent(fn (Traslado $record): View => view(
-                            'filament.pages.actions.iframe',
-                            [
-                                'record' => $record,
-                                'title' => 'Comprobante Traslado #'.$record->id,
-                                'route' => route('pdf.comprobante.traslado', ['id' => $record->id]),
-                                'open' => true,
-                            ],
-                        ))
-                        ->modalWidth(MaxWidth::SevenExtraLarge)
-                        ->slideOver()
-                        ->stickyModalHeader()
-                        ->modalSubmitAction(false),
                     Action::make('traslado')
                         ->icon('heroicon-o-document-arrow-down')
                         ->modalContent(fn (Traslado $record): View => view(
