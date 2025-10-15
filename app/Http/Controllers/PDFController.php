@@ -21,7 +21,10 @@ class PDFController extends Controller
         $html = view('pdf.orden', compact('orden'))->render();
         $pdf = Pdf::loadHTML($html);
 
-        return $pdf->stream("Orden #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Orden-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function venta($id)
@@ -30,7 +33,10 @@ class PDFController extends Controller
         $html = view('pdf.venta', compact('venta'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
-        return $pdf->stream("Venta #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Venta-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function cierre($id)
@@ -39,7 +45,10 @@ class PDFController extends Controller
         $html = view('pdf.cierre', compact('cierre'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
-        return $pdf->stream("Cierre #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Cierre-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function compra($id)
@@ -53,7 +62,10 @@ class PDFController extends Controller
         $html = view('pdf.compras', compact('compra'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
-        return $pdf->stream("Compra #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Compra-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function traslado($id)
@@ -68,7 +80,10 @@ class PDFController extends Controller
         $html = view('pdf.traslado', compact('traslado'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
-        return $pdf->stream("Traslado #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Traslado-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function cotizacion($id)
@@ -77,7 +92,10 @@ class PDFController extends Controller
         $html = view('pdf.cotizacion', compact('orden'))->render();
         $pdf = Pdf::loadHTML($html);
 
-        return $pdf->stream("Cotización #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Cotizacion-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function facturaOrden($id)
@@ -86,7 +104,10 @@ class PDFController extends Controller
         $html = view('pdf.facturaOrden', compact('orden'))->render();
         $pdf = Pdf::loadHTML($html);
 
-        return $pdf->stream("Factura Orden #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Factura-Orden-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function facturaVenta($id)
@@ -98,7 +119,10 @@ class PDFController extends Controller
         $html = view('pdf.facturaVenta', compact('venta', 'emisor'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
-        return $pdf->stream("Factura Venta #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Factura-Venta-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function notaCreditoOrden($id)
@@ -107,7 +131,10 @@ class PDFController extends Controller
         $html = view('pdf.notaCreditoOrden', compact('orden'))->render();
         $pdf = Pdf::loadHTML($html);
 
-        return $pdf->stream("Nota Credito Orden #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Nota-Credito-Orden-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function notaCreditoVenta($id)
@@ -125,7 +152,10 @@ class PDFController extends Controller
         $html = view('pdf.notaCreditoVenta', compact('venta', 'emisor'))->render();
         $pdf = Pdf::loadHTML($html);
 
-        return $pdf->stream("Nota Credito Venta #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Nota-Credito-Venta-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function guias($id)
@@ -162,7 +192,8 @@ class PDFController extends Controller
 
                 return response($result)
                     ->header('Content-Type', 'application/pdf')
-                    ->header('Content-Disposition', 'inline; filename="guia.pdf"');
+                    ->header('Content-Disposition', 'inline; filename="guia.pdf"')
+                    ->header('X-Frame-Options', 'SAMEORIGIN');
                 /* $texto = $orden->guatex_destino;
                 preg_match_all('/\((.*?)\)/', $texto, $matches);
                 $codigoDestino = $matches[1][0] ?? '';
@@ -197,7 +228,10 @@ class PDFController extends Controller
         $html = view('pdf.reciboOrden', compact('orden'))->render();
         $pdf = Pdf::loadHTML($html);
 
-        return $pdf->stream("Recibo Orden #{$id}.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Recibo-Orden-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function catalogo()
@@ -263,7 +297,10 @@ class PDFController extends Controller
         $html = view('pdf.catalogo', compact('productos'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper('letter', 'portrait');
 
-        return $pdf->stream('Catalogo_'.date('Y-m-d').'.pdf');
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Catalogo-'.date('Y-m-d').'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     private function getImageAsBase64($producto)
