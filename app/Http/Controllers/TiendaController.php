@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bodega;
+use App\Models\Carrito;
 use App\Models\Guia;
-use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\Bodega;
-use App\Models\Tienda;
-use App\Models\Carrito;
-use App\Models\Producto;
 use App\Models\OrdenDetalle;
+use App\Models\Producto;
+use App\Models\Tienda;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TiendaController extends Controller
 {
@@ -192,7 +191,6 @@ class TiendaController extends Controller
                         : asset('images/icono.png'),
                     'marca' => $producto->marca->marca ?? null,
 
-
                     // ✅ Agregar detalle de bodegas solo si está logueado, agrupadas por municipio
                     'bodegas' => $user
                         ? ($producto->inventario
@@ -215,19 +213,19 @@ class TiendaController extends Controller
 
                                 return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                             })
-                            ->groupBy(function ($inv) {
-                                return $inv->bodega->municipio->municipio ?? 'Desconocida';
-                            })
-                            ->map(function ($inventarios, $municipio) {
-                                $totalExistencia = $inventarios->sum('existencia');
+                                ->groupBy(function ($inv) {
+                                    return $inv->bodega->municipio->municipio ?? 'Desconocida';
+                                })
+                                ->map(function ($inventarios, $municipio) {
+                                    $totalExistencia = $inventarios->sum('existencia');
 
-                                return [
-                                    'bodega' => $municipio,
-                                    'existencia' => $totalExistencia,
-                                ];
-                            })
-                            ->values()
-                            ->toArray()
+                                    return [
+                                        'bodega' => $municipio,
+                                        'existencia' => $totalExistencia,
+                                    ];
+                                })
+                                ->values()
+                                ->toArray()
                             : null)
                         : null,
                 ];
@@ -281,7 +279,7 @@ class TiendaController extends Controller
         $producto = Producto::where('slug', $slug)->first();
 
         // Verificar si el producto existe, si no existe devolver 404
-        if (!$producto) {
+        if (! $producto) {
             abort(404, 'Producto no encontrado');
         }
 
@@ -309,7 +307,6 @@ class TiendaController extends Controller
                     : asset('images/icono.png'),
                 'marca' => $producto->marca?->marca,
 
-
                 // Mostrar todas las bodegas solo si está logueado, agrupadas por municipio
                 'bodegas' => Auth::check()
                     ? ($producto->inventario
@@ -332,19 +329,19 @@ class TiendaController extends Controller
 
                             return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                         })
-                        ->groupBy(function ($inv) {
-                            return $inv->bodega->municipio->municipio ?? 'Desconocida';
-                        })
-                        ->map(function ($inventarios, $municipio) {
-                            $totalExistencia = $inventarios->sum('existencia');
+                            ->groupBy(function ($inv) {
+                                return $inv->bodega->municipio->municipio ?? 'Desconocida';
+                            })
+                            ->map(function ($inventarios, $municipio) {
+                                $totalExistencia = $inventarios->sum('existencia');
 
-                            return [
-                                'bodega' => $municipio,
-                                'existencia' => $totalExistencia,
-                            ];
-                        })
-                        ->values()
-                        ->toArray()
+                                return [
+                                    'bodega' => $municipio,
+                                    'existencia' => $totalExistencia,
+                                ];
+                            })
+                            ->values()
+                            ->toArray()
                         : null)
                     : null,
 
@@ -369,12 +366,12 @@ class TiendaController extends Controller
 
                         return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                     })
-                    ->sortByDesc('existencia')
-                    ->map(fn ($inv) => [
-                        'bodega' => $inv->bodega->municipio->municipio ?? 'Desconocida', // Mostrar el municipio en lugar del nombre de la bodega
-                        'existencia' => $inv->existencia,
-                    ])
-                    ->first()
+                        ->sortByDesc('existencia')
+                        ->map(fn ($inv) => [
+                            'bodega' => $inv->bodega->municipio->municipio ?? 'Desconocida', // Mostrar el municipio en lugar del nombre de la bodega
+                            'existencia' => $inv->existencia,
+                        ])
+                        ->first()
                     : null,
             ],
             'marcas' => $marcas,
@@ -482,6 +479,9 @@ class TiendaController extends Controller
             ->setPaper([0, 0, 227, 842], 'portrait');
 
         // Abrir en navegador
-        return $pdf->stream("Catalogo.pdf");
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Catalogo.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 }
