@@ -174,14 +174,14 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->action(fn (CajaChica $record) => CajaChicaController::confirmar($record))
-                    ->visible(fn ($record) => auth()->user()->can('annular', $record)),
+                    ->visible(fn ($record) => auth()->user()->can('confirm', $record)),
                 Action::make('annular')
                     ->label('Anular')
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation()
                     ->action(fn (CajaChica $record) => CajaChicaController::anular($record))
-                    ->visible(fn ($record) => auth()->user()->can('confirm', $record)),
+                    ->visible(fn ($record) => auth()->user()->can('annular', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
