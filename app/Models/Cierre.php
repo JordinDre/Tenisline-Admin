@@ -121,9 +121,7 @@ class Cierre extends Model
     public function getTotalCajaChicaAttribute()
     {
         return CajaChica::where('bodega_id', $this->bodega_id)
-            ->where('estado', 'confirmada')
-            ->where('created_at', '>=', $this->apertura)
-            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
             ->get()
             ->sum(function ($caja) {
                 return $caja->pagos()->sum('monto');
@@ -134,8 +132,7 @@ class Cierre extends Model
     {
         return CajaChica::with('pagos', 'usuario')
             ->where('bodega_id', $this->bodega_id)
-            ->where('created_at', '>=', $this->apertura)
-            ->when($this->cierre, fn ($q) => $q->where('created_at', '<=', $this->cierre))
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
             ->get();
     }
 

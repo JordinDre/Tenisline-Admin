@@ -118,28 +118,33 @@
     </table>
     <br>
 
-    {{-- <br><br>
-    <table class="table">
-        <tr>
-            <th class="descripcion">CajaChica</th>
-            <th class="precio">Autoriza</th>
-            <th class="subtotal">Usuario</th>
-            <th class="subtotal">Monto</th>
-        </tr>
-        @foreach ($cierre->datos_caja_chica as $caja_chica)
+    @if (count($cierre->datos_caja_chica) > 0)
+        <br><br>
+        <table class="table">
             <tr>
-                <td colspan="4" style="border-top: 1px solid black;"><strong>Caja Chica #{{ $caja_chica->id }}</strong></td>
+                <th class="descripcion">Detalle</th>
+                <th class="precio">Autoriza</th>
+                <th class="subtotal">Usuario</th>
+                <th class="subtotal">Monto</th>
             </tr>
-                <td class="descripcion">{{ $caja_chica->detalle_gasto }}</td>
-                <td class="descripcion">{{ $caja_chica->autoriza }}</td>
-                <td class="descripcion">{{ $caja_chica->usuario->name }}</td>
-            @foreach ($caja_chica->pagos as $detalle)
-                    <td class="subtotal">Q {{ number_format($detalle->monto, 2) }}</td>
-             
+            @foreach ($cierre->datos_caja_chica as $caja_chica)
+                <tr>
+                    <td colspan="4" style="border-top: 1px solid black;"><strong>Caja Chica #{{ $caja_chica->id }} - {{ $caja_chica->estado }}</strong></td>
+                </tr>
+                <tr>
+                    <td class="descripcion">{{ $caja_chica->detalle_gasto }}</td>
+                    <td class="descripcion">{{ $caja_chica->autoriza }}</td>
+                    <td class="descripcion">{{ $caja_chica->usuario->name }}</td>
+                    <td class="subtotal">Q {{ number_format($caja_chica->pagos->sum('monto'), 2) }}</td>
+                </tr>
             @endforeach
-        @endforeach
-    </table>
-    <br> --}}
+            <tr>
+                <td colspan="3" style="text-align: right; border-top: 2px solid black;"><strong>Total Caja Chica:</strong></td>
+                <td class="subtotal" style="border-top: 2px solid black;"><strong>Q {{ number_format($cierre->total_caja_chica, 2) }}</strong></td>
+            </tr>
+        </table>
+        <br>
+    @endif
 
     <section class="info-section">
         <div><strong>Resumen</strong></div>
