@@ -152,7 +152,7 @@
         <div>Total Tenis Vendidos: {{ number_format($cierre->total_tenis, 0) }}</div>
     
         @php $pagos = $cierre->resumen_pagos; @endphp
-        @if (count($pagos))
+       
             <div><strong>Resumen de Pagos:</strong></div>
             <ul style="padding-left: 15px; margin: 0;">
                 @foreach ($pagos as $pago)
@@ -163,9 +163,7 @@
                 <li>Caja Chica: - Q {{ number_format($cierre->total_caja_chica, 0) }}</li>
             </ul>
             <div>Total General: Q {{ number_format(($cierre->total_ventas - $cierre->total_caja_chica), 2) }}</div>
-        @else
-            <div>No hay pagos registrados.</div>
-        @endif
+     
     </section>
 </body>
 

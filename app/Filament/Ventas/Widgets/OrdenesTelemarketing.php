@@ -65,6 +65,8 @@ class OrdenesTelemarketing extends ChartWidget
                 )); */
                 $clientes = $ordenes->pluck('cliente_id')->unique()->count();
 
+                $proyeccionTotal = $diasLaborados > 0 ? ($total / $diasLaborados) * $totalDias : 0;
+
                 return [
                     'asesor' => $ordenes->first()->asesor->name ?? 'Sin Asesor',
                     'total' => $total,
@@ -74,7 +76,7 @@ class OrdenesTelemarketing extends ChartWidget
                     'meta' => $meta,
                     'alcance' => $meta > 0 ? round(($total * 100) / $meta, 2) : 0,
                     'clientes' => $clientes,
-                    'proyeccion' => ($diasLaborados > 0 && $meta > 0) ? round((($total / $diasLaborados) * $totalDias) / $meta, 2) : 0,
+                    'proyeccion' => $meta > 0 ? round(($proyeccionTotal / $meta) * 100, 2) : 0,
                     'ticket_promedio' => $clientes > 0 ? round($total / $clientes, 2) : 0,
                     'cuota_diaria' => $meta > 0 ? round($meta / $totalDias, 2) : 0,
                 ];
