@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Cierre extends Model
 {
@@ -162,5 +163,26 @@ class Cierre extends Model
             ->map(fn ($monto, $tipo) => "{$tipo}: {$monto}")
             ->values()
             ->toArray();
+    }
+
+    protected function resumenPagosLiquidacion(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $pagos = $this->pagos()
+                    ->where('pagable_type', \App\Models\Cierre::class)
+                    ->with('tipoPago')
+                    ->get()
+                    ->groupBy('tipoPago.tipo_pago');
+
+                $resumen = [];
+                foreach ($pagos as $tipoPago => $coleccionPagos) {
+                    $totalMonto = $coleccionPagos->sum('monto');
+                    $resumen[] = "{$tipoPago}: Q" . number_format($totalMonto, 2);
+                }
+
+                return $resumen;
+            },
+        );
     }
 }

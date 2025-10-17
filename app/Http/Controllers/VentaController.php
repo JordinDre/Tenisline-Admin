@@ -395,12 +395,16 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($data, $cierre) {
+
+                $tipoPagoId = $data['tipo_pago_id'] ?? null;
+                $montoPago = floatval($data['monto']);
+
                 $pagoData = [
-                    'tipo_pago_id'          => $data['tipo_pago_id'] ?? null,
+                    'tipo_pago_id'          => $tipoPagoId,
                     'banco_id'          => $data['banco_id'] ?? null,
                     'fecha_transaccion' => $data['fecha_transaccion'],
                     'no_documento'      => $data['no_documento'] ?? null,
-                    'monto'             => $data['monto'],
+                    'monto'             => $montoPago,
                     'tipo_pago_id'      => $data['tipo_pago_id'] ?? null,
                     'user_id'           => auth()->id(),
                 ];
@@ -411,19 +415,29 @@ class VentaController extends Controller
 
                 $cierre->pagos()->create($pagoData);
 
-                $ventasPendientes = Venta::where('bodega_id', $cierre->bodega_id)
-                ->whereIn('estado', ['creada']) 
-                ->get();
+                $ventasPendientesIds = \App\Models\Venta::where('bodega_id', $cierre->bodega_id)
+                ->whereBetween('created_at', [$cierre->apertura, $cierre->cierre ?? now()])
+                ->whereIn('estado', ['creada'])
+                ->pluck('id');
+            
+                $pagosCoincidentes = \App\Models\Pago::where('tipo_pago_id', $tipoPagoId)
+                    ->where('pagable_type', \App\Models\Venta::class)
+                    ->whereIn('pagable_id', $ventasPendientesIds)
+                    ->get();
 
-                $totalVentas = $ventasPendientes->sum('total');
 
-                $totalPagos = $cierre->pagos()->sum('monto');
+                $totalMontoALiquidar = $pagosCoincidentes->sum('monto');
 
-                if (round(floatval($totalPagos), 0) < round(floatval($totalVentas), 0)) {
-                    throw new Exception("El total de pagos ({$totalPagos}) no cubre el total de ventas ({$totalVentas}).");
+                $ventasALiquidarIds = $pagosCoincidentes->pluck('pagable_id')->unique()->toArray();
+                
+                if ($montoPago < $totalMontoALiquidar) {
+                    $tipoPagoNombre = \App\Models\TipoPago::find($tipoPagoId)?->tipo_pago ?? 'Desconocido';
+                    throw new \Exception("El monto del pago (Q{$montoPago}) no cubre el total de la porción pendiente para '{$tipoPagoNombre}' (Q{$totalMontoALiquidar}).");
                 }
 
-                foreach ($ventasPendientes as $venta) {
+                $ventasALiquidar = \App\Models\Venta::whereIn('id', $ventasALiquidarIds)->get();
+
+                foreach ($ventasALiquidar as $venta) {
                     $venta->update([
                         'fecha_liquidada' => now(),
                         'liquido_id'      => auth()->id(),

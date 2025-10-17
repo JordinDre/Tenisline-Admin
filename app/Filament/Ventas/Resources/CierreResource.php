@@ -129,6 +129,9 @@ class CierreResource extends Resource
                 Tables\Columns\TextColumn::make('resumen_pagos')
                     ->label('Resumen Pagos')
                     ->listWithLineBreaks(),
+                Tables\Columns\TextColumn::make('resumen_pagos_liquidacion')
+                    ->label('Liquidaciones Realizados') 
+                    ->listWithLineBreaks(),
             ])
             ->filters([
                 //
@@ -192,7 +195,7 @@ class CierreResource extends Resource
                             ->default(now())
                             ->required(),
                         FileUpload::make('imagen')
-                            ->required()
+                            // ->required()
                             ->image()
                             ->downloadable()
                             ->label('Imágen')
