@@ -77,7 +77,7 @@ class MetasBodega extends Widget
             $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
             $diferencia = $total - $meta;
             $eficiencia = ($diasTranscurridos > 0 && $meta > 0) ? ($total / $meta) * ($totalDiasMes / $diasTranscurridos) : 0;
-            $proyeccion_porcentaje = $meta > 0 ? round(($total / $meta) * 100, 2) : 0;
+            $proyeccion_porcentaje = $meta > 0 ? round(($proyeccion / $meta) * 100, 2) : 0;
 
             return [
                 'bodega_id' => $item->bodega_id,
