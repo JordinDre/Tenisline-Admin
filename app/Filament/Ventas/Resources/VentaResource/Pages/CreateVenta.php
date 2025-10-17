@@ -495,6 +495,8 @@ class CreateVenta extends CreateRecord
                                                         $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
                                                     }
 
+                                                    $precios['apertura_20'] = 'Cliente Apertura (20% descuento)';
+
                                                     return $precios;
                                                 })
                                                 ->reactive()
@@ -636,6 +638,59 @@ class CreateVenta extends CreateRecord
 
                                                         $set('precio', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    if ($state === 'apertura_20') {
+                                                        $clienteId = $get('../../cliente_id');
+                                                        $cliente = \App\Models\User::with('roles')->find($clienteId);
+                                                        $roles = $cliente?->getRoleNames() ?? collect();
+
+                                                        if (! $roles->contains('cliente_apertura')) {
+                                                            Notification::make()
+                                                                ->title('Descuento no disponible')
+                                                                ->body('Solo los clientes de apertura pueden usar esta promoción.')
+                                                                ->danger()
+                                                                ->send();
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $set('oferta_cliente_20', false);
+                                                            $this->updateOrderTotals($get, $set);
+                                                            return;
+                                                        }
+
+                                                        $yaUso = \App\Models\VentaDetalle::whereHas('venta', fn($q) => $q->where('cliente_id', $clienteId))
+                                                            ->where('oferta_cliente_20', true)
+                                                            ->whereYear('created_at', now()->year)
+                                                            ->whereMonth('created_at', now()->month)
+                                                            ->exists();
+
+                                                        if ($yaUso) {
+                                                            Notification::make()
+                                                                ->title('Límite mensual alcanzado')
+                                                                ->body('El cliente ya usó la promoción 20% este mes.')
+                                                                ->danger()
+                                                                ->send();
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $set('oferta_cliente_20', false);
+                                                            $this->updateOrderTotals($get, $set);
+                                                            return;
+                                                        }
+
+                                                        $precio = round($producto->precio_venta * 0.80, 2);
+                                                        $set('precio', $precio);
+                                                        $set('subtotal', round($precio * $cantidadActual, 2));
+                                                        $set('oferta_cliente_20', true);
+
+                                                        Notification::make()
+                                                            ->title('Descuento aplicado')
+                                                            ->body('Se aplicó el 20% de descuento del cliente apertura.')
+                                                            ->success()
+                                                            ->send();
                                                         $this->updateOrderTotals($get, $set);
                                                         return;
                                                     }
@@ -999,10 +1054,21 @@ class CreateVenta extends CreateRecord
     {
         try {
             DB::transaction(function () {
+                // dd($this->data['detalles']);
+                foreach ($this->record->detalles as $detalle) {
+                    $detalleData = collect($this->data['detalles'])->first(fn($d) => ($d['producto_id'] ?? null) == $detalle->producto_id && ($d['cantidad'] ?? null) == $detalle->cantidad);
+                    if ($detalleData && ($detalleData['oferta_cliente_20'] ?? false)) {
+                        $detalle->oferta_cliente_20 = true;
+                        $detalle->save();
+                    }
+                }
+
                 if ($this->record->tipo_pago_id == 2) {
                     UserController::sumarSaldo(User::find($this->data['cliente_id']), $this->data['total']);
                 }
+
                 VentaController::facturar($this->record);
+
                 Notification::make()
                     ->title('Venta registrada correctamente')
                     ->success()
