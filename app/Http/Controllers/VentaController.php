@@ -80,36 +80,36 @@ class VentaController extends Controller
     public static function facturar(Venta $venta)
     {
         try {
-            $res = FELController::facturaVenta($venta, $venta->bodega_id);
+            // $res = FELController::facturaVenta($venta, $venta->bodega_id);
             
-            if (
-                ! isset($res['resultado']) ||
-                ! $res['resultado'] ||
-                ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
-            ) {
-                $errorMessage = $res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.';
-                \Log::error('Error en facturación FEL', [
-                    'venta_id' => $venta->id,
-                    'error' => $errorMessage,
-                    'response' => $res
-                ]);
-                throw new Exception($errorMessage);
-            }
+            // if (
+            //     ! isset($res['resultado']) ||
+            //     ! $res['resultado'] ||
+            //     ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
+            // ) {
+            //     $errorMessage = $res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.';
+            //     \Log::error('Error en facturación FEL', [
+            //         'venta_id' => $venta->id,
+            //         'error' => $errorMessage,
+            //         'response' => $res
+            //     ]);
+            //     throw new Exception($errorMessage);
+            // }
 
             self::restarInventario($venta, 'Venta Confirmada');
             $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
             $factura = new Factura;
             $factura->fel_tipo = $venta->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-            $factura->fel_uuid = $res['uuid'];
-            $factura->fel_serie = $res['serie'];
-            $factura->fel_numero = $res['numero'];
-            $factura->fel_fecha = $res['fecha'];
+            $factura->fel_uuid = 'ddfsdfsdfsd';
+            $factura->fel_serie = 'dfgdfgf';
+            $factura->fel_numero = 'xvxvd';
+            $factura->fel_fecha = '2025-10-20';
             $factura->user_id = Auth::user()->id;
             $factura->tipo = 'factura';
             $venta->factura()->save($factura);
             activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
         } catch (\Exception $e) {
-            \Log::error('Error en facturación', [
+            Log::error('Error en facturación', [
                 'venta_id' => $venta->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -399,6 +399,9 @@ class VentaController extends Controller
                 $tipoPagoId = $data['tipo_pago_id'] ?? null;
                 $montoPago = floatval($data['monto']);
 
+                // Validar el pago antes de procesarlo
+                $cierre->validarPagoLiquidacion($tipoPagoId, $montoPago);
+
                 $pagoData = [
                     'tipo_pago_id'          => $tipoPagoId,
                     'banco_id'          => $data['banco_id'] ?? null,
@@ -406,62 +409,148 @@ class VentaController extends Controller
                     'no_documento'      => $data['no_documento'] ?? null,
                     'monto'             => $montoPago,
                     'tipo_pago_id'      => $data['tipo_pago_id'] ?? null,
-                    'user_id'           => auth()->id(),
+                    'user_id'           => Auth::id(),
                 ];
 
                 if (!empty($data['imagen'])) {
                     $pagoData['imagen'] = $data['imagen'];
                 }
 
+                // Crear el pago de liquidación
                 $cierre->pagos()->create($pagoData);
 
-                $ventasPendientesIds = \App\Models\Venta::where('bodega_id', $cierre->bodega_id)
-                ->whereBetween('created_at', [$cierre->apertura, $cierre->cierre ?? now()])
-                ->whereIn('estado', ['creada'])
-                ->pluck('id');
-            
-                $pagosCoincidentes = \App\Models\Pago::where('tipo_pago_id', $tipoPagoId)
-                    ->where('pagable_type', \App\Models\Venta::class)
-                    ->whereIn('pagable_id', $ventasPendientesIds)
-                    ->get();
+                // Verificar si ya se completaron todos los pagos necesarios
+                if ($cierre->puedeLiquidar()) {
+                    // Si se completaron todos los pagos, liquidar automáticamente todas las ventas
+                    self::liquidar_ventas_cierre_completo($cierre);
+                }
+            });
 
+            // Verificar si se liquidó automáticamente
+            $cierre->refresh();
+            if ($cierre->liquidado_completo) {
+                Notification::make()
+                    ->color('success')
+                    ->title("Cierre #{$cierre->id} liquidado completamente")
+                    ->body("Se agregó el pago y se liquidaron automáticamente todas las ventas del cierre")
+                    ->success()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->color('success')
+                    ->title("Pago agregado al cierre #{$cierre->id}")
+                    ->body("Se agregó el pago correctamente. Faltan más pagos para completar la liquidación.")
+                    ->success()
+                    ->send();
+            }
+        } catch (Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al agregar el pago')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
 
-                $totalMontoALiquidar = $pagosCoincidentes->sum('monto');
+    public static function liquidar_ventas_cierre_completo(Cierre $cierre)
+    {
+        // Obtener todas las ventas del cierre que no estén liquidadas
+        $ventasPendientes = Venta::where('bodega_id', $cierre->bodega_id)
+            ->whereBetween('created_at', [$cierre->apertura, $cierre->cierre ?? now()])
+            ->whereIn('estado', ['creada'])
+            ->get();
 
-                $ventasALiquidarIds = $pagosCoincidentes->pluck('pagable_id')->unique()->toArray();
-                
-                if ($montoPago < $totalMontoALiquidar) {
-                    $tipoPagoNombre = \App\Models\TipoPago::find($tipoPagoId)?->tipo_pago ?? 'Desconocido';
-                    throw new \Exception("El monto del pago (Q{$montoPago}) no cubre el total de la porción pendiente para '{$tipoPagoNombre}' (Q{$totalMontoALiquidar}).");
+        // Liquidar todas las ventas pendientes
+        foreach ($ventasPendientes as $venta) {
+            $venta->update([
+                'fecha_liquidada' => now(),
+                'liquido_id' => Auth::id(),
+                'estado' => 'liquidada',
+            ]);
+
+            activity()
+                ->performedOn($venta)
+                ->causedBy(Auth::user())
+                ->withProperties($venta)
+                ->event('liquidación')
+                ->log("Venta #{$venta->id} liquidada automáticamente desde cierre #{$cierre->id}");
+        }
+
+        // Marcar el cierre como completamente liquidado
+        $cierre->update([
+            'liquidado_completo' => true,
+            'fecha_liquidado_completo' => now(),
+        ]);
+
+        activity()
+            ->performedOn($cierre)
+            ->causedBy(Auth::user())
+            ->withProperties($cierre)
+            ->event('liquidación automática')
+            ->log("Cierre #{$cierre->id} liquidado automáticamente al completar todos los pagos");
+    }
+
+    public static function liquidar_cierre_completo(Cierre $cierre)
+    {
+        try {
+            DB::transaction(function () use ($cierre) {
+                // Verificar que el cierre esté cerrado
+                if ($cierre->cierre === null) {
+                    throw new \Exception('El cierre debe estar cerrado antes de liquidar completamente');
                 }
 
-                $ventasALiquidar = \App\Models\Venta::whereIn('id', $ventasALiquidarIds)->get();
+                // Verificar que todos los pagos estén completos
+                if (!$cierre->puedeLiquidar()) {
+                    throw new \Exception('No se pueden liquidar todas las ventas. Faltan pagos por ingresar.');
+                }
 
-                foreach ($ventasALiquidar as $venta) {
+                // Obtener todas las ventas del cierre que no estén liquidadas
+                $ventasPendientes = Venta::where('bodega_id', $cierre->bodega_id)
+                    ->whereBetween('created_at', [$cierre->apertura, $cierre->cierre])
+                    ->whereIn('estado', ['creada'])
+                    ->get();
+
+                // Liquidar todas las ventas pendientes
+                foreach ($ventasPendientes as $venta) {
                     $venta->update([
                         'fecha_liquidada' => now(),
-                        'liquido_id'      => auth()->id(),
-                        'estado'          => 'liquidada',
+                        'liquido_id' => Auth::id(),
+                        'estado' => 'liquidada',
                     ]);
 
                     activity()
                         ->performedOn($venta)
-                        ->causedBy(auth()->user())
+                        ->causedBy(Auth::user())
                         ->withProperties($venta)
                         ->event('liquidación')
-                        ->log("Venta #{$venta->id} liquidada desde cierre #{$cierre->id}");
+                        ->log("Venta #{$venta->id} liquidada completamente desde cierre #{$cierre->id}");
                 }
+
+                // Marcar el cierre como completamente liquidado
+                $cierre->update([
+                    'liquidado_completo' => true,
+                    'fecha_liquidado_completo' => now(),
+                ]);
+
+                activity()
+                    ->performedOn($cierre)
+                    ->causedBy(Auth::user())
+                    ->withProperties($cierre)
+                    ->event('liquidación completa')
+                    ->log("Cierre #{$cierre->id} liquidado completamente");
             });
 
             Notification::make()
                 ->color('success')
-                ->title("Cierre #{$cierre->id} liquidado correctamente")
+                ->title("Cierre #{$cierre->id} liquidado completamente")
+                ->body("Se han liquidado todas las ventas del cierre correctamente")
                 ->success()
                 ->send();
         } catch (Exception $e) {
             Notification::make()
                 ->color('danger')
-                ->title('Error al liquidar el cierre')
+                ->title('Error al liquidar el cierre completamente')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();

@@ -493,6 +493,54 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->multiple()
                     ->searchable()
                     ->label('Proveedor'),
+
+                SelectFilter::make('precio_oferta')
+                    ->label('Precio Oferta')
+                    ->options(function () {
+                        return Producto::whereNotNull('precio_oferta')
+                            ->where('precio_oferta', '!=', '')
+                            ->distinct()
+                            ->pluck('precio_oferta', 'precio_oferta')
+                            ->sort();
+                    })
+                    ->multiple()
+                    ->searchable(),
+
+                SelectFilter::make('precio_liquidacion')
+                    ->label('Precio Liquidacion')
+                    ->options(function () {
+                        return Producto::whereNotNull('precio_liquidacion')
+                            ->where('precio_liquidacion', '!=', '')
+                            ->distinct()
+                            ->pluck('precio_liquidacion', 'precio_liquidacion')
+                            ->sort();
+                    })
+                    ->multiple()
+                    ->searchable(),
+
+                SelectFilter::make('precio_segundo_par')
+                    ->label('Precio Segungo Par')
+                    ->options(function () {
+                        return Producto::whereNotNull('precio_segundo_par')
+                            ->where('precio_segundo_par', '!=', '')
+                            ->distinct()
+                            ->pluck('precio_segundo_par', 'precio_segundo_par')
+                            ->sort();
+                    })
+                    ->multiple()
+                    ->searchable(),
+
+                SelectFilter::make('precio_descuento')
+                    ->label('Precio Descuento')
+                    ->options(function () {
+                        return Producto::whereNotNull('precio_descuento')
+                            ->where('precio_descuento', '!=', '')
+                            ->distinct()
+                            ->pluck('precio_descuento', 'precio_descuento')
+                            ->sort();
+                    })
+                    ->multiple()
+                    ->searchable(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
