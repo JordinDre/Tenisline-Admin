@@ -32,16 +32,14 @@ class TipoPago extends Model
 
     public const FORMAS_PAGO_VENTA = [
         'CONTADO',
-        'TARJETA',
-        'LINK DE PAGO',
         'LINK CONTADO',
         'LINK 2 CUOTAS',
         'LINK 3 CUOTAS',
         'LINK 6 CUOTAS',
-        'POS CONTADO',
-        'POS 3 CUOTAS',
+        'TARJETA CONTADO',
+        'TARJETA 3 CUOTAS',
+        'DEPÓSITO',
         'TRANSFERENCIA',
-        '3 CUOTAS',
     ];
 
     public const FORMAS_PAGO = [
