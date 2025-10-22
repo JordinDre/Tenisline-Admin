@@ -34,6 +34,12 @@ class TipoPago extends Model
         'CONTADO',
         'TARJETA',
         'LINK DE PAGO',
+        'LINK CONTADO',
+        'LINK 2 CUOTAS',
+        'LINK 3 CUOTAS',
+        'LINK 6 CUOTAS',
+        'POS CONTADO',
+        'POS 3 CUOTAS',
         'TRANSFERENCIA',
         '3 CUOTAS',
     ];

@@ -145,12 +145,15 @@ class CreateVenta extends CreateRecord
                                         ->label('Cliente')
                                         ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'cliente_apertura', 'colaborador']))
                                         ->getOptionLabelFromRecordUsing(
-                                                fn ($record) => "{$record->id} - {$record->nit} - {$record->razon_social} - {$record->name}"
-                                            )
+                                            fn ($record) => "{$record->id} - {$record->nit} - {$record->razon_social} - {$record->name}"
+                                        )
                                         ->optionsLimit(20)
                                         ->required()
                                         ->live()
                                         ->reactive()
+                                        ->afterStateUpdated(function (Set $set) {
+                                            $set('detalles', []);
+                                        })
                                         ->columnSpan(['sm' => 1, 'md' => 15])
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
@@ -347,7 +350,7 @@ class CreateVenta extends CreateRecord
                                             'id',
                                             'nit',
                                             'name',
-                                            'razon_social'
+                                            'razon_social',
                                         ]),
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
@@ -503,17 +506,21 @@ class CreateVenta extends CreateRecord
                                                 ->dehydrated(false)
                                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                                     $productoId = $get('producto_id');
-                                                    if (! $productoId) return;
+                                                    if (! $productoId) {
+                                                        return;
+                                                    }
 
                                                     $producto = \App\Models\Producto::find($productoId);
-                                                    if (! $producto) return;
+                                                    if (! $producto) {
+                                                        return;
+                                                    }
 
                                                     $detalles = $get('../../detalles') ?? [];
                                                     $currentUuid = $get('uuid') ?? null;
                                                     $cantidadActual = (int) ($get('cantidad') ?? 1);
 
                                                     // total pares en toda la orden (suma de cantidades)
-                                                    $totalPares = collect($detalles)->sum(fn($i) => (int) ($i['cantidad'] ?? 0));
+                                                    $totalPares = collect($detalles)->sum(fn ($i) => (int) ($i['cantidad'] ?? 0));
 
                                                     $precio = $producto->precio_venta;
 
@@ -531,6 +538,7 @@ class CreateVenta extends CreateRecord
                                                             $set('precio', $producto->precio_venta);
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $this->updateOrderTotals($get, $set);
+
                                                             return;
                                                         }
 
@@ -552,6 +560,7 @@ class CreateVenta extends CreateRecord
                                                             $set('precio', $producto->precio_venta);
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $this->updateOrderTotals($get, $set);
+
                                                             return;
                                                         }
 
@@ -559,8 +568,8 @@ class CreateVenta extends CreateRecord
                                                         $paresPermitidos = intdiv($totalPares, 2);
 
                                                         $paresConSegundoParExclCurrent = collect($detalles)
-                                                            ->filter(fn($item) => ($item['uuid'] ?? null) !== $currentUuid && ($item['tipo_precio'] ?? null) === 'segundo_par')
-                                                            ->sum(fn($i) => (int) ($i['cantidad'] ?? 0));
+                                                            ->filter(fn ($item) => ($item['uuid'] ?? null) !== $currentUuid && ($item['tipo_precio'] ?? null) === 'segundo_par')
+                                                            ->sum(fn ($i) => (int) ($i['cantidad'] ?? 0));
 
                                                         $paresConSegundoParDespues = $paresConSegundoParExclCurrent + $cantidadActual;
 
@@ -575,6 +584,7 @@ class CreateVenta extends CreateRecord
                                                             $set('precio', $producto->precio_venta);
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $this->updateOrderTotals($get, $set);
+
                                                             return;
                                                         }
 
@@ -583,6 +593,7 @@ class CreateVenta extends CreateRecord
                                                         $set('precio', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
                                                         $this->updateOrderTotals($get, $set);
+
                                                         return;
                                                     }
 
@@ -606,6 +617,7 @@ class CreateVenta extends CreateRecord
                                                             $set('precio', $producto->precio_venta);
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $this->updateOrderTotals($get, $set);
+
                                                             return;
                                                         }
 
@@ -631,6 +643,7 @@ class CreateVenta extends CreateRecord
                                                                     $set('precio', $producto->precio_venta);
                                                                     $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                                     $this->updateOrderTotals($get, $set);
+
                                                                     return;
                                                                 }
                                                                 break;
@@ -639,6 +652,7 @@ class CreateVenta extends CreateRecord
                                                         $set('precio', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
                                                         $this->updateOrderTotals($get, $set);
+
                                                         return;
                                                     }
 
@@ -658,10 +672,11 @@ class CreateVenta extends CreateRecord
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $set('oferta_cliente_20', false);
                                                             $this->updateOrderTotals($get, $set);
+
                                                             return;
                                                         }
 
-                                                        $yaUso = \App\Models\VentaDetalle::whereHas('venta', fn($q) => $q->where('cliente_id', $clienteId))
+                                                        $yaUso = \App\Models\VentaDetalle::whereHas('venta', fn ($q) => $q->where('cliente_id', $clienteId))
                                                             ->where('oferta_cliente_20', true)
                                                             ->whereYear('created_at', now()->year)
                                                             ->whereMonth('created_at', now()->month)
@@ -678,6 +693,7 @@ class CreateVenta extends CreateRecord
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $set('oferta_cliente_20', false);
                                                             $this->updateOrderTotals($get, $set);
+
                                                             return;
                                                         }
 
@@ -692,6 +708,7 @@ class CreateVenta extends CreateRecord
                                                             ->success()
                                                             ->send();
                                                         $this->updateOrderTotals($get, $set);
+
                                                         return;
                                                     }
 
@@ -1056,7 +1073,7 @@ class CreateVenta extends CreateRecord
             DB::transaction(function () {
                 // dd($this->data['detalles']);
                 foreach ($this->record->detalles as $detalle) {
-                    $detalleData = collect($this->data['detalles'])->first(fn($d) => ($d['producto_id'] ?? null) == $detalle->producto_id && ($d['cantidad'] ?? null) == $detalle->cantidad);
+                    $detalleData = collect($this->data['detalles'])->first(fn ($d) => ($d['producto_id'] ?? null) == $detalle->producto_id && ($d['cantidad'] ?? null) == $detalle->cantidad);
                     if ($detalleData && ($detalleData['oferta_cliente_20'] ?? false)) {
                         $detalle->oferta_cliente_20 = true;
                         $detalle->save();
