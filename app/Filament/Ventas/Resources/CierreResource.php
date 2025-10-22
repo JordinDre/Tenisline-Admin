@@ -56,7 +56,7 @@ class CierreResource extends Resource
                         'bodega',
                         'bodega',
                         fn (Builder $query) => $query
-                            ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
+                            ->whereHas('user', fn ($q) => $q->where('user_id', Auth::id())
                             )
                             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
                             ->where('bodega', 'not like', '%bodega%')
@@ -71,7 +71,7 @@ class CierreResource extends Resource
                                 $fail('Ya existe un cierre abierto para esta bodega. Debe cerrar el anterior.');
                             }
 
-                            $cierreHoy = Cierre::where('user_id', auth()->id())
+                            $cierreHoy = Cierre::where('user_id', Auth::id())
                                 ->whereDate('apertura', now()->toDateString())
                                 ->exists();
 
@@ -87,7 +87,7 @@ class CierreResource extends Resource
                     ->columnSpanFull()
                     ->required(),
                 Forms\Components\Hidden::make('user_id')
-                    ->default(auth()->user()->id),
+                    ->default(Auth::user()->id),
                 Forms\Components\Hidden::make('apertura')
                     ->default(now()),
             ]);
@@ -143,7 +143,7 @@ class CierreResource extends Resource
                             'cierre' => now(),
                         ]);
                     })
-                    ->visible(fn (Cierre $record) => $record->user_id === auth()->id() && $record->cierre === null)
+                    ->visible(fn (Cierre $record) => $record->user_id === Auth::id() && $record->cierre === null)
                     ->requiresConfirmation()
                     ->color('success')
                     ->icon('heroicon-o-check'),
@@ -163,19 +163,68 @@ class CierreResource extends Resource
                     ->stickyModalHeader()
                     ->modalSubmitAction(false),
                 Action::make('liquidar')
-                    ->label('Liquidar')
+                    ->label('Agregar Pago')
                     ->icon('heroicon-o-currency-dollar')
-                    ->visible(auth()->user()->can('view_costs_producto'))
+                    ->visible(Auth::user()->can('view_costs_producto'))
                     ->color('warning')
+                    ->disabled(function (Cierre $record) {
+                        // Solo deshabilitar si ya está completamente liquidado
+                        return $record->liquidado_completo;
+                    })
+                    ->tooltip(function (Cierre $record) {
+                        if ($record->liquidado_completo) {
+                            return 'El cierre ya está completamente liquidado';
+                        }
+                        
+                        $montosRestantes = $record->getMontosRestantes();
+                        
+                        if (empty($montosRestantes)) {
+                            return 'Todos los pagos han sido completados. El cierre se liquidará automáticamente.';
+                        }
+                        
+                        $faltantes = [];
+                        foreach ($montosRestantes as $tipoPago => $montoRestante) {
+                            $faltantes[] = "{$tipoPago}: Q" . number_format($montoRestante, 2);
+                        }
+                        
+                        return "Montos restantes: " . implode(', ', $faltantes) . ". Puedes agregar múltiples pagos del mismo tipo.";
+                    })
                     ->form([
                         Select::make('tipo_pago_id')
                             ->label('Forma de Pago')
-                            ->options(fn() => TipoPago::whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA)->pluck('tipo_pago', 'id')->toArray())
+                            ->options(function (Cierre $record) {
+                                $montosRestantes = $record->getMontosRestantes();
+                                
+                                // Mostrar tipos de pago que aún tienen monto restante
+                                $tiposDisponibles = [];
+                                foreach ($montosRestantes as $tipoPago => $montoRestante) {
+                                    $tipoPagoModel = TipoPago::where('tipo_pago', $tipoPago)->first();
+                                    if ($tipoPagoModel) {
+                                        $tiposDisponibles[$tipoPagoModel->id] = "{$tipoPago} (Faltan: Q" . number_format($montoRestante, 2) . ")";
+                                    }
+                                }
+                                
+                                return $tiposDisponibles;
+                            })
                             ->required()
                             ->live()
                             ->columnSpan(['sm' => 1, 'md' => 1])
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->helperText(function (Cierre $record) {
+                                $montosRestantes = $record->getMontosRestantes();
+                                
+                                if (empty($montosRestantes)) {
+                                    return "Todos los pagos han sido completados. Al agregar el último pago, se liquidarán automáticamente todas las ventas.";
+                                }
+                                
+                                $faltantes = [];
+                                foreach ($montosRestantes as $tipoPago => $montoRestante) {
+                                    $faltantes[] = "{$tipoPago}: Q" . number_format($montoRestante, 2);
+                                }
+                                
+                                return "Montos restantes: " . implode(', ', $faltantes) . ". Puedes agregar múltiples pagos del mismo tipo hasta completar el monto.";
+                            }),
                         Select::make('banco_id')
                             ->label('Banco')
                             ->options(fn() => Banco::whereIn('banco', Banco::BANCOS_DISPONIBLES)->pluck('banco', 'id')->toArray())
@@ -188,7 +237,34 @@ class CierreResource extends Resource
                             ->inputMode('decimal')
                             ->rule('numeric')
                             ->minValue(1)
-                            ->required(),
+                            ->required()
+                            ->live()
+                            ->helperText(function (Get $get, Cierre $record) {
+                                $tipoPagoId = $get('tipo_pago_id');
+                                if (!$tipoPagoId) return '';
+                                
+                                $tipoPago = TipoPago::find($tipoPagoId);
+                                if (!$tipoPago) return '';
+                                
+                                $montosRestantes = $record->getMontosRestantes();
+                                $montoRestante = $montosRestantes[$tipoPago->tipo_pago] ?? 0;
+                                
+                                return "Monto restante: Q" . number_format($montoRestante, 2) . " (máximo permitido)";
+                            })
+                            ->rules([
+                                function (Get $get, Cierre $record) {
+                                    return function (string $attribute, $value, \Closure $fail) use ($get, $record) {
+                                        $tipoPagoId = $get('tipo_pago_id');
+                                        if (!$tipoPagoId) return;
+                                        
+                                        try {
+                                            $record->validarPagoLiquidacion($tipoPagoId, floatval($value));
+                                        } catch (\Exception $e) {
+                                            $fail($e->getMessage());
+                                        }
+                                    };
+                                }
+                            ]),
                         TextInput::make('no_documento')
                             ->label('No. Documento o Autorización'),
                         DatePicker::make('fecha_transaccion')
@@ -230,7 +306,7 @@ class CierreResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         return parent::getEloquentQuery()
             ->when(
