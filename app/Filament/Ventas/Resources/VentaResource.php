@@ -36,6 +36,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
 class VentaResource extends Resource implements HasShieldPermissions
@@ -520,6 +521,30 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
+                    Action::make('validarPago')
+                        ->label('Validar Pago')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            return $record->estado === EstadoVentaStatus::ValidacionPago
+                                && $user
+                                && $user->hasAnyRole(['admin', 'administrador', 'super_admin']);
+                        })
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $record->estado = 'creada';
+                            $record->save();
+
+                            VentaController::facturar($record);
+
+                            Notification::make()
+                                ->title('Pago validado')
+                                ->body('El pago ha sido confirmado y se generó la factura.')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => Auth::user()->can('factura', $record))

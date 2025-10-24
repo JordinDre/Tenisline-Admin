@@ -256,90 +256,6 @@ class CreateVenta extends CreateRecord
                                                         ->minValue(0),
                                                 ])->columnSpanFull()->columns(3)->defaultItems(0),
                                         ])
-                                        /* ->editOptionForm([
-                                            TextInput::make('nit')
-                                                ->default('CF')
-                                                ->required()
-                                                ->maxLength(25)
-                                                ->live(onBlur: true)
-                                                ->rules([
-                                                    fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                        // Solo validar unique si el NIT no es CF
-                                                        if (strtoupper(trim($value)) !== 'CF') {
-                                                            if (User::where('nit', $value)->exists()) {
-                                                                $fail('El campo NIT ya ha sido registrado.');
-                                                            }
-                                                        }
-                                                    },
-                                                ])
-                                                ->afterStateUpdated(function (Set $set, $state) {
-                                                    $nit = UserController::nit($state);
-                                                    $set('razon_social', $nit);
-                                                }),
-                                            TextInput::make('razon_social')
-                                                ->required()
-                                                ->readOnly()
-                                                ->default('CF')
-                                                ->label('Razón Social'),
-                                            TextInput::make('name')
-                                                ->required()
-                                                ->unique(table: User::class)
-                                                ->label('Nombre/Nombre Comercial'),
-                                            TextInput::make('telefono')
-                                                ->label('Teléfono')
-                                                ->tel()
-                                                ->required()
-                                                ->minLength(8)
-                                                ->maxLength(8),
-                                            TextInput::make('whatsapp')
-                                                ->label('WhatsApp')
-                                                ->tel()
-                                                ->minLength(8)
-                                                ->maxLength(8),
-                                            Repeater::make('direcciones')
-                                                ->relationship()
-                                                ->schema([
-                                                    Select::make('pais_id')
-                                                        ->relationship('pais', 'pais')
-                                                        ->required()
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(function (Set $set) {
-                                                            $set('departamento_id', null);
-                                                            $set('municipio_id', null);
-                                                        })
-                                                        ->default(1)
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    Select::make('departamento_id')
-                                                        ->label('Departamento')
-                                                        ->options(fn (Get $get) => Departamento::where('pais_id', $get('pais_id'))->pluck('departamento', 'id'))
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(function (Set $set) {
-                                                            $set('municipio_id', null);
-                                                        })
-                                                        ->required()
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    Select::make('municipio_id')
-                                                        ->label('Municipio')
-                                                        ->options(fn (Get $get) => Municipio::where('departamento_id', $get('departamento_id'))->pluck('municipio', 'id'))
-                                                        ->required()
-                                                        ->searchable()
-                                                        ->preload(),
-                                                    TextInput::make('direccion')
-                                                        ->required()
-                                                        ->label('Dirección')
-                                                        ->maxLength(255),
-                                                    TextInput::make('referencia')
-                                                        ->required()
-                                                        ->maxLength(255),
-                                                    TextInput::make('zona')
-                                                        ->label('Zona')
-                                                        ->inputMode('decimal')
-                                                        ->rule('numeric')
-                                                        ->minValue(0),
-                                                ])->columnSpanFull()->columns(3)->defaultItems(0),
-                                        ]) */
                                         ->createOptionUsing(function (array $data): int {
                                             $user = User::create($data);
                                             $user->assignRole('cliente'); // Asigna el rol automáticamente
@@ -445,21 +361,6 @@ class CreateVenta extends CreateRecord
                                                     $set('../../subtotal', round($subtotalGeneral, 2));
                                                     $set('../../total', round($totalGeneral, 2));
                                                 })
-                                                /* ->suffixAction(
-                                            Action::make('ver')
-                                                ->icon('heroicon-s-eye')
-                                                ->modalContent(fn ($state): View => view(
-                                                    'filament.pages.actions.producto',
-                                                    [
-                                                        'url' => Producto::find($state)?->imagenes[0]
-                                                            ? config('filesystems.disks.s3.url').Producto::find($state)->imagenes[0]
-                                                            : null,
-                                                        'alt' => Producto::find($state)?->descripcion ?? 'Sin descripción',
-                                                    ],
-                                                ))
-                                                ->modalSubmitAction(false)
-                                                ->modalWidth(MaxWidth::Screen)
-                                        ) */
                                                 ->required(),
                                             Select::make('tipo_precio')
                                                 ->label('Tipo de precio')
@@ -788,26 +689,6 @@ class CreateVenta extends CreateRecord
                                                 ->required(),
                                             TextInput::make('precio')
                                                 ->label('Precio')
-                                                /* ->live(onBlur: true) */
-                                                /* ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                            if ($state) {
-                                                $userRoles = auth()->user()->roles->pluck('name');
-                                                $role = collect(User::VENTA_ROLES)->first(fn ($r) => $userRoles->contains($r));
-                                                $escala = Escala::where('precio', '<', $state)
-                                                    ->where('producto_id', $get('producto_id'))
-                                                    ->whereHas('role', fn ($q) => $q->where('name', $role))
-                                                    ->orderByDesc('precio')
-                                                    ->first();
-                                                if ($escala) {
-                                                    $set('escala_id', $escala->id);
-                                                    $set('comision', $escala->comision);
-                                                    $set('subtotal', round((float) $state * (float) $get('cantidad'), 2));
-                                                    $set('ganancia', round((float) $state * (float) $get('cantidad') * ($escala->comision / 100), 2));
-
-                                                    return;
-                                                }
-                                            }
-                                        }) */
                                                 ->default(0)
                                                 ->readOnly()
                                                 ->reactive()
@@ -815,23 +696,8 @@ class CreateVenta extends CreateRecord
                                                 ->prefix('Q')
                                                 ->inputMode('decimal')
                                                 ->rule('numeric')
-                                                /* ->minValue(function (Get $get) {
-                                            $userRoles = auth()->user()->roles->pluck('name');
-                                            $role = collect(User::ORDEN_ROLES)->first(fn ($r) => $userRoles->contains($r));
-
-                                            return Escala::where('producto_id', $get('producto_id'))
-                                                ->whereHas('role', fn ($q) => $q->where('name', $role))
-                                                ->orderBy('precio')
-                                                ->first()->precio;
-                                        }) */
                                                 ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
-                                            /* TextInput::make('comision')
-                                        ->label('Comisión (%)')
-                                        ->readOnly()
-                                        ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]), */
                                             Hidden::make('escala_id'),
-                                            /* Hidden::make('precio_comp'), */
-                                            /* Hidden::make('ganancia'), */
                                             TextInput::make('subtotal')
                                                 ->label('SubTotal')
                                                 ->prefix('Q')
@@ -869,26 +735,6 @@ class CreateVenta extends CreateRecord
                                 'md' => 10,
                             ])
                                 ->schema([
-                                    /* Select::make('tipo_pago_id')
-                                        ->label('Tipo de Pago')
-                                        ->required()
-                                        ->columnSpan(['sm' => 1, 'md' => 8])
-                                        ->options(
-                                            fn(Get $get) => User::find($get('cliente_id'))?->tipo_pagos->pluck('tipo_pago', 'id') ?? []
-                                        )
-                                        ->live()
-                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                            $set('pagos', []);
-                                        })
-                                        ->searchable()
-                                        ->rules([
-                                            fn(Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                if ($get('total') < collect($get('pagos'))->sum('monto') && $value == 4) {
-                                                    $fail('El monto total de los pagos no puede ser mayor al total de la orden.');
-                                                }
-                                            },
-                                        ])
-                                        ->preload(), */
 
                                 ]),
                             Repeater::make('pagos')
@@ -938,26 +784,6 @@ class CreateVenta extends CreateRecord
                                                 }
                                             },
                                         ]),
-
-                                    /* TextInput::make('no_autorizacion')
-                                        ->label('No. Autorización')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    TextInput::make('no_auditoria')
-                                        ->label('No. Auditoría')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    TextInput::make('afiliacion')
-                                        ->label('Afiliación')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    Select::make('cuotas')
-                                        ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    TextInput::make('nombre_cuenta')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
-                                        ->required(), */
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
@@ -971,21 +797,6 @@ class CreateVenta extends CreateRecord
                                     DatePicker::make('fecha_transaccion')
                                         ->default(now())
                                         ->required(),
-                                    /* FileUpload::make('imagen')
-                                        ->required()
-                                        ->image()
-                                        ->downloadable()
-                                        ->label('Imágen')
-                                        ->imageEditor()
-                                        ->disk(config('filesystems.disks.s3.driver'))
-                                        ->directory(config('filesystems.default'))
-                                        ->visibility('public')
-                                        ->appendFiles()
-                                        ->maxSize(5000)
-                                        ->resize(50)
-                                        ->openable()
-                                        ->columnSpan(['sm' => 1, 'md' => 3])
-                                        ->optimize('webp'), */
                                 ])
                                 ->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Pago'),
                             Textarea::make('observaciones')
@@ -1001,17 +812,6 @@ class CreateVenta extends CreateRecord
                         TextInput::make('total')
                             ->readOnly()
                             ->prefix('Q')
-                            /* ->rules([
-                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                    $user = User::find($get('cliente_id'));
-                                    if ($get('tipo_pago_id') == 2 && $value > ($user->credito - $user->saldo)) {
-                                        $fail('El Cliente no cuenta con suficiente crédito para realizar la compra.');
-                                    }
-                                    if ($user && in_array($user->nit, [null, '', 'CF', 'cf', 'cF', 'Cf'], true) && $value >= \App\Models\Factura::CF) {
-                                        $fail('El Cliente no cuenta con NIT registrado para el valor de la Orden.');
-                                    }
-                                },
-                            ]) */
                             ->label('Total'),
                     ]),
 
@@ -1078,6 +878,20 @@ class CreateVenta extends CreateRecord
                         $detalle->oferta_cliente_20 = true;
                         $detalle->save();
                     }
+                }
+
+                $tipoPagoPrincipal = $this->record->pagos()->first()?->tipo_pago_id;
+
+                if (in_array($tipoPagoPrincipal, [5, 9])) {
+                    $this->record->update(['estado' => 'validacion_pago']);
+
+                    Notification::make()
+                        ->title('Venta registrada con pago pendiente')
+                        ->body('El pago es por depósito o transferencia. Debe ser validado por un administrador antes de generar factura.')
+                        ->warning()
+                        ->send();
+
+                    return; // no facturamos todavía
                 }
 
                 if ($this->record->tipo_pago_id == 2) {
