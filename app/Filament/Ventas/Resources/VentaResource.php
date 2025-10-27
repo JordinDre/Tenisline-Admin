@@ -258,7 +258,8 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->minValue(1)
                                         ->required(),
                                     TextInput::make('no_documento')
-                                        ->label('No. Documento o Autorización'),
+                                        ->label('No. Documento o Autorización')
+                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'CONTADO'),
                                     /* TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
@@ -277,14 +278,16 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->required(),
                                     TextInput::make('nombre_cuenta')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
-                                        ->required(),
+                                        ->required(), */
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required()
-                                        ->relationship('banco', 'banco')
+                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'CONTADO')
+                                        ->relationship('banco', 'banco', function ($query) {
+                                            return $query->whereIn('banco', Banco::BANCOS_DISPONIBLES);
+                                        })
                                         ->searchable()
-                                        ->preload(), */
+                                        ->preload(),
                                     DatePicker::make('fecha_transaccion')
                                         ->default(now())
                                         ->required(),
@@ -630,8 +633,10 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->label('Producto')
                                         ->options(function (Get $get, $record) {
                                             // Solo cargar los productos que están en esta venta específica
-                                            if (!$record) return [];
-                                            
+                                            if (! $record) {
+                                                return [];
+                                            }
+
                                             return ProductoController::getProductosDeVenta($record->id);
                                         })
                                         ->getOptionLabelFromRecordUsing(fn (Producto $record, Get $get) => ProductoController::renderProductos($record, 'venta', 1))
@@ -739,7 +744,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                 'asesor',
                 'bodega',
                 'pagos.tipoPago',
-                'factura'
+                'factura',
             ])
             ->orderByDesc('created_at');
     }

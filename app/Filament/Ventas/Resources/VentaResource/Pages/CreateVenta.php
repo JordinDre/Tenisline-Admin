@@ -922,10 +922,7 @@ class CreateVenta extends CreateRecord
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required(fn (Get $get) => in_array(
-                                            optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago,
-                                            ['TRANSFERENCIA', 'DEPOSITO']
-                                        ))
+                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'CONTADO')
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                                 if (
@@ -961,6 +958,9 @@ class CreateVenta extends CreateRecord
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
+                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'CONTADO')
+                                        ->searchable()
+                                        ->preload()
                                         ->relationship(
                                             'banco',
                                             'banco',
