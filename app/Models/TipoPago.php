@@ -32,6 +32,7 @@ class TipoPago extends Model
 
     public const FORMAS_PAGO_VENTA = [
         'CONTADO',
+        'PAGO CONTRA ENTREGA',
         'LINK CONTADO',
         'LINK 2 CUOTAS',
         'LINK 3 CUOTAS',
