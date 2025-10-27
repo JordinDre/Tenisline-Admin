@@ -223,6 +223,100 @@ class ViewVenta extends ViewRecord
                     ->collapsible()
                     ->collapsed(false),
 
+                Section::make('Información de Pagos')
+                    ->schema([
+                        RepeatableEntry::make('pagos')
+                            ->schema([
+                                Group::make([
+                                    Grid::make(4)
+                                        ->schema([
+                                            TextEntry::make('tipoPago.tipo_pago')
+                                                ->label('Forma de Pago')
+                                                ->badge()
+                                                ->color('info')
+                                                ->icon('heroicon-o-credit-card')
+                                                ->weight('bold'),
+                                            TextEntry::make('monto')
+                                                ->label('Monto')
+                                                ->prefix('Q')
+                                                ->numeric(
+                                                    decimalPlaces: 2,
+                                                    decimalSeparator: '.',
+                                                    thousandsSeparator: ','
+                                                )
+                                                ->icon('heroicon-o-currency-dollar')
+                                                ->weight('bold')
+                                                ->color('success'),
+                                            TextEntry::make('total')
+                                                ->label('Total')
+                                                ->prefix('Q')
+                                                ->numeric(
+                                                    decimalPlaces: 2,
+                                                    decimalSeparator: '.',
+                                                    thousandsSeparator: ','
+                                                )
+                                                ->icon('heroicon-o-banknotes')
+                                                ->weight('bold')
+                                                ->color('success'),
+                                            TextEntry::make('fecha_transaccion')
+                                                ->label('Fecha Transacción')
+                                                ->date('d/m/Y')
+                                                ->icon('heroicon-o-calendar'),
+                                        ]),
+                                    Grid::make(4)
+                                        ->schema([
+                                            TextEntry::make('no_documento')
+                                                ->label('No. Documento/Autorización')
+                                                ->icon('heroicon-o-document-text')
+                                                ->copyable()
+                                                ->placeholder('N/A'),
+                                            TextEntry::make('banco.banco')
+                                                ->label('Banco')
+                                                ->icon('heroicon-o-building-library')
+                                                ->placeholder('N/A'),
+                                            TextEntry::make('no_autorizacion')
+                                                ->label('No. Autorización')
+                                                ->icon('heroicon-o-key')
+                                                ->copyable()
+                                                ->placeholder('N/A')
+                                                ->visible(fn ($record) => $record->no_autorizacion !== null),
+                                            TextEntry::make('cuotas')
+                                                ->label('Cuotas')
+                                                ->icon('heroicon-o-calculator')
+                                                ->placeholder('N/A')
+                                                ->visible(fn ($record) => $record->cuotas !== null),
+                                        ]),
+                                    Grid::make(3)
+                                        ->schema([
+                                            TextEntry::make('no_auditoria')
+                                                ->label('No. Auditoría')
+                                                ->icon('heroicon-o-clipboard-document-check')
+                                                ->copyable()
+                                                ->placeholder('N/A')
+                                                ->visible(fn ($record) => $record->no_auditoria !== null),
+                                            TextEntry::make('afiliacion')
+                                                ->label('Afiliación')
+                                                ->icon('heroicon-o-identification')
+                                                ->copyable()
+                                                ->placeholder('N/A')
+                                                ->visible(fn ($record) => $record->afiliacion !== null),
+                                            TextEntry::make('nombre_cuenta')
+                                                ->label('Nombre Cuenta')
+                                                ->icon('heroicon-o-user')
+                                                ->placeholder('N/A')
+                                                ->visible(fn ($record) => $record->nombre_cuenta !== null),
+                                        ]),
+                                ])
+                                    ->extraAttributes(['class' => 'border border-green-200 rounded-lg p-4 mb-4 bg-green-50'])
+                                    ->columnSpanFull(),
+                            ])
+                            ->contained(false)
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->collapsed(false)
+                    ->icon('heroicon-o-credit-card'),
+
                 Section::make('Información Adicional')
                     ->schema([
                         Grid::make(3)
