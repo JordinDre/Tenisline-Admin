@@ -259,7 +259,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->required(),
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
-                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'CONTADO'),
+                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA'])),
                                     /* TextInput::make('no_autorizacion')
                                         ->label('No. Autorización')
                                         ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
@@ -282,7 +282,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'CONTADO')
+                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA']))
                                         ->relationship('banco', 'banco', function ($query) {
                                             return $query->whereIn('banco', Banco::BANCOS_DISPONIBLES);
                                         })
