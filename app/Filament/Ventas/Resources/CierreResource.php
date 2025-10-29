@@ -250,7 +250,14 @@ class CierreResource extends Resource
                             }),
                         Select::make('banco_id')
                             ->label('Banco')
-                            ->options(fn () => Banco::whereIn('banco', Banco::BANCOS_DISPONIBLES)->pluck('banco', 'id')->toArray())
+                            ->options(function () {
+                                // Mostrar bancos permitidos + especiales si existen en BD
+                                $permitidos = array_merge(Banco::BANCOS_DISPONIBLES, ['Efectivo', 'Nota de Crédito']);
+
+                                return Banco::whereIn('banco', $permitidos)
+                                    ->pluck('banco', 'id')
+                                    ->toArray();
+                            })
                             ->searchable()
                             ->preload()
                             ->columnSpan(['sm' => 1, 'md' => 2]),

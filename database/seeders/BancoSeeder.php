@@ -12,6 +12,21 @@ class BancoSeeder extends Seeder
      */
     public function run(): void
     {
+        // Especiales para cierres
+        Banco::firstOrCreate([
+            'banco' => 'Efectivo',
+        ], [
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        Banco::firstOrCreate([
+            'banco' => 'Nota de Crédito',
+        ], [
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
         Banco::create([
             'banco' => 'Banco de Desarrollo Rural, S. A.',
             'created_at' => date('Y-m-d H:i:s'),
