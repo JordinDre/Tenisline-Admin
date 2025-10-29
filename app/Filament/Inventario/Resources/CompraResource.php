@@ -2,38 +2,39 @@
 
 namespace App\Filament\Inventario\Resources;
 
-use App\Filament\Inventario\Resources\CompraResource\Pages;
-use App\Http\Controllers\CompraController;
-use App\Http\Controllers\ProductoController;
+use Closure;
+use App\Models\Pago;
+use Filament\Tables;
 use App\Models\Banco;
 use App\Models\Compra;
-use App\Models\Pago;
-use App\Models\Producto;
-use App\Models\TipoPago;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Closure;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
+use App\Models\Producto;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
+use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Wizard;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\CompraController;
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Inventario\Resources\CompraResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class CompraResource extends Resource implements HasShieldPermissions
 {
@@ -464,9 +465,22 @@ class CompraResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        $user = Filament::auth()->user();
+
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
+            ->with(['bodega'])
+            ->orderByDesc('created_at');
+
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user && $user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+            return $query->whereIn('bodega_id', $bodegaIds);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 }

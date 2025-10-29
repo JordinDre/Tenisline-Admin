@@ -757,15 +757,31 @@ class VentaResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->with([
                 'detalles.producto',
                 'cliente',
                 'asesor',
                 'bodega',
                 'pagos.tipoPago',
-                'factura'
+                'factura',
             ])
             ->orderByDesc('created_at');
+
+        $user = \Filament\Facades\Filament::auth()->user();
+
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user && $user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return $query
+                ->whereIn('bodega_id', $bodegaIds)
+                ->where('asesor_id', $user->id); 
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 }
