@@ -126,7 +126,7 @@ class VentaPolicy
 
     public function factura(User $user, Venta $venta): bool
     {
-        $estadosPermitidos = ['creada', 'liquidada'];
+        $estadosPermitidos = ['creada', 'liquidada', 'enviado'];
 
         return $user->can('factura_venta') && in_array($venta->estado->value, $estadosPermitidos) && $venta->factura()->exists();
     }
@@ -155,7 +155,7 @@ class VentaPolicy
 
     public function liquidate(User $user, Venta $venta): bool
     {
-        $estadosPermitidos = ['creada'];
+        $estadosPermitidos = ['creada', 'enviado'];
 
         return $user->can('liquidate_venta') && in_array($venta->estado->value, $estadosPermitidos) && ($venta->total == $venta->pagos->sum('total'));
     }

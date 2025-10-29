@@ -12,6 +12,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
     case ParcialmenteDevuelta = 'parcialmente_devuelta';
     case Devuelta = 'devuelta';
     case Anulada = 'anulada';
+    case Enviado = 'enviado';
 
     public function getLabel(): ?string
     {
@@ -21,6 +22,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
             self::ParcialmenteDevuelta => 'Parcialmente Devuelta',
             self::Anulada => 'Anulada',
             self::Devuelta => 'Devuelta',
+            self::Enviado => 'Enviado',
         };
     }
 
@@ -32,6 +34,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
             self::ParcialmenteDevuelta => 'teal',
             self::Devuelta => 'orange',
             self::Anulada => 'danger',
+            self::Enviado => 'zinc',
         };
     }
 }
