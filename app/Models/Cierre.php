@@ -198,7 +198,7 @@ class Cierre extends Model
             ->get();
 
         return $pagos
-            ->groupBy(fn ($pago) => $pago->tipoPago->tipo_pago ?? 'Desconocido')
+            ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido')
             ->map(fn ($group) => 'Q'.number_format($group->sum('monto'), 2))
             ->map(fn ($monto, $tipo) => "{$tipo}: {$monto}")
             ->values()
@@ -213,7 +213,7 @@ class Cierre extends Model
                     ->where('pagable_type', \App\Models\Cierre::class)
                     ->with('tipoPago')
                     ->get()
-                    ->groupBy('tipoPago.tipo_pago');
+                    ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido');
 
                 $resumen = [];
                 foreach ($pagos as $tipoPago => $coleccionPagos) {
@@ -250,7 +250,7 @@ class Cierre extends Model
             ->get();
 
         return $pagos
-            ->groupBy(fn ($pago) => $pago->tipoPago->tipo_pago ?? 'Desconocido')
+            ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido')
             ->map(fn ($group) => $group->sum('monto'))
             ->toArray();
     }
@@ -264,7 +264,7 @@ class Cierre extends Model
             ->where('pagable_type', \App\Models\Cierre::class)
             ->with('tipoPago')
             ->get()
-            ->groupBy('tipoPago.tipo_pago');
+            ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido');
 
         return $pagos->map(fn ($coleccionPagos) => $coleccionPagos->sum('monto'))->toArray();
     }
