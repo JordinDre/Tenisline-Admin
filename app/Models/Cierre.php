@@ -119,22 +119,62 @@ class Cierre extends Model
             ->count('producto_id');
     }
 
-    public function getTotalCajaChicaAttribute()
-    {
-        return CajaChica::where('bodega_id', $this->bodega_id)
-            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
-            ->get()
-            ->sum(function ($caja) {
-                return $caja->pagos()->sum('monto');
-            });
-    }
-
     public function getDatosCajaChicaAttribute()
     {
-        return CajaChica::with('pagos', 'usuario')
-            ->where('bodega_id', $this->bodega_id)
+        $query = CajaChica::with('pagos', 'usuario')
+            ->where('bodega_id', $this->bodega_id);
+
+        if ($this->tieneVentaContado()) {
+            return $query
+                ->where(function ($q) {
+                    $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+                    ->orWhere('aplicado_en_cierre_id', $this->id);
+                })
+                ->get();
+        }
+        return $query
             ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
             ->get();
+    }
+
+    public function getTotalCajaChicaAttribute()
+    {
+        if ($this->tieneVentaContado()) {
+            return CajaChica::where('bodega_id', $this->bodega_id)
+                ->where(function ($q) {
+                    $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+                    ->orWhere('aplicado_en_cierre_id', $this->id);
+                })
+                ->with('pagos')
+                ->get()
+                ->sum(fn($caja) => $caja->pagos->sum('monto'));
+        }
+
+        return CajaChica::where('bodega_id', $this->bodega_id)
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->where(function ($q) {
+                $q->where('aplicado', false)->orWhereNull('aplicado_en_cierre_id');
+            })
+            ->with('pagos')
+            ->get()
+            ->sum(fn($caja) => $caja->pagos->sum('monto'));
+    }
+
+    public function tieneVentaContado(): bool
+    {
+        return Venta::where('bodega_id', $this->bodega_id)
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->whereHas('pagos', function ($q) {
+                $q->whereHas('tipoPago', function ($t) {
+                    $t->whereIn('tipo_pago', [
+                        'CONTADO',
+                        'LINK CONTADO',
+                        'TARJETA CONTADO',
+                    ]);
+                })
+                ->where('pagable_type', Venta::class);
+            })
+            ->exists();
     }
 
     public function getResumenPagosAttribute()
