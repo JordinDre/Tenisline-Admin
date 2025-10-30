@@ -127,17 +127,29 @@
                 <th class="subtotal">Usuario</th>
                 <th class="subtotal">Monto</th>
             </tr>
-            @foreach ($cierre->datos_caja_chica as $caja_chica)
-                <tr>
-                    <td colspan="4" style="border-top: 1px solid black;"><strong>Caja Chica #{{ $caja_chica->id }} - {{ $caja_chica->estado }}</strong></td>
-                </tr>
-                <tr>
-                    <td class="descripcion">{{ $caja_chica->detalle_gasto }}</td>
-                    <td class="descripcion">{{ $caja_chica->autoriza }}</td>
-                    <td class="descripcion">{{ $caja_chica->usuario?->name ?? 'N/A' }}</td>
-                    <td class="subtotal">Q {{ number_format($caja_chica->pagos->sum('monto'), 2) }}</td>
-                </tr>
-            @endforeach
+                @foreach ($cierre->datos_caja_chica as $caja_chica)
+                    <tr>
+                        <td colspan="4" style="border-top: 1px solid black;">
+                            <strong>
+                                Caja Chica #{{ $caja_chica->id }}
+                            </strong>
+
+                            @if(!$caja_chica->aplicado)
+                                <span style="color: orange;">(Pendiente)</span>
+                            @elseif($caja_chica->aplicado_en_cierre_id === $cierre->id)
+                                <span style="color: green;">(Aplicado en este cierre)</span>
+                            @else
+                                <span style="color: gray;">(Aplicado en cierre #{{ $caja_chica->aplicado_en_cierre_id }})</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="descripcion">{{ $caja_chica->detalle_gasto }}</td>
+                        <td class="descripcion">{{ $caja_chica->autoriza }}</td>
+                        <td class="descripcion">{{ $caja_chica->usuario->name }}</td>
+                        <td class="subtotal">Q {{ number_format($caja_chica->pagos->sum('monto'), 2) }}</td>
+                    </tr>
+                @endforeach
             <tr>
                 <td colspan="3" style="text-align: right; border-top: 2px solid black;"><strong>Total Caja Chica:</strong></td>
                 <td class="subtotal" style="border-top: 2px solid black;"><strong>Q {{ number_format($cierre->total_caja_chica, 2) }}</strong></td>
