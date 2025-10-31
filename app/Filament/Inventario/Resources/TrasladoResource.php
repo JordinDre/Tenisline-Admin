@@ -293,18 +293,25 @@ class TrasladoResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = \Filament\Facades\Filament::auth()->user();
 
-        if ($user->bodegas->isNotEmpty()) {
-            $bodegasIds = $user->bodegas->pluck('id');
+        $query = parent::getEloquentQuery()
+            ->with(['entrada', 'salida', 'emisor', 'receptor'])
+            ->orderByDesc('created_at');
 
-            $query->where(function ($q) use ($bodegasIds) {
-                $q->whereIn('entrada_id', $bodegasIds)
-                    ->orWhereIn('salida_id', $bodegasIds);
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user && $user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return $query->where(function ($q) use ($bodegaIds) {
+                $q->whereIn('entrada_id', $bodegaIds)
+                ->orWhereIn('salida_id', $bodegaIds);
             });
         }
 
-        return $query;
+        return $query->whereRaw('1 = 0');
     }
 }

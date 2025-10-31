@@ -36,6 +36,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
 class VentaResource extends Resource implements HasShieldPermissions
@@ -523,6 +524,30 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
+                    Action::make('validarPago')
+                        ->label('Validar Pago')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            return $record->estado === EstadoVentaStatus::ValidacionPago
+                                && $user
+                                && $user->hasAnyRole(['admin', 'administrador', 'super_admin']);
+                        })
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $record->estado = 'creada';
+                            $record->save();
+
+                            VentaController::facturar($record);
+
+                            Notification::make()
+                                ->title('Pago validado')
+                                ->body('El pago ha sido confirmado y se generó la factura.')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => Auth::user()->can('factura', $record))
@@ -737,7 +762,7 @@ class VentaResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->with([
                 'detalles.producto',
                 'cliente',
@@ -747,5 +772,21 @@ class VentaResource extends Resource implements HasShieldPermissions
                 'factura',
             ])
             ->orderByDesc('created_at');
+
+        $user = \Filament\Facades\Filament::auth()->user();
+
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user && $user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return $query
+                ->whereIn('bodega_id', $bodegaIds)
+                ->where('asesor_id', $user->id); 
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 }
