@@ -614,7 +614,9 @@ class ProductoResource extends Resource implements HasShieldPermissions
             );
         }
 
-        $query->withSum('inventario as total_existencia', 'existencia')->orderByDesc('total_existencia');
+        $query->withSum('inventario as total_existencia', 'existencia')
+            ->distinct()
+            ->orderByDesc('total_existencia');
 
         return $query;
     }

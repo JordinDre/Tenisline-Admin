@@ -80,21 +80,21 @@ class VentaController extends Controller
     public static function facturar(Venta $venta)
     {
         try {
-             $res = FELController::facturaVenta($venta, $venta->bodega_id);
+            $res = FELController::facturaVenta($venta, $venta->bodega_id);
             
-             if (
-                 ! isset($res['resultado']) ||
-                 ! $res['resultado'] ||
-                 ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
-             ) {
-                 $errorMessage = $res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.';
-                 \Log::error('Error en facturación FEL', [
-                     'venta_id' => $venta->id,
-                     'error' => $errorMessage,
-                     'response' => $res
-                 ]);
-                 throw new Exception($errorMessage);
-             }
+            if (
+                ! isset($res['resultado']) ||
+                ! $res['resultado'] ||
+                ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
+            ) {
+                $errorMessage = $res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.';
+                \Log::error('Error en facturación FEL', [
+                    'venta_id' => $venta->id,
+                    'error' => $errorMessage,
+                    'response' => $res
+                ]);
+                throw new Exception($errorMessage);
+            }
 
             self::restarInventario($venta, 'Venta Confirmada');
             $venta->fecha_vencimiento = $venta->pagos->first()->tipo_pago_id == 2 ? now()->addDays($venta->cliente->credito_dias) : null;
@@ -104,16 +104,12 @@ class VentaController extends Controller
             $factura->fel_serie = $res['serie'];
             $factura->fel_numero = $res['numero'];
             $factura->fel_fecha = $res['fecha'];
-            /* $factura->fel_uuid = '3453535';
-            $factura->fel_serie = '3453535';
-            $factura->fel_numero = '3453535';
-            $factura->fel_fecha ='2025/10/20'; */
             $factura->user_id = Auth::user()->id;
             $factura->tipo = 'factura';
             $venta->factura()->save($factura);
             activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
         } catch (\Exception $e) {
-            Log::error('Error en facturación', [
+            \Log::error('Error en facturación', [
                 'venta_id' => $venta->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
