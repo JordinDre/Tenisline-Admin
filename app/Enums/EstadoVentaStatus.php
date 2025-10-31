@@ -12,6 +12,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
     case ParcialmenteDevuelta = 'parcialmente_devuelta';
     case Devuelta = 'devuelta';
     case Anulada = 'anulada';
+    case ValidacionPago = 'validacion_pago';
 
     public function getLabel(): ?string
     {
@@ -21,6 +22,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
             self::ParcialmenteDevuelta => 'Parcialmente Devuelta',
             self::Anulada => 'Anulada',
             self::Devuelta => 'Devuelta',
+            self::ValidacionPago => 'Validacion Pago',
         };
     }
 
@@ -28,6 +30,7 @@ enum EstadoVentaStatus: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::Creada => 'info',
+            self::ValidacionPago => 'purple',
             self::Liquidada => 'success',
             self::ParcialmenteDevuelta => 'teal',
             self::Devuelta => 'orange',
