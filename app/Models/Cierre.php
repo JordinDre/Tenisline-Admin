@@ -119,28 +119,67 @@ class Cierre extends Model
             ->count('producto_id');
     }
 
-    public function getTotalCajaChicaAttribute()
-    {
-        return CajaChica::where('bodega_id', $this->bodega_id)
-            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
-            ->get()
-            ->sum(function ($caja) {
-                return $caja->pagos()->sum('monto');
-            });
-    }
-
     public function getDatosCajaChicaAttribute()
     {
-        return CajaChica::with('pagos', 'usuario')
+        $query = CajaChica::with('pagos', 'usuario')
             ->where('bodega_id', $this->bodega_id)
+            ->where('estado', 'confirmada');
+
+        if ($this->tieneVentaContado()) {
+            return $query
+                ->where(function ($q) {
+                    $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+                    ->orWhere('aplicado_en_cierre_id', $this->id);
+                })
+                ->get();
+        }
+        return $query
             ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
             ->get();
     }
 
+    public function getTotalCajaChicaAttribute()
+    {
+        if ($this->tieneVentaContado()) {
+            return CajaChica::where('bodega_id', $this->bodega_id)
+                ->where('estado', 'confirmada')
+                ->where(function ($q) {
+                    $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+                    ->orWhere('aplicado_en_cierre_id', $this->id);
+                })
+                ->with('pagos')
+                ->get()
+                ->sum(fn($caja) => $caja->pagos->sum('monto'));
+        }
+
+        return CajaChica::where('bodega_id', $this->bodega_id)
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->where(function ($q) {
+                $q->where('aplicado', false)->orWhereNull('aplicado_en_cierre_id');
+            })
+            ->with('pagos')
+            ->get()
+            ->sum(fn($caja) => $caja->pagos->sum('monto'));
+    }
+
+    public function tieneVentaContado(): bool
+    {
+        return Venta::where('bodega_id', $this->bodega_id)
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->whereHas('pagos', function ($q) {
+                $q->whereHas('tipoPago', function ($t) {
+                    $t->whereIn('tipo_pago', [
+                        'CONTADO',
+                    ]);
+                })
+                ->where('pagable_type', Venta::class);
+            })
+            ->exists();
+    }
+
     public function getResumenPagosAttribute()
     {
-        $ventas = Venta::with(['detalles.producto'])
-            ->where('bodega_id', $this->bodega_id)
+        $ventas = Venta::where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
                     ->orWhere(function ($subQ) {
@@ -157,9 +196,31 @@ class Cierre extends Model
             ->with('tipoPago')
             ->get();
 
-        return $pagos
-            ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido')
-            ->map(fn ($group) => 'Q'.number_format($group->sum('monto'), 2))
+        $agrupados = $pagos
+            ->groupBy(fn ($pago) => strtoupper($pago->tipoPago->tipo_pago ?? 'DESCONOCIDO'))
+            ->map(fn ($group) => $group->sum('monto'))
+            ->toArray();
+
+        $orden = [
+            'CONTADO',
+            'TARJETA',
+            'CUOTAS',
+            'PAGO CONTRA ENTREGA',
+        ];
+
+        $resultado = [];
+
+        foreach ($orden as $tipo) {
+            $monto = $agrupados[$tipo] ?? 0;
+            $resultado[$tipo] = 'Q' . number_format($monto, 2);
+            unset($agrupados[$tipo]);
+        }
+
+        foreach ($agrupados as $tipo => $monto) {
+            $resultado[$tipo] = 'Q' . number_format($monto, 2);
+        }
+
+        return collect($resultado)
             ->map(fn ($monto, $tipo) => "{$tipo}: {$monto}")
             ->values()
             ->toArray();
