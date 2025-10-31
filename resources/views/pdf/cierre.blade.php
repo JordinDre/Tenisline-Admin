@@ -159,23 +159,21 @@
     @endif
 
     <section class="info-section">
-        <div><strong>Resumen</strong></div>
-        <div>Total en Ventas: Q {{ number_format($cierre->total_ventas, 2) }}</div>
-        <div>Total Tenis Vendidos: {{ number_format($cierre->total_tenis, 0) }}</div>
-    
-        @php $pagos = $cierre->resumen_pagos; @endphp
-       
-            <div><strong>Resumen de Pagos:</strong></div>
-            <ul style="padding-left: 15px; margin: 0;">
-                @foreach ($pagos as $pago)
-                    <li>{{ $pago }}</li>
-                @endforeach
-            </ul>
-            <ul style="padding-left: 15px; margin: 0;">
-                <li>Caja Chica: - Q {{ number_format($cierre->total_caja_chica, 0) }}</li>
-            </ul>
-            <div>Total General: Q {{ number_format(($cierre->total_ventas - $cierre->total_caja_chica), 2) }}</div>
-     
+        <div><strong>RESUMEN DE CIERRE</strong></div>
+        <div>Unidades Vendidas: {{ number_format($cierre->total_tenis, 0) }}</div>
+        <div>Total Ventas: Q{{ number_format($cierre->total_ventas, 2) }}</div>
+
+        <br>
+        <div><strong>RESUMEN PAGOS</strong></div>
+        <ul style="padding-left: 15px; margin: 0;">
+            @foreach ($cierre->resumen_pagos as $pago)
+                <li>{{ $pago }}</li>
+            @endforeach
+            <li>Caja Chica: Q{{ number_format($cierre->total_caja_chica, 2) }}</li>
+        </ul>
+
+        <br>
+        <div><strong>TOTAL GENERAL:</strong> Q{{ number_format(($cierre->total_ventas - $cierre->total_caja_chica), 2) }}</div>
     </section>
 </body>
 
