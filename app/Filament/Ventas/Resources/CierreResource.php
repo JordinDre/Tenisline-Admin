@@ -366,13 +366,24 @@ class CierreResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $user = Auth::user();
+        $user = \Filament\Facades\Filament::auth()->user();
 
-        return parent::getEloquentQuery()
-            ->when(
-                ! $user->hasAnyRole(['administrador', 'super_admin']),
-                fn (Builder $query) => $query->where('user_id', $user->id)
-            )
+        $query = parent::getEloquentQuery()
+            ->with(['bodega', 'user'])
             ->orderByDesc('apertura');
+
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user && $user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return $query
+                ->whereIn('bodega_id', $bodegaIds)
+                ->where('user_id', $user->id);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 }

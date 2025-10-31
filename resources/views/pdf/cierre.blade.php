@@ -90,8 +90,8 @@
 
     <section class="info-section">
         <div><strong>Datos de Cierre #{{ $cierre->id }}</strong></div>
-        <div>Bodega: {{ $cierre->bodega->bodega }}</div>
-        <div>Usuario: {{ $cierre->user->name }}</div>
+        <div>Bodega: {{ $cierre->bodega?->bodega ?? 'N/A' }}</div>
+        <div>Usuario: {{ $cierre->user?->name ?? 'N/A' }}</div>
     </section>
 
     <br><br>
@@ -108,7 +108,7 @@
             </tr>
             @foreach ($venta->detalles as $detalle)
                 <tr>
-                    <td class="descripcion">{{ $detalle->producto->codigo . ' - ' . $detalle->producto->descripcion . ' - ' . $detalle->producto->marca->marca }}</td>
+                    <td class="descripcion">{{ $detalle->producto->codigo . ' - ' . $detalle->producto->descripcion . ' - ' . ($detalle->producto->marca?->marca ?? 'Sin marca') }}</td>
                     <td class="cantidad">{{ $detalle->cantidad }}</td>
                     <td class="precio">Q {{ number_format($detalle->precio, 2) }}</td>
                     <td class="subtotal">Q {{ number_format($detalle->cantidad * $detalle->precio, 2) }}</td>
