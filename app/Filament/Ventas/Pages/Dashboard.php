@@ -57,8 +57,10 @@ class Dashboard extends \Filament\Pages\Dashboard
                             ->label('Género')
                             ->options([
                                 '' => 'Todos los Géneros',
-                                'Dama' => 'Dama',
-                                'Caballero' => 'Caballero',
+                                'CABALLERO' => 'Caballero',
+                                'DAMA' => 'Dama',
+                                'INFANTE' => 'Infante',
+                                'NIÑO' => 'Niño',
                             ])
                             ->default('')
                             ->reactive(),
