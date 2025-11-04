@@ -119,39 +119,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->searchable()
                             ->relationship('presentacion', 'presentacion'), */
-                        TextInput::make('precio_venta')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->minValue(0)
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
                         TextInput::make('precio_costo')
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->readOnly()
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                        TextInput::make('precio_oferta')
-                            ->live(onBlur: true)
-                            ->minValue(0)
-                            ->visible(auth()->user()->can('view_costs_producto'))
-                            ->inputMode('decimal')
-                            ->rule('numeric'),
-                    ]),
-                Grid::make([
-                    'default' => 1,
-                    'sm' => 3,
-                    'lg' => 5,
-                ])
-                    ->schema([
-
-                        TextInput::make('precio_descuento')
-                            ->label('Descuento %')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
@@ -162,8 +133,41 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
+                        TextInput::make('precio_oferta')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),                       
+                        
+                    ]),
+                Grid::make([
+                    'default' => 1,
+                    'sm' => 3,
+                    'lg' => 5,
+                ])
+                    ->schema([
+
+                        /* TextInput::make('precio_descuento')
+                            ->label('Descuento %')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'), */
+                        
                         TextInput::make('precio_segundo_par')
                             ->label('Precio Segundo Par')
+                            ->live(onBlur: true)
+                            ->minValue(0)
+                            ->visible(auth()->user()->can('view_costs_producto'))
+                            ->inputMode('decimal')
+                            ->rule('numeric'),
+                        
+                        TextInput::make('precio_venta')
+                            ->label('Precio de Venta')
+                            ->required()
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
