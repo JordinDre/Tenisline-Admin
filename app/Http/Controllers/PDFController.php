@@ -41,7 +41,10 @@ class PDFController extends Controller
 
     public function cierre($id)
     {
-        $cierre = Cierre::find($id);
+        $cierre = Cierre::with([
+            'bodega',
+            'user',
+        ])->findOrFail($id);
         $html = view('pdf.cierre', compact('cierre'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 

@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Cierre extends Model
 {
@@ -67,7 +67,7 @@ class Cierre extends Model
 
     public function getVentasDetallesAttribute()
     {
-        return Venta::with(['detalles.producto'])
+        return Venta::with(['detalles.producto.marca'])
             ->where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
@@ -119,28 +119,67 @@ class Cierre extends Model
             ->count('producto_id');
     }
 
-    public function getTotalCajaChicaAttribute()
-    {
-        return CajaChica::where('bodega_id', $this->bodega_id)
-            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
-            ->get()
-            ->sum(function ($caja) {
-                return $caja->pagos()->sum('monto');
-            });
-    }
-
     public function getDatosCajaChicaAttribute()
     {
-        return CajaChica::with('pagos', 'usuario')
+        $query = CajaChica::with('pagos', 'usuario')
             ->where('bodega_id', $this->bodega_id)
+            ->where('estado', 'confirmada');
+
+        if ($this->tieneVentaContado()) {
+            return $query
+                ->where(function ($q) {
+                    $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+                    ->orWhere('aplicado_en_cierre_id', $this->id);
+                })
+                ->get();
+        }
+        return $query
             ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
             ->get();
     }
 
+    public function getTotalCajaChicaAttribute()
+    {
+        if ($this->tieneVentaContado()) {
+            return CajaChica::where('bodega_id', $this->bodega_id)
+                ->where('estado', 'confirmada')
+                ->where(function ($q) {
+                    $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+                    ->orWhere('aplicado_en_cierre_id', $this->id);
+                })
+                ->with('pagos')
+                ->get()
+                ->sum(fn($caja) => $caja->pagos->sum('monto'));
+        }
+
+        return CajaChica::where('bodega_id', $this->bodega_id)
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->where(function ($q) {
+                $q->where('aplicado', false)->orWhereNull('aplicado_en_cierre_id');
+            })
+            ->with('pagos')
+            ->get()
+            ->sum(fn($caja) => $caja->pagos->sum('monto'));
+    }
+
+    public function tieneVentaContado(): bool
+    {
+        return Venta::where('bodega_id', $this->bodega_id)
+            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->whereHas('pagos', function ($q) {
+                $q->whereHas('tipoPago', function ($t) {
+                    $t->whereIn('tipo_pago', [
+                        'CONTADO',
+                    ]);
+                })
+                ->where('pagable_type', Venta::class);
+            })
+            ->exists();
+    }
+
     public function getResumenPagosAttribute()
     {
-        $ventas = Venta::with(['detalles.producto'])
-            ->where('bodega_id', $this->bodega_id)
+        $ventas = Venta::where('bodega_id', $this->bodega_id)
             ->where(function ($q) {
                 $q->whereIn('estado', ['creada', 'liquidada'])
                     ->orWhere(function ($subQ) {
@@ -157,9 +196,31 @@ class Cierre extends Model
             ->with('tipoPago')
             ->get();
 
-        return $pagos
-            ->groupBy(fn ($pago) => $pago->tipoPago->tipo_pago ?? 'Desconocido')
-            ->map(fn ($group) => 'Q'.number_format($group->sum('monto'), 2))
+        $agrupados = $pagos
+            ->groupBy(fn ($pago) => strtoupper($pago->tipoPago->tipo_pago ?? 'DESCONOCIDO'))
+            ->map(fn ($group) => $group->sum('monto'))
+            ->toArray();
+
+        $orden = [
+            'CONTADO',
+            'TARJETA',
+            'CUOTAS',
+            'PAGO CONTRA ENTREGA',
+        ];
+
+        $resultado = [];
+
+        foreach ($orden as $tipo) {
+            $monto = $agrupados[$tipo] ?? 0;
+            $resultado[$tipo] = 'Q' . number_format($monto, 2);
+            unset($agrupados[$tipo]);
+        }
+
+        foreach ($agrupados as $tipo => $monto) {
+            $resultado[$tipo] = 'Q' . number_format($monto, 2);
+        }
+
+        return collect($resultado)
             ->map(fn ($monto, $tipo) => "{$tipo}: {$monto}")
             ->values()
             ->toArray();
@@ -173,12 +234,12 @@ class Cierre extends Model
                     ->where('pagable_type', \App\Models\Cierre::class)
                     ->with('tipoPago')
                     ->get()
-                    ->groupBy('tipoPago.tipo_pago');
+                    ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido');
 
                 $resumen = [];
                 foreach ($pagos as $tipoPago => $coleccionPagos) {
                     $totalMonto = $coleccionPagos->sum('monto');
-                    $resumen[] = "{$tipoPago}: Q" . number_format($totalMonto, 2);
+                    $resumen[] = "{$tipoPago}: Q".number_format($totalMonto, 2);
                 }
 
                 return $resumen;
@@ -210,7 +271,7 @@ class Cierre extends Model
             ->get();
 
         return $pagos
-            ->groupBy(fn ($pago) => $pago->tipoPago->tipo_pago ?? 'Desconocido')
+            ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido')
             ->map(fn ($group) => $group->sum('monto'))
             ->toArray();
     }
@@ -224,7 +285,7 @@ class Cierre extends Model
             ->where('pagable_type', \App\Models\Cierre::class)
             ->with('tipoPago')
             ->get()
-            ->groupBy('tipoPago.tipo_pago');
+            ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido');
 
         return $pagos->map(fn ($coleccionPagos) => $coleccionPagos->sum('monto'))->toArray();
     }
@@ -235,7 +296,7 @@ class Cierre extends Model
     public function validarPagoLiquidacion($tipoPagoId, $monto)
     {
         $tipoPago = TipoPago::find($tipoPagoId);
-        if (!$tipoPago) {
+        if (! $tipoPago) {
             throw new \Exception('Tipo de pago no válido');
         }
 
@@ -243,7 +304,7 @@ class Cierre extends Model
         $pagosRealizados = $this->getPagosLiquidacionRealizados();
 
         // 1. Validar que el tipo de pago esté en el resumen esperado
-        if (!array_key_exists($tipoPago->tipo_pago, $resumenEsperados)) {
+        if (! array_key_exists($tipoPago->tipo_pago, $resumenEsperados)) {
             throw new \Exception("El tipo de pago '{$tipoPago->tipo_pago}' no está en el resumen de pagos esperados");
         }
 
@@ -253,11 +314,11 @@ class Cierre extends Model
         $montoRestante = $montoEsperado - $montoYaPagado;
 
         if ($montoRestante <= 0) {
-            throw new \Exception("El tipo de pago '{$tipoPago->tipo_pago}' ya está completamente pagado (Q" . number_format($montoEsperado, 2) . ")");
+            throw new \Exception("El tipo de pago '{$tipoPago->tipo_pago}' ya está completamente pagado (Q".number_format($montoEsperado, 2).')');
         }
 
         if ($monto > $montoRestante) {
-            throw new \Exception("El monto Q" . number_format($monto, 2) . " excede el monto restante Q" . number_format($montoRestante, 2) . " para {$tipoPago->tipo_pago}");
+            throw new \Exception('El monto Q'.number_format($monto, 2).' excede el monto restante Q'.number_format($montoRestante, 2)." para {$tipoPago->tipo_pago}");
         }
 
         return true;
@@ -270,17 +331,17 @@ class Cierre extends Model
     {
         $resumenEsperados = $this->getResumenPagosEsperados();
         $pagosRealizados = $this->getPagosLiquidacionRealizados();
-        
+
         $restantes = [];
         foreach ($resumenEsperados as $tipoPago => $montoEsperado) {
             $montoYaPagado = $pagosRealizados[$tipoPago] ?? 0;
             $montoRestante = $montoEsperado - $montoYaPagado;
-            
+
             if ($montoRestante > 0) {
                 $restantes[$tipoPago] = $montoRestante;
             }
         }
-        
+
         return $restantes;
     }
 
@@ -294,10 +355,10 @@ class Cierre extends Model
 
         // Verificar que todos los tipos de pago esperados estén completos
         foreach ($resumenEsperados as $tipoPago => $montoEsperado) {
-            if (!array_key_exists($tipoPago, $pagosRealizados)) {
+            if (! array_key_exists($tipoPago, $pagosRealizados)) {
                 return false; // Falta este tipo de pago
             }
-            
+
             if ($pagosRealizados[$tipoPago] < $montoEsperado) {
                 return false; // El monto no es suficiente
             }

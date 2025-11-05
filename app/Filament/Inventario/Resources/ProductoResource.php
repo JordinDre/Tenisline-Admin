@@ -92,6 +92,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->options([
                                 'CABALLERO' => 'CABALLERO',
                                 'DAMA' => 'DAMA',
+                                'INFANTE' => 'INFANTE',
+                                'NIÑO' => 'NIÑO',
                             ])
                             ->native(false)
                             ->required(),
@@ -458,6 +460,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->options([
                         'CABALLERO' => 'CABALLERO',
                         'DAMA' => 'DAMA',
+                        'INFANTE' => 'INFANTE',
+                        'NIÑO' => 'NIÑO',
                     ])
                     ->multiple(),
 

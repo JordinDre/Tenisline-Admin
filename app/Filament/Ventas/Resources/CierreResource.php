@@ -2,28 +2,31 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Filament\Ventas\Resources\CierreResource\Pages;
-use App\Http\Controllers\VentaController;
-use App\Models\Banco;
-use App\Models\Cierre;
-use App\Models\Pago;
-use App\Models\TipoPago;
 use Closure;
 use Filament\Forms;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
+use App\Models\Pago;
+use Filament\Tables;
+use App\Models\Banco;
+use App\Models\Cierre;
+use Filament\Forms\Get;
+use App\Models\TipoPago;
+use Filament\Forms\Form;
+use App\Models\CajaChica;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
+use Filament\Tables\Actions\Action;
+use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Table;
-use Illuminate\Contracts\View\View;
+use Filament\Notifications\Notification;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+use App\Filament\Ventas\Resources\CierreResource\Pages;
 
 class CierreResource extends Resource
 {
@@ -133,15 +136,36 @@ class CierreResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('Cerrar')
-                    ->action(function (Cierre $record) {
-                        $record->update([
-                            'cierre' => now(),
-                        ]);
-                    })
-                    ->visible(fn (Cierre $record) => $record->user_id === Auth::id() && $record->cierre === null)
-                    ->requiresConfirmation()
+                    ->label('Cerrar Turno')
                     ->color('success')
-                    ->icon('heroicon-o-check'),
+                    ->icon('heroicon-o-check')
+                    ->requiresConfirmation()
+                    ->visible(fn (Cierre $record) => $record->user_id === Auth::id() && $record->cierre === null)
+                    ->action(function (Cierre $record) {
+                        DB::transaction(function () use ($record) {
+                            $record->update(['cierre' => now()]);
+                            if ($record->tieneVentaContado()) {
+                                CajaChica::where('bodega_id', $record->bodega_id)
+                                    ->where('estado', 'confirmada')
+                                    ->where('aplicado', false)
+                                    ->update([
+                                        'aplicado' => true,
+                                        'aplicado_en_cierre_id' => $record->id,
+                                    ]);
+                            }
+
+                            activity()
+                                ->performedOn($record)
+                                ->causedBy(Auth::user())
+                                ->withProperties(['bodega_id' => $record->bodega_id])
+                                ->log('Cierre de turno completado');
+                        });
+
+                        Notification::make()
+                            ->title('Cierre completado correctamente')
+                            ->success()
+                            ->send();
+                    }),
                 Action::make('cierre')
                     ->icon('heroicon-o-document-arrow-down')
                     ->modalContent(fn (Cierre $record): View => view(
@@ -250,7 +274,14 @@ class CierreResource extends Resource
                             }),
                         Select::make('banco_id')
                             ->label('Banco')
-                            ->options(fn () => Banco::whereIn('banco', Banco::BANCOS_DISPONIBLES)->pluck('banco', 'id')->toArray())
+                            ->options(function () {
+                                // Mostrar bancos permitidos + especiales si existen en BD
+                                $permitidos = array_merge(Banco::BANCOS_DISPONIBLES, ['Efectivo', 'Nota de Crédito']);
+
+                                return Banco::whereIn('banco', $permitidos)
+                                    ->pluck('banco', 'id')
+                                    ->toArray();
+                            })
                             ->searchable()
                             ->preload()
                             ->columnSpan(['sm' => 1, 'md' => 2]),
@@ -335,13 +366,24 @@ class CierreResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $user = Auth::user();
+        $user = \Filament\Facades\Filament::auth()->user();
 
-        return parent::getEloquentQuery()
-            ->when(
-                ! $user->hasAnyRole(['administrador', 'super_admin']),
-                fn (Builder $query) => $query->where('user_id', $user->id)
-            )
+        $query = parent::getEloquentQuery()
+            ->with(['bodega', 'user'])
             ->orderByDesc('apertura');
+
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return $query;
+        }
+
+        if ($user && $user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return $query
+                ->whereIn('bodega_id', $bodegaIds)
+                ->where('user_id', $user->id);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 }
