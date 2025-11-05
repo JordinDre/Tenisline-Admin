@@ -146,7 +146,6 @@ class CierreResource extends Resource
                             $record->update(['cierre' => now()]);
                             if ($record->tieneVentaContado()) {
                                 CajaChica::where('bodega_id', $record->bodega_id)
-                                    ->where('estado', 'confirmada')
                                     ->where('aplicado', false)
                                     ->update([
                                         'aplicado' => true,

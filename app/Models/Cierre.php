@@ -122,8 +122,7 @@ class Cierre extends Model
     public function getDatosCajaChicaAttribute()
     {
         $query = CajaChica::with('pagos', 'usuario')
-            ->where('bodega_id', $this->bodega_id)
-            ->where('estado', 'confirmada');
+            ->where('bodega_id', $this->bodega_id);
 
         if ($this->tieneVentaContado()) {
             return $query
@@ -142,7 +141,6 @@ class Cierre extends Model
     {
         if ($this->tieneVentaContado()) {
             return CajaChica::where('bodega_id', $this->bodega_id)
-                ->where('estado', 'confirmada')
                 ->where(function ($q) {
                     $q->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
                     ->orWhere('aplicado_en_cierre_id', $this->id);
