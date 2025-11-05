@@ -556,4 +556,55 @@ class VentaController extends Controller
                 ->send();
         }
     }
+
+    public static function enviarGUATEX(Venta $venta)
+    {
+        try {
+            DB::transaction(function () use ($venta) {
+
+                $tipoPagoId = 3;
+
+                $pago = $venta->pagos()->first();
+
+                if ($pago) {
+                    $pago->update([
+                        'tipo_pago_id' => $tipoPagoId,
+                    ]);
+                } else {
+                    $venta->pagos()->create([
+                        'tipo_pago_id' => $tipoPagoId,
+                        'monto' => $venta->total ?? 0,
+                        'fecha_transaccion' => now(),
+                        'user_id' => auth()->id(),
+                    ]);
+                }
+
+                $venta->update([
+                    'estado' => \App\Enums\EstadoVentaStatus::Enviado->value,
+                ]);
+
+                activity()
+                    ->performedOn($venta)
+                    ->causedBy(auth()->user())
+                    ->withProperties(['venta_id' => $venta->id])
+                    ->event('enviado')
+                    ->log('Venta enviada por GUATEX con pago contra entrega.');
+            });
+
+            Notification::make()
+                ->color('success')
+                ->title('Venta enviada')
+                ->body('La venta #'.$venta->id.' ha sido enviada por GUATEX y marcada como "Pago Contra Entrega".')
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al enviar la venta')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
 }
