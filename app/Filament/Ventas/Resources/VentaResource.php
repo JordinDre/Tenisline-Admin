@@ -587,6 +587,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->color('indigo')
                         ->action(fn (Venta $record) => VentaController::facturar($record))
                         ->visible(fn ($record) => Auth::user()->can('facturar', $record)), */
+                    Action::make('enviar')
+                        ->label('Enviar por GUATEX')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->icon('heroicon-o-paper-airplane')
+                        ->action(fn (Venta $record) => VentaController::enviarGUATEX($record))
+                        ->visible(fn ($record) => Auth::user()->can('liquidate', $record)),
                     Action::make('liquidate')
                         ->label('Liquidar')
                         ->color('success')
@@ -594,6 +601,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('heroicon-o-clipboard-document-check')
                         ->action(fn (Venta $record) => VentaController::liquidar($record))
                         ->visible(fn ($record) => Auth::user()->can('liquidate', $record)),
+                    Action::make('finalizar')
+                        ->label('Finalizar')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->icon('heroicon-o-paper-airplane')
+                        ->action(fn (Venta $record) => VentaController::liquidar($record))
+                        ->visible(fn ($record) => Auth::user()->can('finalziar', $record)),
                     Action::make('annular')
                         ->label('Anular')
                         ->color('danger')
