@@ -138,8 +138,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
-                            ->rule('numeric'),                       
-                        
+                            ->rule('numeric'),
+
                     ]),
                 Grid::make([
                     'default' => 1,
@@ -156,7 +156,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'), */
-                        
+
                         TextInput::make('precio_segundo_par')
                             ->label('Precio Segundo Par')
                             ->live(onBlur: true)
@@ -164,7 +164,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->visible(auth()->user()->can('view_costs_producto'))
                             ->inputMode('decimal')
                             ->rule('numeric'),
-                        
+
                         TextInput::make('precio_venta')
                             ->label('Precio de Venta')
                             ->required()
@@ -378,10 +378,28 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->visible(auth()->user()->can('view_costs_producto'))
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('precio_liquidacion')
+                    ->label('Liquidación')
+                    ->formatStateUsing(function ($record) {
+                        return number_format($record->precio_liquidacion, 2);
+                    })
+                    ->copyable()
+                    ->visible(auth()->user()->can('view_costs_producto'))
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('precio_oferta')
                     ->label('Oferta')
                     ->formatStateUsing(function ($record) {
                         return number_format($record->precio_oferta, 2);
+                    })
+                    ->copyable()
+                    ->visible(auth()->user()->can('view_costs_producto'))
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('precio_segundo_par')
+                    ->label('Segundo Par')
+                    ->formatStateUsing(function ($record) {
+                        return number_format($record->precio_segundo_par, 2);
                     })
                     ->copyable()
                     ->visible(auth()->user()->can('view_costs_producto'))
