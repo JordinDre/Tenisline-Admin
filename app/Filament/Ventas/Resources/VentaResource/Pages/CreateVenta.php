@@ -383,12 +383,12 @@ class CreateVenta extends CreateRecord
                                                         'normal' => 'Precio Normal (Q'.$producto->precio_venta.')',
                                                     ];
 
-                                                    if ($producto->precio_oferta > 0) {
-                                                        $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
-                                                    }
-
                                                     if ($producto->precio_liquidacion > 0) {
                                                         $precios['liquidacion'] = 'Precio Liquidación (Q'.$producto->precio_liquidacion.')';
+                                                    }
+
+                                                    if ($producto->precio_oferta > 0) {
+                                                        $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
                                                     }
 
                                                     if ($producto->precio_segundo_par > 0) {
