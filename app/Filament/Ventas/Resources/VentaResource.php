@@ -23,6 +23,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
@@ -36,7 +37,6 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
 class VentaResource extends Resource implements HasShieldPermissions
@@ -796,9 +796,7 @@ class VentaResource extends Resource implements HasShieldPermissions
         if ($user && $user->bodegas()->exists()) {
             $bodegaIds = $user->bodegas->pluck('id')->toArray();
 
-            return $query
-                ->whereIn('bodega_id', $bodegaIds)
-                ->where('asesor_id', $user->id); 
+            return $query->whereIn('bodega_id', $bodegaIds);
         }
 
         return $query->whereRaw('1 = 0');

@@ -24,7 +24,23 @@ class VentaPolicy
      */
     public function view(User $user, Venta $venta): bool
     {
-        return $user->can('view_venta');
+        if (! $user->can('view_venta')) {
+            return false;
+        }
+
+        // Administradores y super admins pueden ver cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return true;
+        }
+
+        // Usuarios con bodegas asignadas solo pueden ver ventas de sus bodegas
+        if ($user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return in_array($venta->bodega_id, $bodegaIds);
+        }
+
+        return false;
     }
 
     /**
@@ -119,16 +135,56 @@ class VentaPolicy
 
     public function annular(User $user, Venta $venta): bool
     {
+        if (! $user->can('annular_venta')) {
+            return false;
+        }
+
         $estadosPermitidos = ['creada'];
 
-        return $user->can('annular_venta') && in_array($venta->estado->value, $estadosPermitidos);
+        if (! in_array($venta->estado->value, $estadosPermitidos)) {
+            return false;
+        }
+
+        // Administradores y super admins pueden anular cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return true;
+        }
+
+        // Usuarios con bodegas asignadas solo pueden anular ventas de sus bodegas
+        if ($user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return in_array($venta->bodega_id, $bodegaIds);
+        }
+
+        return false;
     }
 
     public function factura(User $user, Venta $venta): bool
     {
+        if (! $user->can('factura_venta')) {
+            return false;
+        }
+
         $estadosPermitidos = ['creada', 'liquidada', 'enviado'];
 
-        return $user->can('factura_venta') && in_array($venta->estado->value, $estadosPermitidos) && $venta->factura()->exists();
+        if (! in_array($venta->estado->value, $estadosPermitidos) || ! $venta->factura()->exists()) {
+            return false;
+        }
+
+        // Administradores y super admins pueden ver factura de cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return true;
+        }
+
+        // Usuarios con bodegas asignadas solo pueden ver facturas de ventas de sus bodegas
+        if ($user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return in_array($venta->bodega_id, $bodegaIds);
+        }
+
+        return false;
     }
 
     public function facturar(User $user, Venta $venta): bool
@@ -141,22 +197,82 @@ class VentaPolicy
 
     public function return(User $user, Venta $venta): bool
     {
+        if (! $user->can('return_venta')) {
+            return false;
+        }
+
         $estadosPermitidos = ['creada', 'liquidada'];
 
-        return $user->can('return_venta') && in_array($venta->estado->value, $estadosPermitidos);
+        if (! in_array($venta->estado->value, $estadosPermitidos)) {
+            return false;
+        }
+
+        // Administradores y super admins pueden devolver cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return true;
+        }
+
+        // Usuarios con bodegas asignadas solo pueden devolver ventas de sus bodegas
+        if ($user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return in_array($venta->bodega_id, $bodegaIds);
+        }
+
+        return false;
     }
 
     public function credit_note(User $user, Venta $venta): bool
     {
+        if (! $user->can('credit_note_venta')) {
+            return false;
+        }
+
         $estadosPermitidos = ['devuelta', 'parcialmente_devuelta'];
 
-        return $user->can('credit_note_venta') && in_array($venta->estado->value, $estadosPermitidos);
+        if (! in_array($venta->estado->value, $estadosPermitidos)) {
+            return false;
+        }
+
+        // Administradores y super admins pueden ver nota de crédito de cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return true;
+        }
+
+        // Usuarios con bodegas asignadas solo pueden ver notas de crédito de ventas de sus bodegas
+        if ($user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return in_array($venta->bodega_id, $bodegaIds);
+        }
+
+        return false;
     }
 
     public function liquidate(User $user, Venta $venta): bool
     {
+        if (! $user->can('liquidate_venta')) {
+            return false;
+        }
+
         $estadosPermitidos = ['creada', 'enviado'];
 
-        return $user->can('liquidate_venta') && in_array($venta->estado->value, $estadosPermitidos) && ($venta->total == $venta->pagos->sum('total'));
+        if (! in_array($venta->estado->value, $estadosPermitidos) || $venta->total != $venta->pagos->sum('total')) {
+            return false;
+        }
+
+        // Administradores y super admins pueden liquidar cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+            return true;
+        }
+
+        // Usuarios con bodegas asignadas solo pueden liquidar ventas de sus bodegas
+        if ($user->bodegas()->exists()) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+
+            return in_array($venta->bodega_id, $bodegaIds);
+        }
+
+        return false;
     }
 }
