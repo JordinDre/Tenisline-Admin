@@ -10,7 +10,6 @@ use App\Http\Controllers\VentaController;
 use App\Models\Banco;
 use App\Models\Cierre;
 use App\Models\Departamento;
-use App\Models\Escala;
 use App\Models\Factura;
 use App\Models\Municipio;
 use App\Models\Pago;
@@ -19,7 +18,6 @@ use App\Models\TipoPago;
 use App\Models\User;
 use Closure;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -33,8 +31,6 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -277,6 +273,19 @@ class CreateVenta extends CreateRecord
                                                 $set('comp', false);
                                             }
                                         })
+                                        ->rules([
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                $clienteId = $get('cliente_id');
+                                                if ($clienteId) {
+                                                    $cliente = User::find($clienteId);
+                                                    $razonSocial = strtoupper(trim($cliente->razon_social ?? ''));
+
+                                                    if ($razonSocial === 'CF' && ! $value) {
+                                                        $fail('El cliente tiene razón social CF, debe activar esta opción.');
+                                                    }
+                                                }
+                                            },
+                                        ])
                                         ->label('Facturar CF')
                                         ->columnSpan(3),
                                     Repeater::make('detalles')
@@ -843,6 +852,21 @@ class CreateVenta extends CreateRecord
                 throw ValidationException::withMessages([
                     'pagos' => 'El total de los pagos no coincide con el total de la venta.',
                 ]);
+            }
+
+            // Validar que si la razón social del cliente es CF, el campo facturar_cf debe ser true
+            $clienteId = $this->data['cliente_id'] ?? null;
+            $facturarCf = $this->data['facturar_cf'] ?? false;
+
+            if ($clienteId) {
+                $cliente = User::find($clienteId);
+                $razonSocial = strtoupper(trim($cliente->razon_social ?? ''));
+
+                if ($razonSocial === 'CF' && ! $facturarCf) {
+                    throw ValidationException::withMessages([
+                        'facturar_cf' => 'El cliente tiene razón social CF, debe activar la opción "Facturar CF".',
+                    ]);
+                }
             }
         } catch (\Exception $e) {
             Notification::make()
