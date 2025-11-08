@@ -147,17 +147,10 @@ class Cierre extends Model
                 })
                 ->with('pagos')
                 ->get()
-                ->sum(fn($caja) => $caja->pagos->sum('monto'));
+                ->sum(fn ($caja) => $caja->pagos->sum('monto'));
         }
 
-        return CajaChica::where('bodega_id', $this->bodega_id)
-            ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
-            ->where(function ($q) {
-                $q->where('aplicado', false)->orWhereNull('aplicado_en_cierre_id');
-            })
-            ->with('pagos')
-            ->get()
-            ->sum(fn($caja) => $caja->pagos->sum('monto'));
+        return 0;
     }
 
     public function tieneVentaContado(): bool
