@@ -365,6 +365,17 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('estado')->badge(),
+                Tables\Columns\TextColumn::make('tracking')
+                    ->label('Tracking')
+                    ->searchable()
+                    ->copyable()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('paquetes')
+                    ->label('Paquetes')
+                    ->numeric()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal')
                     ->numeric()
@@ -594,6 +605,38 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('heroicon-o-paper-airplane')
                         ->action(fn (Venta $record) => VentaController::enviarGUATEX($record))
                         ->visible(fn ($record) => Auth::user()->can('liquidate', $record)),
+                    Action::make('tracking')
+                        ->label('Agregar Tracking')
+                        ->color('warning')
+                        ->icon('heroicon-o-map-pin')
+                        ->visible(fn ($record) => $record->estado === EstadoVentaStatus::Enviado)
+                        ->form([
+                            TextInput::make('tracking')
+                                ->label('Código de Tracking')
+                                ->required()
+                                ->maxLength(255),
+                            TextInput::make('paquetes')
+                                ->label('Cantidad de Paquetes')
+                                ->required()
+                                ->numeric()
+                                ->minValue(1)
+                                ->default(1),
+                        ])
+                        ->fillForm(fn (Venta $record): array => [
+                            'tracking' => $record->tracking,
+                            'paquetes' => $record->paquetes ?? 1,
+                        ])
+                        ->action(function (array $data, Venta $record): void {
+                            $record->tracking = $data['tracking'];
+                            $record->paquetes = $data['paquetes'];
+                            $record->save();
+
+                            Notification::make()
+                                ->title('Tracking agregado')
+                                ->body('El código de tracking y paquetes han sido guardados correctamente.')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('liquidate')
                         ->label('Liquidar')
                         ->color('success')

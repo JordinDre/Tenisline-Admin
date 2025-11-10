@@ -108,6 +108,21 @@ class ViewVenta extends ViewRecord
                                     ->icon('heroicon-o-currency-dollar')
                                     ->weight('bold'),
                             ]),
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('tracking')
+                                    ->label('Código de Tracking')
+                                    ->icon('heroicon-o-map-pin')
+                                    ->copyable()
+                                    ->placeholder('Sin tracking')
+                                    ->visible(fn ($record) => $record->tracking !== null),
+                                TextEntry::make('paquetes')
+                                    ->label('Cantidad de Paquetes')
+                                    ->icon('heroicon-o-cube')
+                                    ->numeric()
+                                    ->placeholder('N/A')
+                                    ->visible(fn ($record) => $record->paquetes !== null),
+                            ]),
                     ])
                     ->collapsible()
                     ->collapsed(false),
