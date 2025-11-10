@@ -384,10 +384,6 @@ class CreateVenta extends CreateRecord
                                                         return [];
                                                     }
 
-                                                    $clienteId = $get('../../cliente_id');
-                                                    $cliente = \App\Models\User::with('roles')->find($clienteId);
-                                                    $roles = $cliente?->getRoleNames() ?? collect();
-
                                                     $precios = [
                                                         'normal' => 'Precio Normal (Q'.$producto->precio_venta.')',
                                                     ];
@@ -408,7 +404,15 @@ class CreateVenta extends CreateRecord
                                                         $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
                                                     }
 
-                                                    $precios['apertura_20'] = 'Cliente Apertura (20% descuento)';
+                                                    $clienteId = $get('../../cliente_id');
+                                                    if ($clienteId) {
+                                                        $roles = \App\Models\User::with('roles')
+                                                            ->find($clienteId)?->getRoleNames() ?? collect();
+
+                                                        if ($roles->contains('cliente_apertura')) {
+                                                            $precios['apertura_20'] = 'Cliente Apertura (20% descuento)';
+                                                        }
+                                                    }
 
                                                     return $precios;
                                                 })
