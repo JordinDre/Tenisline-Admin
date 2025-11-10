@@ -59,4 +59,9 @@ class Traslado extends Model
     {
         return $this->belongsTo(User::class, 'receptor_id');
     }
+
+    public function piloto(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'piloto_id');
+    }
 }

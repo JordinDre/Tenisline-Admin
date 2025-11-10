@@ -193,12 +193,6 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                     ->numeric()
                     ->copyable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('vehiculo.placa')
-                    ->label('Vehículo')
-                    ->searchable()
-                    ->numeric()
-                    ->copyable()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime('d/m/Y H:i:s')
@@ -296,7 +290,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
         $user = \Filament\Facades\Filament::auth()->user();
 
         $query = parent::getEloquentQuery()
-            ->with(['entrada', 'salida', 'emisor', 'receptor'])
+            ->with(['entrada', 'salida', 'emisor', 'receptor', 'piloto'])
             ->orderByDesc('created_at');
 
         if ($user->hasAnyRole(['administrador', 'super_admin'])) {
@@ -308,7 +302,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
 
             return $query->where(function ($q) use ($bodegaIds) {
                 $q->whereIn('entrada_id', $bodegaIds)
-                ->orWhereIn('salida_id', $bodegaIds);
+                    ->orWhereIn('salida_id', $bodegaIds);
             });
         }
 
