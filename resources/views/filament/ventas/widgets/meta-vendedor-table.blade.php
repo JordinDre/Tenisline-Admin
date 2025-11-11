@@ -83,7 +83,7 @@
                             {{ $item['asesor'] }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            <span class="font-bold text-green-600">Q{{ number_format($item['meta'] / 2, 2) }}</span>
+                            <span class="font-bold text-green-600">Q{{ number_format($item['meta'], 2) }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             <span class="font-bold text-blue-600">Q{{ number_format($item['total'], 2) }}</span>
