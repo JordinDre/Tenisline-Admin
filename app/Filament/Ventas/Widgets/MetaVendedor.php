@@ -24,6 +24,7 @@ class MetaVendedor extends Widget
         'lg' => 1,
         'xl' => 1,
     ];
+    
 
     protected function getViewData(): array
     {
