@@ -57,9 +57,17 @@ class ExistenciaPorBodega extends BaseWidget
         $stats = [];
 
         foreach ($bodegasOrdenadas as $bodega) {
-            $existencia = Inventario::where('bodega_id', $bodega->id)
+            // Existencia de productos activos
+            $existenciaActivos = Inventario::where('bodega_id', $bodega->id)
                 ->whereHas('producto', function ($query) {
                     $query->whereNull('deleted_at');
+                })
+                ->sum('existencia');
+
+            // Existencia de productos anulados/eliminados
+            $existenciaAnulados = Inventario::where('bodega_id', $bodega->id)
+                ->whereHas('producto', function ($query) {
+                    $query->whereNotNull('deleted_at');
                 })
                 ->sum('existencia');
 
@@ -75,34 +83,46 @@ class ExistenciaPorBodega extends BaseWidget
                 $ubicacion .= ', '.$bodega->departamento->departamento;
             }
 
-            $stats[] = Stat::make($bodega->bodega, number_format($existencia).' pares')
-                ->description($ubicacion)
-                ->descriptionIcon('heroicon-m-map-pin')
+            $existenciaTotal = $existenciaActivos + $existenciaAnulados;
+
+            $stats[] = Stat::make($bodega->bodega, number_format($existenciaTotal).' pares')
+                ->description('✅ Activos: '.number_format($existenciaActivos).' | ❌ Anulados: '.number_format($existenciaAnulados))
+                ->descriptionIcon('heroicon-m-cube-transparent')
                 ->color('primary')
                 ->extraAttributes([
                     'class' => 'cursor-pointer',
                 ])
                 ->chart([7, 2, 10, 3, 15, 4, 17])
                 ->extraAttributes([
-                    'data-tooltip' => "Productos únicos: {$productosUnicos}",
+                    'data-tooltip' => "Productos únicos activos: {$productosUnicos} | Ubicación: {$ubicacion}",
                 ]);
         }
 
         // Agregar estadística total
-        $totalExistencia = Inventario::whereHas('producto', function ($query) {
+        $totalExistenciaActivos = Inventario::whereHas('producto', function ($query) {
             $query->whereNull('deleted_at');
         })->sum('existencia');
+
+        $totalExistenciaAnulados = Inventario::whereHas('producto', function ($query) {
+            $query->whereNotNull('deleted_at');
+        })->sum('existencia');
+
         $totalProductos = Inventario::where('existencia', '>', 0)
             ->whereHas('producto', function ($query) {
                 $query->whereNull('deleted_at');
             })
             ->count();
 
-        $stats[] = Stat::make('Total Existencia', number_format($totalExistencia).' pares')
-            ->description("En {$totalProductos} productos únicos")
+        $totalGeneral = $totalExistenciaActivos + $totalExistenciaAnulados;
+
+        $stats[] = Stat::make('Total Existencia', number_format($totalGeneral).' pares')
+            ->description('✅ Activos: '.number_format($totalExistenciaActivos).' | ❌ Anulados: '.number_format($totalExistenciaAnulados))
             ->descriptionIcon('heroicon-m-cube')
             ->color('success')
-            ->chart([7, 2, 10, 3, 15, 4, 17]);
+            ->chart([7, 2, 10, 3, 15, 4, 17])
+            ->extraAttributes([
+                'data-tooltip' => "Productos únicos activos: {$totalProductos}",
+            ]);
 
         return $stats;
     }
