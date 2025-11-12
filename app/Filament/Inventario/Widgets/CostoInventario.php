@@ -29,9 +29,12 @@ class CostoInventario extends BaseWidget
     {
         $bodegas = [1 => 'Zacapa', 2 => 'Capital', 3 => 'Mal Estado', 4 => 'Traslado', 5 => 'Abura'];
 
-        // Obtener solo los inventarios con existencia mayor a 0
+        // Obtener solo los inventarios con existencia mayor a 0 y productos no eliminados
         $inventarios = Inventario::whereIn('bodega_id', array_keys($bodegas))
             ->where('existencia', '>', 0) // Filtrar solo los que tienen existencia mayor a 0
+            ->whereHas('producto', function ($query) {
+                $query->whereNull('deleted_at');
+            })
             ->with('producto')
             ->get();
 

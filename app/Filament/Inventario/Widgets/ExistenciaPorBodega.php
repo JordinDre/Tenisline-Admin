@@ -46,10 +46,11 @@ class ExistenciaPorBodega extends BaseWidget
 
         // Orden personalizado de bodegas: 1, 5, 6, 7, 8, 9, 2, 3
         $ordenBodegas = [1, 5, 6, 7, 8, 9, 2, 3];
-        
+
         // Ordenar las bodegas según el orden personalizado
         $bodegasOrdenadas = $bodegas->sortBy(function ($bodega) use ($ordenBodegas) {
             $posicion = array_search($bodega->id, $ordenBodegas);
+
             return $posicion !== false ? $posicion : 999; // Las bodegas no en la lista van al final
         });
 
@@ -57,10 +58,16 @@ class ExistenciaPorBodega extends BaseWidget
 
         foreach ($bodegasOrdenadas as $bodega) {
             $existencia = Inventario::where('bodega_id', $bodega->id)
+                ->whereHas('producto', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
                 ->sum('existencia');
 
             $productosUnicos = Inventario::where('bodega_id', $bodega->id)
                 ->where('existencia', '>', 0)
+                ->whereHas('producto', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
                 ->count();
 
             $ubicacion = $bodega->municipio ? $bodega->municipio->municipio : 'N/A';
@@ -82,8 +89,14 @@ class ExistenciaPorBodega extends BaseWidget
         }
 
         // Agregar estadística total
-        $totalExistencia = Inventario::sum('existencia');
-        $totalProductos = Inventario::where('existencia', '>', 0)->count();
+        $totalExistencia = Inventario::whereHas('producto', function ($query) {
+            $query->whereNull('deleted_at');
+        })->sum('existencia');
+        $totalProductos = Inventario::where('existencia', '>', 0)
+            ->whereHas('producto', function ($query) {
+                $query->whereNull('deleted_at');
+            })
+            ->count();
 
         $stats[] = Stat::make('Total Existencia', number_format($totalExistencia).' pares')
             ->description("En {$totalProductos} productos únicos")
