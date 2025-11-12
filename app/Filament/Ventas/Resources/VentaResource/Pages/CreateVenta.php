@@ -396,8 +396,9 @@ class CreateVenta extends CreateRecord
                                                         $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
                                                     }
 
-                                                    if ($producto->precio_segundo_par > 0) {
-                                                        $precios['segundo_par'] = 'Segundo Par (Q'.$producto->precio_segundo_par.')';
+                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_costo > 0) {
+                                                        $precioCalculado = self::calcularPrecioSegundoPar($producto);
+                                                        $precios['segundo_par'] = 'Segundo Par ('.$producto->precio_segundo_par.'% sobre precio → Q'.$precioCalculado.')';
                                                     }
 
                                                     if ($producto->precio_descuento > 0) {
@@ -438,78 +439,112 @@ class CreateVenta extends CreateRecord
 
                                                     $precio = $producto->precio_venta;
 
-                                                    // Si intentan elegir 'segundo_par'
-                                                    if ($state === 'segundo_par') {
-                                                        // 1) requisitos mínimos
-                                                        if ($producto->precio_segundo_par <= 0 || $totalPares < 2) {
-                                                            Notification::make()
-                                                                ->title('Descuento no aplicable')
-                                                                ->body('El precio de Segundo Par requiere al menos 2 pares en total y que exista precio válido.')
-                                                                ->danger()
-                                                                ->send();
+                                                   if ($state === 'segundo_par') {
+                                                    $detalles       = $this->getDetallesArray($get);
+                                                    $currentUuid    = $get('uuid') ?? null;
+                                                    $cantidadActual = (int) ($get('cantidad') ?? 1);
 
-                                                            $set('tipo_precio', 'normal');
-                                                            $set('precio', $producto->precio_venta);
-                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
-                                                            $this->updateOrderTotals($get, $set);
+                                                    // 0) Debe existir al menos un % configurado en algún producto
+                                                    if (! $this->hayAlgunoConPorcentajeSegundoPar($detalles)) {
+                                                        Notification::make()
+                                                            ->title('Oferta no disponible')
+                                                            ->body('Ningún producto tiene configurado porcentaje de "Segundo Par".')
+                                                            ->danger()->send();
 
-                                                            return;
-                                                        }
-
-                                                        // 2) comprobar que NO haya otras ofertas (oferta/liquidacion/descuento) en *otros* ítems
-                                                        $hayOtrasOfertasEnOtros = collect($detalles)
-                                                            ->contains(function ($item) use ($currentUuid) {
-                                                                return (($item['uuid'] ?? null) !== $currentUuid)
-                                                                    && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento']);
-                                                            });
-
-                                                        if ($hayOtrasOfertasEnOtros) {
-                                                            Notification::make()
-                                                                ->title('Oferta no combinable')
-                                                                ->body('La oferta de Segundo Par no se puede combinar con otras ofertas en la orden.')
-                                                                ->danger()
-                                                                ->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $set('precio', $producto->precio_venta);
-                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        // 3) límite de pares: calcula pares permitidos y cuántos pares ya tienen segundo_par (excluyendo el actual)
-                                                        $paresPermitidos = intdiv($totalPares, 2);
-
-                                                        $paresConSegundoParExclCurrent = collect($detalles)
-                                                            ->filter(fn ($item) => ($item['uuid'] ?? null) !== $currentUuid && ($item['tipo_precio'] ?? null) === 'segundo_par')
-                                                            ->sum(fn ($i) => (int) ($i['cantidad'] ?? 0));
-
-                                                        $paresConSegundoParDespues = $paresConSegundoParExclCurrent + $cantidadActual;
-
-                                                        if ($paresConSegundoParDespues > $paresPermitidos) {
-                                                            Notification::make()
-                                                                ->title('Límite alcanzado')
-                                                                ->body("Solo se puede aplicar Segundo Par a {$paresPermitidos} pares en total.")
-                                                                ->danger()
-                                                                ->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $set('precio', $producto->precio_venta);
-                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        // ✅ todo OK: aplicamos precio segundo par
-                                                        $precio = $producto->precio_segundo_par;
-                                                        $set('precio', $precio);
-                                                        $set('subtotal', round($precio * $cantidadActual, 2));
+                                                        $set('tipo_precio', 'normal');
+                                                        $this->restoreOriginalPrice($get, $set);
                                                         $this->updateOrderTotals($get, $set);
-
                                                         return;
                                                     }
+
+                                                    // 1) Regla ORIGINAL: mínimo 2 pares en la orden
+                                                    $totalPares = $this->totalPares($detalles);
+                                                    if ($totalPares < 2) {
+                                                        Notification::make()
+                                                            ->title('Descuento no aplicable')
+                                                            ->body('El precio de "Segundo Par" requiere al menos 2 pares en total.')
+                                                            ->danger()->send();
+
+                                                        $set('tipo_precio', 'normal');
+                                                        $this->restoreOriginalPrice($get, $set);
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // 2) No combinable con otras ofertas en otros ítems
+                                                    $hayOtrasOfertasEnOtros = collect($detalles)->contains(function ($item) use ($currentUuid) {
+                                                        return (($item['uuid'] ?? null) !== $currentUuid)
+                                                            && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
+                                                    });
+
+                                                    if ($hayOtrasOfertasEnOtros) {
+                                                        Notification::make()
+                                                            ->title('Oferta no combinable')
+                                                            ->body('La oferta de "Segundo Par" no se puede combinar con otras ofertas en la orden.')
+                                                            ->danger()->send();
+
+                                                        $set('tipo_precio', 'normal');
+                                                        $this->restoreOriginalPrice($get, $set);
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // 3) Límite por cupos: 1 par con segundo_par por cada 2 pares totales
+                                                    $permitidos = $this->paresPermitidos($totalPares);
+                                                    $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
+                                                    $despuesDeEste = $yaConSegundoPar + $cantidadActual;
+
+                                                    if ($despuesDeEste > $permitidos) {
+                                                        Notification::make()
+                                                            ->title('Límite alcanzado')
+                                                            ->body("Solo se puede aplicar 'Segundo Par' a {$permitidos} par(es) en total.")
+                                                            ->danger()->send();
+
+                                                        $set('tipo_precio', 'normal');
+                                                        $this->restoreOriginalPrice($get, $set);
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // 4) Debe ser el producto de MENOR costo elegible (porcentaje>0 y costo>0)
+                                                    if (! $this->esProductoMenorCostoElegible((int) $producto->id, $detalles)) {
+                                                        Notification::make()
+                                                            ->title('Regla del menor costo')
+                                                            ->body('El descuento de "Segundo Par" solo aplica al producto de menor costo en la orden.')
+                                                            ->danger()->send();
+
+                                                        $set('tipo_precio', 'normal');
+                                                        $this->restoreOriginalPrice($get, $set);
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // 5) Verificación local del producto
+                                                    if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_costo ?? 0) <= 0) {
+                                                        Notification::make()
+                                                            ->title('Descuento no aplicable')
+                                                            ->body('Este producto no tiene porcentaje de "Segundo Par" o costo configurado.')
+                                                            ->danger()->send();
+
+                                                        $set('tipo_precio', 'normal');
+                                                        $this->restoreOriginalPrice($get, $set);
+                                                        $this->updateOrderTotals($get, $set);
+                                                        return;
+                                                    }
+
+                                                    // 6) Calcular precio con la fórmula (redondeado a 2 decimales)
+                                                    $precio = $this->calcularPrecioSegundoPar($producto);
+                                                    $set('precio', $precio);
+                                                    $set('subtotal', round($precio * $cantidadActual, 2));
+                                                    $this->updateOrderTotals($get, $set);
+
+                                                    Notification::make()
+                                                        ->title('Segundo Par aplicado')
+                                                        ->body('Se aplicó el precio calculado sobre costo según el porcentaje configurado.')
+                                                        ->success()->send();
+
+                                                    return;
+                                                }
 
                                                     // Si seleccionan alguna oferta distinta a segundo_par (oferta, liquidacion, descuento)
                                                     if (in_array($state, ['oferta', 'liquidacion', 'descuento'])) {

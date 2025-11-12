@@ -158,7 +158,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->rule('numeric'), */
 
                         TextInput::make('precio_segundo_par')
-                            ->label('Precio Segundo Par')
+                            ->label('% Precio Segundo Par')
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
