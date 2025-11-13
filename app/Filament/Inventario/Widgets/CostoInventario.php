@@ -29,29 +29,61 @@ class CostoInventario extends BaseWidget
     {
         $bodegas = [1 => 'Zacapa', 2 => 'Capital', 3 => 'Mal Estado', 4 => 'Traslado', 5 => 'Abura'];
 
-        // Obtener solo los inventarios con existencia mayor a 0
-        $inventarios = Inventario::whereIn('bodega_id', array_keys($bodegas))
-            ->where('existencia', '>', 0) // Filtrar solo los que tienen existencia mayor a 0
+        // Obtener inventarios con productos activos
+        $inventariosActivos = Inventario::whereIn('bodega_id', array_keys($bodegas))
+            ->where('existencia', '>', 0)
+            ->whereHas('producto', function ($query) {
+                $query->whereNull('deleted_at');
+            })
             ->with('producto')
             ->get();
 
-        // Agrupar por bodega y calcular los costos
-        $costos = $inventarios->groupBy('bodega_id')->map(
+        // Obtener inventarios con productos anulados
+        $inventariosAnulados = Inventario::whereIn('bodega_id', array_keys($bodegas))
+            ->where('existencia', '>', 0)
+            ->whereHas('producto', function ($query) {
+                $query->whereNotNull('deleted_at');
+            })
+            ->with('producto')
+            ->get();
+
+        // Agrupar por bodega y calcular los costos de productos activos
+        $costosActivos = $inventariosActivos->groupBy('bodega_id')->map(
+            fn ($items) => $items->sum(
+                fn ($inventario) => ($inventario->producto->precio_compra + $inventario->producto->envase) * $inventario->existencia
+            )
+        );
+
+        // Agrupar por bodega y calcular los costos de productos anulados
+        $costosAnulados = $inventariosAnulados->groupBy('bodega_id')->map(
             fn ($items) => $items->sum(
                 fn ($inventario) => ($inventario->producto->precio_compra + $inventario->producto->envase) * $inventario->existencia
             )
         );
 
         // Calcular el total
-        $total = $costos->sum();
+        $totalActivos = $costosActivos->sum();
+        $totalAnulados = $costosAnulados->sum();
+        $totalGeneral = $totalActivos + $totalAnulados;
 
         // Crear el array de estadísticas
-        $stats = collect($bodegas)->map(
-            fn ($nombre, $id) => Stat::make("Costo $nombre", Functions::money($costos[$id] ?? 0))
-        )->values();
+        $stats = collect($bodegas)->map(function ($nombre, $id) use ($costosActivos, $costosAnulados) {
+            $costoActivo = $costosActivos[$id] ?? 0;
+            $costoAnulado = $costosAnulados[$id] ?? 0;
+            $costoTotal = $costoActivo + $costoAnulado;
+
+            return Stat::make("Costo $nombre", Functions::money($costoTotal))
+                ->description('✅ Activos: '.Functions::money($costoActivo).' | ❌ Anulados: '.Functions::money($costoAnulado))
+                ->descriptionIcon('heroicon-m-currency-dollar');
+        })->values();
 
         // Agregar el total
-        $stats->push(Stat::make('Costo Total', Functions::money($total)));
+        $stats->push(
+            Stat::make('Costo Total', Functions::money($totalGeneral))
+                ->description('✅ Activos: '.Functions::money($totalActivos).' | ❌ Anulados: '.Functions::money($totalAnulados))
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color('success')
+        );
 
         return $stats->all();
     }

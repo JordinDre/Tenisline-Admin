@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <!-- Resumen General -->
-    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6">
+    {{-- <div class="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6">
         <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
             <div class="text-xs font-medium text-green-600 dark:text-green-400">Total Meta</div>
             <div class="text-sm font-bold text-green-900 dark:text-green-100">
@@ -49,7 +49,7 @@
                 {{ number_format($this->getViewData()['rentabilidadPromedio'] / 2, 2) }}%
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Tabla de Datos -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
