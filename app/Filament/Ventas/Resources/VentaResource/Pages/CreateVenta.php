@@ -147,8 +147,24 @@ class CreateVenta extends CreateRecord
                                         ->required()
                                         ->live()
                                         ->reactive()
-                                        ->afterStateUpdated(function (Set $set) {
+                                        ->afterStateUpdated(function (Set $set, Get $get, $state) {
                                             $set('detalles', []);
+
+                                            // Validar si el cliente tiene NIT "CF" y el total actual excede 2500
+                                            if ($state) {
+                                                $cliente = User::find($state);
+                                                if ($cliente) {
+                                                    $nit = strtoupper(trim($cliente->nit ?? ''));
+                                                    $total = (float) ($get('total') ?? 0);
+                                                    if ($nit === 'CF' && $total > Factura::CF) {
+                                                        Notification::make()
+                                                            ->title('Venta excede el límite')
+                                                            ->body('Las ventas para clientes con NIT "CF" no pueden ser mayores a Q'.Factura::CF.'.')
+                                                            ->warning()
+                                                            ->send();
+                                                    }
+                                                }
+                                            }
                                         })
                                         ->columnSpan(['sm' => 1, 'md' => 15])
                                         ->rules([
@@ -271,6 +287,17 @@ class CreateVenta extends CreateRecord
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             if (! $get('facturar_cf')) {
                                                 $set('comp', false);
+                                            } else {
+                                                // Validar que el total no exceda 2500 cuando se activa facturar_cf
+                                                $total = (float) ($get('total') ?? 0);
+                                                if ($total > Factura::CF) {
+                                                    Notification::make()
+                                                        ->title('Venta excede el límite')
+                                                        ->body('Las ventas con "Facturar CF" activo no pueden ser mayores a Q'.Factura::CF.'.')
+                                                        ->danger()
+                                                        ->send();
+                                                    $set('facturar_cf', false);
+                                                }
                                             }
                                         })
                                         ->rules([
@@ -282,6 +309,14 @@ class CreateVenta extends CreateRecord
 
                                                     if ($razonSocial === 'CF' && ! $value) {
                                                         $fail('El cliente tiene razón social CF, debe activar esta opción.');
+                                                    }
+                                                }
+
+                                                // Validar que el total no exceda 2500 cuando se activa facturar_cf
+                                                if ($value) {
+                                                    $total = (float) ($get('total') ?? 0);
+                                                    if ($total > Factura::CF) {
+                                                        $fail('Las ventas con "Facturar CF" activo no pueden ser mayores a Q'.Factura::CF.'.');
                                                     }
                                                 }
                                             },
@@ -439,112 +474,118 @@ class CreateVenta extends CreateRecord
 
                                                     $precio = $producto->precio_venta;
 
-                                                   if ($state === 'segundo_par') {
-                                                    $detalles       = $this->getDetallesArray($get);
-                                                    $currentUuid    = $get('uuid') ?? null;
-                                                    $cantidadActual = (int) ($get('cantidad') ?? 1);
+                                                    if ($state === 'segundo_par') {
+                                                        $detalles = $this->getDetallesArray($get);
+                                                        $currentUuid = $get('uuid') ?? null;
+                                                        $cantidadActual = (int) ($get('cantidad') ?? 1);
 
-                                                    // 0) Debe existir al menos un % configurado en algún producto
-                                                    if (! $this->hayAlgunoConPorcentajeSegundoPar($detalles)) {
-                                                        Notification::make()
-                                                            ->title('Oferta no disponible')
-                                                            ->body('Ningún producto tiene configurado porcentaje de "Segundo Par".')
-                                                            ->danger()->send();
+                                                        // 0) Debe existir al menos un % configurado en algún producto
+                                                        if (! $this->hayAlgunoConPorcentajeSegundoPar($detalles)) {
+                                                            Notification::make()
+                                                                ->title('Oferta no disponible')
+                                                                ->body('Ningún producto tiene configurado porcentaje de "Segundo Par".')
+                                                                ->danger()->send();
 
-                                                        $set('tipo_precio', 'normal');
-                                                        $this->restoreOriginalPrice($get, $set);
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        // 1) Regla ORIGINAL: mínimo 2 pares en la orden
+                                                        $totalPares = $this->totalPares($detalles);
+                                                        if ($totalPares < 2) {
+                                                            Notification::make()
+                                                                ->title('Descuento no aplicable')
+                                                                ->body('El precio de "Segundo Par" requiere al menos 2 pares en total.')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        // 2) No combinable con otras ofertas en otros ítems
+                                                        $hayOtrasOfertasEnOtros = collect($detalles)->contains(function ($item) use ($currentUuid) {
+                                                            return (($item['uuid'] ?? null) !== $currentUuid)
+                                                                && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
+                                                        });
+
+                                                        if ($hayOtrasOfertasEnOtros) {
+                                                            Notification::make()
+                                                                ->title('Oferta no combinable')
+                                                                ->body('La oferta de "Segundo Par" no se puede combinar con otras ofertas en la orden.')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        // 3) Límite por cupos: 1 par con segundo_par por cada 2 pares totales
+                                                        $permitidos = $this->paresPermitidos($totalPares);
+                                                        $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
+                                                        $despuesDeEste = $yaConSegundoPar + $cantidadActual;
+
+                                                        if ($despuesDeEste > $permitidos) {
+                                                            Notification::make()
+                                                                ->title('Límite alcanzado')
+                                                                ->body("Solo se puede aplicar 'Segundo Par' a {$permitidos} par(es) en total.")
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        // 4) Debe ser el producto de MENOR costo elegible (porcentaje>0 y costo>0)
+                                                        if (! $this->esProductoMenorCostoElegible((int) $producto->id, $detalles)) {
+                                                            Notification::make()
+                                                                ->title('Regla del menor costo')
+                                                                ->body('El descuento de "Segundo Par" solo aplica al producto de menor costo en la orden.')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        // 5) Verificación local del producto
+                                                        if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_costo ?? 0) <= 0) {
+                                                            Notification::make()
+                                                                ->title('Descuento no aplicable')
+                                                                ->body('Este producto no tiene porcentaje de "Segundo Par" o costo configurado.')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        // 6) Calcular precio con la fórmula (redondeado a 2 decimales)
+                                                        $precio = $this->calcularPrecioSegundoPar($producto);
+                                                        $set('precio', $precio);
+                                                        $set('subtotal', round($precio * $cantidadActual, 2));
                                                         $this->updateOrderTotals($get, $set);
+
+                                                        Notification::make()
+                                                            ->title('Segundo Par aplicado')
+                                                            ->body('Se aplicó el precio calculado sobre costo según el porcentaje configurado.')
+                                                            ->success()->send();
+
                                                         return;
                                                     }
-
-                                                    // 1) Regla ORIGINAL: mínimo 2 pares en la orden
-                                                    $totalPares = $this->totalPares($detalles);
-                                                    if ($totalPares < 2) {
-                                                        Notification::make()
-                                                            ->title('Descuento no aplicable')
-                                                            ->body('El precio de "Segundo Par" requiere al menos 2 pares en total.')
-                                                            ->danger()->send();
-
-                                                        $set('tipo_precio', 'normal');
-                                                        $this->restoreOriginalPrice($get, $set);
-                                                        $this->updateOrderTotals($get, $set);
-                                                        return;
-                                                    }
-
-                                                    // 2) No combinable con otras ofertas en otros ítems
-                                                    $hayOtrasOfertasEnOtros = collect($detalles)->contains(function ($item) use ($currentUuid) {
-                                                        return (($item['uuid'] ?? null) !== $currentUuid)
-                                                            && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
-                                                    });
-
-                                                    if ($hayOtrasOfertasEnOtros) {
-                                                        Notification::make()
-                                                            ->title('Oferta no combinable')
-                                                            ->body('La oferta de "Segundo Par" no se puede combinar con otras ofertas en la orden.')
-                                                            ->danger()->send();
-
-                                                        $set('tipo_precio', 'normal');
-                                                        $this->restoreOriginalPrice($get, $set);
-                                                        $this->updateOrderTotals($get, $set);
-                                                        return;
-                                                    }
-
-                                                    // 3) Límite por cupos: 1 par con segundo_par por cada 2 pares totales
-                                                    $permitidos = $this->paresPermitidos($totalPares);
-                                                    $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
-                                                    $despuesDeEste = $yaConSegundoPar + $cantidadActual;
-
-                                                    if ($despuesDeEste > $permitidos) {
-                                                        Notification::make()
-                                                            ->title('Límite alcanzado')
-                                                            ->body("Solo se puede aplicar 'Segundo Par' a {$permitidos} par(es) en total.")
-                                                            ->danger()->send();
-
-                                                        $set('tipo_precio', 'normal');
-                                                        $this->restoreOriginalPrice($get, $set);
-                                                        $this->updateOrderTotals($get, $set);
-                                                        return;
-                                                    }
-
-                                                    // 4) Debe ser el producto de MENOR costo elegible (porcentaje>0 y costo>0)
-                                                    if (! $this->esProductoMenorCostoElegible((int) $producto->id, $detalles)) {
-                                                        Notification::make()
-                                                            ->title('Regla del menor costo')
-                                                            ->body('El descuento de "Segundo Par" solo aplica al producto de menor costo en la orden.')
-                                                            ->danger()->send();
-
-                                                        $set('tipo_precio', 'normal');
-                                                        $this->restoreOriginalPrice($get, $set);
-                                                        $this->updateOrderTotals($get, $set);
-                                                        return;
-                                                    }
-
-                                                    // 5) Verificación local del producto
-                                                    if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_costo ?? 0) <= 0) {
-                                                        Notification::make()
-                                                            ->title('Descuento no aplicable')
-                                                            ->body('Este producto no tiene porcentaje de "Segundo Par" o costo configurado.')
-                                                            ->danger()->send();
-
-                                                        $set('tipo_precio', 'normal');
-                                                        $this->restoreOriginalPrice($get, $set);
-                                                        $this->updateOrderTotals($get, $set);
-                                                        return;
-                                                    }
-
-                                                    // 6) Calcular precio con la fórmula (redondeado a 2 decimales)
-                                                    $precio = $this->calcularPrecioSegundoPar($producto);
-                                                    $set('precio', $precio);
-                                                    $set('subtotal', round($precio * $cantidadActual, 2));
-                                                    $this->updateOrderTotals($get, $set);
-
-                                                    Notification::make()
-                                                        ->title('Segundo Par aplicado')
-                                                        ->body('Se aplicó el precio calculado sobre costo según el porcentaje configurado.')
-                                                        ->success()->send();
-
-                                                    return;
-                                                }
 
                                                     // Si seleccionan alguna oferta distinta a segundo_par (oferta, liquidacion, descuento)
                                                     if (in_array($state, ['oferta', 'liquidacion', 'descuento'])) {
@@ -773,6 +814,24 @@ class CreateVenta extends CreateRecord
 
                                             $set('../../subtotal', round($subtotalGeneral, 2));
                                             $set('../../total', round($totalGeneral, 2));
+
+                                            // Validar límite de 2500 cuando facturar_cf está activo o el NIT es CF
+                                            $facturarCf = $get('facturar_cf') ?? false;
+                                            $clienteId = $get('cliente_id');
+
+                                            if ($clienteId && ($facturarCf || $totalGeneral > Factura::CF)) {
+                                                $cliente = User::find($clienteId);
+                                                if ($cliente) {
+                                                    $nit = strtoupper(trim($cliente->nit ?? ''));
+                                                    if (($facturarCf || $nit === 'CF') && $totalGeneral > Factura::CF) {
+                                                        Notification::make()
+                                                            ->title('Venta excede el límite')
+                                                            ->body('Las ventas no pueden ser mayores a Q'.Factura::CF.' cuando "Facturar CF" está activo o el NIT del cliente es "CF".')
+                                                            ->warning()
+                                                            ->send();
+                                                    }
+                                                }
+                                            }
                                         }),
 
                                 ])]),
@@ -860,7 +919,34 @@ class CreateVenta extends CreateRecord
                         TextInput::make('total')
                             ->readOnly()
                             ->prefix('Q')
-                            ->label('Total'),
+                            ->label('Total')
+                            ->rules([
+                                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                    $total = (float) ($value ?? 0);
+                                    $facturarCf = $get('facturar_cf') ?? false;
+                                    $clienteId = $get('cliente_id');
+
+                                    // Verificar si facturar_cf está activo
+                                    if ($facturarCf && $total > Factura::CF) {
+                                        $fail('Las ventas con "Facturar CF" activo no pueden ser mayores a Q'.Factura::CF.'.');
+
+                                        return;
+                                    }
+
+                                    // Verificar si el NIT del cliente es CF o cf
+                                    if ($clienteId) {
+                                        $cliente = User::find($clienteId);
+                                        if ($cliente) {
+                                            $nit = strtoupper(trim($cliente->nit ?? ''));
+                                            if (($nit === 'CF') && $total > Factura::CF) {
+                                                $fail('Las ventas para clientes con NIT "CF" no pueden ser mayores a Q'.Factura::CF.'.');
+
+                                                return;
+                                            }
+                                        }
+                                    }
+                                },
+                            ]),
                     ]),
 
             ]);
@@ -904,6 +990,18 @@ class CreateVenta extends CreateRecord
                 if ($razonSocial === 'CF' && ! $facturarCf) {
                     throw ValidationException::withMessages([
                         'facturar_cf' => 'El cliente tiene razón social CF, debe activar la opción "Facturar CF".',
+                    ]);
+                }
+            }
+
+            // Validar que las ventas no pueden ser mayores a 2500 cuando facturar_cf está activo o el NIT es CF/cf
+            if ($clienteId) {
+                $cliente = User::find($clienteId);
+                $nit = strtoupper(trim($cliente->nit ?? ''));
+
+                if (($facturarCf || $nit === 'CF') && $totalVenta > Factura::CF) {
+                    throw ValidationException::withMessages([
+                        'total' => 'Las ventas no pueden ser mayores a Q'.Factura::CF.' cuando "Facturar CF" está activo o el NIT del cliente es "CF".',
                     ]);
                 }
             }
