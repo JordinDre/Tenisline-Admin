@@ -81,6 +81,7 @@ class MetaVendedor extends Widget
             ->whereNotNull('bodega_id')
             ->pluck('meta', 'bodega_id')
             ->toArray();
+            
 
         // --- Traer detalles (filtrando por año/mes/día/bodega/genero)
         $detalles = \App\Models\VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
@@ -106,7 +107,7 @@ class MetaVendedor extends Widget
 
                 // si el asesor vendió en varias bodegas, tomamos la primera (como tu lógica original)
                 $bodegaId = $ordenes->first()->venta->bodega_id ?? null;
-                $meta = isset($metas[$bodegaId]) ? ((float) $metas[$bodegaId] / 2) : 0;
+                $meta = isset($metas[$bodegaId]) ? ((float) $metas[$bodegaId]) : 0;
 
                 $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
                 $proyeccion = ($total / $diasTranscurridos) * $totalDiasMes;
