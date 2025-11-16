@@ -21,6 +21,11 @@ class VentasTiendas extends Widget
 
     protected static string $view = 'filament.ventas.widgets.ventas-tiendas-table';
 
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     protected int|string|array $columnSpan = [
         'sm' => 'full',
         'md' => 'full',
