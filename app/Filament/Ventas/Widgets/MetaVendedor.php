@@ -24,7 +24,10 @@ class MetaVendedor extends Widget
         'lg' => 1,
         'xl' => 1,
     ];
-    
+    public static function canView(): bool
+    {
+        return false;
+    }
 
     protected function getViewData(): array
     {
