@@ -3,8 +3,10 @@
 namespace App\Filament\Ventas\Widgets;
 
 use Carbon\Carbon;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use App\Models\VentaDetalle;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Auth;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class MetaVendedor extends Widget
 {
@@ -61,6 +63,14 @@ class MetaVendedor extends Widget
         // $carbonMonth = Carbon::create($year, $month, 1);
         // $totalDiasMes = $carbonMonth->daysInMonth;
 
+        $user = Auth::user();
+        $isAdmin = $user->hasRole('administrador');
+        $bodegasUsuarioIds = $user->bodegas()
+            ->pluck('bodegas.id')
+            ->toArray();
+
+            
+
         $diasTranscurridos = $day ? (int) $day : now()->day;
         $totalDiasMes = now()->setYear((int) $year)->setMonth((int) $month)->daysInMonth;
 
@@ -75,28 +85,47 @@ class MetaVendedor extends Widget
         // // evitar división por cero
         // $diasTranscurridos = max(1, $diasTranscurridos);
 
-        // --- Metas por bodega (clave: bodega_id)
         $metas = \App\Models\Meta::where('mes', $month)
             ->where('anio', $year)
             ->whereNotNull('bodega_id')
+            ->when(
+                !$isAdmin && !empty($bodegasUsuarioIds),
+                fn ($q) => $q->whereIn('bodega_id', $bodegasUsuarioIds)
+            )
             ->pluck('meta', 'bodega_id')
             ->toArray();
 
-        // --- Traer detalles (filtrando por año/mes/día/bodega/genero)
-        $detalles = \App\Models\VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+        $detallesQuery = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
             ->join('bodegas', 'bodegas.id', '=', 'ventas.bodega_id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
             ->when($day, fn ($q) => $q->whereDay('ventas.created_at', $day))
-            ->when($bodegaFilter, fn ($q, $b) => $q->where('bodegas.bodega', $b))
             ->when($generoFilter, fn ($q, $g) => $q->where('productos.genero', $g))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
-            ->select('venta_detalles.*') // traemos modelos completos (para usar relaciones en colección)
-            ->get();
+            ->select('venta_detalles.*');
 
-        // --- Agrupar por asesor (usamos venta->asesor_id en la colección)
+
+        if ($isAdmin) {
+            $detallesQuery->when(
+                $bodegaFilter,
+                fn ($q, $b) => $q->where('bodegas.bodega', $b) 
+            );
+        } else {
+            if (!empty($bodegasUsuarioIds)) {
+                $detallesQuery->whereIn('ventas.bodega_id', $bodegasUsuarioIds);
+                $detallesQuery->when(
+                    $bodegaFilter,
+                    fn ($q, $b) => $q->where('bodegas.bodega', $b)
+                );
+            } else {
+                $detallesQuery->whereRaw('1 = 0');
+            }
+        }
+
+        $detalles = $detallesQuery->get();
+        
         $data = $detalles
             ->groupBy(fn ($d) => $d->venta->asesor_id ?? 'sin_asesor')
             ->map(function ($ordenes) use ($metas, $diasTranscurridos, $totalDiasMes) {
