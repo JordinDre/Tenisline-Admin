@@ -40,13 +40,15 @@ class VentasTiendas extends Widget
         $day = $this->filters['dia'] ?? null;
         $bodegaFilter = $this->filters['bodega'] ?? '';
 
-        // Datos de ventas por bodega
-        $ventasData = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+        $user = Auth::user();
+        $isAdmin = $user->hasRole('administrador'); 
+        $bodegasUsuarioIds = $user->bodegas->pluck('id')->all();
+
+        $ventasQuery = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereYear('ventas.created_at', $year)
             ->whereMonth('ventas.created_at', $month)
             ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
-            ->when($bodegaFilter, fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)
             ->selectRaw('
@@ -55,8 +57,26 @@ class VentasTiendas extends Widget
                 SUM(venta_detalles.precio) as total,
                 SUM(venta_detalles.cantidad) as unidades_vendidas
             ')
-            ->groupBy('bodegas.id', 'bodegas.bodega')
-            ->get();
+            ->groupBy('bodegas.id', 'bodegas.bodega');
+
+        if ($isAdmin) {
+            $ventasQuery->when(
+                $bodegaFilter,
+                fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega)
+            );
+        } else {
+            if (!empty($bodegasUsuarioIds)) {
+                $ventasQuery->whereIn('bodegas.id', $bodegasUsuarioIds);
+                $ventasQuery->when(
+                    $bodegaFilter,
+                    fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega)
+                );
+            } else {
+                $ventasQuery->whereRaw('1 = 0');
+            }
+        }
+
+        $ventasData = $ventasQuery->get();
 
         // Metas por bodega
         $metas = Meta::where('mes', $month)
