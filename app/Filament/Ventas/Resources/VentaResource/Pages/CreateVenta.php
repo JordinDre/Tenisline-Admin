@@ -877,14 +877,15 @@ class CreateVenta extends CreateRecord
                                         ->columnSpan(['sm' => 1, 'md' => 2])
                                         ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA']))
                                         ->rules([
-                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                                                if (
-                                                    Pago::where('banco_id', $get('banco_id'))
-                                                        ->where('fecha_transaccion', $get('fecha_transaccion'))
-                                                        ->where('no_documento', $value)
-                                                        ->exists()
-                                                ) {
-                                                    $fail('La combinación de Banco, Fecha de Transacción y No. Documento ya existe en los pagos.');
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
+                                                // Solo validar si el valor no está vacío
+                                                if (empty($value)) {
+                                                    return;
+                                                }
+
+                                                // Validar que no_documento sea único en toda la tabla de pagos
+                                                if (Pago::where('no_documento', $value)->exists()) {
+                                                    $fail('El número de documento ya existe en los pagos.');
                                                 }
                                             },
                                         ]),
