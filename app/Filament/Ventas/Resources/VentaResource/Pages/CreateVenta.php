@@ -431,9 +431,9 @@ class CreateVenta extends CreateRecord
                                                         $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
                                                     }
 
-                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_costo > 0) {
+                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_venta > 0) {
                                                         $precioCalculado = self::calcularPrecioSegundoPar($producto);
-                                                        $precios['segundo_par'] = 'Segundo Par ('.$producto->precio_segundo_par.'% sobre precio → Q'.$precioCalculado.')';
+                                                        $precios['segundo_par'] = 'Segundo Par ('.$producto->precio_segundo_par.'% descuento → Q'.$precioCalculado.')';
                                                     }
 
                                                     if ($producto->precio_descuento > 0) {
@@ -545,11 +545,11 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 4) Debe ser el producto de MENOR costo elegible (porcentaje>0 y costo>0)
+                                                        // 4) Debe ser el producto de MENOR precio de venta elegible (porcentaje>0 y precio_venta>0)
                                                         if (! $this->esProductoMenorCostoElegible((int) $producto->id, $detalles)) {
                                                             Notification::make()
-                                                                ->title('Regla del menor costo')
-                                                                ->body('El descuento de "Segundo Par" solo aplica al producto de menor costo en la orden.')
+                                                                ->title('Regla del menor precio')
+                                                                ->body('El descuento de "Segundo Par" solo aplica al producto de menor precio de venta en la orden.')
                                                                 ->danger()->send();
 
                                                             $set('tipo_precio', 'normal');
@@ -560,10 +560,10 @@ class CreateVenta extends CreateRecord
                                                         }
 
                                                         // 5) Verificación local del producto
-                                                        if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_costo ?? 0) <= 0) {
+                                                        if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_venta ?? 0) <= 0) {
                                                             Notification::make()
                                                                 ->title('Descuento no aplicable')
-                                                                ->body('Este producto no tiene porcentaje de "Segundo Par" o costo configurado.')
+                                                                ->body('Este producto no tiene porcentaje de "Segundo Par" o precio de venta configurado.')
                                                                 ->danger()->send();
 
                                                             $set('tipo_precio', 'normal');
@@ -573,7 +573,7 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 6) Calcular precio con la fórmula (redondeado a 2 decimales)
+                                                        // 6) Calcular precio restando el porcentaje del precio de venta (redondeado a 2 decimales)
                                                         $precio = $this->calcularPrecioSegundoPar($producto);
                                                         $set('precio', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
@@ -581,7 +581,7 @@ class CreateVenta extends CreateRecord
 
                                                         Notification::make()
                                                             ->title('Segundo Par aplicado')
-                                                            ->body('Se aplicó el precio calculado sobre costo según el porcentaje configurado.')
+                                                            ->body('Se aplicó el descuento del '.$producto->precio_segundo_par.'% sobre el precio de venta.')
                                                             ->success()->send();
 
                                                         return;
