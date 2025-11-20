@@ -2,9 +2,9 @@
 
 namespace App\Filament\Traits;
 
+use App\Models\Producto;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use App\Models\Producto;
 use Filament\Notifications\Notification;
 
 trait ManageDiscountLogic
@@ -146,24 +146,21 @@ trait ManageDiscountLogic
 
     protected function calcularPrecioSegundoPar(\App\Models\Producto $p): float
     {
-        $porcentaje = (float) ($p->precio_segundo_par ?? 0); // ahora significa % de descuento
-        $costo      = (float) ($p->precio_costo ?? 0);
+        $porcentaje = (float) ($p->precio_segundo_par ?? 0); // % de descuento sobre precio de venta
+        $precioVenta = (float) ($p->precio_venta ?? 0);
 
-        // Debe ser 0 < % < 100 y costo > 0
-        if ($porcentaje <= 0.0 || $porcentaje >= 100.0 || $costo <= 0.0) {
-            return (float) $p->precio_venta;
+        // Debe ser 0 < % < 100 y precio_venta > 0
+        if ($porcentaje <= 0.0 || $porcentaje >= 100.0 || $precioVenta <= 0.0) {
+            return $precioVenta;
         }
 
-        $den = 1.0 - ($porcentaje / 100.0);   // p.ej. 20% => 0.80
-        if ($den <= 0.0) {
-            return (float) $p->precio_venta;
-        }
+        // Restar el porcentaje del precio de venta
+        // Ejemplo: precio_venta = 100, porcentaje = 20% => precio = 100 - (100 * 0.20) = 80
+        $descuento = $precioVenta * ($porcentaje / 100.0);
+        $precio = $precioVenta - $descuento;
 
-        // Redondeo a 2 decimales para que coincida con lo que esperas en UI/DB
-        $precio = $costo / $den;
-
-        // IMPORTANTE: forzar 2 decimales consistentes con number_format
-        return round($precio + 1e-9, 2);
+        // Redondeo a 2 decimales
+        return round($precio, 2);
     }
 
     protected function mapProductosDesdeDetalles(array $detalles): array
@@ -195,6 +192,7 @@ trait ManageDiscountLogic
                 return true;
             }
         }
+
         return false;
     }
 
@@ -203,15 +201,15 @@ trait ManageDiscountLogic
         $productos = $this->mapProductosDesdeDetalles($detalles);
 
         $minId = null;
-        $minCosto = null;
+        $minPrecioVenta = null;
 
         foreach ($productos as $p) {
             $porcentaje = (float) ($p->precio_segundo_par ?? 0);
-            $costo = (float) ($p->precio_costo ?? 0);
+            $precioVenta = (float) ($p->precio_venta ?? 0);
 
-            if ($porcentaje > 0 && $costo > 0) {
-                if ($minCosto === null || $costo < $minCosto) {
-                    $minCosto = $costo;
+            if ($porcentaje > 0 && $precioVenta > 0) {
+                if ($minPrecioVenta === null || $precioVenta < $minPrecioVenta) {
+                    $minPrecioVenta = $precioVenta;
                     $minId = (int) $p->id;
                 }
             }
@@ -223,6 +221,7 @@ trait ManageDiscountLogic
     protected function esProductoMenorCostoElegible(int $productoId, array $detalles): bool
     {
         $minId = $this->idMenorCostoElegible($detalles);
+
         return $minId !== null && $minId === $productoId;
     }
 
