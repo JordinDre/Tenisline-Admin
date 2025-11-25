@@ -357,4 +357,47 @@ class Cierre extends Model
 
         return true;
     }
+
+    public function getCajasChicasRelacionadasAttribute()
+    {
+        $inicioCambio = '2025-10-27';
+
+        $apertura = $this->apertura;
+        $cierre   = $this->cierre ?? now();
+
+        $creadasEnRango = \App\Models\CajaChica::query()
+            ->with('pagos')
+            ->where('bodega_id', $this->bodega_id)
+            ->whereDate('created_at', '>=', $inicioCambio)              
+            ->whereBetween('created_at', [$apertura, $cierre])
+            ->whereIn('estado', ['creada', 'confirmada'])
+            ->get();
+
+        $aplicadasEnEste = \App\Models\CajaChica::query()
+            ->with('pagos')
+            ->where('bodega_id', $this->bodega_id)
+            ->where('aplicado_en_cierre_id', $this->id)
+            ->get();
+
+        $cajas = $creadasEnRango->merge($aplicadasEnEste)
+            ->unique('id')
+            ->sortBy('created_at');
+
+        return $cajas->map(function ($caja) {
+            $estadoLabel = match ($caja->estado) {
+                'confirmada' => 'Confirmada',
+                'creada'     => 'Pendiente',
+                'anulada'    => 'Anulada',
+                default      => ucfirst($caja->estado),
+            };
+
+            if ($caja->aplicado && $caja->aplicado_en_cierre_id === $this->id) {
+                $estadoLabel = 'Aplicada en este cierre';
+            }
+
+            $monto = $caja->pagos->sum('monto');
+
+            return "{$caja->detalle_gasto} (Q" . number_format($monto, 2) . ") - {$estadoLabel}";
+        })->values()->toArray();
+    }
 }
