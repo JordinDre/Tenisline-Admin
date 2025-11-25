@@ -127,7 +127,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->inputMode('decimal')
                             ->rule('numeric'),
                         TextInput::make('precio_liquidacion')
-                            ->label('Precio Liquidación')
+                            ->label('% Precio Liquidación')
                             ->live(onBlur: true)
                             ->minValue(0)
                             ->visible(auth()->user()->can('view_costs_producto'))
