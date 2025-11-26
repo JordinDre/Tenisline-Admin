@@ -130,6 +130,12 @@ class CierreResource extends Resource
                 Tables\Columns\TextColumn::make('resumen_pagos_liquidacion')
                     ->label('Liquidaciones Realizados')
                     ->listWithLineBreaks(),
+                Tables\Columns\TextColumn::make('cajas_chicas_relacionadas')
+                    ->label('Cajas Chicas (Pendientes o Pagadas en Cierre)')
+                    ->listWithLineBreaks()
+                    ->wrap()
+                    ->limitList(5)
+                    ->placeholder('— Sin registros —'),
             ])
             ->filters([
                 //
