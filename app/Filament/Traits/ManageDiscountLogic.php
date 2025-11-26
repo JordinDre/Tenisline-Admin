@@ -146,20 +146,31 @@ trait ManageDiscountLogic
 
     protected function calcularPrecioSegundoPar(\App\Models\Producto $p): float
     {
-        $porcentaje = (float) ($p->precio_segundo_par ?? 0); // % de descuento sobre precio de venta
+        $porcentaje = (float) ($p->precio_segundo_par ?? 0); 
         $precioVenta = (float) ($p->precio_venta ?? 0);
 
-        // Debe ser 0 < % < 100 y precio_venta > 0
         if ($porcentaje <= 0.0 || $porcentaje >= 100.0 || $precioVenta <= 0.0) {
             return $precioVenta;
         }
 
-        // Restar el porcentaje del precio de venta
-        // Ejemplo: precio_venta = 100, porcentaje = 20% => precio = 100 - (100 * 0.20) = 80
         $descuento = $precioVenta * ($porcentaje / 100.0);
         $precio = $precioVenta - $descuento;
 
-        // Redondeo a 2 decimales
+        return round($precio, 2);
+    }
+
+    protected function calcularPrecioLiquidacion(\App\Models\Producto $p): float
+    {
+        $porcentaje = (float) ($p->precio_liquidacion ?? 0); 
+        $precioVenta = (float) ($p->precio_venta ?? 0);
+
+        if ($porcentaje <= 0.0 || $porcentaje >= 100.0 || $precioVenta <= 0.0) {
+            return $precioVenta;
+        }
+
+        $descuento = $precioVenta * ($porcentaje / 100.0);
+        $precio = $precioVenta - $descuento;
+
         return round($precio, 2);
     }
 

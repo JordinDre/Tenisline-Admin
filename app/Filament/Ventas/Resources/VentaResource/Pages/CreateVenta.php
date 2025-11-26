@@ -424,7 +424,8 @@ class CreateVenta extends CreateRecord
                                                     ];
 
                                                     if ($producto->precio_liquidacion > 0) {
-                                                        $precios['liquidacion'] = 'Precio Liquidación (Q'.$producto->precio_liquidacion.')';
+                                                        $precioCalculado = self::calcularPrecioLiquidacion($producto);
+                                                        $precios['liquidacion'] = 'Liquidación ('.$producto->precio_liquidacion.'% descuento → Q'.$precioCalculado.')';
                                                     }
 
                                                     if ($producto->precio_oferta > 0) {
@@ -479,7 +480,6 @@ class CreateVenta extends CreateRecord
                                                         $currentUuid = $get('uuid') ?? null;
                                                         $cantidadActual = (int) ($get('cantidad') ?? 1);
 
-                                                        // 0) Debe existir al menos un % configurado en algún producto
                                                         if (! $this->hayAlgunoConPorcentajeSegundoPar($detalles)) {
                                                             Notification::make()
                                                                 ->title('Oferta no disponible')
@@ -493,7 +493,6 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 1) Regla ORIGINAL: mínimo 2 pares en la orden
                                                         $totalPares = $this->totalPares($detalles);
                                                         if ($totalPares < 2) {
                                                             Notification::make()
@@ -508,7 +507,6 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 2) No combinable con otras ofertas en otros ítems
                                                         $hayOtrasOfertasEnOtros = collect($detalles)->contains(function ($item) use ($currentUuid) {
                                                             return (($item['uuid'] ?? null) !== $currentUuid)
                                                                 && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
@@ -527,7 +525,6 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 3) Límite por cupos: 1 par con segundo_par por cada 2 pares totales
                                                         $permitidos = $this->paresPermitidos($totalPares);
                                                         $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
                                                         $despuesDeEste = $yaConSegundoPar + $cantidadActual;
@@ -545,7 +542,6 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 4) Debe ser el producto de MENOR precio de venta elegible (porcentaje>0 y precio_venta>0)
                                                         if (! $this->esProductoMenorCostoElegible((int) $producto->id, $detalles)) {
                                                             Notification::make()
                                                                 ->title('Regla del menor precio')
@@ -559,7 +555,6 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 5) Verificación local del producto
                                                         if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_venta ?? 0) <= 0) {
                                                             Notification::make()
                                                                 ->title('Descuento no aplicable')
@@ -573,7 +568,6 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        // 6) Calcular precio restando el porcentaje del precio de venta (redondeado a 2 decimales)
                                                         $precio = $this->calcularPrecioSegundoPar($producto);
                                                         $set('precio', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
@@ -617,7 +611,7 @@ class CreateVenta extends CreateRecord
                                                                 $precio = ($producto->precio_oferta > 0) ? $producto->precio_oferta : $producto->precio_venta;
                                                                 break;
                                                             case 'liquidacion':
-                                                                $precio = ($producto->precio_liquidacion > 0) ? $producto->precio_liquidacion : $producto->precio_venta;
+                                                                $precio = $this->calcularPrecioLiquidacion($producto);
                                                                 break;
                                                             case 'descuento':
                                                                 if ($producto->precio_descuento > 0) {
