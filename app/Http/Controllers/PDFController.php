@@ -242,7 +242,8 @@ class PDFController extends Controller
         // Obtener máximo 10 productos con sus relaciones
         $productos = Producto::with(['marca', 'inventario.bodega.municipio'])
             ->whereHas('inventario', function ($query) {
-                $query->where('existencia', '>', 0);
+                $query->where('existencia', '>', 0)
+                    ->where('bodega_id', '!=', 2); // Excluir bodega central (bodega_id = 2)
             })
             ->limit(10)
             ->get()
@@ -264,6 +265,11 @@ class PDFController extends Controller
                             ->filter(function ($inv) {
                                 $bodega = $inv->bodega;
                                 if (! $bodega) {
+                                    return false;
+                                }
+
+                                // Excluir bodega central (bodega_id = 2)
+                                if ($bodega->id == 2) {
                                     return false;
                                 }
 
