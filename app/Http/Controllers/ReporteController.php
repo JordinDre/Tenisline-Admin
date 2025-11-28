@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ReporteDiarioExport;
-use App\Exports\ReporteHistorialClienteExport;
-use App\Exports\ReportePagosExport;
-use App\Exports\ReporteVentasGeneralExport;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\ReportePagosExport;
+use App\Exports\ReporteDiarioExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ReporteVentasGeneralExport;
+use App\Exports\ReporteHistorialClienteExport;
+use App\Exports\ReporteUltimaCompraClienteExport;
 
 class ReporteController extends Controller
 {
@@ -327,6 +329,46 @@ class ReporteController extends Controller
         return Excel::download(
             new ReporteDiarioExport($data),
             'Reporte Resultados '.$fecha_inicial.' - '.$fecha_final.'.xlsx'
+        );
+    }
+
+    public function ReporteInventario()
+    {
+
+        $fecha = Carbon::now()->format('d:m:y');
+
+        $sql = "
+        SELECT
+            p.id AS producto_id,
+            p.codigo,
+            p.descripcion,
+            m.marca AS marca,
+            p.precio_venta,
+            p.precio_costo,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 1 THEN i.existencia END), 0) AS zacapa,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 2 THEN i.existencia END), 0) AS central_bodega,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 3 THEN i.existencia END), 0) AS mal_estado,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 4 THEN i.existencia END), 0) AS traslado,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 5 THEN i.existencia END), 0) AS zacapa_bodega,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 6 THEN i.existencia END), 0) AS chiquimula,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 7 THEN i.existencia END), 0) AS chiquimula_bodega,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 8 THEN i.existencia END), 0) AS esquipulas,
+            COALESCE(MAX(CASE WHEN i.bodega_id = 9 THEN i.existencia END), 0) AS esquipulas_bodega,
+            COALESCE(SUM(i.existencia),0) AS total_existencias
+        FROM productos p
+        LEFT JOIN inventarios i ON i.producto_id = p.id
+        LEFT JOIN marcas m ON m.id = p.marca_id
+        GROUP BY
+            p.id, p.codigo, p.descripcion, m.marca,
+            p.precio_venta, p.precio_costo
+        ORDER BY p.id;
+        ";
+
+        $data = DB::select($sql);
+
+        return Excel::download(
+            new ReporteUltimaCompraClienteExport($data),
+            'Reporte Inventario fecha:'.$fecha.'.xlsx'
         );
     }
 }
