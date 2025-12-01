@@ -56,7 +56,11 @@ class CardResource extends Resource implements HasShieldPermissions
                     ->schema([
                         TextInput::make('correlativo')
                             ->required()
-                            ->maxLength(100),
+                            ->maxLength(100)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         Select::make('cliente_id')
                             ->label('Cliente')
                             ->relationship('user', 'name', fn (Builder $query) => $query->role(['cliente', 'colaborador']))

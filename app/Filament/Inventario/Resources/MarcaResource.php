@@ -48,7 +48,11 @@ class MarcaResource extends Resource implements HasShieldPermissions
                 Forms\Components\TextInput::make('marca')
                     ->maxLength(50)
                     ->columnSpanFull()
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true)
+                    ->rules(['regex:/^[^a-z]+$/'])
+                    ->validationMessages([
+                        'regex' => 'No se permiten letras minúsculas.',
+                    ]),
             ]);
     }
 
