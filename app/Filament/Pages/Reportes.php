@@ -120,6 +120,15 @@ class Reportes extends Page
 
                     return response()->redirectTo($url);
                 }),
+            Action::make('ReporteInventario')
+                ->label('Reporte de Inventario')
+                ->icon('heroicon-o-document-text')
+                ->modalHeading('Generar Reporte')
+                ->action(function () {
+                    $url = route('reporte.reporteinventario');
+
+                    return response()->redirectTo($url);
+                }),
         ];
     }
 }
