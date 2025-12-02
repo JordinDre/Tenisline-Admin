@@ -368,7 +368,7 @@ class ReporteController extends Controller
 
         return Excel::download(
             new ReporteUltimaCompraClienteExport($data),
-            'Reporte Inventario fecha:'.$fecha.'.xlsx'
+            'Reporte Inventario con fecha:'.$fecha.'.xlsx'
         );
     }
 }
