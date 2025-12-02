@@ -73,13 +73,21 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         TextInput::make('codigo')
                             ->required()
                             ->maxLength(100)
-                            ->unique(table: Producto::class, ignoreRecord: true),
+                            ->unique(table: Producto::class, ignoreRecord: true)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250)
                             ->afterStateUpdated(function ($state, Set $set) {
                                 $set('descripcion', mb_strtoupper($state));
-                            }),
+                            })
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
 
                         // TextInput::make('modelo')
                         //     ->label('Linea/Modelo')
@@ -98,7 +106,11 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->native(false)
                             ->required(),
                         TextInput::make('color')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                     ]),
                 Grid::make([
                     'default' => 1,
