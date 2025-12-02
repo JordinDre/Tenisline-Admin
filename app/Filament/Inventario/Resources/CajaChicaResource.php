@@ -77,11 +77,19 @@ class CajaChicaResource extends Resource implements HasShieldPermissions
                             ->relationship('proveedor', 'name', fn (Builder $query) => $query->role('proveedor')),
                         Forms\Components\TextInput::make('detalle_gasto')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         Forms\Components\TextInput::make('autoriza')
                             ->label('Quien autoriza')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
 
                     ]),
                 Forms\Components\Repeater::make('pagos')

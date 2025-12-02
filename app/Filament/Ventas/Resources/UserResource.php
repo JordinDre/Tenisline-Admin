@@ -78,6 +78,7 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->maxLength(25)
                             ->live(onBlur: true)
                             ->rules([
+                                'regex:/^[^a-z]+$/', 
                                 fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                                     // Solo validar unique si el NIT no es CF
                                     if (strtoupper(trim($value)) !== 'CF') {
@@ -94,6 +95,9 @@ class UserResource extends Resource implements HasShieldPermissions
                                     }
                                 },
                             ])
+                            ->validationMessages([
+                                'regex' => 'El NIT no puede contener letras minúsculas.',
+                            ])
                             ->afterStateUpdated(function (Set $set, $state) {
                                 $nit = UserController::nit($state);
                                 $set('razon_social', $nit);
@@ -106,10 +110,18 @@ class UserResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->readOnly()
                             ->default('CF')
-                            ->label('Razón Social'),
+                            ->label('Razón Social')
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         TextInput::make('name')
                             ->required()
-                            ->label('Nombre/Nombre Comercial'),
+                            ->label('Nombre/Nombre Comercial')
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         TextInput::make('telefono')
                             ->label('Teléfono')
                             ->tel()
@@ -297,10 +309,18 @@ class UserResource extends Resource implements HasShieldPermissions
                         TextInput::make('direccion')
                             ->required()
                             ->label('Dirección')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         TextInput::make('referencia')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules(['regex:/^[^a-z]+$/'])
+                            ->validationMessages([
+                                'regex' => 'No se permiten letras minúsculas.',
+                            ]),
                         TextInput::make('zona')
                             ->label('Zona')
                             ->inputMode('decimal')
