@@ -25,3 +25,4 @@ class ReporteInventarioExport implements FromCollection, WithHeadings
             'Mal estado', 'Traslado', 'Bodega Zacapa', 'Chiquimula', 'Bodega Chiquimula', 'Esquipulas', 'Bodega Esquipulas', 'Total Existencias'];
     }
 }
+
