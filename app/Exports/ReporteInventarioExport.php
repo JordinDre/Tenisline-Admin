@@ -5,7 +5,7 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class ReporteUltimaCompraClienteExport implements FromCollection, WithHeadings
+class ReporteInventarioExport implements FromCollection, WithHeadings
 {
     protected $data;
 

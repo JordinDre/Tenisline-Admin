@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ReporteDiarioExport;
+use App\Exports\ReporteHistorialClienteExport;
+use App\Exports\ReporteInventarioExport;
+use App\Exports\ReportePagosExport;
+use App\Exports\ReporteVentasGeneralExport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Exports\ReportePagosExport;
-use App\Exports\ReporteDiarioExport;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ReporteVentasGeneralExport;
-use App\Exports\ReporteHistorialClienteExport;
-use App\Exports\ReporteUltimaCompraClienteExport;
 
 class ReporteController extends Controller
 {
@@ -337,7 +337,7 @@ class ReporteController extends Controller
 
         $fecha = Carbon::now()->format('d:m:y');
 
-        $sql = "
+        $sql = '
         SELECT
             p.id AS producto_id,
             p.codigo,
@@ -345,6 +345,9 @@ class ReporteController extends Controller
             m.marca AS marca,
             p.precio_venta,
             p.precio_costo,
+            p.precio_liquidacion,
+            p.precio_segundo_par,
+            p.precio_oferta,
             COALESCE(MAX(CASE WHEN i.bodega_id = 1 THEN i.existencia END), 0) AS zacapa,
             COALESCE(MAX(CASE WHEN i.bodega_id = 2 THEN i.existencia END), 0) AS central_bodega,
             COALESCE(MAX(CASE WHEN i.bodega_id = 3 THEN i.existencia END), 0) AS mal_estado,
@@ -360,14 +363,15 @@ class ReporteController extends Controller
         LEFT JOIN marcas m ON m.id = p.marca_id
         GROUP BY
             p.id, p.codigo, p.descripcion, m.marca,
-            p.precio_venta, p.precio_costo
+            p.precio_venta, p.precio_costo, p.precio_liquidacion,
+            p.precio_segundo_par, p.precio_oferta
         ORDER BY p.id;
-        ";
+        ';
 
         $data = DB::select($sql);
 
         return Excel::download(
-            new ReporteUltimaCompraClienteExport($data),
+            new ReporteInventarioExport($data),
             'Reporte Inventario con fecha:'.$fecha.'.xlsx'
         );
     }
