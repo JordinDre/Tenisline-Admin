@@ -99,8 +99,7 @@ class TiendaController extends Controller
 
         $productos = Producto::with('marca', 'inventario')
             ->whereHas('inventario', function ($query) use ($bodega) {
-                $query->where('existencia', '>', 0)
-                    ->where('bodega_id', '!=', 2); // Excluir bodega central (bodega_id = 2)
+                $query->where('existencia', '>', 0);
 
                 if ($bodega) {
                     // Si se selecciona una bodega, buscar en todas las bodegas de ese municipio
@@ -109,8 +108,7 @@ class TiendaController extends Controller
                         $municipioId = $bodegaSeleccionada->municipio_id;
                         $query->whereHas('bodega', function ($q) use ($municipioId) {
                             $q->where('municipio_id', $municipioId)
-                                ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
-                                ->where('id', '!=', 2); // Excluir bodega central
+                                ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
                         });
                     } else {
                         $query->where('bodega_id', $bodega);
@@ -202,11 +200,6 @@ class TiendaController extends Controller
                                     return false;
                                 }
 
-                                // Excluir bodega central (bodega_id = 2)
-                                if ($bodega->id == 2) {
-                                    return false;
-                                }
-
                                 // Excluir bodegas específicas que no deben mostrar existencia
                                 if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
                                     return false;
@@ -240,7 +233,6 @@ class TiendaController extends Controller
 
         // Obtener bodegas agrupadas por municipio, excluyendo las que no deben mostrar existencia
         $bodegas = Bodega::with('municipio')
-            ->where('id', '!=', 2) // Excluir bodega central (bodega_id = 2)
             ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
             ->whereHas('municipio', function ($query) {
                 $query->whereIn('municipio', ['Zacapa', 'Chiquimula', 'Esquipulas']);
@@ -324,11 +316,6 @@ class TiendaController extends Controller
                                 return false;
                             }
 
-                            // Excluir bodega central (bodega_id = 2)
-                            if ($bodega->id == 2) {
-                                return false;
-                            }
-
                             // Excluir bodegas específicas que no deben mostrar existencia
                             if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
                                 return false;
@@ -363,11 +350,6 @@ class TiendaController extends Controller
                     ? $producto->inventario->filter(function ($inv) {
                         $bodega = $inv->bodega;
                         if (! $bodega) {
-                            return false;
-                        }
-
-                        // Excluir bodega central (bodega_id = 2)
-                        if ($bodega->id == 2) {
                             return false;
                         }
 
@@ -467,19 +449,14 @@ class TiendaController extends Controller
 
     public function exportarPdf(Request $request)
     {
-        $query = Producto::query()
-            ->whereHas('inventario', function ($q) {
-                $q->where('existencia', '>', 0)
-                    ->where('bodega_id', '!=', 2); // Excluir bodega central (bodega_id = 2)
-            });
+        $query = Producto::query();
 
         if ($request->filled('search')) {
             $query->where('descripcion', 'like', "%{$request->search}%");
         }
         if ($request->filled('bodega')) {
             $query->whereHas('inventario', function ($q) use ($request) {
-                $q->where('bodega_id', $request->bodega)
-                    ->where('bodega_id', '!=', 2); // Excluir bodega central
+                $q->where('bodega_id', $request->bodega);
             });
         }
         if ($request->filled('marca')) {
