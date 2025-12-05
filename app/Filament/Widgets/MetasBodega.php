@@ -66,9 +66,14 @@ class MetasBodega extends Widget
             ->pluck('meta', 'bodega_id')
             ->toArray();
 
-        // Calcular días transcurridos y total de días del mes
-        $diasTranscurridos = $day ? (int) $day : now()->day;
-        $totalDiasMes = now()->setYear((int) $year)->setMonth((int) $month)->daysInMonth;
+        $totalDiasMes = now()
+            ->setYear((int) $year)
+            ->setMonth((int) $month)
+            ->daysInMonth;
+
+        $diasTranscurridos = $day
+            ? (int) $day                 // si seleccionan día, usar ese día
+            : $totalDiasMes; 
 
         $data = $ventasData->map(function ($item) use ($metas, $diasTranscurridos, $totalDiasMes) {
             $total = $item->total;
