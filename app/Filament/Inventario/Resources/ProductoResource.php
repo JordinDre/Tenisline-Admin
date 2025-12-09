@@ -78,6 +78,14 @@ class ProductoResource extends Resource implements HasShieldPermissions
                             ->validationMessages([
                                 'regex' => 'No se permiten letras minúsculas.',
                             ]),
+                        Select::make('marchamo')
+                            ->options([
+                                'rojo' => 'ROJO',
+                                'naranja' => 'NARANJA',
+                                'celeste' => 'CELESTE',
+                            ])
+                            ->native(false)
+                            ->required(),
                         TextInput::make('descripcion')
                             ->required()
                             ->maxLength(250)
@@ -357,6 +365,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         ]);
                     }),
                 Tables\Columns\TextColumn::make('codigo')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('marchamo')
                     ->copyable()
                     ->searchable()
                     ->sortable(),
