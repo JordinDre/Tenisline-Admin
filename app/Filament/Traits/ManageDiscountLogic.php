@@ -211,29 +211,35 @@ trait ManageDiscountLogic
     {
         $productos = $this->mapProductosDesdeDetalles($detalles);
 
-        $minId = null;
-        $minPrecioVenta = null;
+        $productosValidos = collect($productos)->filter(function ($p) {
+            return ($p->precio_segundo_par ?? 0) > 0 && ($p->precio_venta ?? 0) > 0;
+        });
 
-        foreach ($productos as $p) {
-            $porcentaje = (float) ($p->precio_segundo_par ?? 0);
-            $precioVenta = (float) ($p->precio_venta ?? 0);
-
-            if ($porcentaje > 0 && $precioVenta > 0) {
-                if ($minPrecioVenta === null || $precioVenta < $minPrecioVenta) {
-                    $minPrecioVenta = $precioVenta;
-                    $minId = (int) $p->id;
-                }
-            }
+        if ($productosValidos->isEmpty()) {
+            return null;
         }
 
-        return $minId;
+        $precios = $productosValidos->pluck('precio_venta')->unique();
+
+        if ($precios->count() === 1) {
+            return null; 
+        }
+
+        return $productosValidos
+            ->sortBy('precio_venta')
+            ->first()
+            ->id ?? null;
     }
 
     protected function esProductoMenorCostoElegible(int $productoId, array $detalles): bool
     {
         $minId = $this->idMenorCostoElegible($detalles);
 
-        return $minId !== null && $minId === $productoId;
+        if ($minId === null) {
+            return true;
+        }
+
+        return $productoId === $minId;
     }
 
     protected function totalPares(array $detalles): int
