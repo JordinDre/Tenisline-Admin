@@ -2,21 +2,23 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\MetasBodega;
-use App\Filament\Widgets\VentasBodega;
-use App\Filament\Widgets\VentasPorGenero;
-use App\Filament\Widgets\VentasPorMarca;
-use App\Filament\Widgets\VentasPorTallaCompleto;
-use App\Http\Controllers\Utils\Functions;
 use Carbon\Carbon;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
+use App\Filament\Widgets\MetasBodega;
+use Filament\Forms\Components\Select;
+use App\Filament\Widgets\VentasBodega;
+use Filament\Forms\Components\Section;
+use App\Filament\Widgets\VentasPorMarca;
+use App\Filament\Widgets\VentasPorGenero;
+use App\Http\Controllers\Utils\Functions;
+use App\Filament\Widgets\VentasPorTallaCompleto;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class Dashboard extends \Filament\Pages\Dashboard
 {
     use HasFiltersForm;
+    use InteractsWithPageFilters;
 
     public function filtersForm(Form $form): Form
     {
@@ -96,6 +98,7 @@ class Dashboard extends \Filament\Pages\Dashboard
             VentasPorTallaCompleto::class,
             VentasPorMarca::class,
             VentasPorGenero::class,
+            \App\Filament\Widgets\MarchamosChart::class
         ];
     }
 }
