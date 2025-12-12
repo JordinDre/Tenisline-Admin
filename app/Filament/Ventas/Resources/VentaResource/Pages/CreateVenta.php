@@ -660,7 +660,7 @@ class CreateVenta extends CreateRecord
                                                             return;
                                                         }
 
-                                                        $yaUso = \App\Models\VentaDetalle::whereHas('venta', fn ($q) => $q->where('cliente_id', $clienteId))
+                                                        /* $yaUso = \App\Models\VentaDetalle::whereHas('venta', fn ($q) => $q->where('cliente_id', $clienteId))
                                                             ->where('oferta_cliente_20', true)
                                                             ->whereYear('created_at', now()->year)
                                                             ->whereMonth('created_at', now()->month)
@@ -679,7 +679,7 @@ class CreateVenta extends CreateRecord
                                                             $this->updateOrderTotals($get, $set);
 
                                                             return;
-                                                        }
+                                                        } */
 
                                                         $precio = round($producto->precio_venta * 0.80, 2);
                                                         $set('precio', $precio);
