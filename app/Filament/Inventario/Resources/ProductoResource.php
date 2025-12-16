@@ -511,6 +511,16 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ])
                     ->multiple(),
 
+                SelectFilter::make('marchamo')
+                    ->label('Marchamo')
+                    ->options([
+                        'rojo' => 'ROJO',
+                        'naranja' => 'NARANJA',
+                        'celeste' => 'CELESTE',
+                        'amarillo' => 'AMARILLO',
+                    ])
+                    ->multiple(),
+
                 // Filtro por color
                 SelectFilter::make('color')
                     ->label('Color')
