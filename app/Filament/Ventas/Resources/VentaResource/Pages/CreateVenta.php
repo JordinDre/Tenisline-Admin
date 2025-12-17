@@ -512,7 +512,7 @@ class CreateVenta extends CreateRecord
                                                                 && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
                                                         });
 
-                                                        if ($hayOtrasOfertasEnOtros) {
+                                                        /* if ($hayOtrasOfertasEnOtros) {
                                                             Notification::make()
                                                                 ->title('Oferta no combinable')
                                                                 ->body('La oferta de "Segundo Par" no se puede combinar con otras ofertas en la orden.')
@@ -523,7 +523,7 @@ class CreateVenta extends CreateRecord
                                                             $this->updateOrderTotals($get, $set);
 
                                                             return;
-                                                        }
+                                                        } */
 
                                                         $permitidos = $this->paresPermitidos($totalPares);
                                                         $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
