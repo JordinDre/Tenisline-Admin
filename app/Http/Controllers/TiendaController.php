@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Carrito;
 use App\Models\Guia;
+use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\OrdenDetalle;
-use App\Models\Producto;
+use App\Models\Bodega;
 use App\Models\Tienda;
+use App\Models\Carrito;
+use App\Models\Producto;
+use App\Models\OrdenDetalle;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class TiendaController extends Controller
 {
@@ -97,6 +98,11 @@ class TiendaController extends Controller
         $color = $request->color;
         $genero = $request->genero;
 
+        $user = Auth::user();
+        $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
+
+        $marchamo = $request->marchamo;
+
         $productos = Producto::with('marca', 'inventario')
             ->whereHas('inventario', function ($query) use ($bodega) {
                 $query->where('existencia', '>', 0);
@@ -131,6 +137,12 @@ class TiendaController extends Controller
                         ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$term}%"));
                 });
             }
+        }
+
+        $marchamo = $request->marchamo;
+
+        if ($esAdmin && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+            $productos->where('marchamo', $marchamo);
         }
 
         if ($marca) {
@@ -271,6 +283,9 @@ class TiendaController extends Controller
             'marcasDisponibles' => $marcasDisponibles,
             'coloresDisponibles' => $colores,
             'generosDisponibles' => $generosDisponibles,
+            'marchamo' => $marchamo,
+            'puedeVerMarchamo' => $esAdmin,
+            'marchamosDisponibles' => ['rojo', 'naranja', 'celeste', 'amarillo'],
         ]);
     }
 
@@ -471,12 +486,25 @@ class TiendaController extends Controller
             $query->whereIn('talla', (array) $request->tallas);
         }
 
-        $productos = $query->get();
+        $user = Auth::user();
+        $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
+        $marchamo = $request->marchamo;
 
-        $html = view('pdf.catalogo-filtro', compact('productos'))->render();
+        if ($esAdmin && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+            $query->where('marchamo', $marchamo);
+        }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
-            ->setPaper([0, 0, 227, 842], 'portrait');
+        $productos = $query
+            ->with('marca:id,marca')
+            ->limit(150)             
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.catalogo-filtro', compact('productos'))
+            ->setPaper([0, 0, 227, 842], 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+            ]);
 
         // Abrir en navegador
         return response($pdf->output())

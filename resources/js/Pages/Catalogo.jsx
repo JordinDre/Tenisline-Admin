@@ -15,6 +15,9 @@ export default function Catalogo({
     genero,
     marcasDisponibles,
     generosDisponibles,
+    marchamo,
+    puedeVerMarchamo,
+    marchamosDisponibles,
 }) {
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
@@ -24,6 +27,7 @@ export default function Catalogo({
         marca: marca || '',
         genero: genero || '',
         tallas: tallas || [],
+        marchamo: marchamo || '',
     });
 
     // Guardar filtros en sessionStorage cuando cambien
@@ -61,6 +65,7 @@ export default function Catalogo({
             bodega: '',
             tallas: [],
             genero: '',
+            marchamo: '',
         });
     };
 
@@ -81,6 +86,7 @@ export default function Catalogo({
 
         if (data.search) query.append("search", data.search);
         if (data.bodega) query.append("bodega", data.bodega);
+        if (data.marchamo) query.append("marchamo", data.marchamo);
         if (data.marca) query.append("marca", data.marca);
         if (data.genero) query.append("genero", data.genero);
         if (data.tallas?.length) {
@@ -205,6 +211,8 @@ export default function Catalogo({
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
                                     handleExportPdf={handleExportPdf} 
+                                    puedeVerMarchamo={puedeVerMarchamo}
+                                    marchamosDisponibles={marchamosDisponibles}
                                 />
 
                                 {/* Botones de acción */}
@@ -264,6 +272,8 @@ export default function Catalogo({
                                     marcasDisponibles={marcasDisponibles}
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
+                                    puedeVerMarchamo={puedeVerMarchamo}
+                                    marchamosDisponibles={marchamosDisponibles}
                                 />
                             </div>
                         </div>
@@ -395,6 +405,9 @@ function Filtros({
     generosDisponibles,
     handleExportPdf,
     tallasRango,
+    marchamo,
+    puedeVerMarchamo,
+    marchamosDisponibles,
 }) {
     return (
         <div className="space-y-6">
@@ -539,6 +552,42 @@ function Filtros({
                     ))}
                 </select>
             </div>
+
+            {/* marchamo */}
+            {puedeVerMarchamo && (
+                <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
+                        <svg
+                            className="h-4 w-4 text-zinc-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                            />
+                        </svg>
+                        Marchamo
+                    </label>
+
+                    <select
+                        value={data.marchamo}
+                        onChange={(e) => setData('marchamo', e.target.value)}
+                        className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    >
+                        <option value="">Todos</option>
+
+                        {marchamosDisponibles.map((m) => (
+                            <option key={m} value={m}>
+                                {m.charAt(0).toUpperCase() + m.slice(1)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Tallas */}
             <div className="space-y-3">
