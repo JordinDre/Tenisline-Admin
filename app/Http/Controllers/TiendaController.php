@@ -326,6 +326,7 @@ class TiendaController extends Controller
                 'slug' => $producto->slug,
                 'descripcion' => $producto->descripcion,
                 'precio' => $producto->precio_venta,
+                'precio_oferta' => $producto->precio_oferta && $producto->precio_oferta > 0 ? $producto->precio_oferta : null,
                 'genero' => $producto->genero,
                 'modelo' => $producto->modelo,
                 'talla' => $producto->talla,

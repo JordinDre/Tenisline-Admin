@@ -87,9 +87,20 @@ export default function Producto({ producto, marcas }) {
 
                             {/* Precio debajo de la imagen */}
                             <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
-                                <div className="text-3xl font-extrabold text-green-600">
-                                    Q{producto.precio}
-                                </div>
+                                {producto.precio_oferta ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span className="text-xl text-gray-500 line-through">
+                                            Q{parseFloat(producto.precio).toFixed(2)}
+                                        </span>
+                                        <span className="text-3xl font-extrabold text-red-600">
+                                            Q{parseFloat(producto.precio_oferta).toFixed(2)}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="text-3xl font-extrabold text-green-600">
+                                        Q{parseFloat(producto.precio).toFixed(2)}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Existencia destacada debajo del precio */}
