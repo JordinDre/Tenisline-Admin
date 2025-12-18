@@ -477,37 +477,97 @@ class TiendaController extends Controller
 
     public function exportarPdf(Request $request)
     {
-        $query = Producto::query();
-
-        if ($request->filled('search')) {
-            $query->where('descripcion', 'like', "%{$request->search}%");
-        }
-        if ($request->filled('bodega')) {
-            $query->whereHas('inventario', function ($q) use ($request) {
-                $q->where('bodega_id', $request->bodega);
-            });
-        }
-        if ($request->filled('marca')) {
-            $query->whereHas('marca', function ($q) use ($request) {
-                $q->where('marca', $request->marca);
-            });
-        }
-        if ($request->filled('genero')) {
-            $query->where('genero', $request->genero);
-        }
-        if ($request->filled('tallas')) {
-            $query->whereIn('talla', (array) $request->tallas);
-        }
+        $search = $request->search;
+        $marca = $request->marca;
+        $bodega = $request->bodega;
+        $tallas = $request->tallas ?? [];
+        $genero = $request->genero;
 
         $user = Auth::user();
         $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
+
+        $marchamo = $request->marchamo;
+
+        $productos = Producto::with('marca', 'inventario')
+            ->whereHas('inventario', function ($query) use ($bodega) {
+                $query->where('existencia', '>', 0);
+
+                if ($bodega) {
+                    // Si se selecciona una bodega, buscar en todas las bodegas de ese municipio
+                    $bodegaSeleccionada = Bodega::with('municipio')->find($bodega);
+                    if ($bodegaSeleccionada && $bodegaSeleccionada->municipio) {
+                        $municipioId = $bodegaSeleccionada->municipio_id;
+                        $query->whereHas('bodega', function ($q) use ($municipioId) {
+                            $q->where('municipio_id', $municipioId)
+                                ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
+                        });
+                    } else {
+                        $query->where('bodega_id', $bodega);
+                    }
+                }
+            });
+
+        if ($search) {
+            $searchTerms = explode(' ', $search);
+
+            foreach ($searchTerms as $term) {
+                $productos->where(function ($query) use ($term) {
+                    $query->where('productos.codigo', 'LIKE', "%{$term}%")
+                        ->orWhere('productos.id', 'LIKE', "%{$term}%")
+                        ->orWhere('productos.descripcion', 'LIKE', "%{$term}%")
+                        ->orWhere('productos.modelo', 'like', "%{$term}%")
+                        ->orWhere('productos.talla', 'like', "%{$term}%")
+                        ->orWhere('productos.genero', 'like', "%{$term}%")
+                        ->orWhere('productos.color', 'like', "%{$term}%")
+                        ->orWhereHas('marca', fn ($q) => $q->where('marca', 'LIKE', "%{$term}%"));
+                });
+            }
+        }
+
         $marchamo = $request->marchamo ? mb_strtolower($request->marchamo) : null;
 
         if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
-            $query->where('marchamo', $marchamo);
+            $productos->where('marchamo', $marchamo);
         }
 
-        $productos = $query
+        if ($marca) {
+            $productos->whereHas('marca', function ($query) use ($marca) {
+                $query->where('marca', '=', $marca);
+            });
+        }
+
+        if (! empty($tallas)) {
+            // Normaliza las tallas ingresadas (ej. "8.0" → "8")
+            $tallasNormalizadas = collect($tallas)
+                ->map(fn ($t) => rtrim(rtrim($t, '0'), '.')) // elimina .0 o .00
+                ->unique()
+                ->toArray();
+
+            // Aplica comparación también normalizada en SQL
+            $productos->whereIn(
+                DB::raw("REPLACE(REPLACE(productos.talla, '.0', ''), '.00', '')"),
+                $tallasNormalizadas
+            );
+        }
+
+        if ($genero) {
+            $productos->where('genero', $genero);
+        }
+
+        // Filtro para productos ofertados
+        $ofertados = $request->ofertados;
+        if ($ofertados !== null) {
+            if ($ofertados === 'con_oferta') {
+                $productos->where('precio_oferta', '>', 0);
+            } elseif ($ofertados === 'sin_oferta') {
+                $productos->where(function ($query) {
+                    $query->whereNull('precio_oferta')
+                        ->orWhere('precio_oferta', '<=', 0);
+                });
+            }
+        }
+
+        $productos = $productos
             ->with('marca:id,marca')
             ->limit(150)
             ->get();
@@ -516,7 +576,10 @@ class TiendaController extends Controller
             ->setPaper([0, 0, 227, 842], 'portrait')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => false,
+                'isRemoteEnabled' => true,
+                'enable-javascript' => false,
+                'debugCss' => false,
+                'dpi' => 96,
             ]);
 
         // Abrir en navegador
