@@ -2,11 +2,11 @@
 
 namespace App\Filament\Ventas\Widgets;
 
-use Carbon\Carbon;
 use App\Models\VentaDetalle;
+use Carbon\Carbon;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class MetaVendedor extends Widget
 {
@@ -26,6 +26,7 @@ class MetaVendedor extends Widget
         'lg' => 1,
         'xl' => 1,
     ];
+
     public static function canView(): bool
     {
         return false;
@@ -72,10 +73,20 @@ class MetaVendedor extends Widget
             ->pluck('bodegas.id')
             ->toArray();
 
-            
+        $hoy = now();
+        $totalDiasMes = $hoy->setYear((int) $year)->setMonth((int) $month)->daysInMonth;
 
-        $diasTranscurridos = $day ? (int) $day : now()->day;
-        $totalDiasMes = now()->setYear((int) $year)->setMonth((int) $month)->daysInMonth;
+        // Calcular días transcurridos
+        if ($day) {
+            // Si seleccionan un día específico, usar ese día
+            $diasTranscurridos = (int) $day;
+        } elseif ($year == $hoy->year && $month == $hoy->month) {
+            // Si es el mes y año actual, usar los días transcurridos reales
+            $diasTranscurridos = $hoy->day;
+        } else {
+            // Para meses pasados o futuros, usar todos los días del mes
+            $diasTranscurridos = $totalDiasMes;
+        }
 
         // if ($dayFilter) {
         //     $diasTranscurridos = (int) $dayFilter;
@@ -92,12 +103,11 @@ class MetaVendedor extends Widget
             ->where('anio', $year)
             ->whereNotNull('bodega_id')
             ->when(
-                !$isAdmin && !empty($bodegasUsuarioIds),
+                ! $isAdmin && ! empty($bodegasUsuarioIds),
                 fn ($q) => $q->whereIn('bodega_id', $bodegasUsuarioIds)
             )
             ->pluck('meta', 'bodega_id')
             ->toArray();
-            
 
         $detallesQuery = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
@@ -110,14 +120,13 @@ class MetaVendedor extends Widget
             ->where('venta_detalles.devuelto', 0)
             ->select('venta_detalles.*');
 
-
         if ($isAdmin) {
             $detallesQuery->when(
                 $bodegaFilter,
-                fn ($q, $b) => $q->where('bodegas.bodega', $b) 
+                fn ($q, $b) => $q->where('bodegas.bodega', $b)
             );
         } else {
-            if (!empty($bodegasUsuarioIds)) {
+            if (! empty($bodegasUsuarioIds)) {
                 $detallesQuery->whereIn('ventas.bodega_id', $bodegasUsuarioIds);
                 $detallesQuery->when(
                     $bodegaFilter,
@@ -129,7 +138,7 @@ class MetaVendedor extends Widget
         }
 
         $detalles = $detallesQuery->get();
-        
+
         $data = $detalles
             ->groupBy(fn ($d) => $d->venta->asesor_id ?? 'sin_asesor')
             ->map(function ($ordenes) use ($metas, $diasTranscurridos, $totalDiasMes) {
@@ -142,8 +151,8 @@ class MetaVendedor extends Widget
                 $meta = isset($metas[$bodegaId]) ? ((float) $metas[$bodegaId]) : 0;
 
                 $alcance = $meta > 0 ? round(($total * 100) / $meta, 2) : 0;
-                $proyeccion = ($total / $diasTranscurridos) * $totalDiasMes;
-                $unidadesProyectadas = ($unidadesVendidas / $diasTranscurridos) * $totalDiasMes;
+                $proyeccion = $diasTranscurridos > 0 ? ($total / $diasTranscurridos) * $totalDiasMes : 0;
+                $unidadesProyectadas = $diasTranscurridos > 0 ? ($unidadesVendidas / $diasTranscurridos) * $totalDiasMes : 0;
                 $rentabilidad = $total > 0 ? round((($total - $costo) / $total), 4) : 0;
 
                 return [
