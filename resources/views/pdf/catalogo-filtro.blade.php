@@ -41,7 +41,6 @@
         .table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
         }
 
         .table th,
@@ -59,8 +58,6 @@
 
         .descripcion {
             width: 35%;
-            white-space: normal;
-            word-wrap: break-word;
         }
 
         .marca { width: 20%; text-align: center; }
@@ -83,6 +80,7 @@
         @if(request('genero')) Género: {{ request('genero') }} <br>@endif
         @if(request('tallas')) Tallas: {{ implode(', ', (array) request('tallas')) }} <br>@endif
         @if(request('bodega')) Bodega ID: {{ request('bodega') }} <br>@endif
+        @if(request('marchamo')) Marchamo: {{ mb_strtoupper(request('marchamo')) }} <br>@endif
     </section>
 
     <table class="table">

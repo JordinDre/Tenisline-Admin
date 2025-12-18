@@ -371,7 +371,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('marchamo')
                     ->copyable()
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => $state ? mb_strtoupper($state) : ''),
                 Tables\Columns\TextColumn::make('descripcion')
                     ->copyable()
                     ->searchable()
@@ -517,7 +518,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         'rojo' => 'ROJO',
                         'naranja' => 'NARANJA',
                         'celeste' => 'CELESTE',
-                        'amarillo' => 'AMARILLO',
                     ])
                     ->multiple(),
 
