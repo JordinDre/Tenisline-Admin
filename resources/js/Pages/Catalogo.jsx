@@ -1,5 +1,5 @@
 import Layout from '@/Layouts/Layout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
@@ -18,7 +18,10 @@ export default function Catalogo({
     marchamo,
     puedeVerMarchamo,
     marchamosDisponibles,
+    ofertados,
 }) {
+    const { auth } = usePage().props;
+    const user = auth?.user;
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
     const { data, setData, get } = useForm({
@@ -28,6 +31,7 @@ export default function Catalogo({
         genero: genero || '',
         tallas: tallas || [],
         marchamo: marchamo || '',
+        ofertados: ofertados || '',
     });
 
     // Guardar filtros en sessionStorage cuando cambien
@@ -66,6 +70,7 @@ export default function Catalogo({
             tallas: [],
             genero: '',
             marchamo: '',
+            ofertados: '',
         });
     };
 
@@ -89,6 +94,7 @@ export default function Catalogo({
         if (data.marchamo) query.append("marchamo", data.marchamo);
         if (data.marca) query.append("marca", data.marca);
         if (data.genero) query.append("genero", data.genero);
+        if (data.ofertados) query.append("ofertados", data.ofertados);
         if (data.tallas?.length) {
             data.tallas.forEach(t => query.append("tallas[]", t));
         }
@@ -213,6 +219,8 @@ export default function Catalogo({
                                     handleExportPdf={handleExportPdf} 
                                     puedeVerMarchamo={puedeVerMarchamo}
                                     marchamosDisponibles={marchamosDisponibles}
+                                    ofertados={ofertados}
+                                    user={user}
                                 />
 
                                 {/* Botones de acción */}
@@ -274,6 +282,8 @@ export default function Catalogo({
                                     tallasRango={tallasRango}
                                     puedeVerMarchamo={puedeVerMarchamo}
                                     marchamosDisponibles={marchamosDisponibles}
+                                    ofertados={ofertados}
+                                    user={user}
                                 />
                             </div>
                         </div>
@@ -326,9 +336,20 @@ export default function Catalogo({
                                                         {producto.genero}
                                                     </span>
                                                 </p>
-                                                <p className="mt-2 text-lg font-bold text-green-600">
-                                                    Q{producto.precio}
-                                                </p>
+                                                {producto.precio_oferta ? (
+                                                    <div className="mt-2 flex flex-col items-end">
+                                                        <span className="text-sm text-gray-500 line-through">
+                                                            Q{parseFloat(producto.precio).toFixed(2)}
+                                                        </span>
+                                                        <span className="text-lg font-bold text-red-600">
+                                                            Q{parseFloat(producto.precio_oferta).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <p className="mt-2 text-lg font-bold text-green-600">
+                                                        Q{parseFloat(producto.precio).toFixed(2)}
+                                                    </p>
+                                                )}
                                             </div>
                                         </a>
                                     </motion.div>
@@ -381,15 +402,6 @@ export default function Catalogo({
                     </div>
                 </div>
             </div>
-            <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleExportPdf}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Exportar PDF
-        </button>
-      </div>
         </Layout>
     );
 }
@@ -408,6 +420,8 @@ function Filtros({
     marchamo,
     puedeVerMarchamo,
     marchamosDisponibles,
+    ofertados,
+    user,
 }) {
     return (
         <div className="space-y-6">
@@ -582,12 +596,42 @@ function Filtros({
 
                         {marchamosDisponibles.map((m) => (
                             <option key={m} value={m}>
-                                {m.charAt(0).toUpperCase() + m.slice(1)}
+                                {m.toUpperCase()}
                             </option>
                         ))}
                     </select>
                 </div>
             )}
+
+            {/* Filtro de Ofertados */}
+            <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
+                    <svg
+                        className="h-4 w-4 text-zinc-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                        />
+                    </svg>
+                    Productos Ofertados
+                </label>
+                <select
+                    name="ofertados"
+                    value={data.ofertados}
+                    onChange={(e) => setData('ofertados', e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                    <option value="">Todos</option>
+                    <option value="con_oferta">Con Oferta</option>
+                    <option value="sin_oferta">Sin Oferta</option>
+                </select>
+            </div>
 
             {/* Tallas */}
             <div className="space-y-3">
@@ -631,7 +675,7 @@ function Filtros({
             </div>
 
             {/* Botón de reinicio */}
-            <div className="pt-4">
+            <div className="pt-4 space-y-3">
                 <button
                     type="button"
                     onClick={handleReset}
@@ -654,6 +698,30 @@ function Filtros({
                         Limpiar filtros
                     </div>
                 </button>
+                {user && (
+                    <button
+                        type="button"
+                        onClick={handleExportPdf}
+                        className="w-full rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-md"
+                    >
+                        <div className="flex items-center justify-center gap-2">
+                            <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                            </svg>
+                            Exportar PDF
+                        </div>
+                    </button>
+                )}
             </div>
         </div>
     );

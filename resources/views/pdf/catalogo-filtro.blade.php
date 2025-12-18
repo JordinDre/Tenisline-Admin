@@ -80,7 +80,7 @@
         @if(request('genero')) Género: {{ request('genero') }} <br>@endif
         @if(request('tallas')) Tallas: {{ implode(', ', (array) request('tallas')) }} <br>@endif
         @if(request('bodega')) Bodega ID: {{ request('bodega') }} <br>@endif
-        @if(request('marchamo')) Marchamo: {{ ucfirst(request('marchamo')) }} <br>@endif
+        @if(request('marchamo')) Marchamo: {{ mb_strtoupper(request('marchamo')) }} <br>@endif
     </section>
 
     <table class="table">

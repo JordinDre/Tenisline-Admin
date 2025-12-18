@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bodega;
+use App\Models\Carrito;
 use App\Models\Guia;
-use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\Bodega;
-use App\Models\Tienda;
-use App\Models\Carrito;
-use App\Models\Producto;
 use App\Models\OrdenDetalle;
-use Illuminate\Http\Request;
+use App\Models\Producto;
+use App\Models\Tienda;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TiendaController extends Controller
 {
@@ -101,8 +101,6 @@ class TiendaController extends Controller
         $user = Auth::user();
         $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
 
-        $marchamo = $request->marchamo;
-
         $productos = Producto::with('marca', 'inventario')
             ->whereHas('inventario', function ($query) use ($bodega) {
                 $query->where('existencia', '>', 0);
@@ -139,10 +137,23 @@ class TiendaController extends Controller
             }
         }
 
-        $marchamo = $request->marchamo;
+        $marchamo = $request->marchamo ? mb_strtolower($request->marchamo) : null;
 
-        if ($esAdmin && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
             $productos->where('marchamo', $marchamo);
+        }
+
+        // Filtro para productos ofertados
+        $ofertados = $request->ofertados;
+        if ($ofertados !== null) {
+            if ($ofertados === 'con_oferta') {
+                $productos->where('precio_oferta', '>', 0);
+            } elseif ($ofertados === 'sin_oferta') {
+                $productos->where(function ($query) {
+                    $query->whereNull('precio_oferta')
+                        ->orWhere('precio_oferta', '<=', 0);
+                });
+            }
         }
 
         if ($marca) {
@@ -193,6 +204,7 @@ class TiendaController extends Controller
                     'slug' => $producto->slug,
                     'descripcion' => $producto->descripcion,
                     'precio' => $producto->precio_venta ?? null,
+                    'precio_oferta' => $producto->precio_oferta && $producto->precio_oferta > 0 ? $producto->precio_oferta : null,
                     'modelo' => $producto->modelo ?? null,
                     'talla' => $producto->talla ?? null,
                     'color' => $producto->color ?? null,
@@ -279,6 +291,7 @@ class TiendaController extends Controller
             'genero' => $genero,
             'precioMin' => $precioMin,
             'precioMax' => $precioMax,
+            'ofertados' => $ofertados,
             'tallasDisponibles' => $tallasDisponibles,
             'marcasDisponibles' => $marcasDisponibles,
             'coloresDisponibles' => $colores,
@@ -488,15 +501,15 @@ class TiendaController extends Controller
 
         $user = Auth::user();
         $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
-        $marchamo = $request->marchamo;
+        $marchamo = $request->marchamo ? mb_strtolower($request->marchamo) : null;
 
-        if ($esAdmin && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
             $query->where('marchamo', $marchamo);
         }
 
         $productos = $query
             ->with('marca:id,marca')
-            ->limit(150)             
+            ->limit(150)
             ->get();
 
         $pdf = Pdf::loadView('pdf.catalogo-filtro', compact('productos'))
