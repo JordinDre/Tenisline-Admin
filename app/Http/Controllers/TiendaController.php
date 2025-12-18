@@ -112,7 +112,7 @@ class TiendaController extends Controller
                         $municipioId = $bodegaSeleccionada->municipio_id;
                         $query->whereHas('bodega', function ($q) use ($municipioId) {
                             $q->where('municipio_id', $municipioId)
-                                ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
+                                ->whereNotIn('bodega', ['Mal estado', 'Traslado']);
                         });
                     } else {
                         $query->where('bodega_id', $bodega);
@@ -225,7 +225,7 @@ class TiendaController extends Controller
                                 }
 
                                 // Excluir bodegas específicas que no deben mostrar existencia
-                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
                                     return false;
                                 }
 
@@ -257,7 +257,7 @@ class TiendaController extends Controller
 
         // Obtener bodegas agrupadas por municipio, excluyendo las que no deben mostrar existencia
         $bodegas = Bodega::with('municipio')
-            ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
+            ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
             ->whereHas('municipio', function ($query) {
                 $query->whereIn('municipio', ['Zacapa', 'Chiquimula', 'Esquipulas']);
             })
@@ -346,7 +346,7 @@ class TiendaController extends Controller
                             }
 
                             // Excluir bodegas específicas que no deben mostrar existencia
-                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
                                 return false;
                             }
 
@@ -383,7 +383,7 @@ class TiendaController extends Controller
                         }
 
                         // Excluir bodegas específicas que no deben mostrar existencia
-                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
                             return false;
                         }
 
@@ -500,7 +500,7 @@ class TiendaController extends Controller
                         $municipioId = $bodegaSeleccionada->municipio_id;
                         $query->whereHas('bodega', function ($q) use ($municipioId) {
                             $q->where('municipio_id', $municipioId)
-                                ->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
+                                ->whereNotIn('bodega', ['Mal estado', 'Traslado']);
                         });
                     } else {
                         $query->where('bodega_id', $bodega);
