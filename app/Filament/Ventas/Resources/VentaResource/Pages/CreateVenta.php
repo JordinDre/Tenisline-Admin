@@ -836,8 +836,36 @@ class CreateVenta extends CreateRecord
                                 'md' => 10,
                             ])
                                 ->schema([
-
                                 ]),
+                            
+                            Select::make('condicion_pago')
+                                ->label('Condición de la venta')
+                                ->options([
+                                    'contado' => 'CONTADO O EFECTIVO (5% descuento)',
+                                    'normal'  => 'NORMAL (sin descuento)',
+                                ])
+                                ->default('normal')
+                                ->required()
+                                ->live()
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+
+                                    $set('pagos', []);
+                                    // 1️⃣ Setear flag
+                                    $set('descuento_efectivo_5', $state === 'contado');
+
+                                    // 2️⃣ Recalcular total inmediatamente
+                                    $subtotal = (float) ($get('subtotal') ?? 0);
+
+                                    if ($state === 'contado') {
+                                        $set('total', round($subtotal * 0.95, 2));
+                                    } else {
+                                        $set('total', $subtotal);
+                                    }
+                                }),
+                            Hidden::make('descuento_efectivo_5')
+                                ->dehydrated(false)
+                                ->reactive(),
                             Repeater::make('pagos')
                                 ->label('Pagos')
                                 ->required()
@@ -845,15 +873,37 @@ class CreateVenta extends CreateRecord
                                 ->minItems(1)
                                 ->defaultItems(1)
                                 ->columns(7)
+                                ->live()
                                 ->schema([
                                     Select::make('tipo_pago_id')
                                         ->label('Forma de Pago')
-                                        ->relationship('tipoPago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
                                         ->required()
                                         ->live()
-                                        ->columnSpan(['sm' => 1, 'md' => 2])
                                         ->searchable()
-                                        ->preload(),
+                                        ->preload()
+                                        ->options(function (Get $get) {
+
+                                            $condicion = $get('../../condicion_pago');
+
+                                            if ($condicion === 'contado') {
+                                                return TipoPago::whereIn('tipo_pago', ['CONTADO'])
+                                                    ->pluck('tipo_pago', 'id')
+                                                    ->toArray();
+                                            }
+
+                                            return TipoPago::whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA)
+                                                ->pluck('tipo_pago', 'id')
+                                                ->toArray();
+                                        })
+                                        ->afterStateUpdated(function (Set $set, Get $get, $state) {
+
+                                            if ($get('../../condicion_pago') === 'contado') {
+                                                $tipo = TipoPago::find($state)?->tipo_pago;
+                                                if (! in_array($tipo, ['CONTADO'])) {
+                                                    $set('tipo_pago_id', null);
+                                                }
+                                            }
+                                        }),
                                     TextInput::make('monto')
                                         ->label('Monto')
                                         ->prefix('Q')
