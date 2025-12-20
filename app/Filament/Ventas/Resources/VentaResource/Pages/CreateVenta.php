@@ -838,7 +838,7 @@ class CreateVenta extends CreateRecord
                                 ->schema([
                                 ]),
                             
-                            Select::make('condicion_pago')
+                            /* Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
                                     'contado' => 'CONTADO O EFECTIVO (5% descuento)',
@@ -862,10 +862,10 @@ class CreateVenta extends CreateRecord
                                     } else {
                                         $set('total', $subtotal);
                                     }
-                                }),
-                            Hidden::make('descuento_efectivo_5')
+                                }), */
+                            /* Hidden::make('descuento_efectivo_5')
                                 ->dehydrated(false)
-                                ->reactive(),
+                                ->reactive(), */
                             Repeater::make('pagos')
                                 ->label('Pagos')
                                 ->required()
