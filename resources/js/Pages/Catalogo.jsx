@@ -334,6 +334,12 @@ export default function Catalogo({
                                                     {producto.descripcion}
                                                 </h3>
                                                 <p className="mt-1 text-xs text-zinc-500">
+                                                    Código:{' '}
+                                                    <span className="font-medium text-purple-600">
+                                                        {producto.codigo}
+                                                    </span>
+                                                </p>
+                                                <p className="mt-1 text-xs text-zinc-500">
                                                     Marca:{' '}
                                                     <span className="font-medium text-indigo-600">
                                                         {producto.marca}
