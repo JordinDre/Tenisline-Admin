@@ -399,8 +399,10 @@ class CreateVenta extends CreateRecord
                                                     $totalGeneral = 0;
                                                     $subtotalGeneral = 0;
                                                     foreach ($productos as $productoItem) {
-                                                        $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
-                                                        $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                                        $cantidad = (float) ($productoItem['cantidad'] ?? 0);
+                                                        $precio = (float) ($productoItem['precio'] ?? 0);
+                                                        $totalGeneral += ($cantidad * $precio);
+                                                        $subtotalGeneral += ($cantidad * $precio);
                                                     }
                                                     $set('../../subtotal', round($subtotalGeneral, 2));
                                                     $set('../../total', round($totalGeneral, 2));
@@ -762,8 +764,10 @@ class CreateVenta extends CreateRecord
                                                     $totalGeneral = 0;
                                                     $subtotalGeneral = 0;
                                                     foreach ($productos as $productoItem) {
-                                                        $totalGeneral += (float) ($productoItem['subtotal'] ?? 0);
-                                                        $subtotalGeneral += (float) ($productoItem['subtotal'] ?? 0);
+                                                        $cantidad = (float) ($productoItem['cantidad'] ?? 0);
+                                                        $precio = (float) ($productoItem['precio'] ?? 0);
+                                                        $totalGeneral += ($cantidad * $precio);
+                                                        $subtotalGeneral += ($cantidad * $precio);
                                                     }
                                                     $set('../../subtotal', round($subtotalGeneral, 2));
                                                     $set('../../total', round($totalGeneral, 2));
@@ -837,7 +841,7 @@ class CreateVenta extends CreateRecord
                             ])
                                 ->schema([
                                 ]),
-                            
+
                             /* Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
