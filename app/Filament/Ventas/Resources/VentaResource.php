@@ -559,6 +559,28 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->success()
                                 ->send();
                         }),
+                    Action::make('anularPago')
+                        ->label('Anular Pago')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('danger')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            return $record->estado === EstadoVentaStatus::ValidacionPago
+                                && $user
+                                && $user->hasAnyRole(['admin', 'administrador', 'super_admin']);
+                        })
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $record->estado = 'anulada';
+                            $record->save();
+
+                            Notification::make()
+                                ->title('Pago anulado')
+                                ->body('El pago ha sido anulado, la venta ha sido colocada en anuladas.')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
                         ->visible(fn ($record) => Auth::user()->can('factura', $record))
@@ -680,7 +702,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     'producto_id' => $detalle->producto_id,
                                     'cantidad' => $detalle->cantidad,
                                     'devuelto' => $detalle->devuelto,
-                                    'codigo_nuevo' => $detalle->producto->codigo ?? '', // Usar el código actual del producto
+                                    'codigo_nuevo' => $detalle->producto->codigo ?? '', 
                                 ];
                             })->toArray(),
                         ])
