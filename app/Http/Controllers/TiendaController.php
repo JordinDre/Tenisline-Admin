@@ -106,13 +106,16 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0);
 
                 if ($bodega) {
-                    // Si se selecciona una bodega, buscar en todas las bodegas de ese municipio
+                    // Si se selecciona una bodega, buscar en todas las bodegas que contengan el nombre del municipio
                     $bodegaSeleccionada = Bodega::with('municipio')->find($bodega);
                     if ($bodegaSeleccionada && $bodegaSeleccionada->municipio) {
-                        $municipioId = $bodegaSeleccionada->municipio_id;
-                        $query->whereHas('bodega', function ($q) use ($municipioId) {
-                            $q->where('municipio_id', $municipioId)
-                                ->whereNotIn('bodega', ['Mal estado', 'Traslado']);
+                        $nombreMunicipio = strtolower($bodegaSeleccionada->municipio->municipio);
+                        $query->whereHas('bodega', function ($q) use ($nombreMunicipio) {
+                            $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
+                                ->where(function ($subQuery) use ($nombreMunicipio) {
+                                    $subQuery->whereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio}%"])
+                                        ->orWhereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio} bodega%"]);
+                                });
                         });
                     } else {
                         $query->where('bodega_id', $bodega);
@@ -516,13 +519,16 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0);
 
                 if ($bodega) {
-                    // Si se selecciona una bodega, buscar en todas las bodegas de ese municipio
+                    // Si se selecciona una bodega, buscar en todas las bodegas que contengan el nombre del municipio
                     $bodegaSeleccionada = Bodega::with('municipio')->find($bodega);
                     if ($bodegaSeleccionada && $bodegaSeleccionada->municipio) {
-                        $municipioId = $bodegaSeleccionada->municipio_id;
-                        $query->whereHas('bodega', function ($q) use ($municipioId) {
-                            $q->where('municipio_id', $municipioId)
-                                ->whereNotIn('bodega', ['Mal estado', 'Traslado']);
+                        $nombreMunicipio = strtolower($bodegaSeleccionada->municipio->municipio);
+                        $query->whereHas('bodega', function ($q) use ($nombreMunicipio) {
+                            $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
+                                ->where(function ($subQuery) use ($nombreMunicipio) {
+                                    $subQuery->whereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio}%"])
+                                        ->orWhereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio} bodega%"]);
+                                });
                         });
                     } else {
                         $query->where('bodega_id', $bodega);
