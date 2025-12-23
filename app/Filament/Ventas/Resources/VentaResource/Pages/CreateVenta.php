@@ -572,6 +572,7 @@ class CreateVenta extends CreateRecord
 
                                                         $precio = $this->calcularPrecioSegundoPar($producto);
                                                         $set('precio', $precio);
+                                                        $set('precio_base', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
                                                         $this->updateOrderTotals($get, $set);
 
@@ -592,7 +593,7 @@ class CreateVenta extends CreateRecord
                                                                     && ($item['tipo_precio'] ?? null) === 'segundo_par';
                                                             });
 
-                                                        if ($haySegundoParEnOtros) {
+                                                        /* if ($haySegundoParEnOtros) {
                                                             Notification::make()
                                                                 ->title('Oferta no combinable')
                                                                 ->body('No puede aplicar esta oferta: ya hay ítems con "Segundo Par" en la orden.')
@@ -601,11 +602,12 @@ class CreateVenta extends CreateRecord
 
                                                             $set('tipo_precio', 'normal');
                                                             $set('precio', $producto->precio_venta);
+                                                            $set('precio_base', $producto->precio_venta);
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $this->updateOrderTotals($get, $set);
 
                                                             return;
-                                                        }
+                                                        } */
 
                                                         // 2) si es oferta/liquidacion/descuento, calcula el precio como antes
                                                         switch ($state) {
@@ -627,6 +629,7 @@ class CreateVenta extends CreateRecord
 
                                                                     $set('tipo_precio', 'normal');
                                                                     $set('precio', $producto->precio_venta);
+                                                                    $set('precio_base', $producto->precio_venta);
                                                                     $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                                     $this->updateOrderTotals($get, $set);
 
@@ -636,6 +639,7 @@ class CreateVenta extends CreateRecord
                                                         }
 
                                                         $set('precio', $precio);
+                                                        $set('precio_base', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
                                                         $this->updateOrderTotals($get, $set);
 
@@ -655,6 +659,7 @@ class CreateVenta extends CreateRecord
                                                                 ->send();
                                                             $set('tipo_precio', 'normal');
                                                             $set('precio', $producto->precio_venta);
+                                                            $set('precio_base', $producto->precio_venta);
                                                             $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                             $set('oferta_cliente_20', false);
                                                             $this->updateOrderTotals($get, $set);
@@ -685,6 +690,7 @@ class CreateVenta extends CreateRecord
 
                                                         $precio = round($producto->precio_venta * 0.80, 2);
                                                         $set('precio', $precio);
+                                                        $set('precio_base', $precio);
                                                         $set('subtotal', round($precio * $cantidadActual, 2));
                                                         $set('oferta_cliente_20', true);
 
@@ -700,6 +706,7 @@ class CreateVenta extends CreateRecord
 
                                                     // si es 'normal' u otro, dejar precio por defecto
                                                     $set('precio', $producto->precio_venta);
+                                                    $set('precio_base', $producto->precio_venta);
                                                     $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
                                                     $this->updateOrderTotals($get, $set);
                                                 })
@@ -784,6 +791,8 @@ class CreateVenta extends CreateRecord
                                                 ->inputMode('decimal')
                                                 ->rule('numeric')
                                                 ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
+                                            Hidden::make('precio_base')
+                                                ->dehydrated(false),
                                             Hidden::make('escala_id'),
                                             TextInput::make('subtotal')
                                                 ->label('SubTotal')
@@ -845,29 +854,40 @@ class CreateVenta extends CreateRecord
                             /* Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
-                                    'contado' => 'CONTADO O EFECTIVO (5% descuento)',
-                                    'normal'  => 'NORMAL (sin descuento)',
+                                    'contado' => 'Contado / Efectivo (5% descuento)',
+                                    'normal'  => 'Normal / Crédito / Mixto',
                                 ])
                                 ->default('normal')
-                                ->required()
                                 ->live()
                                 ->dehydrated(false)
                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
 
-                                    $set('pagos', []);
-                                    // 1️⃣ Setear flag
-                                    $set('descuento_efectivo_5', $state === 'contado');
+                                    $detalles = $get('detalles') ?? [];
 
-                                    // 2️⃣ Recalcular total inmediatamente
-                                    $subtotal = (float) ($get('subtotal') ?? 0);
+                                    $nuevoSubtotal = 0;
 
-                                    if ($state === 'contado') {
-                                        $set('total', round($subtotal * 0.95, 2));
-                                    } else {
-                                        $set('total', $subtotal);
+                                    foreach ($detalles as $index => $item) {
+                                        $precioBase = (float) ($item['precio_base'] ?? $item['precio'] ?? 0);
+                                        $cantidad   = (int) ($item['cantidad'] ?? 1);
+
+                                        if ($state === 'contado') {
+                                            $precioFinal = round($precioBase * 0.95, 2);
+                                        } else {
+                                            $precioFinal = $precioBase;
+                                        }
+
+                                        $set("detalles.$index.precio", $precioFinal);
+                                        $set("detalles.$index.subtotal", round($precioFinal * $cantidad, 2));
+
+                                        $nuevoSubtotal += $precioFinal * $cantidad;
                                     }
-                                }), */
-                            /* Hidden::make('descuento_efectivo_5')
+
+                                    $set('subtotal', round($nuevoSubtotal, 2));
+                                    $set('total', round($nuevoSubtotal, 2));
+
+                                    $set('pagos', []);
+                                }),
+                            Hidden::make('descuento_efectivo_5')
                                 ->dehydrated(false)
                                 ->reactive(), */
                             Repeater::make('pagos')
