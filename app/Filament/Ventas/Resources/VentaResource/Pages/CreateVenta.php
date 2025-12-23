@@ -896,7 +896,7 @@ class CreateVenta extends CreateRecord
                                 ->relationship()
                                 ->minItems(1)
                                 ->defaultItems(1)
-                                ->columns(7)
+                                ->columns(6)
                                 ->live()
                                 ->schema([
                                     Select::make('tipo_pago_id')
@@ -927,7 +927,28 @@ class CreateVenta extends CreateRecord
                                                     $set('tipo_pago_id', null);
                                                 }
                                             }
+
+                                            if (! in_array($state, array_keys(\App\Models\TipoPago::FORMAS_PAGO_TARJETA))) {
+                                                $set('nombre_tarjeta', null);
+                                                $set('ult_dgt', null);
+                                            }
                                         }),
+                                    TextInput::make('nombre_tarjeta')
+                                        ->label('Nombre de la Tarjeta')
+                                        ->visible(fn (Get $get) => in_array(
+                                            $get('tipo_pago_id'),
+                                            array_keys(\App\Models\TipoPago::FORMAS_PAGO_TARJETA)
+                                        )),
+                                    TextInput::make('ult_dgt')
+                                        ->label('Ultimos 4 digitos de la tarjeta')
+                                        ->visible(fn (Get $get) => in_array(
+                                            $get('tipo_pago_id'),
+                                            array_keys(\App\Models\TipoPago::FORMAS_PAGO_TARJETA)
+                                        ))
+                                        ->inputMode('decimal')
+                                        ->rule('numeric')
+                                        ->minValue(1)
+                                        ->rule('digits:4'),
                                     TextInput::make('monto')
                                         ->label('Monto')
                                         ->prefix('Q')
