@@ -1121,7 +1121,7 @@ class CreateVenta extends CreateRecord
                         ->warning()
                         ->send();
 
-                    return; // no facturamos todavía
+                    return; 
                 }
 
                 if ($this->record->tipo_pago_id == 2) {
