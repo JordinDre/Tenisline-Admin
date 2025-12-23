@@ -69,11 +69,9 @@
                     </div>
                     <div>
                         @if ($venta->facturar_cf)
-                            Nombre Comercial: {{ @$venta->cliente->name }}
+                            {{ @$venta->cliente->name }}
                         @else
                             Razon Social: {{ @$venta->cliente->razon_social }}
-                            <br />
-                            Nombre Comercial: {{ @$venta->cliente->name }}
                         @endif
                     </div>
                 </div>

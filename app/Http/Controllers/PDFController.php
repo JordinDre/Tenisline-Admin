@@ -268,11 +268,15 @@ class PDFController extends Controller
                                 }
 
                                 // Excluir bodegas específicas que no deben mostrar existencia
-                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
                                     return false;
                                 }
 
-                                // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                                // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                                if ($bodega->bodega === 'Central Bodega') {
+                                    return true;
+                                }
+
                                 $municipio = $bodega->municipio;
                                 if (! $municipio) {
                                     return false;
@@ -281,6 +285,11 @@ class PDFController extends Controller
                                 return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                             })
                             ->groupBy(function ($inv) {
+                                // Si es Central Bodega, agrupar con "*", sino usar el municipio
+                                if ($inv->bodega->bodega === 'Central Bodega') {
+                                    return '*';
+                                }
+
                                 return $inv->bodega->municipio->municipio ?? 'Desconocida';
                             })
                             ->map(function ($inventarios, $municipio) {

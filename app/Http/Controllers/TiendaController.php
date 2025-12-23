@@ -229,7 +229,11 @@ class TiendaController extends Controller
                                     return false;
                                 }
 
-                                // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                                // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                                if ($bodega->bodega === 'Central Bodega') {
+                                    return true;
+                                }
+
                                 $municipio = $bodega->municipio;
                                 if (! $municipio) {
                                     return false;
@@ -238,6 +242,11 @@ class TiendaController extends Controller
                                 return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                             })
                                 ->groupBy(function ($inv) {
+                                    // Si es Central Bodega, agrupar con "*", sino usar el municipio
+                                    if ($inv->bodega->bodega === 'Central Bodega') {
+                                        return '*';
+                                    }
+
                                     return $inv->bodega->municipio->municipio ?? 'Desconocida';
                                 })
                                 ->map(function ($inventarios, $municipio) {
@@ -350,7 +359,11 @@ class TiendaController extends Controller
                                 return false;
                             }
 
-                            // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                            // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                            if ($bodega->bodega === 'Central Bodega') {
+                                return true;
+                            }
+
                             $municipio = $bodega->municipio;
                             if (! $municipio) {
                                 return false;
@@ -359,6 +372,11 @@ class TiendaController extends Controller
                             return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                         })
                             ->groupBy(function ($inv) {
+                                // Si es Central Bodega, agrupar con "*", sino usar el municipio
+                                if ($inv->bodega->bodega === 'Central Bodega') {
+                                    return '*';
+                                }
+
                                 return $inv->bodega->municipio->municipio ?? 'Desconocida';
                             })
                             ->map(function ($inventarios, $municipio) {
@@ -374,7 +392,7 @@ class TiendaController extends Controller
                         : null)
                     : null,
 
-                // Siempre enviar la bodega con más stock (Zacapa, Chiquimula y Esquipulas, excluyendo Mal estado, Traslado y Central Bodega)
+                // Siempre enviar la bodega con más stock (Zacapa, Chiquimula y Esquipulas, excluyendo Mal estado y Traslado)
                 'bodega_destacada' => $producto->inventario
                     ? $producto->inventario->filter(function ($inv) {
                         $bodega = $inv->bodega;
@@ -387,7 +405,11 @@ class TiendaController extends Controller
                             return false;
                         }
 
-                        // Solo incluir bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                        // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
+                        if ($bodega->bodega === 'Central Bodega') {
+                            return true;
+                        }
+
                         $municipio = $bodega->municipio;
                         if (! $municipio) {
                             return false;
@@ -397,7 +419,7 @@ class TiendaController extends Controller
                     })
                         ->sortByDesc('existencia')
                         ->map(fn ($inv) => [
-                            'bodega' => $inv->bodega->municipio->municipio ?? 'Desconocida', // Mostrar el municipio en lugar del nombre de la bodega
+                            'bodega' => $inv->bodega->bodega === 'Central Bodega' ? '*' : ($inv->bodega->municipio->municipio ?? 'Desconocida'), // Mostrar "*" para Central Bodega, sino el municipio
                             'existencia' => $inv->existencia,
                         ])
                         ->first()
