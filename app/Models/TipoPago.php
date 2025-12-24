@@ -63,4 +63,16 @@ class TipoPago extends Model
         'CONTADO',
         'CRÉDITO',
     ];
+
+    public const FORMAS_PAGO_TARJETA = [
+        7 => 'TARJETA',
+        13 => 'LINK DE PAGO',
+        14 => '3 CUOTAS',
+        15 => 'LINK CONTADO',
+        16 => 'LINK 2 CUOTAS',
+        17 => 'LINK 3 CUOTAS',
+        18 => 'LINK 6 CUOTAS',
+        19 => 'TARJETA CONTADO',
+        20 => 'TARJETA 3 CUOTAS',
+    ];
 }
