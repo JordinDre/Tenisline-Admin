@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
-use App\Models\Pago;
-use App\Models\Venta;
 use App\Models\Bodega;
 use App\Models\Cierre;
-use App\Models\Kardex;
 use App\Models\Factura;
-use App\Models\Producto;
 use App\Models\Inventario;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Kardex;
+use App\Models\Pago;
+use App\Models\Producto;
+use App\Models\Venta;
+use Exception;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class VentaController extends Controller
 {
@@ -81,7 +80,7 @@ class VentaController extends Controller
     {
         try {
             $res = FELController::facturaVenta($venta, $venta->bodega_id);
-            
+
             if (
                 ! isset($res['resultado']) ||
                 ! $res['resultado'] ||
@@ -91,7 +90,7 @@ class VentaController extends Controller
                 \Log::error('Error en facturación FEL', [
                     'venta_id' => $venta->id,
                     'error' => $errorMessage,
-                    'response' => $res
+                    'response' => $res,
                 ]);
                 throw new Exception($errorMessage);
             }
@@ -112,7 +111,7 @@ class VentaController extends Controller
             \Log::error('Error en facturación', [
                 'venta_id' => $venta->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
         }
@@ -147,8 +146,6 @@ class VentaController extends Controller
                 $venta->motivo = $data['motivo'];
                 $venta->fecha_anulada = now();
                 $venta->anulo_id = Auth::user()->id;
-                $pago = Pago::where('pagable_id', $venta->id);
-                $pago->delete();
                 $venta->save();
                 activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('anulación')->log('Venta anulada');
             });
@@ -403,16 +400,16 @@ class VentaController extends Controller
                 $cierre->validarPagoLiquidacion($tipoPagoId, $montoPago);
 
                 $pagoData = [
-                    'tipo_pago_id'          => $tipoPagoId,
-                    'banco_id'          => $data['banco_id'] ?? null,
+                    'tipo_pago_id' => $tipoPagoId,
+                    'banco_id' => $data['banco_id'] ?? null,
                     'fecha_transaccion' => $data['fecha_transaccion'],
-                    'no_documento'      => $data['no_documento'] ?? null,
-                    'monto'             => $montoPago,
-                    'tipo_pago_id'      => $data['tipo_pago_id'] ?? null,
-                    'user_id'           => Auth::id(),
+                    'no_documento' => $data['no_documento'] ?? null,
+                    'monto' => $montoPago,
+                    'tipo_pago_id' => $data['tipo_pago_id'] ?? null,
+                    'user_id' => Auth::id(),
                 ];
 
-                if (!empty($data['imagen'])) {
+                if (! empty($data['imagen'])) {
                     $pagoData['imagen'] = $data['imagen'];
                 }
 
@@ -432,14 +429,14 @@ class VentaController extends Controller
                 Notification::make()
                     ->color('success')
                     ->title("Cierre #{$cierre->id} liquidado completamente")
-                    ->body("Se agregó el pago y se liquidaron automáticamente todas las ventas del cierre")
+                    ->body('Se agregó el pago y se liquidaron automáticamente todas las ventas del cierre')
                     ->success()
                     ->send();
             } else {
                 Notification::make()
                     ->color('success')
                     ->title("Pago agregado al cierre #{$cierre->id}")
-                    ->body("Se agregó el pago correctamente. Faltan más pagos para completar la liquidación.")
+                    ->body('Se agregó el pago correctamente. Faltan más pagos para completar la liquidación.')
                     ->success()
                     ->send();
             }
@@ -501,7 +498,7 @@ class VentaController extends Controller
                 }
 
                 // Verificar que todos los pagos estén completos
-                if (!$cierre->puedeLiquidar()) {
+                if (! $cierre->puedeLiquidar()) {
                     throw new \Exception('No se pueden liquidar todas las ventas. Faltan pagos por ingresar.');
                 }
 
@@ -544,7 +541,7 @@ class VentaController extends Controller
             Notification::make()
                 ->color('success')
                 ->title("Cierre #{$cierre->id} liquidado completamente")
-                ->body("Se han liquidado todas las ventas del cierre correctamente")
+                ->body('Se han liquidado todas las ventas del cierre correctamente')
                 ->success()
                 ->send();
         } catch (Exception $e) {
