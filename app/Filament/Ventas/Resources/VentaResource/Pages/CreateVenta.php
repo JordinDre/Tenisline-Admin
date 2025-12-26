@@ -851,11 +851,11 @@ class CreateVenta extends CreateRecord
                                 ->schema([
                                 ]),
 
-                            /* Select::make('condicion_pago')
+                            Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
                                     'contado' => 'Contado / Efectivo (5% descuento)',
-                                    'normal'  => 'Normal / Crédito / Mixto',
+                                    'normal' => 'Normal / Crédito / Mixto',
                                 ])
                                 ->default('normal')
                                 ->live()
@@ -868,7 +868,7 @@ class CreateVenta extends CreateRecord
 
                                     foreach ($detalles as $index => $item) {
                                         $precioBase = (float) ($item['precio_base'] ?? $item['precio'] ?? 0);
-                                        $cantidad   = (int) ($item['cantidad'] ?? 1);
+                                        $cantidad = (int) ($item['cantidad'] ?? 1);
 
                                         if ($state === 'contado') {
                                             $precioFinal = round($precioBase * 0.95, 2);
@@ -889,7 +889,7 @@ class CreateVenta extends CreateRecord
                                 }),
                             Hidden::make('descuento_efectivo_5')
                                 ->dehydrated(false)
-                                ->reactive(), */
+                                ->reactive(),
                             Repeater::make('pagos')
                                 ->label('Pagos')
                                 ->required()
@@ -1142,7 +1142,7 @@ class CreateVenta extends CreateRecord
                         ->warning()
                         ->send();
 
-                    return; 
+                    return;
                 }
 
                 if ($this->record->tipo_pago_id == 2) {
