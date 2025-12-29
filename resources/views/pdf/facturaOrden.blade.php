@@ -123,8 +123,7 @@
                     <td>{{ $dt->producto->codigo }}</td>
                     <td style="text-align: left;">
                         {{ $dt->producto->descripcion }},
-                        {{ $dt->producto->presentacion->presentacion }},
-                        {{ $dt->producto->marca->marca }}
+                        {{ $dt->producto->marca->marca }}{{ $dt->producto->talla ? ', Talla: ' . $dt->producto->talla : '' }}
                     </td>
                     <td style="text-align: right;">{{ Number::currency($dt->precio, 'GTQ') }}</td>
                     <td style="text-align: right;">{{ Number::currency($dt->cantidad * $dt->precio, 'GTQ') }}
