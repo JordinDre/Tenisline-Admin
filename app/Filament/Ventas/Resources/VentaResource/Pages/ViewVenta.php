@@ -153,6 +153,11 @@ class ViewVenta extends ViewRecord
                                                 TextEntry::make('producto.marca.marca')
                                                     ->label('Marca')
                                                     ->color('gray'),
+                                                TextEntry::make('producto.talla')
+                                                    ->label('Talla')
+                                                    ->color('info')
+                                                    ->placeholder('N/A')
+                                                    ->visible(fn ($record) => ! empty($record->producto->talla)),
                                             ])
                                                 ->columnSpan(4),
                                             Group::make([

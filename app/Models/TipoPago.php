@@ -39,6 +39,7 @@ class TipoPago extends Model
         'LINK 6 CUOTAS',
         'TARJETA CONTADO',
         'TARJETA 3 CUOTAS',
+        '6 CUOTAS',
         'DEPÓSITO',
         'TRANSFERENCIA',
     ];
@@ -74,5 +75,6 @@ class TipoPago extends Model
         18 => 'LINK 6 CUOTAS',
         19 => 'TARJETA CONTADO',
         20 => 'TARJETA 3 CUOTAS',
+        21 => '6 CUOTAS',
     ];
 }

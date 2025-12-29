@@ -22,7 +22,7 @@ class FELController extends Controller
         $granTotal = 0;
         foreach ($orden->detalles as $item) {
             $producto = Producto::withTrashed()->find($item->producto_id);
-            $descripcion = $producto->codigo.' - '.$producto->descripcion.' - '.$producto->marca->marca.' - '.$producto->presentacion->presentacion;
+            $descripcion = $producto->codigo.' - '.$producto->descripcion.' - '.$producto->marca->marca.($producto->talla ? ' - Talla: '.$producto->talla : '');
             $precioUnitario = $item->precio;
             $precioTotal = round($item->cantidad * $precioUnitario, 2);
             $montoGravable = round($precioTotal / 1.12, 2);
@@ -374,12 +374,12 @@ class FELController extends Controller
         $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name;
         $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
 
-        $emisor = $bodega == 6 ? config('services.fel2') 
-        : ($bodega == 1 ? config('services.fel') 
+        $emisor = $bodega == 6 ? config('services.fel2')
+        : ($bodega == 1 ? config('services.fel')
         : ($bodega == 8 ? config('services.fel3') : config('services.fel')));
 
         $codigo = $bodega == 6 ? 4
-        : ($bodega == 1 ? 2 
+        : ($bodega == 1 ? 2
         : ($bodega == 8 ? 5 : 2));
 
         $totalMontoImpuesto = 0;
@@ -389,7 +389,7 @@ class FELController extends Controller
 
         foreach ($venta->detalles as $item) {
             $producto = Producto::withTrashed()->find($item->producto_id);
-            $descripcion = $producto->codigo.' - '.$producto->descripcion.' - '.$producto->marca->marca;
+            $descripcion = $producto->codigo.' - '.$producto->descripcion.' - '.$producto->marca->marca.($producto->talla ? ' - Talla: '.$producto->talla : '');
             $precioUnitario = $item->precio;
             $precioTotal = round($item->cantidad * $precioUnitario, 2);
             $montoGravable = round($precioTotal / 1.12, 2);
@@ -565,12 +565,12 @@ class FELController extends Controller
 
         $asesor = User::withTrashed()->find($venta->asesor_id);
 
-        $emisor = $bodega == 6 ? config('services.fel2') 
-        : ($bodega == 1 ? config('services.fel') 
+        $emisor = $bodega == 6 ? config('services.fel2')
+        : ($bodega == 1 ? config('services.fel')
         : ($bodega == 8 ? config('services.fel3') : config('services.fel')));
 
         $codigo = $bodega == 6 ? 4
-        : ($bodega == 1 ? 2 
+        : ($bodega == 1 ? 2
         : ($bodega == 8 ? 5 : 2));
 
         $totalMontoImpuesto = 0;

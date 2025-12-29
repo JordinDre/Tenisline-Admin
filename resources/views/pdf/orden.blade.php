@@ -190,7 +190,7 @@
             <tr>
                 <th>Código</th>
                 <th>Producto</th>
-                <th>Presentación</th>
+                <th>Talla</th>
                 <th>Marca</th>
                 <th>Cantidad</th>
                 <th>Boni</th>
@@ -203,7 +203,7 @@
                 <tr>
                     <td>{{ $detalle->producto->codigo }}</td>
                     <td>{{ $detalle->producto->descripcion }}</td>
-                    <td>{{ $detalle->producto->presentacion->presentacion }}</td>
+                    <td>{{ $detalle->producto->talla ?? 'N/A' }}</td>
                     <td>{{ $detalle->producto->marca->marca }}</td>
                     <td>{{ $detalle->cantidad }}</td>
                     <td class="right">{{ Number::currency($detalle->precio, 'GTQ') }}</td>

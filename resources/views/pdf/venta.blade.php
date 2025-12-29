@@ -123,7 +123,7 @@
         @foreach ($venta->detalles as $dt)
             <tr>
                 <td class="descripcion">
-                    {{ $dt->producto->codigo . ' - ' . $dt->producto->descripcion . ' - ' . $dt->producto->marca->marca }}
+                    {{ $dt->producto->codigo . ' - ' . $dt->producto->descripcion . ' - ' . $dt->producto->marca->marca }}{{ $dt->producto->talla ? ' - Talla: ' . $dt->producto->talla : '' }}
                 </td>
                 <td class="cantidad">{{ $dt->cantidad }}</td>
                 <td class="precio">{{ number_format($dt->precio, 2) }}</td>
