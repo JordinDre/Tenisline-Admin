@@ -2,28 +2,29 @@
 
 namespace App\Providers\Filament;
 
-use App\Http\Middleware\AdminPanel;
-use App\Models\User;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\MenuItem;
 use Filament\Panel;
+use App\Models\User;
 use Filament\PanelProvider;
-use Filament\Support\Enums\MaxWidth;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Session\Middleware\AuthenticateSession;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Kainiklas\FilamentScout\FilamentScoutPlugin;
 use Kenepa\Banner\BannerPlugin;
+use Filament\Navigation\MenuItem;
+use App\Http\Middleware\AdminPanel;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Http\Middleware\Authenticate;
 use Kenepa\ResourceLock\ResourceLockPlugin;
 use Rmsramos\Activitylog\ActivitylogPlugin;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Kainiklas\FilamentScout\FilamentScoutPlugin;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use App\Http\Middleware\BloquearSistemaPorVentaPendiente;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -114,6 +115,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
                 \Hasnayeen\Themes\Http\Middleware\SetTheme::class,
                 AdminPanel::class,
+                BloquearSistemaPorVentaPendiente::class,
             ]);
     }
 }

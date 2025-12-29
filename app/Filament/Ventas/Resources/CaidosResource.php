@@ -28,6 +28,11 @@ class CaidosResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! \App\Filament\Ventas\Resources\VentaResource::hayBloqueo();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

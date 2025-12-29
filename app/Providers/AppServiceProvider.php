@@ -2,14 +2,16 @@
 
 namespace App\Providers;
 
-use BezhanSalleh\PanelSwitch\PanelSwitch;
-use Filament\Support\Colors\Color;
-use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Table;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Facades\Filament;
+use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use Filament\Notifications\Notification;
+use BezhanSalleh\PanelSwitch\PanelSwitch;
+use Filament\Support\Facades\FilamentColor;
+use Illuminate\Auth\Notifications\ResetPassword;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Filament::serving(function () {
+
+            Filament::registerRenderHook(
+                'panels::page.start',
+                function () {
+
+                    if (! \App\Filament\Ventas\Resources\VentaResource::hayBloqueo()) {
+                        return null;
+                    }
+
+                    return view('filament.bloqueo-ventas');
+                }
+            );
+
+        });
+
         Vite::prefetch(concurrency: 3);
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
             return config('app.frontend_url')."/password-reset/$token?email={$notifiable->getEmailForPasswordReset()}";
