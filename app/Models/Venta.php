@@ -98,11 +98,21 @@ class Venta extends Model
      */
     public function debeOcultarFactura(): bool
     {
-        $primerPago = $this->pagos->first();
+        // Si comp es true, no ocultar
+        if ($this->comp == true) {
+            return false;
+        }
 
-        return $this->comp == false
-            && $this->facturar_cf == true
-            && $primerPago
-            && $primerPago->tipo_pago_id == 1;
+        // Si facturar_cf es false, no ocultar
+        if ($this->facturar_cf != true) {
+            return false;
+        }
+
+        // Verificar que exista al menos un pago y que el tipo_pago_id sea 1
+        $primerPago = $this->relationLoaded('pagos')
+            ? $this->pagos->first()
+            : $this->pagos()->first();
+
+        return $primerPago !== null && $primerPago->tipo_pago_id == 1;
     }
 }
