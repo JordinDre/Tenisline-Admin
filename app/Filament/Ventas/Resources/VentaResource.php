@@ -866,4 +866,16 @@ class VentaResource extends Resource implements HasShieldPermissions
 
         return $query->whereRaw('1 = 0');
     }
+
+    public static function canCreate(): bool
+    {
+        return ! static::hayBloqueo();
+    }
+
+    public static function hayBloqueo(): bool
+    {
+        return Venta::where('estado', 'validacion_pago')
+            ->where('created_at', '<=', now()->subHour())
+            ->exists();
+    }
 }

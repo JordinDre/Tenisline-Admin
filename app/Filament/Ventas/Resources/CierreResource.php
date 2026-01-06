@@ -44,6 +44,11 @@ class CierreResource extends Resource
 
     protected static ?string $slug = 'cierres';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! \App\Filament\Ventas\Resources\VentaResource::hayBloqueo();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
