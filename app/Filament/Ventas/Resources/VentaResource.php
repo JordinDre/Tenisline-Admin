@@ -424,20 +424,28 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->label('Fel No. Autorización')
                     ->sortable()
                     ->copyable()
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn ($record) => ! $record->debeOcultarFactura()),
                 Tables\Columns\TextColumn::make('factura.fel_numero')
                     ->label('Fel No. DTE')
                     ->sortable()
                     ->copyable()
-                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn ($record) => ! $record->debeOcultarFactura()),
                 Tables\Columns\TextColumn::make('factura.fel_serie')
                     ->label('Fel No. Serie')
                     ->sortable()
-                    ->copyable()->toggleable(isToggledHiddenByDefault: true),
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn ($record) => ! $record->debeOcultarFactura()),
                 Tables\Columns\TextColumn::make('factura.fel_fecha')
                     ->label('Fel Fecha')
                     ->dateTime('d/m/Y H:i:s')
-                    ->sortable()->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn ($record) => ! $record->debeOcultarFactura()),
 
                 Tables\Columns\TextColumn::make('anulacion.fel_uuid')
                     ->label('Anulación Autorización')
@@ -583,7 +591,8 @@ class VentaResource extends Resource implements HasShieldPermissions
                         }),
                     Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->visible(fn ($record) => Auth::user()->can('factura', $record))
+                        ->visible(fn ($record) => Auth::user()->can('factura', $record) && ! $record->debeOcultarFactura())
+                        ->disabled(fn ($record) => $record->debeOcultarFactura())
                         ->modalContent(fn (Venta $record): View => view(
                             'filament.pages.actions.iframe',
                             [
@@ -702,7 +711,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     'producto_id' => $detalle->producto_id,
                                     'cantidad' => $detalle->cantidad,
                                     'devuelto' => $detalle->devuelto,
-                                    'codigo_nuevo' => $detalle->producto->codigo ?? '', 
+                                    'codigo_nuevo' => $detalle->producto->codigo ?? '',
                                 ];
                             })->toArray(),
                         ])

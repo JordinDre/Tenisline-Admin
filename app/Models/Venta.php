@@ -91,4 +91,18 @@ class Venta extends Model
     {
         return $this->belongsTo(CierreDia::class);
     }
+
+    /**
+     * Verifica si la venta debe mostrar información de factura
+     * No debe mostrar factura si: comp == false && facturar_cf == true && tipo_pago_id == 1
+     */
+    public function debeOcultarFactura(): bool
+    {
+        $primerPago = $this->pagos->first();
+
+        return $this->comp == false
+            && $this->facturar_cf == true
+            && $primerPago
+            && $primerPago->tipo_pago_id == 1;
+    }
 }
