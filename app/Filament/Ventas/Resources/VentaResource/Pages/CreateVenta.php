@@ -322,7 +322,16 @@ class CreateVenta extends CreateRecord
                                             },
                                         ])
                                         ->label('Facturar CF')
-                                        ->columnSpan(3),
+                                        ->columnSpan(2),
+                                        Toggle::make('comp')
+                                            ->inline(false)
+                                            ->live()
+                                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                            })
+                                            ->rules([
+                                            ])
+                                            ->label('COMP')
+                                            ->columnSpan(1),
                                     Repeater::make('detalles')
                                         ->label('')
                                         ->relationship()

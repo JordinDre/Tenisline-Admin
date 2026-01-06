@@ -42,6 +42,11 @@ class CardResource extends Resource implements HasShieldPermissions
         ];
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! \App\Filament\Ventas\Resources\VentaResource::hayBloqueo();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

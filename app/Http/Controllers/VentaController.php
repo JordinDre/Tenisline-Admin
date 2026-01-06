@@ -78,7 +78,13 @@ class VentaController extends Controller
 
     public static function facturar(Venta $venta)
     {
+        
         try {
+            
+            if($venta->comp == false && $venta->facturar_cf == true && $venta->pagos->first()->tipo_pago_id == 1){
+                self::restarInventario($venta, 'Venta Confirmada');
+                activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
+            } else {
             $res = FELController::facturaVenta($venta, $venta->bodega_id);
 
             if (
@@ -107,6 +113,7 @@ class VentaController extends Controller
             $factura->tipo = 'factura';
             $venta->factura()->save($factura);
             activity()->performedOn($venta)->causedBy(Auth::user())->withProperties($venta)->event('confirmacion')->log('Venta confirmada');
+        }
         } catch (\Exception $e) {
             \Log::error('Error en facturación', [
                 'venta_id' => $venta->id,

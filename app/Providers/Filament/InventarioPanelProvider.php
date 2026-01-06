@@ -2,25 +2,26 @@
 
 namespace App\Providers\Filament;
 
-use App\Models\User;
-use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\MenuItem;
 use Filament\Panel;
+use App\Models\User;
 use Filament\PanelProvider;
+use Kenepa\Banner\BannerPlugin;
+use Filament\Navigation\MenuItem;
 use Filament\Support\Enums\MaxWidth;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Filament\Http\Middleware\Authenticate;
+use Kenepa\ResourceLock\ResourceLockPlugin;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Kainiklas\FilamentScout\FilamentScoutPlugin;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
-use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Kainiklas\FilamentScout\FilamentScoutPlugin;
-use Kenepa\Banner\BannerPlugin;
-use Kenepa\ResourceLock\ResourceLockPlugin;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use App\Http\Middleware\BloquearSistemaPorVentaPendiente;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 
 class InventarioPanelProvider extends PanelProvider
 {
@@ -56,6 +57,7 @@ class InventarioPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 \Hasnayeen\Themes\Http\Middleware\SetTheme::class,
+                BloquearSistemaPorVentaPendiente::class,
                 /* InventarioPanel::class, */
             ])
             ->sidebarFullyCollapsibleOnDesktop()
