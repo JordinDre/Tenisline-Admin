@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bodega;
-use App\Models\Carrito;
 use App\Models\Guia;
+use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\OrdenDetalle;
-use App\Models\Producto;
+use App\Models\Bodega;
 use App\Models\Tienda;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Carrito;
+use App\Models\Producto;
+use App\Models\OrdenDetalle;
+use App\Models\VentaDetalle;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class TiendaController extends Controller
 {
@@ -616,5 +617,107 @@ class TiendaController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="Catalogo.pdf"')
             ->header('X-Frame-Options', 'SAMEORIGIN');
+    }
+
+    public function HistorialVendidosPdf(Request $request)
+    {
+        $search  = $request->search;
+        $marca   = $request->marca;
+        $bodega  = $request->bodega;
+        $tallas  = $request->tallas ?? [];
+        $genero  = $request->genero;
+
+        $user = Auth::user();
+        $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
+
+        $marchamo = $request->marchamo
+            ? mb_strtolower($request->marchamo)
+            : null;
+
+        $vendidos = VentaDetalle::query()
+            ->with([
+                'producto.marca:id,marca',
+                'venta.bodega:id,bodega',
+            ]);
+
+        /* 🔍 FILTRO BODEGA (DESDE LA VENTA) */
+        if ($bodega) {
+            $vendidos->whereHas('venta', function ($q) use ($bodega) {
+                $q->where('bodega_id', $bodega);
+            });
+        }
+
+        /* 🔍 BÚSQUEDA GENERAL */
+        if ($search) {
+            $terms = explode(' ', $search);
+
+            foreach ($terms as $term) {
+                $vendidos->whereHas('producto', function ($q) use ($term) {
+                    $q->where('codigo', 'LIKE', "%{$term}%")
+                        ->orWhere('descripcion', 'LIKE', "%{$term}%")
+                        ->orWhere('modelo', 'LIKE', "%{$term}%")
+                        ->orWhere('talla', 'LIKE', "%{$term}%")
+                        ->orWhere('genero', 'LIKE', "%{$term}%")
+                        ->orWhereHas('marca', fn ($m) =>
+                            $m->where('marca', 'LIKE', "%{$term}%")
+                        );
+                });
+            }
+        }
+
+        /* 🔍 MARCA */
+        if ($marca) {
+            $vendidos->whereHas('producto.marca', function ($q) use ($marca) {
+                $q->where('marca', $marca);
+            });
+        }
+
+        /* 🔍 TALLAS */
+        if (!empty($tallas)) {
+            $tallasNormalizadas = collect($tallas)
+                ->map(fn ($t) => rtrim(rtrim($t, '0'), '.'))
+                ->unique()
+                ->toArray();
+
+            $vendidos->whereHas('producto', function ($q) use ($tallasNormalizadas) {
+                $q->whereIn(
+                    DB::raw("REPLACE(REPLACE(talla, '.0', ''), '.00', '')"),
+                    $tallasNormalizadas
+                );
+            });
+        }
+
+        /* 🔍 GÉNERO */
+        if ($genero) {
+            $vendidos->whereHas('producto', function ($q) use ($genero) {
+                $q->where('genero', $genero);
+            });
+        }
+
+        /* 🔍 MARCHAMO (SOLO ADMIN) */
+        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+            $vendidos->whereHas('producto', function ($q) use ($marchamo) {
+                $q->where('marchamo', $marchamo);
+            });
+        }
+
+        $vendidos = $vendidos
+            ->orderByDesc('created_at')
+            ->limit(200)
+            ->get();
+
+            /* dd($vendidos); */
+
+        $pdf = Pdf::loadView('pdf.historial-productos', compact('vendidos'))
+            ->setPaper([0, 0, 227, 842], 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 96,
+            ]);
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="Historial_Vendidos.pdf"');
     }
 }

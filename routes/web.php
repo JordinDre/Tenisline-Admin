@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/catalogo', [PDFController::class, 'catalogo'])->name('pdf.catalogo');
 
         Route::get('/catalogo/pdf', [TiendaController::class, 'exportarPdf'])->name('catalogo.pdf');
+        Route::get('/catalogo/pdf-historial', [TiendaController::class, 'HistorialVendidosPdf'])->name('historial.pdf');
     });
 });
 
