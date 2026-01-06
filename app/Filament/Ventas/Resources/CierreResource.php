@@ -331,7 +331,21 @@ class CierreResource extends Resource
                                 },
                             ]),
                         TextInput::make('no_documento')
-                            ->label('No. Documento o Autorización'),
+                            ->label('No. Documento o Autorización')
+                            ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA']))
+                                        ->rules([
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
+                                                // Solo validar si el valor no está vacío
+                                                if (empty($value)) {
+                                                    return;
+                                                }
+
+                                                // Validar que no_documento sea único en toda la tabla de pagos
+                                                if (Pago::where('no_documento', $value)->exists()) {
+                                                    $fail('El número de documento ya existe en los pagos.');
+                                                }
+                                            },
+                                        ]),
                         DatePicker::make('fecha_transaccion')
                             ->default(now())
                             ->required(),
