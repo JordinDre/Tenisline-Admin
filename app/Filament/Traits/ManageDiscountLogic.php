@@ -34,7 +34,7 @@ trait ManageDiscountLogic
         $set('../../subtotal', $totalGeneral);
         $set('../../total', $totalGeneral);
 
-        $this->aplicarDescuentoEfectivoGlobal($get, $set);
+       /*  $this->aplicarDescuentoEfectivoGlobal($get, $set); */
     }
 
     protected function updateRootTotals(Get $get, Set $set): void
@@ -51,7 +51,7 @@ trait ManageDiscountLogic
         $set('subtotal', $totalGeneral);
         $set('total', $totalGeneral);
 
-        $this->aplicarDescuentoEfectivoGlobal($get, $set);
+       /*  $this->aplicarDescuentoEfectivoGlobal($get, $set); */
     }
 
     protected function restoreOriginalPrice(Get $get, Set $set): void
@@ -263,7 +263,7 @@ trait ManageDiscountLogic
             ->sum(fn ($i) => (int) ($i['cantidad'] ?? 0));
     }
 
-    protected function aplicarDescuentoEfectivoGlobal(Get $get, Set $set): void
+    /* protected function aplicarDescuentoEfectivoGlobal(Get $get, Set $set): void
     {
         $subtotal = (float) ($get('subtotal') ?? 0);
 
@@ -274,5 +274,5 @@ trait ManageDiscountLogic
         }
 
         $set('total', $total);
-    }
+    } */
 }
