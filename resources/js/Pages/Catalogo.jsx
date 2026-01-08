@@ -116,6 +116,35 @@ export default function Catalogo({
         return false;
     };
 
+    const handleExportPdf_historial = (e) => {
+        e?.preventDefault();
+        e?.stopPropagation();
+        
+        const params = new URLSearchParams();
+
+        if (data.search) params.append("search", data.search);
+        if (data.bodega) params.append("bodega", data.bodega);
+        if (data.marchamo) params.append("marchamo", data.marchamo);
+        if (data.marca) params.append("marca", data.marca);
+        if (data.genero) params.append("genero", data.genero);
+        if (data.ofertados) params.append("ofertados", data.ofertados);
+        if (data.tallas?.length) {
+            data.tallas.forEach(t => params.append("tallas[]", t));
+        }
+
+        const queryString = params.toString();
+        const url = '/pdf/catalogo/pdf-historial' + (queryString ? "?" + queryString : "");
+        
+        // Intentar abrir en nueva pestaña, si falla usar location
+        const newWindow = window.open(url, "_blank");
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == "undefined") {
+            // Si el navegador bloquea popups, usar location directamente
+            window.location.href = url;
+        }
+        
+        return false;
+    };
+
     return (
         <Layout>
             <Head>
@@ -231,6 +260,7 @@ export default function Catalogo({
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
                                     handleExportPdf={handleExportPdf} 
+                                    handleExportPdf_historial={handleExportPdf_historial} 
                                     puedeVerMarchamo={puedeVerMarchamo}
                                     marchamosDisponibles={marchamosDisponibles}
                                     ofertados={ofertados}
@@ -295,6 +325,7 @@ export default function Catalogo({
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
                                     handleExportPdf={handleExportPdf}
+                                    handleExportPdf_historial={handleExportPdf_historial}
                                     puedeVerMarchamo={puedeVerMarchamo}
                                     marchamosDisponibles={marchamosDisponibles}
                                     ofertados={ofertados}
@@ -437,6 +468,7 @@ function Filtros({
     marcasDisponibles,
     generosDisponibles,
     handleExportPdf,
+    handleExportPdf_historial,
     tallasRango,
     marchamo,
     puedeVerMarchamo,
@@ -748,6 +780,37 @@ function Filtros({
                             />
                         </svg>
                         Exportar PDF
+                    </a>
+                )}
+                {user && handleExportPdf_historial && (
+                    <a
+                        href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (typeof handleExportPdf_historial === 'function') {
+                                handleExportPdf_historial(e);
+                            } else {
+                                console.error('handleExportPdf_historial no es una función:', handleExportPdf_historial);
+                            }
+                            return false;
+                        }}
+                        className="w-full rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-green-600 hover:to-green-700 hover:shadow-md flex items-center justify-center gap-2"
+                    >
+                        <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                        </svg>
+                        Historial Tenis Vendidos
                     </a>
                 )}
             </div>
