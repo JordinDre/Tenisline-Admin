@@ -127,6 +127,43 @@ class CreateVenta extends CreateRecord
                             ->searchable()
                             ->preload()
                             ->required(),
+                        Select::make('condicion_pago')
+                                ->label('Condición de la venta')
+                                ->options([
+                                    'contado' => 'Contado / Efectivo (5% descuento)',
+                                    'normal' => 'Normal / Crédito / Mixto',
+                                ])
+                                ->default('normal')
+                                ->live()
+                                ->dehydrated(false)
+                                /* ->afterStateUpdated(function ($state, Set $set, Get $get) {
+
+                                    $detalles = $get('detalles') ?? [];
+
+                                    $nuevoSubtotal = 0;
+
+                                    foreach ($detalles as $index => $item) {
+                                        $precioBase = (float) ($item['precio_base'] ?? $item['precio'] ?? 0);
+                                        $cantidad = (int) ($item['cantidad'] ?? 1);
+
+                                        if ($state === 'contado') {
+                                            $precioFinal = round($precioBase * 0.95, 2);
+                                        } else {
+                                            $precioFinal = $precioBase;
+                                        }
+
+                                        $set("detalles.$index.precio", $precioFinal);
+                                        $set("detalles.$index.subtotal", round($precioFinal * $cantidad, 2));
+
+                                        $nuevoSubtotal += $precioFinal * $cantidad;
+                                    }
+
+                                    $set('subtotal', round($nuevoSubtotal, 2));
+                                    $set('total', round($nuevoSubtotal, 2));
+
+                                    $set('pagos', []);
+                                }) */
+                                ->columnSpan(['sm' => 1, 'md' => 2]),
                     ])
                     ->columnSpanFull(),
                 Wizard::make([
@@ -344,6 +381,31 @@ class CreateVenta extends CreateRecord
                                             'xl' => 2,
                                         ])
                                         ->schema([
+                                            Toggle::make('5%')
+                                                ->inline(false)
+                                                ->live()
+                                                ->visible(fn (Get $get) => $get('../../condicion_pago') === 'contado')
+                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                    $precioOriginal = (float) ($get('precio_base') ?? 0);
+
+                                                    if ($precioOriginal <= 0) {
+                                                        return;
+                                                    }
+
+                                                    if ($state == true) {
+                                                        $precioFinal = round($precioOriginal * 0.95, 2);
+                                                    } else {
+                                                        $precioFinal = $precioOriginal;
+                                                    }
+
+                                                    $set('precio', round($precioFinal, 2));
+                                                    $set('subtotal', round($precioFinal, 2));
+                                                    $this->updateOrderTotals($get, $set);
+
+                                                })
+                                                ->label('5% extra')
+                                                ->dehydrated(false)
+                                                ->columnSpan(1),
                                             Hidden::make('uuid')
                                                 ->default(fn () => (string) Str::uuid())
                                                 ->dehydrated(false),
@@ -800,6 +862,8 @@ class CreateVenta extends CreateRecord
                                                 ->inputMode('decimal')
                                                 ->rule('numeric')
                                                 ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2]),
+                                            Hidden::make('precio_original')
+                                            ->dehydrated(false),
                                             Hidden::make('precio_base')
                                                 ->dehydrated(false),
                                             Hidden::make('escala_id'),
@@ -860,7 +924,7 @@ class CreateVenta extends CreateRecord
                                 ->schema([
                                 ]),
 
-                            Select::make('condicion_pago')
+                            /* Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
                                     'contado' => 'Contado / Efectivo (5% descuento)',
@@ -895,7 +959,7 @@ class CreateVenta extends CreateRecord
                                     $set('total', round($nuevoSubtotal, 2));
 
                                     $set('pagos', []);
-                                }),
+                                }), */
                             Hidden::make('descuento_efectivo_5')
                                 ->dehydrated(false)
                                 ->reactive(),
