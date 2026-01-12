@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bodega;
+use App\Models\Carrito;
 use App\Models\Guia;
-use Inertia\Inertia;
 use App\Models\Marca;
 use App\Models\Orden;
-use App\Models\Bodega;
-use App\Models\Tienda;
-use App\Models\Carrito;
-use App\Models\Producto;
 use App\Models\OrdenDetalle;
+use App\Models\Producto;
+use App\Models\Tienda;
 use App\Models\VentaDetalle;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TiendaController extends Controller
 {
@@ -104,7 +104,8 @@ class TiendaController extends Controller
 
         $productos = Producto::with('marca', 'inventario')
             ->whereHas('inventario', function ($query) use ($bodega) {
-                $query->where('existencia', '>', 0);
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7]);
 
                 if ($bodega) {
                     // Si se selecciona una bodega, buscar en todas las bodegas que contengan el nombre del municipio
@@ -113,6 +114,7 @@ class TiendaController extends Controller
                         $nombreMunicipio = strtolower($bodegaSeleccionada->municipio->municipio);
                         $query->whereHas('bodega', function ($q) use ($nombreMunicipio) {
                             $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
+                                ->whereNotIn('id', [6, 7])
                                 ->where(function ($subQuery) use ($nombreMunicipio) {
                                     $subQuery->whereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio}%"])
                                         ->orWhereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio} bodega%"]);
@@ -229,7 +231,7 @@ class TiendaController extends Controller
                                 }
 
                                 // Excluir bodegas específicas que no deben mostrar existencia
-                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado']) || in_array($bodega->id, [6, 7])) {
                                     return false;
                                 }
 
@@ -271,6 +273,7 @@ class TiendaController extends Controller
         // Obtener bodegas agrupadas por municipio, excluyendo las que no deben mostrar existencia
         $bodegas = Bodega::with('municipio')
             ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
+            ->whereNotIn('id', [6, 7])
             ->whereHas('municipio', function ($query) {
                 $query->whereIn('municipio', ['Zacapa', 'Chiquimula', 'Esquipulas']);
             })
@@ -405,7 +408,7 @@ class TiendaController extends Controller
                         }
 
                         // Excluir bodegas específicas que no deben mostrar existencia
-                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
+                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado']) || in_array($bodega->id, [6, 7])) {
                             return false;
                         }
 
@@ -517,7 +520,8 @@ class TiendaController extends Controller
 
         $productos = Producto::with('marca', 'inventario')
             ->whereHas('inventario', function ($query) use ($bodega) {
-                $query->where('existencia', '>', 0);
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7]);
 
                 if ($bodega) {
                     // Si se selecciona una bodega, buscar en todas las bodegas que contengan el nombre del municipio
@@ -526,6 +530,7 @@ class TiendaController extends Controller
                         $nombreMunicipio = strtolower($bodegaSeleccionada->municipio->municipio);
                         $query->whereHas('bodega', function ($q) use ($nombreMunicipio) {
                             $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
+                                ->whereNotIn('id', [6, 7])
                                 ->where(function ($subQuery) use ($nombreMunicipio) {
                                     $subQuery->whereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio}%"])
                                         ->orWhereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio} bodega%"]);
@@ -621,11 +626,11 @@ class TiendaController extends Controller
 
     public function HistorialVendidosPdf(Request $request)
     {
-        $search  = $request->search;
-        $marca   = $request->marca;
-        $bodega  = $request->bodega;
-        $tallas  = $request->tallas ?? [];
-        $genero  = $request->genero;
+        $search = $request->search;
+        $marca = $request->marca;
+        $bodega = $request->bodega;
+        $tallas = $request->tallas ?? [];
+        $genero = $request->genero;
 
         $user = Auth::user();
         $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
@@ -658,8 +663,7 @@ class TiendaController extends Controller
                         ->orWhere('modelo', 'LIKE', "%{$term}%")
                         ->orWhere('talla', 'LIKE', "%{$term}%")
                         ->orWhere('genero', 'LIKE', "%{$term}%")
-                        ->orWhereHas('marca', fn ($m) =>
-                            $m->where('marca', 'LIKE', "%{$term}%")
+                        ->orWhereHas('marca', fn ($m) => $m->where('marca', 'LIKE', "%{$term}%")
                         );
                 });
             }
@@ -673,7 +677,7 @@ class TiendaController extends Controller
         }
 
         /* 🔍 TALLAS */
-        if (!empty($tallas)) {
+        if (! empty($tallas)) {
             $tallasNormalizadas = collect($tallas)
                 ->map(fn ($t) => rtrim(rtrim($t, '0'), '.'))
                 ->unique()
@@ -706,7 +710,7 @@ class TiendaController extends Controller
             ->limit(200)
             ->get();
 
-            /* dd($vendidos); */
+        /* dd($vendidos); */
 
         $pdf = Pdf::loadView('pdf.historial-productos', compact('vendidos'))
             ->setPaper([0, 0, 227, 842], 'portrait')
