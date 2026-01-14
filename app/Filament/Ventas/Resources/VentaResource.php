@@ -420,6 +420,10 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->listWithLineBreaks()
                     ->bulleted()
                     ->copyable(),
+                Tables\Columns\TextColumn::make('tipo_envio')
+                    ->label('Tipo de Envío')
+                    ->searchable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('factura.fel_uuid')
                     ->label('Fel No. Autorización')
                     ->sortable()
@@ -635,7 +639,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->requiresConfirmation()
                         ->icon('heroicon-o-paper-airplane')
                         ->action(fn (Venta $record) => VentaController::enviarGUATEX($record))
-                        ->visible(fn ($record) => Auth::user()->can('liquidate', $record)),
+                        ->visible(fn ($record) => Auth::user()->can('liquidate', $record) && $record->tipo_envio == "guatex"),
                     Action::make('tracking')
                         ->label('Agregar Tracking')
                         ->color('warning')

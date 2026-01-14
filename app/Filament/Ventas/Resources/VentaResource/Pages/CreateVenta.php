@@ -127,6 +127,13 @@ class CreateVenta extends CreateRecord
                             ->searchable()
                             ->preload()
                             ->required(),
+                        Select::make('tipo_envio')
+                            ->label('Tipo de envío')
+                            ->options(['guatex' => 'GUATEX', 'propio' => 'PROPIO'])
+                            ->preload()
+                            ->live()
+                            ->searchable()
+                            ->required(),
                         Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
@@ -162,10 +169,9 @@ class CreateVenta extends CreateRecord
                                     $set('total', round($nuevoSubtotal, 2));
 
                                     $set('pagos', []);
-                                }) */
-                                ->columnSpan(['sm' => 1, 'md' => 2]),
-                    ])
-                    ->columnSpanFull(),
+                                }) */,
+                    ]),
+                    
                 Wizard::make([
                     Wizard\Step::make('Cliente y Productos')
                         ->schema([
