@@ -2,16 +2,21 @@
 
 namespace App\Filament\Ventas\Pages;
 
+use App\Filament\Ventas\Widgets\MetasBodega;
+use App\Filament\Ventas\Widgets\VentasBodega;
+use App\Filament\Ventas\Widgets\VentasPorTallaCompleto;
 use App\Http\Controllers\Utils\Functions;
 use Carbon\Carbon;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class Dashboard extends \Filament\Pages\Dashboard
 {
     use HasFiltersForm;
+    use InteractsWithPageFilters;
 
     public function filtersForm(Form $form): Form
     {
@@ -76,5 +81,14 @@ class Dashboard extends \Filament\Pages\Dashboard
     public function getColumns(): int|string|array
     {
         return 2;
+    }
+
+    public function getWidgets(): array
+    {
+        return [
+            MetasBodega::class,
+            VentasBodega::class,
+            VentasPorTallaCompleto::class,
+        ];
     }
 }
