@@ -386,20 +386,38 @@ class CreateVenta extends CreateRecord
                                                 ->live()
                                                 ->visible(fn (Get $get) => $get('../../condicion_pago') === 'contado')
                                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                                    $precioOriginal = (float) ($get('precio_base') ?? 0);
+                                                    // Obtener el precio original de venta del producto (sin promociones)
+                                                    $precioVentaOriginal = (float) ($get('precio_original') ?? 0);
+                                                    
+                                                    // Si no hay precio_original, obtenerlo desde el producto
+                                                    if ($precioVentaOriginal <= 0) {
+                                                        $productoId = $get('producto_id');
+                                                        if ($productoId) {
+                                                            $producto = Producto::find($productoId);
+                                                            $precioVentaOriginal = $producto?->precio_venta ?? 0;
+                                                        }
+                                                    }
 
-                                                    if ($precioOriginal <= 0) {
+                                                    if ($precioVentaOriginal <= 0) {
                                                         return;
                                                     }
 
+                                                    // Obtener el precio base (puede ser con promoción si hay liquidación/oferta/etc)
+                                                    $precioBase = (float) ($get('precio_base') ?? $precioVentaOriginal);
+                                                    $cantidad = (int) ($get('cantidad') ?? 1);
+
                                                     if ($state == true) {
-                                                        $precioFinal = round($precioOriginal * 0.95, 2);
+                                                        // Calcular el 5% sobre el precio de venta original
+                                                        $descuento5Porciento = round($precioVentaOriginal * 0.05, 2);
+                                                        // Restar ese 5% del precio base (que puede tener promoción aplicada)
+                                                        $precioFinal = round($precioBase - $descuento5Porciento, 2);
                                                     } else {
-                                                        $precioFinal = $precioOriginal;
+                                                        // Si se desactiva el 5%, restaurar el precio base (con promoción si aplica)
+                                                        $precioFinal = $precioBase;
                                                     }
 
                                                     $set('precio', round($precioFinal, 2));
-                                                    $set('subtotal', round($precioFinal, 2));
+                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
                                                     $this->updateOrderTotals($get, $set);
 
                                                 })
