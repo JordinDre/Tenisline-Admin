@@ -219,25 +219,43 @@ class CierreResource extends Resource
                         return $countPagos > 0 ? $countPagos : null;
                     })
                     ->badgeColor('success'),
+                Action::make('liquidar_completo_manual')
+                    ->label('Liquidar Cierre')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn (Cierre $record) => 
+                        Auth::user()->can('view_costs_producto') && 
+                        !$record->liquidado_completo && 
+                        $record->puedeLiquidar()
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Liquidar Cierre')
+                    ->modalDescription('Se ha detectado que todos los pagos han sido completados. ¿Desea liquidar todas las ventas de este cierre ahora?')
+                    ->action(function (Cierre $record) {
+                        try {
+                            if ($record->cierre === null) {
+                                throw new \Exception('Debe cerrar el turno (Cerrar Turno) antes de poder liquidar completamente.');
+                            }
+                            VentaController::liquidar_cierre_completo($record);
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error al liquidar')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 Action::make('liquidar')
                     ->label('Agregar Pago')
                     ->icon('heroicon-o-currency-dollar')
-                    ->visible(Auth::user()->can('view_costs_producto'))
+                    ->visible(fn (Cierre $record) => 
+                        Auth::user()->can('view_costs_producto') && 
+                        !$record->liquidado_completo && 
+                        !$record->puedeLiquidar()
+                    )
                     ->color('warning')
-                    ->disabled(function (Cierre $record) {
-                        // Solo deshabilitar si ya está completamente liquidado
-                        return $record->liquidado_completo;
-                    })
                     ->tooltip(function (Cierre $record) {
-                        if ($record->liquidado_completo) {
-                            return 'El cierre ya está completamente liquidado';
-                        }
-
                         $montosRestantes = $record->getMontosRestantes();
-
-                        if (empty($montosRestantes)) {
-                            return 'Todos los pagos han sido completados. El cierre se liquidará automáticamente.';
-                        }
 
                         $faltantes = [];
                         foreach ($montosRestantes as $tipoPago => $montoRestante) {
