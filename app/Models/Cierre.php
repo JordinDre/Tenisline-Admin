@@ -263,7 +263,7 @@ class Cierre extends Model
 
         return $pagos
             ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido')
-            ->map(fn ($group) => $group->sum('monto'))
+            ->map(fn ($group) => round($group->sum('monto'), 2))
             ->toArray();
     }
 
@@ -278,7 +278,7 @@ class Cierre extends Model
             ->get()
             ->groupBy(fn ($pago) => $pago->tipoPago?->tipo_pago ?? 'Desconocido');
 
-        return $pagos->map(fn ($coleccionPagos) => $coleccionPagos->sum('monto'))->toArray();
+        return $pagos->map(fn ($coleccionPagos) => round($coleccionPagos->sum('monto'), 2))->toArray();
     }
 
     /**
@@ -302,13 +302,13 @@ class Cierre extends Model
         // 2. Validar que el monto acumulado no exceda el esperado
         $montoEsperado = $resumenEsperados[$tipoPago->tipo_pago];
         $montoYaPagado = $pagosRealizados[$tipoPago->tipo_pago] ?? 0;
-        $montoRestante = $montoEsperado - $montoYaPagado;
+        $montoRestante = round($montoEsperado - $montoYaPagado, 2);
 
         if ($montoRestante <= 0) {
             throw new \Exception("El tipo de pago '{$tipoPago->tipo_pago}' ya está completamente pagado (Q".number_format($montoEsperado, 2).')');
         }
 
-        if ($monto > $montoRestante) {
+        if (round($monto, 2) > $montoRestante) {
             throw new \Exception('El monto Q'.number_format($monto, 2).' excede el monto restante Q'.number_format($montoRestante, 2)." para {$tipoPago->tipo_pago}");
         }
 
@@ -326,7 +326,7 @@ class Cierre extends Model
         $restantes = [];
         foreach ($resumenEsperados as $tipoPago => $montoEsperado) {
             $montoYaPagado = $pagosRealizados[$tipoPago] ?? 0;
-            $montoRestante = $montoEsperado - $montoYaPagado;
+            $montoRestante = round($montoEsperado - $montoYaPagado, 2);
 
             if ($montoRestante > 0) {
                 $restantes[$tipoPago] = $montoRestante;
@@ -350,7 +350,7 @@ class Cierre extends Model
                 return false; // Falta este tipo de pago
             }
 
-            if ($pagosRealizados[$tipoPago] < $montoEsperado) {
+            if (round($pagosRealizados[$tipoPago], 2) < round($montoEsperado, 2)) {
                 return false; // El monto no es suficiente
             }
         }
