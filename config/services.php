@@ -101,16 +101,15 @@ return [
         'usuario' => env('GUATEX_USUARIO', 'WSGTX'),
         'password' => env('GUATEX_PASSWORD', 'GTXH4M123'),
         'password_municipios' => env('GUATEX_PASSWORD_MUNICIPIOS', 'GTXCLDHMS'),
-
-        'codigo_cobro' => env('GUATEX_CODIGO_COBRO', 'CON5723'),
-        'codigo_cobro_cod' => env('GUATEX_CODIGO_COBRO_COD', 'U8400016'),
-        'codigo_caneca_cubeta' => env('GUATEX_CODIGO_CANECA_CUBETA', 'CON6430'),
-        'codigo_caneca_cubeta_cod' => env('GUATEX_CODIGO_CANECA_CUBETA_COD', 'T32000B4'),
-
-        'codigo_cobro_capital' => env('GUATEX_CODIGO_COBRO_CAPITAL', 'CON5723'),
-        'codigo_cobro_cod_capital' => env('GUATEX_CODIGO_COBRO_COD_CAPITAL', 'U8400016'),
-        'codigo_caneca_cubeta_capital' => env('GUATEX_CODIGO_CANECA_CUBETA_CAPITAL', 'CON6430'),
-        'codigo_caneca_cubeta_cod_capital' => env('GUATEX_CODIGO_CANECA_CUBETA_COD_CAPITAL', 'T32000B4'),
+        // ZACAPA
+        'codigo_cobro_zacapa' => env('GUATEX_CODIGO_COBRO_ZACAPA', 'CON5723'),
+        'codigo_cobro_cod_zacapa' => env('GUATEX_CODIGO_COBRO_COD_ZACAPA', 'U8400016'),
+        // CHIQUIMULA
+        'codigo_cobro_chiquimula' => env('GUATEX_CODIGO_COBRO_CHIQUIMULA', 'CON5723'),
+        'codigo_cobro_cod_chiquimula' => env('GUATEX_CODIGO_COBRO_COD_CHIQUIMULA', 'U8400016'),
+        // ESQUIPULAS
+        'codigo_cobro_esquipulas' => env('GUATEX_CODIGO_COBRO_ESQUIPULAS', 'CON5723'),
+        'codigo_cobro_cod_esquipulas' => env('GUATEX_CODIGO_COBRO_COD_ESQUIPULAS', 'U8400016'),
     ],
 
 ];

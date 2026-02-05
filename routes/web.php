@@ -65,16 +65,13 @@ Route::prefix('guatex')->group(function () {
     Route::get('/destinos/{departamento}/{municipio?}', [GUATEXController::class, 'obtenerDestinos']);
     Route::get('/destino/{codigo}', [GUATEXController::class, 'consultarCodigoDestino']);
     Route::get('/guia/{id}', [GUATEXController::class, 'generarGuia']);
-    Route::get('/guia_cubeta_caneca/{id}', [GUATEXController::class, 'generarGuiaCanecasCubetas']);
     Route::get('/consulta_tracking/{tracking}', [GUATEXController::class, 'consultarTracking']);
     Route::get('/eliminar_guia/{tracking}', [GUATEXController::class, 'eliminarGuia']);
     Route::get('/recolectar/{tracking}', [GUATEXController::class, 'recolectar']);
     Route::get('/entregar/{tracking}', [GUATEXController::class, 'entregar']);
     Route::post('/liquidar', [GUATEXController::class, 'liquidar']);
-    Route::get('/generar_guias_pdf/{id}', [GUATEXController::class, 'generarGuiasPdf']);
-    Route::get('/generar_guias_cubetas_canecas_pdf/{id}', [GUATEXController::class, 'generarGuiasCanecasCubetasPdf']);
+    Route::get('/generar_guias_pdf/{id}', [GUATEXController::class, 'generarGuiasPdf'])->name('guatex.generar_guias_pdf');
     Route::get('/obtenerContent/{id}', [GUATEXController::class, 'obtenerContent']);
-    Route::get('/obtenerContentCanecasCubetas/{id}', [GUATEXController::class, 'obtenerContentCanecasCubetas']);
     Route::get('/actualizarOrdenesConTracking', [GUATEXController::class, 'actualizarOrdenesConTracking']);
 });
 

@@ -17,108 +17,81 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Utils\Functions;
-use App\Http\Requests\Ordenes\LiquidarGuatexRequest;
+use App\Http\Requests\ventaes\LiquidarGuatexRequest;
 
 class GUATEXController extends Controller
 {
-     public function generarGuiasPdf($id)
+    public function generarGuiasPdf($id)
     {
-        $orden = Venta::with(
-            'estado',
+        $venta = Venta::with(
             'asesor',
             'cliente',
-            'direccion.municipio.departamento',
-            'detalle.producto.marca:id,marca',
-            'detalle.producto.presentacion:id,presentacion',
+            'cliente.direcciones.municipio.departamento',
+            'detalles.producto.marca:id,marca',
+            'pagos',
             'tipo_pago',
-            'guias_hijas:guia,guia_madre,orden_id'
+            'guias',
         )->find($id);
 
-        $pdf = PDF::loadView('impresiones.guiaGuatex', compact('orden'));
+        $html = view('pdf.guias', compact('venta'))->render();
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 
-        $pdf->getDomPDF()->setPaper([0, 0, 250, 500], 'portrait');
-
-        $pdfContent = $pdf->output();
-
-        return response($pdfContent)
+        return response($pdf->output())
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename=guia.pdf');
-    }
-
-    public function generarGuiasCanecasCubetasPdf($id)
-    {
-        $orden = Venta::with(
-            'estado',
-            'asesor',
-            'cliente',
-            'direccion.municipio.departamento',
-            'detalle.producto.marca:id,marca',
-            'detalle.producto.presentacion:id,presentacion',
-            'tipo_pago',
-            'guias_hijas_canecas_cubetas:guia,guia_madre,orden_id'
-        )->find($id);
-
-        $pdf = PDF::loadView('impresiones.guiaGuatexCanecasCubetas', compact('orden'));
-
-        $pdf->getDomPDF()->setPaper([0, 0, 250, 500], 'portrait');
-
-        $pdfContent = $pdf->output();
-
-        return response($pdfContent)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename=guia.pdf');
+            ->header('Content-Disposition', 'inline; filename="Guia_venta-'.$id.'.pdf"')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function recolectar($tracking)
     {
-        $orden = Venta::where('estado_id', '<', 7)
+        $venta = Venta::where('estado_id', '<', 7)
             ->where(function ($query) use ($tracking) {
                 $query->where('tracking', $tracking)
                     ->orWhere('tracking_canecas_cubetas', $tracking);
             })->first();
 
-        if ($orden) {
-            $orden->estado_id = 7;
-            $orden->fecha_recoleccion = Carbon::now()->format('Y-m-d H:i:s');
-            $orden->save();
+        if ($venta) {
+            $venta->estado_id = 7;
+            $venta->fecha_recoleccion = Carbon::now()->format('Y-m-d H:i:s');
+            $venta->save();
 
-            activity($orden->id)->performedOn($orden)->withProperties($orden)->event('RECOLECCIÓN')->log('ORDEN '.$orden->id.' RECOLECTADA POR GUATEX');
+            activity($venta->id)->performedOn($venta)->withProperties($venta)->event('RECOLECCIÓN')->log('venta '.$venta->id.' RECOLECTADA POR GUATEX');
 
-            /* if ($orden->direccion['telefono']) {
-                WhatsappController::recolectar($orden->id);
+            /* if ($venta->direccion['telefono']) {
+                WhatsappController::recolectar($venta->id);
             } */
 
             return [
-                'message' => 'Orden Recolectada con éxito',
+                'message' => 'venta Recolectada con éxito',
                 'status' => true,
-                'orden' => $orden,
+                'venta' => $venta,
             ];
         }
 
         return [
-            'message' => 'Orden no encontrada',
+            'message' => 'venta no encontrada',
             'status' => false,
         ];
     }
 
-    public function actualizarOrdenesConTracking(Request $request)
+    public function actualizarventaesConTracking(Request $request)
     {
         $pagina = $request->input('pagina', 1); // Página por defecto 1
         $porPagina = 10; // Número de órdenes por página
 
-        $ordenes = Venta::where('estado_id', 7)
+        $ventaes = Venta::where('estado_id', 7)
             ->where('tipo_envio', 'GUATEX')
             ->paginate($porPagina, ['*'], 'page', $pagina);
 
-        foreach ($ordenes as $orden) {
-            $consultaJson = $this->consultarTracking($orden->tracking);
+        foreach ($ventaes as $venta) {
+            $consultaJson = $this->consultarTracking($venta->tracking);
             $consultaArray = json_decode($consultaJson, true);
 
             if (! empty($consultaArray)) {
                 $ultimoRegistro = end($consultaArray);
 
                 if (! empty($ultimoRegistro['recibio']) && ! empty($ultimoRegistro['operacion'])) {
-                    $orden->update([
+                    $venta->update([
                         'recibido_por' => $ultimoRegistro['recibio'],
                         'estado_tracking' => $ultimoRegistro['operacion'],
                         'estado_id' => 8,
@@ -130,22 +103,22 @@ class GUATEXController extends Controller
 
         return response()->json([
             'mensaje' => 'Órdenes actualizadas correctamente',
-            'pagina_actual' => $ordenes->currentPage(),
-            'total_paginas' => $ordenes->lastPage(),
-            'total_registros' => $ordenes->total(),
-            'por_pagina' => $ordenes->perPage(),
+            'pagina_actual' => $ventaes->currentPage(),
+            'total_paginas' => $ventaes->lastPage(),
+            'total_registros' => $ventaes->total(),
+            'por_pagina' => $ventaes->perPage(),
         ]);
     }
 
     public function entregar($tracking)
     {
-        $orden = Venta::whereIn('estado_id', [6, 7, 14])
+        $venta = Venta::whereIn('estado_id', [6, 7, 14])
             ->where(function ($query) use ($tracking) {
                 $query->where('tracking', $tracking)
                     ->orWhere('tracking_canecas_cubetas', $tracking);
             })->first();
 
-        if ($orden) {
+        if ($venta) {
             $consultaJson = $this->consultarTracking($tracking);
             $consultaArray = json_decode($consultaJson, true);
             $ultimoRegistro = end($consultaArray);
@@ -153,43 +126,43 @@ class GUATEXController extends Controller
             // Verificar si existe la clave 'recibio' en el último registro
             if (! isset($ultimoRegistro['recibio']) || empty($ultimoRegistro['recibio'])) {
                 return [
-                    'message' => 'No se puede entregar la orden porque falta la información de recepción.',
+                    'message' => 'No se puede entregar la venta porque falta la información de recepción.',
                     'status' => false,
                 ];
             }
 
-            // Si 'recibio' existe, actualizar la orden
-            $orden->recibido_por = $ultimoRegistro['recibio'];
-            $orden->estado_tracking = $ultimoRegistro['operacion'];
-            $orden->estado_id = 8;
-            $orden->fecha_entrega = Carbon::now()->format('Y-m-d H:i:s');
-            $orden->save();
+            // Si 'recibio' existe, actualizar la venta
+            $venta->recibido_por = $ultimoRegistro['recibio'];
+            $venta->estado_tracking = $ultimoRegistro['operacion'];
+            $venta->estado_id = 8;
+            $venta->fecha_entrega = Carbon::now()->format('Y-m-d H:i:s');
+            $venta->save();
 
-            activity($orden->id)->performedOn($orden)->withProperties($orden)->event('ENTREGA')->log('ORDEN '.$orden->id.' ENTREGADA POR GUATEX');
+            activity($venta->id)->performedOn($venta)->withProperties($venta)->event('ENTREGA')->log('venta '.$venta->id.' ENTREGADA POR GUATEX');
 
             return [
-                'message' => 'Orden Entregada con éxito',
+                'message' => 'venta Entregada con éxito',
                 'status' => true,
             ];
         }
 
         return [
-            'message' => 'Orden no encontrada',
+            'message' => 'venta no encontrada',
             'status' => false,
         ];
     }
 
     public function liquidar(LiquidarGuatexRequest $request)
     {
-        $orden = Venta::where('estado_id', '<', 10)
+        $venta = Venta::where('estado_id', '<', 10)
             ->where(function ($query) use ($request) {
                 $query->where('tracking', $request->tracking)
                     ->orWhere('tracking_canecas_cubetas', $request->tracking);
             })->first();
 
-        if (! $orden) {
+        if (! $venta) {
             return [
-                'message' => 'Orden no encontrada',
+                'message' => 'venta no encontrada',
                 'status' => false,
             ];
         }
@@ -200,20 +173,20 @@ class GUATEXController extends Controller
 
         if ($pagoExistente) {
             return [
-                'message' => 'Ya se ha registrado el pago a la Orden',
+                'message' => 'Ya se ha registrado el pago a la venta',
                 'status' => false,
             ];
         }
 
-        if ($request->total_liquidacion > $orden->total) {
+        if ($request->total_liquidacion > $venta->total) {
             return [
-                'message' => 'La Liquidación no debe ser mayor al total de la Orden',
+                'message' => 'La Liquidación no debe ser mayor al total de la venta',
                 'status' => false,
             ];
         }
 
         $pago = new Pago();
-        $pago->orden_id = $orden->id;
+        $pago->venta_id = $venta->id;
         $pago->tipo_pago_id = 9;
         $pago->cuenta_bancaria_id = 4;
         $pago->no_acreditamiento = $request->no_acreditamiento;
@@ -225,18 +198,18 @@ class GUATEXController extends Controller
         $pago->user_id = 1002;
         $pago->save();
 
-        activity($orden->id)->performedOn($pago)->withProperties($pago)->event('CREACIÓN')->log('PAGO DE ORDEN POR GUATEX'.$orden->id);
+        activity($venta->id)->performedOn($pago)->withProperties($pago)->event('CREACIÓN')->log('PAGO DE venta POR GUATEX'.$venta->id);
 
-        if (intval($request->total_liquidacion) == intval($orden->total)) {
-            $orden->save();
+        if (intval($request->total_liquidacion) == intval($venta->total)) {
+            $venta->save();
 
             return [
-                'message' => 'Orden Liquidada con éxito',
+                'message' => 'venta Liquidada con éxito',
                 'status' => true,
             ];
         } else {
             return [
-                'message' => 'Orden Abonada con éxito',
+                'message' => 'venta Abonada con éxito',
                 'status' => true,
             ];
         }
@@ -252,7 +225,7 @@ class GUATEXController extends Controller
         $url = 'https://jcl.guatex.gt/WSMunicipiosGTXGF/WSMunicipiosGTXGF';
         $usuario = config('services.guatex.usuario');
         $password = config('services.guatex.password_municipios');
-        $codigo = config('services.guatex.codigo_cobro');
+        $codigo = config('services.guatex.codigo_cobro_zacapa');
 
         $headers = [
             'Content-Type: text/xml',
@@ -308,6 +281,7 @@ class GUATEXController extends Controller
 
     public function obtenerDestinos($departamento, $municipio = null)
     {
+        
         $destinosJson = $this->consultarMunicipios();
         $destinos = json_decode($destinosJson, true);
         $departamento = Functions::eliminarTildes($departamento);
@@ -389,7 +363,7 @@ class GUATEXController extends Controller
             $jsonArray[] = $returnArray;
         }
 
-        // Función de ordenamiento
+        // Función de ventaamiento
         usort($jsonArray, function ($a, $b) {
             $dateTimeA = substr($a['tfecha'], 0, 10).' '.$a['thora']; // 2024-01-18 17:20
             $dateTimeB = substr($b['tfecha'], 0, 10).' '.$b['thora']; // 2024-01-18 19:20
@@ -404,58 +378,59 @@ class GUATEXController extends Controller
     {
         $usuario = config('services.guatex.usuario');
         $password = config('services.guatex.password');
-        $codigo = config('services.guatex.codigo_cobro');
+        $codigo = config('services.guatex.codigo_cobro_zacapa');
 
-        $orden = Venta::with([
-            'estado',
+        $venta = Venta::with([
             'asesor',
             'cliente',
-            'direccion.municipio.departamento',
-            'detalle.producto.marca:id,marca',
-            'detalle.producto.presentacion:id,presentacion',
+            'cliente.direcciones.municipio.departamento',
+            'detalles.producto.marca:id,marca',
             'tipo_pago',
             'pagos',
         ])->findOrFail($id);
 
-        // Configuración de códigos
-        if ($orden->tienda_id == 1) {
-            $codigoCobro = config('services.guatex.codigo_cobro');
-            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod');
-        } elseif ($orden->tienda_id == 2) {
-            $codigoCobro = config('services.guatex.codigo_cobro_capital');
-            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod_capital');
+        // Configuración de códigos zacapa 1, chiquimula 6, esquipulas 8
+        if ($venta->bodega_id == 1) {
+            $codigoCobro = config('services.guatex.codigo_cobro_zacapa');
+            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod_zacapa');
+        } elseif ($venta->bodega_id == 6) {
+            $codigoCobro = config('services.guatex.codigo_cobro_chiquimula');
+            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod_chiquimula');
+        } elseif ($venta->bodega_id == 8) {
+            $codigoCobro = config('services.guatex.codigo_cobro_esquipulas');
+            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod_esquipulas');
         } else {
-            $codigoCobro = config('services.guatex.codigo_cobro');
-            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod');
+            $codigoCobro = config('services.guatex.codigo_cobro_zacapa');
+            $codigoCobroCOD = config('services.guatex.codigo_cobro_cod_zacapa');
         }
 
-        $ordenID = $orden->id;
-        $remitente = 'CALIDADES HARMISH S.A.';
-        $remitenteTel = $orden->asesor['telefono'].'/54934520';
-        $receptorNombre = $orden->direccion['nombre_comercial'];
-        $receptorTelefono = $orden->direccion['telefono'];
-        $receptorCodigoDestino = $orden->codigo_destino_guatex;
-        $municipioDestino = $orden->municipio_destino_guatex;
-        $puntoDestino = $orden->punto_destino_guatex;
-        $receptorDireccion = $orden->direccion['direccion'].', zona '.@$orden->direccion['zona'].', '.$orden->direccion['referencia'].', '.$orden->direccion['municipio']['municipio'].', '.$orden->direccion['municipio']['departamento']['departamento'];
-        $paquetes = $orden->paquetes;
+        $ventaID = $venta->id;
+        $remitente = 'TENISLINE S.A.';
+        $remitenteTel = $venta->asesor['telefono'].'/54934520';
+        $receptorNombre = $venta->cliente['razon_social'];
+        $receptorTelefono = $venta->cliente->direcciones[0]['encargado_contacto'];
+        $receptorCodigoDestino = $venta->codigo_destino_guatex;
+        $municipioDestino = $venta->municipio_destino_guatex;
+        $puntoDestino = $venta->punto_destino_guatex;
+        $receptorDireccion = $venta->cliente->direcciones[0]['direccion'].', zona '.@$venta->cliente->direcciones[0]['zona'].', '.$venta->cliente->direcciones[0]['referencia'].', '.$venta->cliente->direcciones[0]['municipio']['municipio'].', '.$venta->cliente->direcciones[0]['municipio']['departamento']['departamento'];
+        $paquetes = $venta->paquetes;
         $tipoPaquete = 2;
 
-        // Calcular monto a cobrar
+        /* // Calcular monto a cobrar
         $total_cubeta_caneca = 0;
-        foreach ($orden->detalle as $producto) {
+        foreach ($venta->detalles as $producto) {
             if (
                 strpos(strtolower($producto['producto']['presentacion']['presentacion']), 'cubeta') !== false ||
                 strpos(strtolower($producto['producto']['presentacion']['presentacion']), 'caneca') !== false
             ) {
                 $total_cubeta_caneca += ($producto['cantidad'] * $producto['precio']);
             }
-        }
+        } */
 
         // Configuración de URL y COD
-        if ($orden->tipo_pago_id == 3) {
+        if ($venta->tipo_pago_id == 3) {
             $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoCODGFIMP/WSTomaServiciosCodigoGFIMP';
-            $COD = '<COD_VALORACOBRAR>'.($orden->total - $total_cubeta_caneca - $orden->pagos->sum('total_liquidacion')).'</COD_VALORACOBRAR>
+            $COD = '<COD_VALORACOBRAR>'.($venta->total /* - $total_cubeta_caneca */ - $venta->pagos->sum('total_liquidacion')).'</COD_VALORACOBRAR>
             <SEABREPAQUETE>S</SEABREPAQUETE>
             <CODIGO_COBRO_GUIA>'.$codigoCobroCOD.'</CODIGO_COBRO_GUIA>';
         } else {
@@ -473,13 +448,13 @@ class GUATEXController extends Controller
             </LINEA_DETALLE_GUIA>';
         }
 
-        $direccionRemitente = $orden->tienda_id == 2
+        $direccionRemitente = $venta->tienda_id == 2
             ? 'Colonia el Naranjo, Complejo Logística Naranjo'
             : 'Residenciales El Sol, Barrio La Reforma Zona 2';
 
-        $municipioOrigen = $orden->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $orden->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $orden->tienda_id == 2 ? '395' : '707';
+        $municipioOrigen = $venta->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
+        $puntoOrigen = $venta->tienda_id == 2 ? 'CAP' : 'ZAC';
+        $codOrigen = $venta->tienda_id == 2 ? '395' : '707';
 
         // XML SOAP content
         $content = '
@@ -503,7 +478,7 @@ class GUATEXController extends Controller
                 <ESTA_LISTO>S</ESTA_LISTO>
                 <CODORIGEN>'.$codOrigen.'</CODORIGEN>
                 <GUIA>
-                    <LLAVE_CLIENTE>'.$ordenID.'</LLAVE_CLIENTE>
+                    <LLAVE_CLIENTE>'.$ventaID.'</LLAVE_CLIENTE>
                     '.$COD.'
                     <NOMBRE_DESTINATARIO>'.$receptorNombre.'</NOMBRE_DESTINATARIO>
                     <TELEFONO_DESTINATARIO>'.$receptorTelefono.'</TELEFONO_DESTINATARIO>
@@ -560,171 +535,6 @@ class GUATEXController extends Controller
         return json_encode($xmlResult);
     }
 
-    public function generarGuiaCanecasCubetas($id)
-    {
-        $usuario = config('services.guatex.usuario');
-        $password = config('services.guatex.password');
-        $codigo = config('services.guatex.codigo_cobro');
-
-        $orden = Venta::with([
-            'estado',
-            'asesor',
-            'cliente',
-            'direccion.municipio.departamento',
-            'detalle.producto.marca:id,marca',
-            'detalle.producto.presentacion:id,presentacion',
-            'tipo_pago',
-            'pagos',
-        ])->findOrFail($id);
-
-        // Códigos según tienda
-        if ($orden->tienda_id == 1) {
-            $codigoCanecaCubeta = config('services.guatex.codigo_caneca_cubeta');
-            $codigoCanecaCubetaCOD = config('services.guatex.codigo_caneca_cubeta_cod');
-        } elseif ($orden->tienda_id == 2) {
-            $codigoCanecaCubeta = config('services.guatex.codigo_caneca_cubeta_capital');
-            $codigoCanecaCubetaCOD = config('services.guatex.codigo_caneca_cubeta_cod_capital');
-        } else {
-            $codigoCanecaCubeta = config('services.guatex.codigo_caneca_cubeta');
-            $codigoCanecaCubetaCOD = config('services.guatex.codigo_caneca_cubeta_cod');
-        }
-
-        $ordenID = $orden->id;
-        $remitente = 'CALIDADES HARMISH S.A.';
-        $remitenteTel = $orden->asesor['telefono'].'/54934520';
-        $receptorNombre = $orden->direccion['nombre_comercial'];
-        $receptorTelefono = $orden->direccion['telefono'];
-        $receptorCodigoDestino = $orden->codigo_destino_guatex;
-        $municipioDestino = $orden->municipio_destino_guatex;
-        $puntoDestino = $orden->punto_destino_guatex;
-        $receptorDireccion = $orden->direccion['direccion'].', zona '.@$orden->direccion['zona'].', '.$orden->direccion['referencia'].', '.$orden->direccion['municipio']['municipio'].', '.$orden->direccion['municipio']['departamento']['departamento'];
-        $canecas_cubetas = $orden->canecas_cubetas;
-        $tipoPaquete = 326;
-
-        // Calcular valores
-        $total_cubeta_caneca = 0;
-        $extras = 0;
-        foreach ($orden->detalle as $producto) {
-            $presentacion = strtolower($producto['producto']['presentacion']['presentacion']);
-            if (strpos($presentacion, 'cubeta') !== false || strpos($presentacion, 'caneca') !== false) {
-                $total_cubeta_caneca += $producto['cantidad'] * $producto['precio'];
-            } elseif ($orden->paquetes == 0) {
-                $extras += $producto['cantidad'] * $producto['precio'];
-            }
-        }
-
-        // Definir URL y contenido COD
-        if ($orden->tipo_pago_id == 3) {
-            $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoCODGFIMP/WSTomaServiciosCodigoGFIMP';
-            $valorACobrar = $orden->paquetes > 0
-                ? $total_cubeta_caneca
-                : $total_cubeta_caneca + $orden->envio + $extras - $orden->pagos->sum('total_liquidacion');
-            $COD = '<COD_VALORACOBRAR>'.$valorACobrar.'</COD_VALORACOBRAR>
-            <SEABREPAQUETE>S</SEABREPAQUETE>
-            <CODIGO_COBRO_GUIA>'.$codigoCanecaCubetaCOD.'</CODIGO_COBRO_GUIA>';
-        } else {
-            $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoGFIMP/WSTomaServiciosCodigoGFIMP';
-            $COD = '<CODIGO_COBRO_GUIA>'.$codigoCanecaCubeta.'</CODIGO_COBRO_GUIA>';
-        }
-
-        // Armar detalle guía
-        $guiasHija = '';
-        for ($i = 0; $i < $canecas_cubetas; $i++) {
-            $guiasHija .= '
-            <LINEA_DETALLE_GUIA>
-                <PIEZAS_DETALLE>1</PIEZAS_DETALLE>
-                <TIPO_ENVIO_DETALLE>'.$tipoPaquete.'</TIPO_ENVIO_DETALLE>
-                <PESO_DETALLE>10</PESO_DETALLE>
-            </LINEA_DETALLE_GUIA>';
-        }
-
-        $direccionRemitente = $orden->tienda_id == 2
-            ? 'Colonia el Naranjo, Complejo Logística Naranjo'
-            : 'Residenciales El Sol, Barrio La Reforma Zona 2';
-
-        $municipioOrigen = $orden->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $orden->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $orden->tienda_id == 2 ? '395' : '707';
-
-        // Crear contenido XML SOAP
-        $content = '
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://servicio.wstomaservicioscodimp.guatex.com/">
-        <soapenv:Header/>
-        <soapenv:Body>
-            <ser:tomaServicioGTX>
-                <xmlentrada>
-                <![CDATA[
-        <TOMA_SERVICIO>
-            <USUARIO>'.$usuario.'</USUARIO>
-            <PASSWORD>'.$password.'</PASSWORD>
-            <CODIGO_COBRO>'.$codigo.'</CODIGO_COBRO>
-            <SERVICIO>
-                <TIPO_USUARIO>C</TIPO_USUARIO>
-                <NOMBRE_REMITENTE>'.$remitente.'</NOMBRE_REMITENTE>
-                <TELEFONO_REMITENTE>'.$remitenteTel.'</TELEFONO_REMITENTE>
-                <DIRECCION_REMITENTE>'.$direccionRemitente.'</DIRECCION_REMITENTE>
-                <MUNICIPIO_ORIGEN>'.$municipioOrigen.'</MUNICIPIO_ORIGEN>
-                <PUNTO_ORIGEN>'.$puntoOrigen.'</PUNTO_ORIGEN>
-                <ESTA_LISTO>S</ESTA_LISTO>
-                <CODORIGEN>'.$codOrigen.'</CODORIGEN>
-                <GUIA>
-                    <LLAVE_CLIENTE>'.$ordenID.'</LLAVE_CLIENTE>
-                    '.$COD.'
-                    <NOMBRE_DESTINATARIO>'.$receptorNombre.'</NOMBRE_DESTINATARIO>
-                    <TELEFONO_DESTINATARIO>'.$receptorTelefono.'</TELEFONO_DESTINATARIO>
-                    <DIRECCION_DESTINATARIO>'.substr($receptorDireccion, 0, 100).'</DIRECCION_DESTINATARIO>
-                    <MUNICIPIO_DESTINO>'.$municipioDestino.'</MUNICIPIO_DESTINO>
-                    <PUNTO_DESTINO>'.$puntoDestino.'</PUNTO_DESTINO>
-                    <DESCRIPCION_ENVIO>'.substr($receptorDireccion, 0, 100).'</DESCRIPCION_ENVIO>
-                    <RECOGE_OFICINA>N</RECOGE_OFICINA>
-                    <CODDESTINO>'.$receptorCodigoDestino.'</CODDESTINO>
-                    <DETALLE_GUIA>'.$guiasHija.'</DETALLE_GUIA>
-                </GUIA>
-            </SERVICIO>
-        </TOMA_SERVICIO>
-        ]]>
-                </xmlentrada>
-            </ser:tomaServicioGTX>
-        </soapenv:Body>
-    </soapenv:Envelope>';
-
-        // Enviar usando cURL
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: text/xml; charset=utf-8',
-            'Content-Length: '.strlen($content),
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 180); // Aumentado a 3 minutos
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Solo si hay problemas de SSL
-
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode !== 200 || $response === false) {
-            Log::error("Error Guatex [$httpCode]: $error\n$response");
-
-            return response()->json(['error' => 'No se pudo generar la guía.'], 500);
-        }
-
-        // Procesar respuesta XML
-        $dom = new DOMDocument;
-        $dom->loadXML($response);
-        $xpath = new DOMXPath($dom);
-        $result = $xpath->evaluate('string(//return)');
-
-        $result = htmlspecialchars_decode($result);
-        $result = str_replace(['&lt;', '&gt;'], ['<', '>'], $result);
-
-        $xmlResult = simplexml_load_string($result);
-
-        return json_encode($xmlResult);
-    }
-
     public function obtenerGuiasFaltantes()
     {
         $query = DB::select("
@@ -732,7 +542,7 @@ class GUATEXController extends Controller
             SELECT 
                 LEFT(tracking, 6) AS prefijo,
                 CAST(RIGHT(tracking, 5) AS UNSIGNED) AS correlativo
-            FROM ordenes
+            FROM ventaes
             WHERE estado_id = 6 AND tipo_envio = 'GUATEX' AND tracking IS NOT NULL
 
             UNION ALL
@@ -740,7 +550,7 @@ class GUATEXController extends Controller
             SELECT 
                 LEFT(tracking_canecas_cubetas, 6) AS prefijo,
                 CAST(RIGHT(tracking_canecas_cubetas, 5) AS UNSIGNED) AS correlativo
-            FROM ordenes
+            FROM ventaes
             WHERE estado_id = 6 AND tipo_envio = 'GUATEX' AND tracking_canecas_cubetas IS NOT NULL
         ),
         rangos AS (
@@ -798,7 +608,7 @@ class GUATEXController extends Controller
         $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoGFIMP/WSTomaServiciosCodigoGFIMP';
         $usuario = config('services.guatex.usuario');
         $password = config('services.guatex.password');
-        $codigo = config('services.guatex.codigo_cobro');
+        $codigo = config('services.guatex.codigo_cobro_zacapa');
         $headers = [
             'Content-Type: text/xml',
         ];
@@ -844,7 +654,7 @@ class GUATEXController extends Controller
         $password = config('services.guatex.password');
         $codigo = config('services.guatex.codigo_cobro');
 
-        $orden = Venta::with([
+        $venta = Venta::with([
             'estado',
             'asesor',
             'cliente',
@@ -856,10 +666,10 @@ class GUATEXController extends Controller
         ])->findOrFail($id);
 
         // Configuración de códigos
-        if ($orden->tienda_id == 1) {
+        if ($venta->tienda_id == 1) {
             $codigoCobro = config('services.guatex.codigo_cobro');
             $codigoCobroCOD = config('services.guatex.codigo_cobro_cod');
-        } elseif ($orden->tienda_id == 2) {
+        } elseif ($venta->tienda_id == 2) {
             $codigoCobro = config('services.guatex.codigo_cobro_capital');
             $codigoCobroCOD = config('services.guatex.codigo_cobro_cod_capital');
         } else {
@@ -867,21 +677,21 @@ class GUATEXController extends Controller
             $codigoCobroCOD = config('services.guatex.codigo_cobro_cod');
         }
 
-        $ordenID = $orden->id;
+        $ventaID = $venta->id;
         $remitente = 'CALIDADES HARMISH S.A.';
-        $remitenteTel = $orden->asesor['telefono'].'/54934520';
-        $receptorNombre = $orden->direccion['nombre_comercial'];
-        $receptorTelefono = $orden->direccion['telefono'];
-        $receptorCodigoDestino = $orden->codigo_destino_guatex;
-        $municipioDestino = $orden->municipio_destino_guatex;
-        $puntoDestino = $orden->punto_destino_guatex;
-        $receptorDireccion = $orden->direccion['direccion'].', zona '.@$orden->direccion['zona'].', '.$orden->direccion['referencia'].', '.$orden->direccion['municipio']['municipio'].', '.$orden->direccion['municipio']['departamento']['departamento'];
-        $paquetes = $orden->paquetes;
+        $remitenteTel = $venta->asesor['telefono'].'/54934520';
+        $receptorNombre = $venta->direccion['nombre_comercial'];
+        $receptorTelefono = $venta->direccion['telefono'];
+        $receptorCodigoDestino = $venta->codigo_destino_guatex;
+        $municipioDestino = $venta->municipio_destino_guatex;
+        $puntoDestino = $venta->punto_destino_guatex;
+        $receptorDireccion = $venta->direccion['direccion'].', zona '.@$venta->direccion['zona'].', '.$venta->direccion['referencia'].', '.$venta->direccion['municipio']['municipio'].', '.$venta->direccion['municipio']['departamento']['departamento'];
+        $paquetes = $venta->paquetes;
         $tipoPaquete = 2;
 
         // Calcular monto a cobrar
         $total_cubeta_caneca = 0;
-        foreach ($orden->detalle as $producto) {
+        foreach ($venta->detalle as $producto) {
             if (
                 strpos(strtolower($producto['producto']['presentacion']['presentacion']), 'cubeta') !== false ||
                 strpos(strtolower($producto['producto']['presentacion']['presentacion']), 'caneca') !== false
@@ -891,9 +701,9 @@ class GUATEXController extends Controller
         }
 
         // Configuración de URL y COD
-        if ($orden->tipo_pago_id == 3) {
+        if ($venta->tipo_pago_id == 3) {
             $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoCODGFIMP/WSTomaServiciosCodigoGFIMP';
-            $COD = '<COD_VALORACOBRAR>'.($orden->total - $total_cubeta_caneca - $orden->pagos->sum('total_liquidacion')).'</COD_VALORACOBRAR>
+            $COD = '<COD_VALORACOBRAR>'.($venta->total - $total_cubeta_caneca - $venta->pagos->sum('total_liquidacion')).'</COD_VALORACOBRAR>
             <SEABREPAQUETE>S</SEABREPAQUETE>
             <CODIGO_COBRO_GUIA>'.$codigoCobroCOD.'</CODIGO_COBRO_GUIA>';
         } else {
@@ -911,13 +721,13 @@ class GUATEXController extends Controller
             </LINEA_DETALLE_GUIA>';
         }
 
-        $direccionRemitente = $orden->tienda_id == 2
+        $direccionRemitente = $venta->tienda_id == 2
             ? 'Colonia el Naranjo, Complejo Logística Naranjo'
             : 'Residenciales El Sol, Barrio La Reforma Zona 2';
 
-        $municipioOrigen = $orden->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $orden->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $orden->tienda_id == 2 ? '395' : '707';
+        $municipioOrigen = $venta->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
+        $puntoOrigen = $venta->tienda_id == 2 ? 'CAP' : 'ZAC';
+        $codOrigen = $venta->tienda_id == 2 ? '395' : '707';
 
         // XML SOAP content
         $content = '
@@ -941,138 +751,7 @@ class GUATEXController extends Controller
                 <ESTA_LISTO>S</ESTA_LISTO>
                 <CODORIGEN>'.$codOrigen.'</CODORIGEN>
                 <GUIA>
-                    <LLAVE_CLIENTE>'.$ordenID.'</LLAVE_CLIENTE>
-                    '.$COD.'
-                    <NOMBRE_DESTINATARIO>'.$receptorNombre.'</NOMBRE_DESTINATARIO>
-                    <TELEFONO_DESTINATARIO>'.$receptorTelefono.'</TELEFONO_DESTINATARIO>
-                    <DIRECCION_DESTINATARIO>'.substr($receptorDireccion, 0, 100).'</DIRECCION_DESTINATARIO>
-                    <MUNICIPIO_DESTINO>'.$municipioDestino.'</MUNICIPIO_DESTINO>
-                    <PUNTO_DESTINO>'.$puntoDestino.'</PUNTO_DESTINO>
-                    <DESCRIPCION_ENVIO>'.substr($receptorDireccion, 0, 100).'</DESCRIPCION_ENVIO>
-                    <RECOGE_OFICINA>N</RECOGE_OFICINA>
-                    <CODDESTINO>'.$receptorCodigoDestino.'</CODDESTINO>
-                    <DETALLE_GUIA>'.$guiasHija.'</DETALLE_GUIA>
-                </GUIA>
-            </SERVICIO>
-        </TOMA_SERVICIO>
-        ]]>
-                </xmlentrada>
-            </ser:tomaServicioGTX>
-        </soapenv:Body>
-    </soapenv:Envelope>';
-
-        return $url.$content;
-    }
-
-    public function obtenerContentCanecasCubetas($id)
-    {
-        $usuario = config('services.guatex.usuario');
-        $password = config('services.guatex.password');
-        $codigo = config('services.guatex.codigo_cobro');
-
-        $orden = Venta::with([
-            'estado',
-            'asesor',
-            'cliente',
-            'direccion.municipio.departamento',
-            'detalle.producto.marca:id,marca',
-            'detalle.producto.presentacion:id,presentacion',
-            'tipo_pago',
-            'pagos',
-        ])->findOrFail($id);
-
-        // Códigos según tienda
-        if ($orden->tienda_id == 1) {
-            $codigoCanecaCubeta = config('services.guatex.codigo_caneca_cubeta');
-            $codigoCanecaCubetaCOD = config('services.guatex.codigo_caneca_cubeta_cod');
-        } elseif ($orden->tienda_id == 2) {
-            $codigoCanecaCubeta = config('services.guatex.codigo_caneca_cubeta_capital');
-            $codigoCanecaCubetaCOD = config('services.guatex.codigo_caneca_cubeta_cod_capital');
-        } else {
-            $codigoCanecaCubeta = config('services.guatex.codigo_caneca_cubeta');
-            $codigoCanecaCubetaCOD = config('services.guatex.codigo_caneca_cubeta_cod');
-        }
-
-        $ordenID = $orden->id;
-        $remitente = 'CALIDADES HARMISH S.A.';
-        $remitenteTel = $orden->asesor['telefono'].'/54934520';
-        $receptorNombre = $orden->direccion['nombre_comercial'];
-        $receptorTelefono = $orden->direccion['telefono'];
-        $receptorCodigoDestino = $orden->codigo_destino_guatex;
-        $municipioDestino = $orden->municipio_destino_guatex;
-        $puntoDestino = $orden->punto_destino_guatex;
-        $receptorDireccion = $orden->direccion['direccion'].', zona '.@$orden->direccion['zona'].', '.$orden->direccion['referencia'].', '.$orden->direccion['municipio']['municipio'].', '.$orden->direccion['municipio']['departamento']['departamento'];
-        $canecas_cubetas = $orden->canecas_cubetas;
-        $tipoPaquete = 326;
-
-        // Calcular valores
-        $total_cubeta_caneca = 0;
-        $extras = 0;
-        foreach ($orden->detalle as $producto) {
-            $presentacion = strtolower($producto['producto']['presentacion']['presentacion']);
-            if (strpos($presentacion, 'cubeta') !== false || strpos($presentacion, 'caneca') !== false) {
-                $total_cubeta_caneca += $producto['cantidad'] * $producto['precio'];
-            } elseif ($orden->paquetes == 0) {
-                $extras += $producto['cantidad'] * $producto['precio'];
-            }
-        }
-
-        // Definir URL y contenido COD
-        if ($orden->tipo_pago_id == 3) {
-            $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoCODGFIMP/WSTomaServiciosCodigoGFIMP';
-            $valorACobrar = $orden->paquetes > 0
-                ? $total_cubeta_caneca
-                : $total_cubeta_caneca + $orden->envio + $extras - $orden->pagos->sum('total_liquidacion');
-            $COD = '<COD_VALORACOBRAR>'.$valorACobrar.'</COD_VALORACOBRAR>
-            <SEABREPAQUETE>S</SEABREPAQUETE>
-            <CODIGO_COBRO_GUIA>'.$codigoCanecaCubetaCOD.'</CODIGO_COBRO_GUIA>';
-        } else {
-            $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoGFIMP/WSTomaServiciosCodigoGFIMP';
-            $COD = '<CODIGO_COBRO_GUIA>'.$codigoCanecaCubeta.'</CODIGO_COBRO_GUIA>';
-        }
-
-        // Armar detalle guía
-        $guiasHija = '';
-        for ($i = 0; $i < $canecas_cubetas; $i++) {
-            $guiasHija .= '
-            <LINEA_DETALLE_GUIA>
-                <PIEZAS_DETALLE>1</PIEZAS_DETALLE>
-                <TIPO_ENVIO_DETALLE>'.$tipoPaquete.'</TIPO_ENVIO_DETALLE>
-                <PESO_DETALLE>10</PESO_DETALLE>
-            </LINEA_DETALLE_GUIA>';
-        }
-
-        $direccionRemitente = $orden->tienda_id == 2
-            ? 'Colonia el Naranjo, Complejo Logística Naranjo'
-            : 'Residenciales El Sol, Barrio La Reforma Zona 2';
-
-        $municipioOrigen = $orden->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $orden->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $orden->tienda_id == 2 ? '395' : '707';
-
-        // Crear contenido XML SOAP
-        $content = '
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://servicio.wstomaservicioscodimp.guatex.com/">
-        <soapenv:Header/>
-        <soapenv:Body>
-            <ser:tomaServicioGTX>
-                <xmlentrada>
-                <![CDATA[
-        <TOMA_SERVICIO>
-            <USUARIO>'.$usuario.'</USUARIO>
-            <PASSWORD>'.$password.'</PASSWORD>
-            <CODIGO_COBRO>'.$codigo.'</CODIGO_COBRO>
-            <SERVICIO>
-                <TIPO_USUARIO>C</TIPO_USUARIO>
-                <NOMBRE_REMITENTE>'.$remitente.'</NOMBRE_REMITENTE>
-                <TELEFONO_REMITENTE>'.$remitenteTel.'</TELEFONO_REMITENTE>
-                <DIRECCION_REMITENTE>'.$direccionRemitente.'</DIRECCION_REMITENTE>
-                <MUNICIPIO_ORIGEN>'.$municipioOrigen.'</MUNICIPIO_ORIGEN>
-                <PUNTO_ORIGEN>'.$puntoOrigen.'</PUNTO_ORIGEN>
-                <ESTA_LISTO>S</ESTA_LISTO>
-                <CODORIGEN>'.$codOrigen.'</CODORIGEN>
-                <GUIA>
-                    <LLAVE_CLIENTE>'.$ordenID.'</LLAVE_CLIENTE>
+                    <LLAVE_CLIENTE>'.$ventaID.'</LLAVE_CLIENTE>
                     '.$COD.'
                     <NOMBRE_DESTINATARIO>'.$receptorNombre.'</NOMBRE_DESTINATARIO>
                     <TELEFONO_DESTINATARIO>'.$receptorTelefono.'</TELEFONO_DESTINATARIO>
@@ -1097,26 +776,26 @@ class GUATEXController extends Controller
 
     public function enviarMensajeWhatsApp($id)
     {
-        $DatosOrden = DB::select(
-            'select ordenes.id, tracking, total, users.whatsapp, razon_social, nombre_comercial
-            from ordenes 
-            inner join users on users.id = ordenes.cliente_id
-            inner join direcciones on direcciones.id = ordenes.direccion_id
-            where ordenes.id = ?',
+        $Datosventa = DB::select(
+            'select ventaes.id, tracking, total, users.whatsapp, razon_social, nombre_comercial
+            from ventaes 
+            inner join users on users.id = ventaes.cliente_id
+            inner join direcciones on direcciones.id = ventaes.direccion_id
+            where ventaes.id = ?',
             [
                 $id,
             ]
         );
 
-        if (empty($DatosOrden)) {
-            return response()->json(['success' => false, 'error' => 'Orden no encontrada']);
+        if (empty($Datosventa)) {
+            return response()->json(['success' => false, 'error' => 'venta no encontrada']);
         }
 
-        $DatosOrden = $DatosOrden[0];
+        $Datosventa = $Datosventa[0];
 
         $url = 'https://api.bird.com/workspaces/511d525b-48b9-46da-a54c-916bde57e6b7/channels/f3b3c643-59ac-488f-92a5-2d7de298bc05/messages';
         $accessKey = config('services.bird.api_key');
-        $phoneNumber = /* '+50237100158' */ '+502'.($DatosOrden->whatsapp ?? '');
+        $phoneNumber = /* '+50237100158' */ '+502'.($Datosventa->whatsapp ?? '');
 
         try {
             $response = Http::withHeaders([
@@ -1136,10 +815,10 @@ class GUATEXController extends Controller
                     'version' => 'e186629b-69c5-43b6-8ebb-b1fe8a460842',
                     'locale' => 'es-MX',
                     'variables' => [
-                        'nombre_comercial' => (string) ($DatosOrden->nombre_comercial ?? ''),
-                        'numero_orden' => (string) ($DatosOrden->id ?? ''),
-                        'total' => (string) ($DatosOrden->total ?? ''),
-                        'numero_guia' => (string) ($DatosOrden->tracking ?? 'SIN NUMERO GUIA'),
+                        'nombre_comercial' => (string) ($Datosventa->nombre_comercial ?? ''),
+                        'numero_venta' => (string) ($Datosventa->id ?? ''),
+                        'total' => (string) ($Datosventa->total ?? ''),
+                        'numero_guia' => (string) ($Datosventa->tracking ?? 'SIN NUMERO GUIA'),
                     ],
                 ],
             ]);

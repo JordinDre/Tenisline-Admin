@@ -1,12 +1,13 @@
 @php
     use Illuminate\Support\Str;
     use SimpleSoftwareIO\QrCode\Facades\QrCode;
+    /* dd($venta); */
 @endphp
 <!DOCTYPE html>
 <html>
 
 <head>
-    <title>Guía Orden #{{ $orden->id }}</title>
+    <title>Guía Venta #{{ $venta->id }}</title>
     <style>
         @page {
             margin: 0.2cm;
@@ -61,14 +62,14 @@
 </head>
 
 <body>
-    @foreach ($orden->guias as $guia)
+    @foreach ($venta->guias as $guia)
         @if ($guia->cantidad > 0)
             <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($guia->tracking, 'C128', 1.92, 90) }}"
                 alt="Código de Barras">
             <div style="font-size: 13px; letter-spacing: 1.5px;">
                 CAP - {{ $guia->tracking }}
             </div>
-            @if ($orden->tipo_pago_id == 3)
+            @if ($venta->tipo_pago_id == 3)
                 <div class="vertical-text">
                     <div class="vertical-letter">O</div>
                     <div class="vertical-letter">T</div>
@@ -86,44 +87,44 @@
 
             <section style="margin-top: 7px;">
                 <div>Remitente: HARMISH</div>
-                <div>Dirección: {{ $orden->bodega->bodega }}</div>
-                <div>Asesor: {{ $orden->asesor['name'] }}</div>
-                <div>Teléfono: {{ $orden->asesor['telefono'] }}</div>
+                <div>Dirección: {{ $venta->bodega->bodega }}</div>
+                <div>Asesor: {{ $venta->asesor['name'] }}</div>
+                <div>Teléfono: {{ $venta->asesor['telefono'] }}</div>
             </section>
 
             <div style="font-size: 26px; margin-top: 8px;">{{ $guia->tracking }}</div>
 
             <section style="margin-top: 7px;">
                 <div>
-                    {{ Str::substr('Destinatario: ' . $orden->cliente->id . ' - ' . $orden->cliente->name . ' - ' . $orden->cliente->razon_social, 0, 110) }}
+                    {{ Str::substr('Destinatario: ' . $venta->cliente->id . ' - ' . $venta->cliente->name . ' - ' . $venta->cliente->razon_social, 0, 110) }}
                 </div>
                 <div>Dirección:
-                    {{ Str::substr($orden->direccion->direccion . ', ' . ($orden->direccion->zona ? 'ZONA ' . $orden->direccion->zona . ', ' : '') . $orden->direccion->referencia . ', ' . $orden->direccion->municipio->municipio . ', ' . $orden->direccion->municipio->departamento->departamento, 0, 110) }}
+                    {{ Str::substr($venta->cliente->direcciones[0]->direccion . ', ' . ($venta->cliente->direcciones[0]->zona ? 'ZONA ' . $venta->cliente->direcciones[0]->zona . ', ' : '') . $venta->cliente->direcciones[0]->referencia . ', ' . $venta->cliente->direcciones[0]->municipio->municipio . ', ' . $venta->cliente->direcciones[0]->municipio->departamento->departamento, 0, 110) }}
                 </div>
                 <div>
-                    Teléfono: {{ $orden->cliente->telefono }}
+                    Teléfono: {{ $venta->cliente->telefono }}
                 </div>
                 <div>
-                    @isset($orden->direccion->encargado)
-                        Contacto: {{ $orden->direccion->encargado }} - {{ $orden->direccion->encargado_contacto }}
+                    @isset($venta->direccion->encargado)
+                        Contacto: {{ $venta->direccion->encargado }} - {{ $venta->direccion->encargado_contacto }}
                     @endisset
                 </div>
             </section>
-            <div style="font-weight: bold; font-size: 100px; ">{{ $puntoCobertura }}
+            <div style="font-weight: bold; font-size: 100px; ">{{ $venta->punto_destino_guatex }}
             </div>
             <div style="font-weight: bold; font-size: 10px;">
-                Desc. Envío: ORDEN NO.{{ $orden->id }} - {{ $guia->tipo }}
+                Desc. Envío: venta NO.{{ $venta->id }} - {{ $guia->tipo }}
             </div>
             <div style="margin-top: 10px;"></div>
             <div style="font-weight: bold; font-size: 10px;">No. Piezas: {{ $guia->cantidad }} </div>
             <div style="font-weight: bold; font-size: 10px;">Peso: 10</div>
-            <div style="font-weight: bold; font-size: 10px;">Forma de Pago: {{ $orden->tipo_pago->tipo_pago }} </div>
-            <div style="font-weight: bold; font-size: 10px;">Fecha: {{ date_format($orden->created_at, 'd/m/Y') }}
+            <div style="font-weight: bold; font-size: 10px;">Forma de Pago: {{ $venta->tipo_pago }} </div>
+            <div style="font-weight: bold; font-size: 10px;">Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}
             </div>
             <div class="table-container" style="margin-top: 0.5cm;">
                 <div class="table-row">
                     <div class="table-cell" style="text-align: left;">
-                        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate($guia->tracking . '|' . $puntoCobertura)) }}"
+                        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate($guia->tracking . '|' . $venta->punto_destino_guatex)) }}"
                             alt="Código QR" style="display: block; margin: 0 auto;">
                     </div>
                     <div class="table-cell" style="text-align: left;">
@@ -138,7 +139,7 @@
                 <div style="font-size: 13px; letter-spacing: 1.5px;">
                     CAP - {{ $hija }} - {{ $guia->tracking }}
                 </div>
-                @if ($orden->tipo_pago_id == 3)
+                @if ($venta->tipo_pago_id == 3)
                     <div class="vertical-text">
                         <div class="vertical-letter">O</div>
                         <div class="vertical-letter">T</div>
@@ -156,45 +157,45 @@
 
                 <section style="margin-top: 7px;">
                     <div>Remitente: HARMISH</div>
-                    <div>Dirección: {{ $orden->bodega->bodega }}</div>
-                    <div>Asesor: {{ $orden->asesor['name'] }}</div>
-                    <div>Teléfono: {{ $orden->asesor['telefono'] }}</div>
+                    <div>Dirección: {{ $venta->bodega->bodega }}</div>
+                    <div>Asesor: {{ $venta->asesor['name'] }}</div>
+                    <div>Teléfono: {{ $venta->asesor['telefono'] }}</div>
                 </section>
 
                 <div style="font-size: 26px; margin-top: 8px;">{{ $hija }}</div>
 
                 <section style="margin-top: 7px;">
                     <div>
-                        {{ Str::substr('Destinatario: ' . $orden->cliente->id . ' - ' . $orden->cliente->name . ' - ' . $orden->cliente->razon_social, 0, 110) }}
+                        {{ Str::substr('Destinatario: ' . $venta->cliente->id . ' - ' . $venta->cliente->name . ' - ' . $venta->cliente->razon_social, 0, 110) }}
                     </div>
                     <div>Dirección:
-                        {{ Str::substr($orden->direccion->direccion . ', ' . ($orden->direccion->zona ? 'ZONA ' . $orden->direccion->zona . ', ' : '') . $orden->direccion->referencia . ', ' . $orden->direccion->municipio->municipio . ', ' . $orden->direccion->municipio->departamento->departamento, 0, 110) }}
+                        {{ Str::substr($venta->direccion->direccion . ', ' . ($venta->direccion->zona ? 'ZONA ' . $venta->direccion->zona . ', ' : '') . $venta->direccion->referencia . ', ' . $venta->direccion->municipio->municipio . ', ' . $venta->direccion->municipio->departamento->departamento, 0, 110) }}
                     </div>
                     <div>
-                        Teléfono: {{ $orden->cliente->telefono }}
+                        Teléfono: {{ $venta->cliente->telefono }}
                     </div>
                     <div>
-                        @isset($orden->direccion->encargado)
-                            Contacto: {{ $orden->direccion->encargado }} - {{ $orden->direccion->encargado_contacto }}
+                        @isset($venta->direccion->encargado)
+                            Contacto: {{ $venta->direccion->encargado }} - {{ $venta->direccion->encargado_contacto }}
                         @endisset
                     </div>
                 </section>
-                <div style="font-weight: bold; font-size: 100px; ">{{ $puntoCobertura }}
+                <div style="font-weight: bold; font-size: 100px; ">{{ $venta->punto_destino_guatex }}
                 </div>
                 <div style="font-weight: bold; font-size: 10px;">
-                    Desc. Envío: ORDEN NO.{{ $orden->id }} - {{ $guia->tipo }}
+                    Desc. Envío: venta NO.{{ $venta->id }} - {{ $guia->tipo }}
                 </div>
                 <div style="margin-top: 10px;"></div>
                 <div style="font-weight: bold; font-size: 10px;">No. Piezas: {{ $guia->cantidad }} </div>
                 <div style="font-weight: bold; font-size: 10px;">Peso: 10</div>
-                <div style="font-weight: bold; font-size: 10px;">Forma de Pago: {{ $orden->tipo_pago->tipo_pago }}
+                <div style="font-weight: bold; font-size: 10px;">Forma de Pago: {{ $venta->tipo_pago }}
                 </div>
-                <div style="font-weight: bold; font-size: 10px;">Fecha: {{ date_format($orden->created_at, 'd/m/Y') }}
+                <div style="font-weight: bold; font-size: 10px;">Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}
                 </div>
                 <div class="table-container" style="margin-top: 0.5cm;">
                     <div class="table-row">
                         <div class="table-cell" style="text-align: left;">
-                            <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate($hija . '|' . $puntoCobertura)) }}"
+                            <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate($hija . '|' . $venta->punto_destino_guatex)) }}"
                                 alt="Código QR" style="display: block; margin: 0 auto;">
                         </div>
                         <div class="table-cell" style="text-align: left;">
