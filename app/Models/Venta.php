@@ -92,6 +92,11 @@ class Venta extends Model
         return $this->belongsTo(CierreDia::class);
     }
 
+    public function guias(): MorphMany
+    {
+        return $this->morphMany(Guia::class, 'guiable');
+    }
+
     /**
      * Verifica si la venta debe mostrar información de factura
      * No debe mostrar factura si: comp == false && facturar_cf == true && tipo_pago_id == 1

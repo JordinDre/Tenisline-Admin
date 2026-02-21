@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\GUATEXController;
 
 class PDFController extends Controller
 {

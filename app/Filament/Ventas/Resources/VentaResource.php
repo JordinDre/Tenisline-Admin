@@ -2,42 +2,46 @@
 
 namespace App\Filament\Ventas\Resources;
 
-use App\Enums\EstadoVentaStatus;
-use App\Filament\Ventas\Resources\VentaResource\Pages;
-use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\VentaController;
+use App\Models\User;
+use Filament\Tables;
+use App\Models\Venta;
 use App\Models\Escala;
+use Filament\Forms\Get;
 use App\Models\Producto;
 use App\Models\TipoPago;
-use App\Models\User;
-use App\Models\Venta;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Services\GuatexService;
+use App\Enums\EstadoVentaStatus;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
+use Filament\Tables\Actions\Action;
+use Illuminate\Contracts\View\View;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Enums\ActionsPosition;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\FiltersLayout;
+use App\Http\Controllers\VentaController;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\GUATEXController;
+use Filament\Tables\Enums\ActionsPosition;
+use App\Http\Controllers\ProductoController;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+use App\Filament\Ventas\Resources\VentaResource\Pages;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
 class VentaResource extends Resource implements HasShieldPermissions
 {
@@ -420,6 +424,22 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->listWithLineBreaks()
                     ->bulleted()
                     ->copyable(),
+                Tables\Columns\TextColumn::make('tipo_envio')
+                    ->label('Tipo de Envío')
+                    ->searchable()
+                    ->copyable(),
+                Tables\Columns\TextColumn::make('codigo_destino_guatex')
+                    ->label('Código Destino GUATEX')
+                    ->searchable()
+                    ->copyable(),
+                Tables\Columns\TextColumn::make('municipio_destino_guatex')
+                    ->label('Municipio Destino GUATEX')
+                    ->searchable()
+                    ->copyable(),
+                Tables\Columns\TextColumn::make('punto_destino_guatex')
+                    ->label('Punto Destino GUATEX')
+                    ->searchable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('factura.fel_uuid')
                     ->label('Fel No. Autorización')
                     ->sortable()
@@ -630,12 +650,117 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->action(fn (Venta $record) => VentaController::facturar($record))
                         ->visible(fn ($record) => Auth::user()->can('facturar', $record)), */
                     Action::make('enviar')
-                        ->label('Enviar por GUATEX')
-                        ->color('info')
+                        ->label('Agregar Destino GUATEX')
+                        ->color('success')
+                        ->icon('heroicon-o-truck')
                         ->requiresConfirmation()
-                        ->icon('heroicon-o-paper-airplane')
-                        ->action(fn (Venta $record) => VentaController::enviarGUATEX($record))
-                        ->visible(fn ($record) => Auth::user()->can('liquidate', $record)),
+                        ->form(function (Venta $record) {
+
+                            $opciones = static::opcionesGuatex($record);
+
+                            return [
+                                Select::make('destino_guatex')
+                                    ->options($opciones)
+                                    ->required()
+                                    ->searchable(),
+
+                                TextInput::make('paquetes')
+                                    ->numeric()
+                                    ->default(1),
+                            ];
+                        })
+                            ->action(function (array $data, Venta $record) {
+
+                                DB::transaction(function () use ($data, $record) {
+
+                                    $destino = json_decode($data['destino_guatex'], true);
+
+                                    $record->update([
+                                        'codigo_destino_guatex'    => $destino['CODIGO'],
+                                        'municipio_destino_guatex' => $destino['MUNICIPIO'],
+                                        'punto_destino_guatex'     => $destino['PUNTO_COBERTURA'],
+                                        'paquetes'          => $data['paquetes'],
+                                    ]);
+
+                                    $service = app(\App\Services\GuatexService::class);
+                                    $guia = $service->generarYGuardarGuia(
+                                        venta: $record,
+                                        paquetes: $data['paquetes'],
+                                        tipo: 'paquetes'
+                                    );
+
+                                    $record->update([
+                                        'tracking' => $guia->tracking,
+                                        'estado'   => \App\Enums\EstadoVentaStatus::Enviado,
+                                    ]);
+
+                                });
+
+                                    Notification::make()
+                                        ->title('Guía GUATEX generada correctamente')
+                                        ->success()
+                                        ->send();
+                            })
+                            ->visible(fn ($record) => Auth::user()->can('liquidate', $record) && $record->tipo_envio == "guatex" && $record->estado == \App\Enums\EstadoVentaStatus::Creada),
+                    Action::make('ver_guia_guatex')
+                        ->label('Ver guía GUATEX')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->modalContent(fn (Venta $record): View => view(
+                            'filament.pages.actions.iframe',
+                            [
+                                'record' => $record,
+                                'title'  => 'Guía GUATEX #'.$record->tracking,
+                                'route'  => route('guatex.generar_guias_pdf', ['id' => $record->id]),
+                                'open'   => true,
+                            ]
+                        ))
+                        ->modalWidth(MaxWidth::SevenExtraLarge)
+                        ->slideOver()
+                        ->stickyModalHeader()
+                        ->modalSubmitAction(false)
+                        ->visible(fn (Venta $record) =>
+                            $record->tracking !== null
+                        ),
+                    Action::make('eliminar_guia_guatex')
+                        ->label('Eliminar guía GUATEX')
+                        ->color('danger')
+                        ->icon('heroicon-o-x-circle')
+                        ->requiresConfirmation()
+                        ->modalHeading('Eliminar guía GUATEX')
+                        ->modalDescription('Esta acción eliminará la guía en GUATEX y no se puede deshacer.')
+                        ->action(function (Venta $record) {
+
+                            if (! $record->tracking) {
+                                Notification::make()
+                                    ->title('La venta no tiene guía asignada')
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
+                            DB::transaction(function () use ($record) {
+
+                                $service = app(\App\Services\GuatexService::class);
+
+                                $service->eliminarGuia($record->tracking);
+
+                                $record->guias()->delete();
+
+                                $record->update([
+                                    'tracking' => null,
+                                    'estado'   => \App\Enums\EstadoVentaStatus::Creada,
+                                ]);
+                            });
+
+                            Notification::make()
+                                ->title('Guía GUATEX eliminada correctamente')
+                                ->success()
+                                ->send();
+                        })
+                        ->visible(fn (Venta $record) =>
+                            $record->tracking !== null &&
+                            $record->estado === \App\Enums\EstadoVentaStatus::Enviado
+                        ),
                     Action::make('tracking')
                         ->label('Agregar Tracking')
                         ->color('warning')
@@ -886,5 +1011,43 @@ class VentaResource extends Resource implements HasShieldPermissions
         return Venta::where('estado', 'validacion_pago')
             ->where('created_at', '<=', now()->subHour())
             ->exists();
+    }
+
+    protected static function opcionesGuatex(Venta $record): array
+    {
+        if (! $record->cliente) {
+        return [];
+        }
+
+        $direccion = $record->cliente
+            ->direcciones()
+            ->with(['departamento', 'municipio'])
+            ->first();
+
+        if (
+            ! $direccion ||
+            ! $direccion->departamento ||
+            ! $direccion->municipio
+        ) {
+            return [];
+        }
+
+        $destinos = app(\App\Http\Controllers\GUATEXController::class)
+            ->obtenerDestinos(
+                $direccion->departamento->departamento,
+                $direccion->municipio->municipio
+            );
+
+
+        if (! is_array($destinos) || empty($destinos)) {
+            return [];
+        }
+
+        return collect($destinos)->mapWithKeys(function ($destino) {
+            return [
+                json_encode($destino) =>
+                    "{$destino['CODIGO']} - {$destino['NOMBRE']} - {$destino['MUNICIPIO']} - {$destino['DEPARTAMENTO']} - {$destino['FRECUENCIA_VISITA']}",
+            ];
+        })->toArray();
     }
 }
