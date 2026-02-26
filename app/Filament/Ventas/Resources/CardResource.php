@@ -97,13 +97,17 @@ class CardResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 TextColumn::make('user.name')
                     ->label('Usuario')
+                    ->searchable()
                     ->listWithLineBreaks(),
                 TextColumn::make('correlativo')
+                    ->searchable()
                     ->listWithLineBreaks(),
                 TextColumn::make('cliente.name')
+                    ->searchable()
                     ->label('Cliente')
                     ->listWithLineBreaks(),
                 TextColumn::make('dpi')
+                    ->searchable()
                     ->label('DPI')
                     ->listWithLineBreaks(),
                 /* Tables\Columns\TextColumn::make('estado')
