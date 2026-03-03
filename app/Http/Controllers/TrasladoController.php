@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EstadoTrasladoStatus;
 use App\Filament\Inventario\Resources\TrasladoResource;
 use App\Models\Bodega;
 use App\Models\Inventario;
@@ -67,7 +68,7 @@ class TrasladoController extends Controller
             DB::transaction(function () use ($traslado) {
                 self::manejarInventario($traslado, 'Traslado preparado', 'salida');
                 self::manejarInventario($traslado, 'Traslado confirmado', 'entrada', Bodega::TRASLADO);
-                $traslado->estado = 'preparado';
+                $traslado->estado = EstadoTrasladoStatus::Preparado;
                 $traslado->fecha_preparado = now();
                 $traslado->save();
             });
@@ -104,7 +105,7 @@ class TrasladoController extends Controller
             DB::transaction(function () use ($traslado) {
                 self::manejarInventario($traslado, 'Traslado confirmado', 'entrada', $traslado->entrada_id);
                 self::manejarInventario($traslado, 'Traslado confirmado', 'salida', Bodega::TRASLADO);
-                $traslado->estado = 'confirmado';
+                $traslado->estado = EstadoTrasladoStatus::Confirmado;
                 $traslado->fecha_confirmado = now();
                 $traslado->receptor_id = auth()->user()->id;
                 $traslado->save();
@@ -143,7 +144,7 @@ class TrasladoController extends Controller
                     self::manejarInventario($traslado, 'Traslado anulado', 'entrada', $traslado->salida_id);
                 }
 
-                $traslado->estado = 'anulado';
+                $traslado->estado = EstadoTrasladoStatus::Anulado;
                 $traslado->fecha_anulado = now(); // Fecha de anulación
                 $traslado->anulo_id = auth()->user()->id;
                 $traslado->save();
@@ -172,7 +173,7 @@ class TrasladoController extends Controller
     {
         try {
             DB::transaction(function () use ($traslado) {
-                $traslado->estado = 'recibido';
+                $traslado->estado = EstadoTrasladoStatus::Recibido;
                 $traslado->fecha_recibido = now();
                 $traslado->save();
             });
@@ -200,7 +201,7 @@ class TrasladoController extends Controller
             }
 
             DB::transaction(function () use ($traslado) {
-                $traslado->estado = 'en tránsito';
+                $traslado->estado = EstadoTrasladoStatus::EnTransito;
                 $traslado->fecha_salida = now();
                 $traslado->piloto_id = auth()->user()->id;
                 $traslado->save();
@@ -219,6 +220,39 @@ class TrasladoController extends Controller
             Notification::make()
                 ->color('danger')
                 ->title('Error al recolectar el Traslado')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public static function regresar(Traslado $traslado)
+    {
+        try {
+            DB::transaction(function () use ($traslado) {
+                // Revertir inventario de la bodega de traslado a la de salida original
+                self::manejarInventario($traslado, 'Traslado regresado', 'salida', Bodega::TRASLADO);
+                self::manejarInventario($traslado, 'Traslado regresado', 'entrada', $traslado->salida_id);
+
+                $traslado->estado = EstadoTrasladoStatus::Anulado;
+                $traslado->fecha_anulado = now();
+                $traslado->anulo_id = auth()->user()->id;
+                $traslado->save();
+            });
+
+            activity()->performedOn($traslado)->causedBy(auth()->user())
+                ->withProperties($traslado)
+                ->event('anulación')->log('Traslado regresado');
+
+            Notification::make()
+                ->title('Traslado regresado correctamente')
+                ->success()
+                ->color('success')
+                ->send();
+        } catch (Exception $e) {
+            Notification::make()
+                ->color('danger')
+                ->title('Error al regresar el Traslado')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();

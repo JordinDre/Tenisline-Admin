@@ -149,10 +149,17 @@ class TrasladoPolicy
         return $user->can('deliver_traslado') && in_array($traslado->estado->value, $estadosPermitidos);
     }
 
-    public function confirm(User $user, Traslado $traslado): bool
+    public static function confirm(User $user, Traslado $traslado): bool
     {
         $estadosPermitidos = ['recibido'];
 
         return $user->can('confirm_traslado') && in_array($traslado->estado->value, $estadosPermitidos) && $user->bodegas->contains('id', $traslado->entrada_id);
+    }
+
+    public function regresar(User $user, Traslado $traslado): bool
+    {
+        $estadosPermitidos = ['en tránsito'];
+
+        return $user->can('annular_traslado') && in_array($traslado->estado->value, $estadosPermitidos) && $user->bodegas->contains('id', $traslado->salida_id);
     }
 }

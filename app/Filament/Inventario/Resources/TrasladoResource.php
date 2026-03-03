@@ -55,6 +55,7 @@ class TrasladoResource extends Resource implements HasShieldPermissions
             'deliver',
             'annular',
             'confirm',
+            'regresar',
         ];
     }
 
@@ -266,6 +267,13 @@ class TrasladoResource extends Resource implements HasShieldPermissions
                         ->requiresConfirmation()
                         ->action(fn (Traslado $record) => TrasladoController::anular($record))
                         ->visible(fn ($record) => auth()->user()->can('annular', $record)),
+                    Action::make('regresar')
+                        ->label('Regresar')
+                        ->color('danger')
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->requiresConfirmation()
+                        ->action(fn (Traslado $record) => TrasladoController::regresar($record))
+                        ->visible(fn ($record) => auth()->user()->can('regresar', $record)),
 
                 ])
                     ->link()
