@@ -234,9 +234,7 @@ class TrasladoController extends Controller
                 self::manejarInventario($traslado, 'Traslado regresado', 'salida', Bodega::TRASLADO);
                 self::manejarInventario($traslado, 'Traslado regresado', 'entrada', $traslado->salida_id);
 
-                $traslado->estado = EstadoTrasladoStatus::Anulado;
-                $traslado->fecha_anulado = now();
-                $traslado->anulo_id = auth()->user()->id;
+                $traslado->estado = EstadoTrasladoStatus::Creado;
                 $traslado->save();
             });
 
