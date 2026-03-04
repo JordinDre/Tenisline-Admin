@@ -34,7 +34,7 @@ class GUATEXController extends Controller
         )->find($id);
 
         $html = view('pdf.guias', compact('venta'))->render();
-        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 250, 500], "portrait");
 
         return response($pdf->output())
             ->header('Content-Type', 'application/pdf')
@@ -374,7 +374,7 @@ class GUATEXController extends Controller
         return json_encode($jsonArray, JSON_PRETTY_PRINT);
     }
 
-    public function generarGuia($id)
+    public function generarGuia($id, $direccionId = null)
     {
         $usuario = config('services.guatex.usuario');
         $password = config('services.guatex.password');
@@ -388,6 +388,20 @@ class GUATEXController extends Controller
             'tipo_pago',
             'pagos',
         ])->findOrFail($id);
+
+        $direccion = null;
+        if ($direccionId) {
+            $direccion = $venta->cliente->direcciones->firstWhere('id', $direccionId);
+        }
+
+        // Si no se pasó dirección o no se encontró, usar la primera por defecto (comportamiento anterior)
+        if (! $direccion) {
+            $direccion = $venta->cliente->direcciones[0] ?? null;
+        }
+
+        if (! $direccion) {
+            throw new \Exception('El cliente no tiene una dirección configurada para generar la guía.');
+        }
 
         // Configuración de códigos zacapa 1, chiquimula 6, esquipulas 8
         if ($venta->bodega_id == 1) {
@@ -408,11 +422,11 @@ class GUATEXController extends Controller
         $remitente = 'TENISLINE S.A.';
         $remitenteTel = $venta->asesor['telefono'].'/54934520';
         $receptorNombre = $venta->cliente['razon_social'];
-        $receptorTelefono = $venta->cliente->direcciones[0]['encargado_contacto'];
+        $receptorTelefono = $direccion['encargado_contacto'];
         $receptorCodigoDestino = $venta->codigo_destino_guatex;
         $municipioDestino = $venta->municipio_destino_guatex;
         $puntoDestino = $venta->punto_destino_guatex;
-        $receptorDireccion = $venta->cliente->direcciones[0]['direccion'].', zona '.@$venta->cliente->direcciones[0]['zona'].', '.$venta->cliente->direcciones[0]['referencia'].', '.$venta->cliente->direcciones[0]['municipio']['municipio'].', '.$venta->cliente->direcciones[0]['municipio']['departamento']['departamento'];
+        $receptorDireccion = $direccion['direccion'].', zona '.@$direccion['zona'].', '.$direccion['referencia'].', '.$direccion['municipio']['municipio'].', '.$direccion['municipio']['departamento']['departamento'];
         $paquetes = $venta->paquetes;
         $tipoPaquete = 2;
 

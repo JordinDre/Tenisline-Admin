@@ -11,11 +11,11 @@ use App\Http\Controllers\GUATEXController;
 
 class GuatexService
 {
-    public function generarYGuardarGuia(Venta $venta, int $paquetes, string $tipo = 'paquetes'): Guia
+    public function generarYGuardarGuia(Venta $venta, int $paquetes, string $tipo = 'paquetes', $direccionId = null): Guia
     {
         $guatex = new GUATEXController();
 
-        $respuesta = json_decode($guatex->generarGuia($venta->id), true);
+        $respuesta = json_decode($guatex->generarGuia($venta->id, $direccionId), true);
 
         if (! isset($respuesta['SERVICIO']['GUIAS']['GUIA']['NOGUIA'])) {
             Log::error('Error GUATEX', [
