@@ -6,6 +6,7 @@ use App\Models\User;
 use Filament\Tables;
 use App\Models\Venta;
 use App\Models\Escala;
+use App\Models\Direccion;
 use Filament\Forms\Get;
 use App\Models\Producto;
 use App\Models\TipoPago;
@@ -28,6 +29,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Forms\Components\Placeholder;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Enums\FiltersLayout;
 use App\Http\Controllers\VentaController;
@@ -654,15 +656,36 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->color('success')
                         ->icon('heroicon-o-truck')
                         ->requiresConfirmation()
+                        ->modalSubmitAction(fn ($action) => $action->extraAttributes(['wire:loading.attr' => 'disabled']))
+                        ->modalCancelAction(fn ($action) => $action->extraAttributes(['wire:loading.attr' => 'disabled']))
                         ->form(function (Venta $record) {
+                            $direcciones = $record->cliente->direcciones;
 
-                            $opciones = static::opcionesGuatex($record);
+                            if ($direcciones->isEmpty()) {
+                                return [
+                                    Placeholder::make('error_direccion')
+                                        ->label('')
+                                        ->content('El cliente no tiene direccion agregada'),
+                                ];
+                            }
 
                             return [
-                                Select::make('destino_guatex')
-                                    ->options($opciones)
+                                Select::make('direccion_id')
+                                    ->label('Seleccionar Dirección')
+                                    ->options($direcciones->mapWithKeys(function ($d) {
+                                        return [$d->id => "{$d->direccion} - {$d->referencia} - {$d->municipio->municipio} - {$d->departamento->departamento}"];
+                                    }))
                                     ->required()
+                                    ->live()
                                     ->searchable(),
+
+                                Select::make('destino_guatex')
+                                    ->label('Destino GUATEX')
+                                    ->options(fn (Get $get) => static::opcionesGuatex($get('direccion_id')))
+                                    ->required()
+                                    ->searchable()
+                                    ->loadingMessage('Cargando destinos...')
+                                    ->disabled(fn (Get $get) => ! $get('direccion_id')),
 
                                 TextInput::make('paquetes')
                                     ->numeric()
@@ -686,6 +709,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     $guia = $service->generarYGuardarGuia(
                                         venta: $record,
                                         paquetes: $data['paquetes'],
+                                        direccionId: $data['direccion_id'],
                                         tipo: 'paquetes'
                                     );
 
@@ -1013,16 +1037,14 @@ class VentaResource extends Resource implements HasShieldPermissions
             ->exists();
     }
 
-    protected static function opcionesGuatex(Venta $record): array
+    protected static function opcionesGuatex($direccionId): array
     {
-        if (! $record->cliente) {
-        return [];
+        if (! $direccionId) {
+            return [];
         }
 
-        $direccion = $record->cliente
-            ->direcciones()
-            ->with(['departamento', 'municipio'])
-            ->first();
+        $direccion = Direccion::with(['departamento', 'municipio'])
+            ->find($direccionId);
 
         if (
             ! $direccion ||
@@ -1034,19 +1056,19 @@ class VentaResource extends Resource implements HasShieldPermissions
 
         $destinos = app(\App\Http\Controllers\GUATEXController::class)
             ->obtenerDestinos(
-                $direccion->departamento->departamento,
-                $direccion->municipio->municipio
+                $direccion->departamento->departamento
             );
-
 
         if (! is_array($destinos) || empty($destinos)) {
             return [];
         }
 
         return collect($destinos)->mapWithKeys(function ($destino) {
+            $frecuencia = $destino['FRECUENCIA_VISITA'] ?? 'No especificada';
+
             return [
                 json_encode($destino) =>
-                    "{$destino['CODIGO']} - {$destino['NOMBRE']} - {$destino['MUNICIPIO']} - {$destino['DEPARTAMENTO']} - {$destino['FRECUENCIA_VISITA']}",
+                    "{$destino['CODIGO']} - {$destino['NOMBRE']} - {$destino['MUNICIPIO']} - {$destino['DEPARTAMENTO']} - {$frecuencia}",
             ];
         })->toArray();
     }
