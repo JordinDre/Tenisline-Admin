@@ -31,6 +31,7 @@ class GUATEXController extends Controller
             'pagos',
             'tipo_pago',
             'guias',
+            'bodega',
         )->find($id);
 
         $html = view('pdf.guias', compact('venta'))->render();

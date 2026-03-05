@@ -63,13 +63,19 @@
         @php
             $direccion = $venta->cliente->direcciones[0] ?? null;
             $piezas = $guia->cantidad;
+            $siglas = match ($venta->bodega_id) {
+                1 => 'ZAC',
+                6 => 'CHQ',
+                8 => 'ESQ',
+                default => 'CAP',
+            };
         @endphp
 
         {{-- Main tracking barcode --}}
         <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($guia->tracking, 'C128', 1.92, 90) }}"
             alt="Código de Barras">
         <div style="font-size: 13px; letter-spacing: 1.5px;">
-            CAP - {{ $guia->tracking }}
+            {{ $siglas }} - {{ $guia->tracking }}
         </div>
 
         @if ($venta->tipo_pago_id == 3)
@@ -147,7 +153,7 @@
             <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($hija, 'C128', 1.92, 90) }}"
                 alt="Código de Barras">
             <div style="font-size: 12px; letter-spacing: 2.5px;">
-                CAP - {{ $hija }} - {{ $guia->tracking }}
+                {{ $siglas }} - {{ $hija }} - {{ $guia->tracking }}
             </div>
             
             @if ($venta->tipo_pago_id == 3)
