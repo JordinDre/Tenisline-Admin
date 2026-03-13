@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Utils\Functions;
-use App\Http\Requests\ventaes\LiquidarGuatexRequest;
+use App\Http\Requests\Ordenes\LiquidarGuatexRequest;
 
 class GUATEXController extends Controller
 {
@@ -421,9 +421,10 @@ class GUATEXController extends Controller
 
         $ventaID = $venta->id;
         $remitente = 'TENISLINE S.A.';
-        $remitenteTel = $venta->asesor['telefono'].'/54934520';
-        $receptorNombre = $venta->cliente['razon_social'];
-        $receptorTelefono = $direccion['encargado_contacto'];
+        $remitenteTel = $venta->asesor['telefono'] ?? '79410101';
+        $receptorNombre = substr($venta->cliente['name'] . ($venta->cliente['razon_social'] ? ' - ' . $venta->cliente['razon_social'] : ''), 0, 100);
+        $receptorTelefono = preg_replace('/[^0-9]/', '', $direccion['encargado_contacto'] ?: $venta->cliente['telefono']);
+        $receptorTelefono = substr($receptorTelefono, 0, 8);
         $receptorCodigoDestino = $venta->codigo_destino_guatex;
         $municipioDestino = $venta->municipio_destino_guatex;
         $puntoDestino = $venta->punto_destino_guatex;
@@ -463,13 +464,33 @@ class GUATEXController extends Controller
             </LINEA_DETALLE_GUIA>';
         }
 
-        $direccionRemitente = $venta->tienda_id == 2
-            ? 'Colonia el Naranjo, Complejo Logística Naranjo'
-            : 'Residenciales El Sol, Barrio La Reforma Zona 2';
+        // Determine config key based on bodega_id (1: Zacapa, 6: Chiquimula, 8: Esquipulas)
+        $felConfigKey = match ($venta->bodega_id) {
+            1 => 'fel',
+            6 => 'fel2',
+            8 => 'fel3',
+            default => 'fel',
+        };
 
-        $municipioOrigen = $venta->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $venta->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $venta->tienda_id == 2 ? '395' : '707';
+        $felConfig = config("services.{$felConfigKey}");
+
+        $remitente = $felConfig['nombre_comercial'] ?? 'TENISLINE S.A.';
+        $remitenteTel = $felConfig['whatsapp'] ?? ($venta->asesor['telefono'] ?? '79410101');
+        $direccionRemitente = $felConfig['direccion'] ?? 'Residenciales El Sol, Barrio La Reforma Zona 2, Zacapa, Zacapa';
+
+        $municipioOrigen = $felConfig['municipio'] ?? 'ZACAPA';
+        $puntoOrigen = match ($felConfigKey) {
+            'fel' => 'ZAC',
+            'fel2' => 'CHQ',
+            'fel3' => 'ESQ',
+            default => 'ZAC',
+        };
+        $codOrigen = match ($felConfigKey) {
+            'fel' => '707',
+            'fel2' => '207',
+            'fel3' => '208',
+            default => '707',
+        };
 
         // XML SOAP content
         $content = '
@@ -736,13 +757,45 @@ class GUATEXController extends Controller
             </LINEA_DETALLE_GUIA>';
         }
 
-        $direccionRemitente = $venta->tienda_id == 2
-            ? 'Colonia el Naranjo, Complejo Logística Naranjo'
-            : 'Residenciales El Sol, Barrio La Reforma Zona 2';
+        // Determine config key based on bodega_id (1: Zacapa, 6: Chiquimula, 8: Esquipulas)
+        $felConfigKey = match (true) {
+            $venta->tienda_id == 1 => 'fel',
+            default => 'fel',
+        };
 
-        $municipioOrigen = $venta->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $venta->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $venta->tienda_id == 2 ? '395' : '707';
+        $felConfig = config("services.{$felConfigKey}");
+
+        $remitente = $felConfig['nombre_comercial'] ?? 'CALIDADES HARMISH S.A.';
+        $remitenteTel = $felConfig['whatsapp'] ?? ($venta->asesor['telefono'].'/54934520');
+        $receptorNombre = $venta->direccion['nombre_comercial'];
+        $receptorTelefono = $venta->direccion['telefono'];
+        $receptorCodigoDestino = $venta->codigo_destino_guatex;
+        $municipioDestino = $venta->municipio_destino_guatex;
+        $puntoDestino = $venta->punto_destino_guatex;
+        $receptorDireccion = $venta->direccion['direccion'].', zona '.@$venta->direccion['zona'].', '.$venta->direccion['referencia'].', '.$venta->direccion['municipio']['municipio'].', '.$venta->direccion['municipio']['departamento']['departamento'];
+        $paquetes = $venta->paquetes;
+        $tipoPaquete = 2;
+
+        // Calcular monto a cobrar...
+
+        // Configuración de URL y COD...
+
+        // Dirección remitente and origin codes
+        $direccionRemitente = $felConfig['direccion'] ?? 'Residenciales El Sol, Barrio La Reforma Zona 2, Zacapa, Zacapa';
+
+        $municipioOrigen = $felConfig['municipio'] ?? 'ZACAPA';
+        $puntoOrigen = match ($felConfigKey) {
+            'fel' => 'ZAC',
+            'fel2' => 'CHQ',
+            'fel3' => 'ESQ',
+            default => 'ZAC',
+        };
+        $codOrigen = match ($felConfigKey) {
+            'fel' => '707',
+            'fel2' => '207',
+            'fel3' => '208',
+            default => '707',
+        };
 
         // XML SOAP content
         $content = '
