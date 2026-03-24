@@ -7,6 +7,7 @@ use App\Models\Venta;
 use App\Models\GuiaHija;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\GUATEXController;
 
 class GuatexService
@@ -15,25 +16,40 @@ class GuatexService
     {
         $guatex = new GUATEXController();
 
-        $respuesta = json_decode($guatex->generarGuia($venta->id, $direccionId), true);
+        $json = $guatex->generarGuia($venta->id, $direccionId);
+        $respuesta = json_decode($json, true);
 
-        if (! isset($respuesta['SERVICIO']['GUIAS']['GUIA']['NOGUIA'])) {
-            Log::error('Error GUATEX', [
+        if (! ($respuesta['success'] ?? false)) {
+            Log::error('Error GUATEX: La petición falló', [
+                'venta_id' => $venta->id,
+                'respuesta' => $respuesta,
+            ]);
+            throw new \Exception('GUATEX no pudo generar la guía. ' . ($respuesta['body'] ?? ''));
+        }
+
+        $servicios = $respuesta['data']['serviciosGenerados'] ?? [];
+        $guiaData = $servicios[0] ?? null;
+
+        if (! $guiaData || ! isset($guiaData['noguia'])) {
+            Log::error('Error GUATEX: No se encontró número de guía en la respuesta JSON', [
                 'venta_id' => $venta->id,
                 'respuesta' => $respuesta,
             ]);
 
-            throw new \Exception('GUATEX no devolvió número de guía');
+            throw new \Exception('GUATEX no devolvió número de guía en el formato esperado.');
         }
 
-        $guiaData = $respuesta['SERVICIO']['GUIAS']['GUIA'];
-
-        $hijas = Arr::wrap(
-            $guiaData['GUIAS_HIJAS']['HGUIAHIJA'] ?? []
-        );
+        // Extract only the guide numbers for the 'hijas' array, as the view expects strings
+        $hijas = [];
+        if (isset($guiaData['guiasHijas']) && is_array($guiaData['guiasHijas'])) {
+            $hijas = array_column($guiaData['guiasHijas'], 'noguia');
+        } elseif (isset($guiaData['hijas']) && is_array($guiaData['hijas'])) {
+            // Fallback to 'hijas' key just in case
+            $hijas = array_column($guiaData['hijas'], 'noguia');
+        }
 
         return $venta->guias()->create([
-            'tracking'  => $guiaData['NOGUIA'],
+            'tracking'  => (string)$guiaData['noguia'],
             'hijas'     => $hijas,
             'cantidad'  => $paquetes,
             'tipo'      => $tipo,
@@ -41,42 +57,67 @@ class GuatexService
         ]);
     }
 
+    /**
+     * Converts ZPL string to PDF content using Labelary API.
+     */
+    public function convertZplToPdf(string $zpl): ?string
+    {
+        // 8dpmm (203 dpi), 4x6 inch label
+        $url = "http://api.labelary.com/v1/printers/8dpmm/labels/4x6/0/";
+
+        try {
+            $response = Http::timeout(30)->withHeaders([
+                'Accept' => 'application/pdf',
+            ])->send('POST', $url, [
+                'body' => $zpl,
+            ]);
+
+            Log::debug("Labelary response [{$response->status()}] content-type: {$response->header('Content-Type')}");
+
+            $body = $response->body();
+            if ($response->successful() && str_starts_with($body, '%PDF')) {
+                return $body; // Binary PDF content
+            }
+
+            Log::error("Labelary conversion failed or returned invalid header: " . substr($body, 0, 500));
+        } catch (\Exception $e) {
+            Log::error("Exception in Labelary conversion: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
     public function eliminarGuia(string $tracking): void
     {
-        $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoGFIMP/WSTomaServiciosCodigoGFIMP';
+        $url = 'https://guias.guatex.gt/tomarservicio/eliminar';
 
         $usuario  = config('services.guatex.usuario');
         $password = config('services.guatex.password');
         $codigo   = config('services.guatex.codigo_cobro_zacapa');
 
-        $xml = <<<XML
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://servicio.wstomaservicioscodimp.guatex.com/">
-        <soapenv:Header/>
-        <soapenv:Body>
-            <ser:eliminarServicioGTX>
-                <xmlentrada><![CDATA[
-                    <ELIMINAR_GUIA>
-                        <USUARIO>{$usuario}</USUARIO>
-                        <PASSWORD>{$password}</PASSWORD>
-                        <CODIGO_COBRO>{$codigo}</CODIGO_COBRO>
-                        <NUMERO_GUIA>{$tracking}</NUMERO_GUIA>
-                    </ELIMINAR_GUIA>
-                ]]></xmlentrada>
-            </ser:eliminarServicioGTX>
-        </soapenv:Body>
-    </soapenv:Envelope>
-    XML;
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json'
+            ])->timeout(30)->post($url, [
+                'usuario' => $usuario,
+                'password' => $password,
+                'codigoCobro' => $codigo,
+                'noguia' => $tracking
+            ]);
 
-        $response = file_get_contents($url, false, stream_context_create([
-            'http' => [
-                'method'  => 'POST',
-                'header'  => "Content-Type: text/xml; charset=utf-8",
-                'content' => $xml,
-            ],
-        ]));
+            if ($response->failed()) {
+                Log::error("Error al eliminar guía en GUATEX JSON [{$response->status()}]: {$response->body()}");
+                throw new \Exception('Error al eliminar guía en GUATEX');
+            }
 
-        if ($response === false) {
-            throw new \Exception('Error al eliminar guía en GUATEX');
+            $data = $response->json();
+            if (($data['codigoRespuesta'] ?? '') !== 'EXITO') {
+                Log::error("GUATEX JSON respondió error al eliminar: " . json_encode($data));
+                throw new \Exception('GUATEX denegó la eliminación de la guía.');
+            }
+        } catch (\Exception $e) {
+            Log::error("Excepción eliminando guía en service: " . $e->getMessage());
+            throw $e;
         }
     }
 }

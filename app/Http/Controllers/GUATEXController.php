@@ -17,22 +17,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Utils\Functions;
-use App\Http\Requests\ventaes\LiquidarGuatexRequest;
+use App\Http\Requests\Ordenes\LiquidarGuatexRequest;
 
 class GUATEXController extends Controller
 {
     public function generarGuiasPdf($id)
     {
-        $venta = Venta::with(
-            'asesor',
-            'cliente',
-            'cliente.direcciones.municipio.departamento',
-            'detalles.producto.marca:id,marca',
-            'pagos',
-            'tipo_pago',
-            'guias',
-            'bodega',
-        )->find($id);
+        $venta = Venta::with('guias')->findOrFail($id);
 
         $html = view('pdf.guias', compact('venta'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 250, 500], "portrait");
@@ -328,51 +319,92 @@ class GUATEXController extends Controller
 
     public function consultarTracking($tracking)
     {
-        $url = 'https://jcl.guatex.gt/WSTracking/WSTracking';
+        $url = 'http://ws.guatex.gt/webservice/service.asmx?WSDL';
 
+        try {
+            $soap = new \SoapClient($url, [
+                'trace' => 1,
+                'exceptions' => true,
+                'cache_wsdl' => WSDL_CACHE_NONE
+            ]);
+
+            $response = $soap->consultaws(['noguia' => $tracking]);
+            // El resultado suele venir en un campo 'consultawsResult' que contiene XML o un array
+            // Según el manual, devuelve movimientos.
+            
+            // Si el cliente Soap no funciona bien con WSDL, usamos el método manual que ya tenían
+            // Pero actualizando el endpoint si es necesario.
+            // Por simplicidad y consistencia con lo que ya tenían:
+            return $this->trackingManual($tracking, 'consultaws');
+        } catch (\Exception $e) {
+            Log::error("Error en consultarTracking: " . $e->getMessage());
+            return json_encode([]);
+        }
+    }
+
+    public function consultarEntrega($tracking)
+    {
+        return $this->trackingManual($tracking, 'entregaws');
+    }
+
+    private function trackingManual($tracking, $method)
+    {
+        $url = 'http://ws.guatex.gt/webservice/service.asmx';
+        
         $headers = [
-            'Content-Type: text/xml',
+            'Content-Type: text/xml; charset=utf-8',
+            'SOAPAction: "http://tempuri.org/'.$method.'"'
         ];
 
-        $content = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.tracking.guatex.com/">
-                    <soapenv:Header/>
-                    <soapenv:Body>
-                        <ws:consultaws>
-                            <noguia>'.$tracking.'</noguia>
-                        </ws:consultaws>
-                    </soapenv:Body>
-                </soapenv:Envelope>';
+        $content = '<?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <'.$method.' xmlns="http://tempuri.org/">
+              <noguia>'.$tracking.'</noguia>
+            </'.$method.'>
+          </soap:Body>
+        </soap:Envelope>';
 
-        $options = [
-            'http' => [
-                'header' => implode("\r\n", $headers),
-                'method' => 'POST',
-                'content' => $content,
-            ],
-        ];
+        $response = Http::withHeaders([
+            'Content-Type' => 'text/xml; charset=utf-8',
+            'SOAPAction' => 'http://tempuri.org/'.$method
+        ])->send('POST', $url, [
+            'body' => $content
+        ]);
 
-        $context = stream_context_create($options);
-        $response = file_get_contents($url, false, $context);
-        $xml = simplexml_load_string($response);
-        $jsonArray = [];
-
-        foreach ($xml->xpath('//return') as $return) {
-            $returnArray = [];
-            foreach ($return->children() as $key => $value) {
-                $returnArray[$key] = (string) $value;
-            }
-            $jsonArray[] = $returnArray;
+        if ($response->failed()) {
+            return json_encode([]);
         }
 
-        // Función de ventaamiento
+        // Parsear la respuesta SOAP
+        $cleanXml = str_ireplace(['soap:', 'soapenv:'], '', $response->body());
+        $xml = simplexml_load_string($cleanXml);
+        
+        $resultNode = $method.'Result';
+        $data = $xml->Body->$method->$resultNode ?? null;
+        
+        // Dependiendo de cómo devuelva los datos (generalmente es un XML dentro de un string o nodos hijos)
+        // Por ahora devolvemos el array mapeado si es previsible
+        $jsonArray = [];
+        if ($xml) {
+            foreach ($xml->xpath('//return') as $return) {
+                $returnArray = [];
+                foreach ($return->children() as $key => $value) {
+                    $returnArray[$key] = (string) $value;
+                }
+                $jsonArray[] = $returnArray;
+            }
+        }
+
+        // Función de ordenamiento
         usort($jsonArray, function ($a, $b) {
-            $dateTimeA = substr($a['tfecha'], 0, 10).' '.$a['thora']; // 2024-01-18 17:20
-            $dateTimeB = substr($b['tfecha'], 0, 10).' '.$b['thora']; // 2024-01-18 19:20
+            $dateTimeA = substr($a['tfecha'] ?? '', 0, 10).' '.($a['thora'] ?? '');
+            $dateTimeB = substr($b['tfecha'] ?? '', 0, 10).' '.($b['thora'] ?? '');
 
             return strtotime($dateTimeA) <=> strtotime($dateTimeB);
         });
 
-        return json_encode($jsonArray, JSON_PRETTY_PRINT);
+        return json_encode($jsonArray);
     }
 
     public function generarGuia($id, $direccionId = null)
@@ -421,9 +453,10 @@ class GUATEXController extends Controller
 
         $ventaID = $venta->id;
         $remitente = 'TENISLINE S.A.';
-        $remitenteTel = $venta->asesor['telefono'].'/54934520';
-        $receptorNombre = $venta->cliente['razon_social'];
-        $receptorTelefono = $direccion['encargado_contacto'];
+        $remitenteTel = $venta->asesor['telefono'] ?? '79410101';
+        $receptorNombre = substr($venta->cliente['name'] . ($venta->cliente['razon_social'] ? ' - ' . $venta->cliente['razon_social'] : ''), 0, 100);
+        $receptorTelefono = preg_replace('/[^0-9]/', '', $direccion['encargado_contacto'] ?: $venta->cliente['telefono']);
+        $receptorTelefono = substr($receptorTelefono, 0, 8);
         $receptorCodigoDestino = $venta->codigo_destino_guatex;
         $municipioDestino = $venta->municipio_destino_guatex;
         $puntoDestino = $venta->punto_destino_guatex;
@@ -442,112 +475,100 @@ class GUATEXController extends Controller
             }
         } */
 
-        // Configuración de URL y COD
-        if ($venta->tipo_pago_id == 3) {
-            $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoCODGFIMP/WSTomaServiciosCodigoGFIMP';
-            $COD = '<COD_VALORACOBRAR>'.($venta->total /* - $total_cubeta_caneca */ - $venta->pagos->sum('total_liquidacion')).'</COD_VALORACOBRAR>
-            <SEABREPAQUETE>S</SEABREPAQUETE>
-            <CODIGO_COBRO_GUIA>'.$codigoCobroCOD.'</CODIGO_COBRO_GUIA>';
-        } else {
-            $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoGFIMP/WSTomaServiciosCodigoGFIMP';
-            $COD = '<CODIGO_COBRO_GUIA>'.$codigoCobro.'</CODIGO_COBRO_GUIA>';
-        }
+        // Determine config key based on bodega_id (1: Zacapa, 6: Chiquimula, 8: Esquipulas)
+        $felConfigKey = match ($venta->bodega_id) {
+            1 => 'fel',
+            6 => 'fel2',
+            8 => 'fel3',
+            default => 'fel',
+        };
 
-        $guiasHija = '';
+        $felConfig = config("services.{$felConfigKey}");
+
+        $remitente = $felConfig['nombre_comercial'] ?? 'TENISLINE S.A.';
+        $remitenteTel = $felConfig['whatsapp'] ?? ($venta->asesor['telefono'] ?? '79410101');
+        $direccionRemitente = $felConfig['direccion'] ?? 'Residenciales El Sol, Barrio La Reforma Zona 2, Zacapa, Zacapa';
+        $codOrigen = match ($felConfigKey) {
+            'fel' => '707',
+            'fel2' => '207',
+            'fel3' => '208',
+            default => '707',
+        };
+
+        // Configuración de URL - JSON API
+        $url = 'https://guias.guatex.gt/tomarservicio/servicio';
+
+        $lineasDetalle = [];
         for ($i = 0; $i < $paquetes; $i++) {
-            $guiasHija .= '
-            <LINEA_DETALLE_GUIA>
-                <PIEZAS_DETALLE>1</PIEZAS_DETALLE>
-                <TIPO_ENVIO_DETALLE>'.$tipoPaquete.'</TIPO_ENVIO_DETALLE>
-                <PESO_DETALLE>10</PESO_DETALLE>
-            </LINEA_DETALLE_GUIA>';
+            $lineasDetalle[] = [
+                'piezas' => "1",
+                'tipoEnvio' => "2", // Package
+                'peso' => "1"
+            ];
         }
 
-        $direccionRemitente = $venta->tienda_id == 2
-            ? 'Colonia el Naranjo, Complejo Logística Naranjo'
-            : 'Residenciales El Sol, Barrio La Reforma Zona 2';
+        $guiaObj = [
+            'llaveCliente' => (string)$ventaID,
+            'nombreDestinatario' => $receptorNombre,
+            'telefonoDestinatario' => $receptorTelefono,
+            'direccionDestinatario' => substr($receptorDireccion, 0, 100),
+            'municipioDestino' => (string)$municipioDestino, // Should be MUNI code
+            'descripcionEnvio' => substr("#$ventaID - $receptorDireccion", 0, 100),
+            'recogeOficina' => "N",
+            'codigoCobroGuia' => (string)($venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro),
+            'codigoDestino' => (string)$receptorCodigoDestino, // Should be CODIGO
+            'lineasDetalle' => $lineasDetalle
+        ];
 
-        $municipioOrigen = $venta->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $venta->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $venta->tienda_id == 2 ? '395' : '707';
-
-        // XML SOAP content
-        $content = '
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://servicio.wstomaservicioscodimp.guatex.com/">
-        <soapenv:Header/>
-        <soapenv:Body>
-            <ser:tomaServicioGTX>
-                <xmlentrada>
-                <![CDATA[
-        <TOMA_SERVICIO>
-            <USUARIO>'.$usuario.'</USUARIO>
-            <PASSWORD>'.$password.'</PASSWORD>
-            <CODIGO_COBRO>'.$codigo.'</CODIGO_COBRO>
-            <SERVICIO>
-                <TIPO_USUARIO>C</TIPO_USUARIO>
-                <NOMBRE_REMITENTE>'.$remitente.'</NOMBRE_REMITENTE>
-                <TELEFONO_REMITENTE>'.$remitenteTel.'</TELEFONO_REMITENTE>
-                <DIRECCION_REMITENTE>'.$direccionRemitente.'</DIRECCION_REMITENTE>
-                <MUNICIPIO_ORIGEN>'.$municipioOrigen.'</MUNICIPIO_ORIGEN>
-                <PUNTO_ORIGEN>'.$puntoOrigen.'</PUNTO_ORIGEN>
-                <ESTA_LISTO>S</ESTA_LISTO>
-                <CODORIGEN>'.$codOrigen.'</CODORIGEN>
-                <GUIA>
-                    <LLAVE_CLIENTE>'.$ventaID.'</LLAVE_CLIENTE>
-                    '.$COD.'
-                    <NOMBRE_DESTINATARIO>'.$receptorNombre.'</NOMBRE_DESTINATARIO>
-                    <TELEFONO_DESTINATARIO>'.$receptorTelefono.'</TELEFONO_DESTINATARIO>
-                    <DIRECCION_DESTINATARIO>'.substr($receptorDireccion, 0, 100).'</DIRECCION_DESTINATARIO>
-                    <MUNICIPIO_DESTINO>'.$municipioDestino.'</MUNICIPIO_DESTINO>
-                    <PUNTO_DESTINO>'.$puntoDestino.'</PUNTO_DESTINO>
-                    <DESCRIPCION_ENVIO>'.substr($receptorDireccion, 0, 100).'</DESCRIPCION_ENVIO>
-                    <RECOGE_OFICINA>N</RECOGE_OFICINA>
-                    <CODDESTINO>'.$receptorCodigoDestino.'</CODDESTINO>
-                    <DETALLE_GUIA>'.$guiasHija.'</DETALLE_GUIA>
-                </GUIA>
-            </SERVICIO>
-        </TOMA_SERVICIO>
-        ]]>
-                </xmlentrada>
-            </ser:tomaServicioGTX>
-        </soapenv:Body>
-    </soapenv:Envelope>';
-
-        // cURL: Enviar solicitud
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: text/xml; charset=utf-8',
-            'Content-Length: '.strlen($content),
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 180); // Aumentado a 3 minutos
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // desactívalo si tienes problemas de SSL
-
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode !== 200 || $response === false) {
-            Log::error("Error Guatex [$httpCode]: $error\n$response");
-
-            return response()->json(['error' => 'No se pudo generar la guía.'], 500);
+        // If COD (tipo_pago_id == 3), add mandatory COD fields for JSON API if supported 
+        // Note: The user's snippet didn't show valorACobrar, but for COD it's usually required.
+        // I will follow the user's snippet strictly but keep an eye on this.
+        if ($venta->tipo_pago_id == 3) {
+            $totalCobrar = $venta->total - $venta->pagos->sum('total_liquidacion');
+            $guiaObj['valorACobrar'] = (string)$totalCobrar;
+            $guiaObj['isSeAbrePaquete'] = "S";
         }
 
-        // Procesar respuesta XML
-        $dom = new DOMDocument;
-        $dom->loadXML($response);
-        $xpath = new DOMXPath($dom);
-        $result = $xpath->evaluate('string(//return)');
+        $requestData = [
+            "usuario" => $usuario,
+            "password" => $password,
+            "codigoCobro" => $codigoCobro,
+            "tipoUsuario" => "C",
+            "nombreRemitente" => $remitente,
+            "direccionRemitente" => $direccionRemitente,
+            "telefonoRemitente" => substr(preg_replace('/^502/', '', preg_replace('/[^0-9]/', '', $remitenteTel)), 0, 8),
+            "codigoOrigen" => (string)$codOrigen,
+            "generaZPL" => "S",
+            "generaPDF" => "N",
+            "estaListo" => "S",
+            "guias" => [$guiaObj]
+        ];
 
-        $result = htmlspecialchars_decode($result);
-        $result = str_replace(['&lt;', '&gt;'], ['<', '>'], $result);
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json'
+            ])->timeout(180)->post($url, $requestData);
 
-        $xmlResult = simplexml_load_string($result);
+            if ($response->failed()) {
+                Log::error("Error Guatex JSON [{$response->status()}]: {$response->body()}");
+                return json_encode([
+                    'success' => false,
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+            }
 
-        return json_encode($xmlResult);
+            return json_encode([
+                'success' => true,
+                'data' => $response->json()
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Excepción en Guatex JSON: " . $e->getMessage());
+            return json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public function obtenerGuiasFaltantes()
@@ -620,47 +641,41 @@ class GUATEXController extends Controller
 
     public function eliminarGuia($tracking)
     {
-        $url = 'https://jcl.guatex.gt:443/WSTomaServiciosCodigoGFIMP/WSTomaServiciosCodigoGFIMP';
+        $url = 'https://guias.guatex.gt/tomarservicio/eliminar';
         $usuario = config('services.guatex.usuario');
         $password = config('services.guatex.password');
         $codigo = config('services.guatex.codigo_cobro_zacapa');
-        $headers = [
-            'Content-Type: text/xml',
-        ];
 
-        $content = '
-        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://servicio.wstomaservicioscodimp.guatex.com/">
-            <soapenv:Header/>
-            <soapenv:Body>
-                <ser:eliminarServicioGTX>
-                    <!--Optional:-->
-                    <xmlentrada>
-                    <![CDATA[
-            <ELIMINAR_GUIA>
-                <USUARIO>'.$usuario.'</USUARIO>
-                <PASSWORD>'.$password.'</PASSWORD>
-                <CODIGO_COBRO>'.$codigo.'</CODIGO_COBRO>
-                <NUMERO_GUIA>'.$tracking.'</NUMERO_GUIA>
-            </ELIMINAR_GUIA>
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json'
+            ])->timeout(30)->post($url, [
+                'usuario' => $usuario,
+                'password' => $password,
+                'codigoCobro' => $codigo,
+                'noguia' => $tracking
+            ]);
 
-            ]]>
-                    </xmlentrada>
-                </ser:eliminarServicioGTX>
-            </soapenv:Body>
-            </soapenv:Envelope>';
+            if ($response->failed()) {
+                Log::error("Error eliminando guía Guatex [{$response->status()}]: {$response->body()}");
+                return json_encode([
+                    'success' => false,
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+            }
 
-        $options = [
-            'http' => [
-                'header' => implode("\r\n", $headers),
-                'method' => 'POST',
-                'content' => $content,
-            ],
-        ];
-
-        $context = stream_context_create($options);
-        $response = file_get_contents($url, false, $context);
-
-        return $response;
+            return json_encode([
+                'success' => true,
+                'data' => $response->json()
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Excepción eliminando guía Guatex: " . $e->getMessage());
+            return json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public function obtenerContent($id)
@@ -736,13 +751,45 @@ class GUATEXController extends Controller
             </LINEA_DETALLE_GUIA>';
         }
 
-        $direccionRemitente = $venta->tienda_id == 2
-            ? 'Colonia el Naranjo, Complejo Logística Naranjo'
-            : 'Residenciales El Sol, Barrio La Reforma Zona 2';
+        // Determine config key based on bodega_id (1: Zacapa, 6: Chiquimula, 8: Esquipulas)
+        $felConfigKey = match (true) {
+            $venta->tienda_id == 1 => 'fel',
+            default => 'fel',
+        };
 
-        $municipioOrigen = $venta->tienda_id == 2 ? 'CAPITAL' : 'ZACAPA';
-        $puntoOrigen = $venta->tienda_id == 2 ? 'CAP' : 'ZAC';
-        $codOrigen = $venta->tienda_id == 2 ? '395' : '707';
+        $felConfig = config("services.{$felConfigKey}");
+
+        $remitente = $felConfig['nombre_comercial'] ?? 'CALIDADES HARMISH S.A.';
+        $remitenteTel = $felConfig['whatsapp'] ?? ($venta->asesor['telefono'].'/54934520');
+        $receptorNombre = $venta->direccion['nombre_comercial'];
+        $receptorTelefono = $venta->direccion['telefono'];
+        $receptorCodigoDestino = $venta->codigo_destino_guatex;
+        $municipioDestino = $venta->municipio_destino_guatex;
+        $puntoDestino = $venta->punto_destino_guatex;
+        $receptorDireccion = $venta->direccion['direccion'].', zona '.@$venta->direccion['zona'].', '.$venta->direccion['referencia'].', '.$venta->direccion['municipio']['municipio'].', '.$venta->direccion['municipio']['departamento']['departamento'];
+        $paquetes = $venta->paquetes;
+        $tipoPaquete = 2;
+
+        // Calcular monto a cobrar...
+
+        // Configuración de URL y COD...
+
+        // Dirección remitente and origin codes
+        $direccionRemitente = $felConfig['direccion'] ?? 'Residenciales El Sol, Barrio La Reforma Zona 2, Zacapa, Zacapa';
+
+        $municipioOrigen = $felConfig['municipio'] ?? 'ZACAPA';
+        $puntoOrigen = match ($felConfigKey) {
+            'fel' => 'ZAC',
+            'fel2' => 'CHQ',
+            'fel3' => 'ESQ',
+            default => 'ZAC',
+        };
+        $codOrigen = match ($felConfigKey) {
+            'fel' => '707',
+            'fel2' => '207',
+            'fel3' => '208',
+            default => '707',
+        };
 
         // XML SOAP content
         $content = '

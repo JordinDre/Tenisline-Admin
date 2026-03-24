@@ -700,7 +700,7 @@ class VentaResource extends Resource implements HasShieldPermissions
 
                                     $record->update([
                                         'codigo_destino_guatex'    => $destino['CODIGO'],
-                                        'municipio_destino_guatex' => $destino['MUNICIPIO'],
+                                        'municipio_destino_guatex' => $destino['MUNI'],
                                         'punto_destino_guatex'     => $destino['PUNTO_COBERTURA'],
                                         'paquetes'          => $data['paquetes'],
                                     ]);
@@ -745,6 +745,23 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->visible(fn (Venta $record) =>
                             $record->tracking !== null
                         ),
+                    Action::make('historial_guatex')
+                        ->label('Historial Guatex')
+                        ->icon('heroicon-o-document-magnifying-glass')
+                        ->color('gray')
+                        ->modalHeading(fn (Venta $record) => "Historial de Guía #{$record->tracking}")
+                        ->modalContent(function (Venta $record) {
+                            $controller = app(\App\Http\Controllers\GUATEXController::class);
+                            $movimientosJson = $controller->consultarTracking($record->tracking);
+                            $movimientos = json_decode($movimientosJson, true);
+                            
+                            return view('filament.pages.actions.guatex-tracking', [
+                                'movimientos' => $movimientos
+                            ]);
+                        })
+                        ->modalSubmitAction(false)
+                        ->modalWidth(MaxWidth::FourExtraLarge)
+                        ->visible(fn (Venta $record) => $record->tracking !== null),
                     Action::make('eliminar_guia_guatex')
                         ->label('Eliminar guía GUATEX')
                         ->color('danger')

@@ -11,13 +11,13 @@
     <style>
         @page {
             margin: 0.2cm;
-            margin-top: 0.4cm;
+            margin-top: 1.0cm;
             font-family: Arial, sans-serif;
         }
 
         section {
             font-size: 11px;
-            line-height: 1.2;
+            line-height: 1.5;
         }
 
         .table-container {
@@ -69,6 +69,33 @@
                 8 => 'ESQ',
                 default => 'CAP',
             };
+            $codigoCobro = match ($venta->bodega_id) {
+                1 => config('services.guatex.codigo_cobro_zacapa'),
+                6 => config('services.guatex.codigo_cobro_chiquimula'),
+                8 => config('services.guatex.codigo_cobro_esquipulas'),
+                default => config('services.guatex.codigo_cobro_zacapa'),
+            };
+            $codigoCobroCOD = match ($venta->bodega_id) {
+                1 => config('services.guatex.codigo_cobro_cod_zacapa'),
+                6 => config('services.guatex.codigo_cobro_cod_chiquimula'),
+                8 => config('services.guatex.codigo_cobro_cod_esquipulas'),
+                default => config('services.guatex.codigo_cobro_cod_zacapa'),
+            };
+            $felConfigKey = match ($venta->bodega_id) {
+                1 => 'fel',
+                6 => 'fel2',
+                8 => 'fel3',
+                default => 'fel',
+            };
+            $felConfig = config("services.{$felConfigKey}");
+            $direccionRemitente = $felConfig['direccion'] ?? 'Residenciales El Sol, Barrio La Reforma Zona 2, Zacapa, Zacapa';
+            $nombreRemitente = $felConfig['nombre_comercial'] ?? 'TENISLINE';
+            $telefonoRemitente = $felConfig['whatsapp'] ?? ($venta->asesor['telefono'] ?? '');
+            $telefonoRemitente = preg_replace('/[^0-9]/', '', $telefonoRemitente);
+            if (str_starts_with($telefonoRemitente, '502')) {
+                $telefonoRemitente = substr($telefonoRemitente, 3);
+            }
+            $telefonoRemitente = trim($telefonoRemitente);
         @endphp
 
         {{-- Main tracking barcode --}}
@@ -95,19 +122,16 @@
         @endif
 
         <section style="margin-top: 7px;">
-            <div>Remitente: TENISLINE</div>
-            <div>Dirección: {{ $venta->bodega->bodega ?? 'CIUDAD CAPITAL' }}</div>
-            <div>Asesor: {{ $venta->asesor['name'] }}</div>
-            <div>Teléfono: {{ $venta->asesor['telefono'] }}</div>
+            <div><strong>Remitente:</strong> {{ $nombreRemitente }}</div>
+            <div><strong>Dirección:</strong> {{ $direccionRemitente }}</div>
+            <div><strong>Teléfono:</strong> {{ $telefonoRemitente }}</div>
         </section>
 
-        <div style="font-size: 26px; margin-top: 8px;">{{ $guia->tracking }}</div>
+        <div style="font-size: 26px; margin-top: 20px;">{{ $guia->tracking }}</div>
 
         <section style="margin-top: 7px;">
-            <div>
-                {{ Str::substr('Destinatario: ' . $venta->cliente['id'] . ' - ' . $venta->cliente['name'] . ' - ' . $venta->cliente['razon_social'], 0, 110) }}
-            </div>
-            <div>Dirección:
+            <div><strong>Destinatario:</strong> {{ Str::substr(($venta->cliente['name'] . ($venta->cliente['razon_social'] ? ' - ' . $venta->cliente['razon_social'] : '')), 0, 110) }}</div>
+            <div><strong>Dirección:</strong>
                 @if($direccion)
                     {{ Str::substr($direccion['direccion'] . ', ' . ($direccion['zona'] ? 'ZONA ' . $direccion['zona'] . ', ' : '') . $direccion['referencia'] . ', ' . $direccion['municipio']['municipio'] . ', ' . $direccion['municipio']['departamento']['departamento'], 0, 110) }}
                 @else
@@ -115,31 +139,33 @@
                 @endif
             </div>
             <div>
-                Teléfono: {{ $venta->cliente['telefono'] }}
+                @php
+                    $telDest = preg_replace('/[^0-9]/', '', ($direccion['encargado_contacto'] ?: $venta->cliente['telefono']));
+                    if (str_starts_with($telDest, '502')) {
+                        $telDest = substr($telDest, 3);
+                    }
+                @endphp
+                <strong>Teléfono:</strong> {{ $telDest }}
             </div>
-            <div>
-                @if($direccion && isset($direccion['encargado']))
-                    Contacto: {{ $direccion['encargado'] }} - {{ $direccion['encargado_contacto'] }}
-                @endif
-            </div>
+            <div><strong>Llave de cliente:</strong> {{ $venta->id }}</div>
         </section>
 
-        <div style="font-weight: bold; font-size: 100px; ">{{ $venta->punto_destino_guatex }}</div>
-        
-        <div style="font-weight: bold; font-size: 10px;">
-            Desc. Envío: Venta NO.{{ $venta->id }} - {{ $piezas }} {{ $piezas == 1 ? 'PAQUETE' : 'PAQUETES' }}
+        <div style="font-weight: bold; font-size: 80px; line-height: 0.8; margin-top: 35px; margin-bottom: 20px;">{{ $venta->punto_destino_guatex }}</div>
+
+        <div style="font-size: 10px;">Desc. Envío: {{ $piezas }}</div>
+
+        <div style="margin-top: 10px; font-size: 10px;">
+            <div>No. Piezas: {{ $piezas }} Peso: 10.00 Forma de pago: {{ $venta->tipo_pago->tipo_pago ?? 'CONTADO' }}</div>
+            <div>Codigo de cobro: {{ $venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro }} Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}</div>
         </div>
 
-        <div style="margin-top: 10px;"></div>
-        <div style="font-weight: bold; font-size: 10px;">No. Piezas: {{ $piezas }} </div>
-        <div style="font-weight: bold; font-size: 10px;">Peso: 10</div>
-        <div style="font-weight: bold; font-size: 10px;">Forma de Pago: {{ $venta->tipo_pago->tipo_pago ?? 'CONTADO' }} </div>
-        <div style="font-weight: bold; font-size: 10px;">Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}</div>
-
-        <div class="table-container" style="margin-top: 0.5cm;">
+        <div style="background-color: black; color: white; padding: 2px 5px; font-size: 8px; font-weight: bold; margin-top: 10px; display: inline-block;">
+            Tracking | Condiciones Generales de Servicio
+        </div>
+        <div class="table-container" style="margin-top: 5px;">
             <div class="table-row">
                 <div class="table-cell" style="text-align: left;">
-                    <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate($guia->tracking . '|' . $venta->punto_destino_guatex)) }}"
+                    <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate('https://servicios.guatex.gt/Guatex/rastreoTracking?tipo=G&dato=' . $guia->tracking)) }}"
                         alt="Código QR" style="display: block; margin: 0 auto;">
                 </div>
                 <div class="table-cell" style="text-align: left;">
@@ -149,11 +175,16 @@
         </div>
 
         @foreach (($guia->hijas ?? []) as $key => $hija)
+            @php
+                // Defensivo: Si $hija es un array (por registros viejos), extraer noguia
+                $noguiaHija = is_array($hija) ? ($hija['noguia'] ?? '') : $hija;
+                if (empty($noguiaHija)) continue;
+            @endphp
             <div style="page-break-before: always;"></div>
-            <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($hija, 'C128', 1.92, 90) }}"
+            <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($noguiaHija, 'C128', 1.92, 90) }}"
                 alt="Código de Barras">
             <div style="font-size: 12px; letter-spacing: 2.5px;">
-                {{ $siglas }} - {{ $hija }} - {{ $guia->tracking }}
+                {{ $siglas }} - {{ $noguiaHija }} - {{ $guia->tracking }}
             </div>
             
             @if ($venta->tipo_pago_id == 3)
@@ -173,19 +204,16 @@
             @endif
 
             <section style="margin-top: 7px;">
-                <div>Remitente: TENISLINE</div>
-                <div>Dirección: {{ $venta->bodega->bodega ?? 'CIUDAD CAPITAL' }}</div>
-                <div>Asesor: {{ $venta->asesor['name'] }}</div>
-                <div>Teléfono: {{ $venta->asesor['telefono'] }}</div>
+                <div><strong>Remitente:</strong> {{ $nombreRemitente }}</div>
+                <div><strong>Dirección:</strong> {{ $direccionRemitente }}</div>
+                <div><strong>Teléfono:</strong> {{ $telefonoRemitente }}</div>
             </section>
 
-            <div style="font-size: 26px; margin-top: 8px;">{{ $hija }}</div>
+            <div style="font-size: 26px; margin-top: 25px;">{{ $noguiaHija }}</div>
 
             <section style="margin-top: 7px;">
-                <div>
-                    {{ Str::substr('Destinatario: ' . $venta->cliente['id'] . ' - ' . $venta->cliente['name'] . ' - ' . $venta->cliente['razon_social'], 0, 110) }}
-                </div>
-                <div>Dirección:
+                <div><strong>Destinatario:</strong> {{ Str::substr(($venta->cliente['name'] . ($venta->cliente['razon_social'] ? ' - ' . $venta->cliente['razon_social'] : '')), 0, 110) }}</div>
+                <div><strong>Dirección:</strong>
                     @if($direccion)
                         {{ Str::substr($direccion['direccion'] . ', ' . ($direccion['zona'] ? 'ZONA ' . $direccion['zona'] . ', ' : '') . $direccion['referencia'] . ', ' . $direccion['municipio']['municipio'] . ', ' . $direccion['municipio']['departamento']['departamento'], 0, 110) }}
                     @else
@@ -193,31 +221,33 @@
                     @endif
                 </div>
                 <div>
-                    Teléfono: {{ $venta->cliente['telefono'] }}
+                    @php
+                        $telDestHija = preg_replace('/[^0-9]/', '', ($direccion['encargado_contacto'] ?: $venta->cliente['telefono']));
+                        if (str_starts_with($telDestHija, '502')) {
+                            $telDestHija = substr($telDestHija, 3);
+                        }
+                    @endphp
+                    <strong>Teléfono:</strong> {{ $telDestHija }}
                 </div>
-                <div>
-                    @if($direccion && isset($direccion['encargado']))
-                        Contacto: {{ $direccion['encargado'] }} - {{ $direccion['encargado_contacto'] }}
-                    @endif
-                </div>
+                <div><strong>Llave de cliente:</strong> {{ $venta->id }}</div>
             </section>
 
-            <div style="font-weight: bold; font-size: 100px; ">{{ $venta->punto_destino_guatex }}</div>
-            
-            <div style="font-weight: bold; font-size: 10px;">
-                Desc. Envío: Venta NO.{{ $venta->id }} - {{ $piezas }} {{ $piezas == 1 ? 'PAQUETE' : 'PAQUETES' }}
+            <div style="font-weight: bold; font-size: 80px; line-height: 0.8; margin-top: 40px; margin-bottom: 25px;">{{ $venta->punto_destino_guatex }}</div>
+
+            <div style="font-size: 10px;">Desc. Envío: {{ $piezas }}</div>
+
+            <div style="margin-top: 10px; font-size: 10px;">
+                <div>No. Piezas: {{ $piezas }} Peso: 10.00 Forma de pago: {{ $venta->tipo_pago->tipo_pago ?? 'CONTADO' }}</div>
+                <div>Codigo de cobro: {{ $venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro }} Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}</div>
             </div>
 
-            <div style="margin-top: 10px;"></div>
-            <div style="font-weight: bold; font-size: 10px;">No. Piezas: {{ $piezas }} </div>
-            <div style="font-weight: bold; font-size: 10px;">Peso: 10</div>
-            <div style="font-weight: bold; font-size: 10px;">Forma de Pago: {{ $venta->tipo_pago->tipo_pago ?? 'CONTADO' }} </div>
-            <div style="font-weight: bold; font-size: 10px;">Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}</div>
-
-            <div class="table-container" style="margin-top: 0.5cm;">
+            <div style="background-color: black; color: white; padding: 2px 5px; font-size: 8px; font-weight: bold; margin-top: 10px; display: inline-block;">
+                Tracking | Condiciones Generales de Servicio
+            </div>
+            <div class="table-container" style="margin-top: 5px;">
                 <div class="table-row">
                     <div class="table-cell" style="text-align: left;">
-                        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate($hija . '|' . $venta->punto_destino_guatex)) }}"
+                        <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(90)->generate('https://servicios.guatex.gt/Guatex/rastreoTracking?tipo=G&dato=' . $guia->tracking)) }}"
                             alt="Código QR" style="display: block; margin: 0 auto;">
                     </div>
                     <div class="table-cell" style="text-align: left;">
