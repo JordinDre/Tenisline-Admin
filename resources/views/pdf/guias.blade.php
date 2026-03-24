@@ -91,8 +91,10 @@
             $direccionRemitente = $felConfig['direccion'] ?? 'Residenciales El Sol, Barrio La Reforma Zona 2, Zacapa, Zacapa';
             $nombreRemitente = $felConfig['nombre_comercial'] ?? 'TENISLINE';
             $telefonoRemitente = $felConfig['whatsapp'] ?? ($venta->asesor['telefono'] ?? '');
-            $telefonoRemitente = str_replace('+502', '', $telefonoRemitente);
-            $telefonoRemitente = ltrim($telefonoRemitente, '502'); // Remove if starts with 502 without +
+            $telefonoRemitente = preg_replace('/[^0-9]/', '', $telefonoRemitente);
+            if (str_starts_with($telefonoRemitente, '502')) {
+                $telefonoRemitente = substr($telefonoRemitente, 3);
+            }
             $telefonoRemitente = trim($telefonoRemitente);
         @endphp
 
@@ -145,6 +147,7 @@
                 @endphp
                 <strong>Teléfono:</strong> {{ $telDest }}
             </div>
+            <div><strong>Llave de cliente:</strong> {{ $venta->id }}</div>
         </section>
 
         <div style="font-weight: bold; font-size: 80px; line-height: 0.8; margin-top: 35px; margin-bottom: 20px;">{{ $venta->punto_destino_guatex }}</div>
@@ -172,11 +175,16 @@
         </div>
 
         @foreach (($guia->hijas ?? []) as $key => $hija)
+            @php
+                // Defensivo: Si $hija es un array (por registros viejos), extraer noguia
+                $noguiaHija = is_array($hija) ? ($hija['noguia'] ?? '') : $hija;
+                if (empty($noguiaHija)) continue;
+            @endphp
             <div style="page-break-before: always;"></div>
-            <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($hija, 'C128', 1.92, 90) }}"
+            <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($noguiaHija, 'C128', 1.92, 90) }}"
                 alt="Código de Barras">
             <div style="font-size: 12px; letter-spacing: 2.5px;">
-                {{ $siglas }} - {{ $hija }} - {{ $guia->tracking }}
+                {{ $siglas }} - {{ $noguiaHija }} - {{ $guia->tracking }}
             </div>
             
             @if ($venta->tipo_pago_id == 3)
@@ -201,7 +209,7 @@
                 <div><strong>Teléfono:</strong> {{ $telefonoRemitente }}</div>
             </section>
 
-            <div style="font-size: 26px; margin-top: 25px;">{{ $hija }}</div>
+            <div style="font-size: 26px; margin-top: 25px;">{{ $noguiaHija }}</div>
 
             <section style="margin-top: 7px;">
                 <div><strong>Destinatario:</strong> {{ Str::substr(($venta->cliente['name'] . ($venta->cliente['razon_social'] ? ' - ' . $venta->cliente['razon_social'] : '')), 0, 110) }}</div>
@@ -221,6 +229,7 @@
                     @endphp
                     <strong>Teléfono:</strong> {{ $telDestHija }}
                 </div>
+                <div><strong>Llave de cliente:</strong> {{ $venta->id }}</div>
             </section>
 
             <div style="font-weight: bold; font-size: 80px; line-height: 0.8; margin-top: 40px; margin-bottom: 25px;">{{ $venta->punto_destino_guatex }}</div>

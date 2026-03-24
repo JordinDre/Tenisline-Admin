@@ -75,4 +75,6 @@ Route::prefix('guatex')->group(function () {
     Route::get('/actualizarOrdenesConTracking', [GUATEXController::class, 'actualizarOrdenesConTracking']);
 });
 
+
+
 require __DIR__.'/auth.php';
