@@ -156,7 +156,7 @@
 
         <div style="margin-top: 10px; font-size: 10px;">
             <div>No. Piezas: {{ $piezas }} Peso: 10.00 Forma de pago: {{ $venta->tipo_pago->tipo_pago ?? 'CONTADO' }}</div>
-            <div>Codigo de cobro: {{ $venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro }} Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}</div>
+            <div>Codigo de cobro: {{ $venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro }} Fecha: {{ now()->format('d/m/Y') }}</div>
         </div>
 
         <div style="background-color: black; color: white; padding: 2px 5px; font-size: 8px; font-weight: bold; margin-top: 10px; display: inline-block;">
@@ -238,7 +238,7 @@
 
             <div style="margin-top: 10px; font-size: 10px;">
                 <div>No. Piezas: {{ $piezas }} Peso: 10.00 Forma de pago: {{ $venta->tipo_pago->tipo_pago ?? 'CONTADO' }}</div>
-                <div>Codigo de cobro: {{ $venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro }} Fecha: {{ date_format($venta->created_at, 'd/m/Y') }}</div>
+                <div>Codigo de cobro: {{ $venta->tipo_pago_id == 3 ? $codigoCobroCOD : $codigoCobro }} Fecha: {{ now()->format('d/m/Y') }}</div>
             </div>
 
             <div style="background-color: black; color: white; padding: 2px 5px; font-size: 8px; font-weight: bold; margin-top: 10px; display: inline-block;">

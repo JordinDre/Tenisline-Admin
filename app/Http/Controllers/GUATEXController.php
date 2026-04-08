@@ -503,7 +503,7 @@ class GUATEXController extends Controller
             $lineasDetalle[] = [
                 'piezas' => "1",
                 'tipoEnvio' => "2", // Package
-                'peso' => "1"
+                'peso' => "10"
             ];
         }
 
@@ -541,6 +541,7 @@ class GUATEXController extends Controller
             "generaZPL" => "S",
             "generaPDF" => "N",
             "estaListo" => "S",
+            "fecha" => now()->format('d/m/Y'),
             "guias" => [$guiaObj]
         ];
 
