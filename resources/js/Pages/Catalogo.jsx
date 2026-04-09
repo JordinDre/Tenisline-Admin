@@ -3,7 +3,6 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
-import { router } from '@inertiajs/react';
 
 export default function Catalogo({
     productos,
@@ -90,58 +89,69 @@ export default function Catalogo({
     const handleExportPdf = (e) => {
         e?.preventDefault();
         e?.stopPropagation();
-        
+
         const params = new URLSearchParams();
 
-        if (data.search) params.append("search", data.search);
-        if (data.bodega) params.append("bodega", data.bodega);
-        if (data.marchamo) params.append("marchamo", data.marchamo);
-        if (data.marca) params.append("marca", data.marca);
-        if (data.genero) params.append("genero", data.genero);
-        if (data.ofertados) params.append("ofertados", data.ofertados);
+        if (data.search) params.append('search', data.search);
+        if (data.bodega) params.append('bodega', data.bodega);
+        if (data.marchamo) params.append('marchamo', data.marchamo);
+        if (data.marca) params.append('marca', data.marca);
+        if (data.genero) params.append('genero', data.genero);
+        if (data.ofertados) params.append('ofertados', data.ofertados);
         if (data.tallas?.length) {
-            data.tallas.forEach(t => params.append("tallas[]", t));
+            data.tallas.forEach((t) => params.append('tallas[]', t));
         }
 
         const queryString = params.toString();
-        const url = '/pdf/catalogo/pdf' + (queryString ? "?" + queryString : "");
-        
+        const url =
+            '/pdf/catalogo/pdf' + (queryString ? '?' + queryString : '');
+
         // Intentar abrir en nueva pestaña, si falla usar location
-        const newWindow = window.open(url, "_blank");
-        if (!newWindow || newWindow.closed || typeof newWindow.closed == "undefined") {
+        const newWindow = window.open(url, '_blank');
+        if (
+            !newWindow ||
+            newWindow.closed ||
+            typeof newWindow.closed == 'undefined'
+        ) {
             // Si el navegador bloquea popups, usar location directamente
             window.location.href = url;
         }
-        
+
         return false;
     };
 
     const handleExportPdf_historial = (e) => {
         e?.preventDefault();
         e?.stopPropagation();
-        
+
         const params = new URLSearchParams();
 
-        if (data.search) params.append("search", data.search);
-        if (data.bodega) params.append("bodega", data.bodega);
-        if (data.marchamo) params.append("marchamo", data.marchamo);
-        if (data.marca) params.append("marca", data.marca);
-        if (data.genero) params.append("genero", data.genero);
-        if (data.ofertados) params.append("ofertados", data.ofertados);
+        if (data.search) params.append('search', data.search);
+        if (data.bodega) params.append('bodega', data.bodega);
+        if (data.marchamo) params.append('marchamo', data.marchamo);
+        if (data.marca) params.append('marca', data.marca);
+        if (data.genero) params.append('genero', data.genero);
+        if (data.ofertados) params.append('ofertados', data.ofertados);
         if (data.tallas?.length) {
-            data.tallas.forEach(t => params.append("tallas[]", t));
+            data.tallas.forEach((t) => params.append('tallas[]', t));
         }
 
         const queryString = params.toString();
-        const url = '/pdf/catalogo/pdf-historial' + (queryString ? "?" + queryString : "");
-        
+        const url =
+            '/pdf/catalogo/pdf-historial' +
+            (queryString ? '?' + queryString : '');
+
         // Intentar abrir en nueva pestaña, si falla usar location
-        const newWindow = window.open(url, "_blank");
-        if (!newWindow || newWindow.closed || typeof newWindow.closed == "undefined") {
+        const newWindow = window.open(url, '_blank');
+        if (
+            !newWindow ||
+            newWindow.closed ||
+            typeof newWindow.closed == 'undefined'
+        ) {
             // Si el navegador bloquea popups, usar location directamente
             window.location.href = url;
         }
-        
+
         return false;
     };
 
@@ -259,8 +269,10 @@ export default function Catalogo({
                                     marcasDisponibles={marcasDisponibles}
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
-                                    handleExportPdf={handleExportPdf} 
-                                    handleExportPdf_historial={handleExportPdf_historial} 
+                                    handleExportPdf={handleExportPdf}
+                                    handleExportPdf_historial={
+                                        handleExportPdf_historial
+                                    }
                                     puedeVerMarchamo={puedeVerMarchamo}
                                     marchamosDisponibles={marchamosDisponibles}
                                     ofertados={ofertados}
@@ -325,7 +337,9 @@ export default function Catalogo({
                                     generosDisponibles={generosDisponibles}
                                     tallasRango={tallasRango}
                                     handleExportPdf={handleExportPdf}
-                                    handleExportPdf_historial={handleExportPdf_historial}
+                                    handleExportPdf_historial={
+                                        handleExportPdf_historial
+                                    }
                                     puedeVerMarchamo={puedeVerMarchamo}
                                     marchamosDisponibles={marchamosDisponibles}
                                     ofertados={ofertados}
@@ -360,7 +374,6 @@ export default function Catalogo({
                                                 className="h-52 w-full object-contain p-4"
                                             />
                                             <div className="px-4 pb-4">
-
                                                 <h3 className="text-md whitespace-normal font-semibold text-zinc-800">
                                                     {producto.descripcion}
                                                 </h3>
@@ -391,15 +404,24 @@ export default function Catalogo({
                                                 {producto.precio_oferta ? (
                                                     <div className="mt-2 flex flex-col items-end">
                                                         <span className="text-sm text-gray-500 line-through">
-                                                            Q{parseFloat(producto.precio).toFixed(2)}
+                                                            Q
+                                                            {parseFloat(
+                                                                producto.precio,
+                                                            ).toFixed(2)}
                                                         </span>
                                                         <span className="text-lg font-bold text-red-600">
-                                                            Q{parseFloat(producto.precio_oferta).toFixed(2)}
+                                                            Q
+                                                            {parseFloat(
+                                                                producto.precio_oferta,
+                                                            ).toFixed(2)}
                                                         </span>
                                                     </div>
                                                 ) : (
                                                     <p className="mt-2 text-lg font-bold text-green-600">
-                                                        Q{parseFloat(producto.precio).toFixed(2)}
+                                                        Q
+                                                        {parseFloat(
+                                                            producto.precio,
+                                                        ).toFixed(2)}
                                                     </p>
                                                 )}
                                             </div>
@@ -728,7 +750,7 @@ function Filtros({
             </div>
 
             {/* Botón de reinicio */}
-            <div className="pt-4 space-y-3">
+            <div className="space-y-3 pt-4">
                 <button
                     type="button"
                     onClick={handleReset}
@@ -760,11 +782,14 @@ function Filtros({
                             if (typeof handleExportPdf === 'function') {
                                 handleExportPdf(e);
                             } else {
-                                console.error('handleExportPdf no es una función:', handleExportPdf);
+                                console.error(
+                                    'handleExportPdf no es una función:',
+                                    handleExportPdf,
+                                );
                             }
                             return false;
                         }}
-                        className="w-full rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-md flex items-center justify-center gap-2"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-md"
                     >
                         <svg
                             className="h-4 w-4"
@@ -788,14 +813,19 @@ function Filtros({
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (typeof handleExportPdf_historial === 'function') {
+                            if (
+                                typeof handleExportPdf_historial === 'function'
+                            ) {
                                 handleExportPdf_historial(e);
                             } else {
-                                console.error('handleExportPdf_historial no es una función:', handleExportPdf_historial);
+                                console.error(
+                                    'handleExportPdf_historial no es una función:',
+                                    handleExportPdf_historial,
+                                );
                             }
                             return false;
                         }}
-                        className="w-full rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-green-600 hover:to-green-700 hover:shadow-md flex items-center justify-center gap-2"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-green-600 hover:to-green-700 hover:shadow-md"
                     >
                         <svg
                             className="h-4 w-4"

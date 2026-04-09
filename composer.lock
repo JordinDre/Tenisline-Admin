@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d419e57bb75661253cd2f2bd0892bedc",
+    "content-hash": "86405fdf8ffc77c269835422649e1beb",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -2685,12 +2685,12 @@
             "version": "11.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/mikebronner/laravel-model-caching.git",
+                "url": "https://github.com/mike-bronner/laravel-model-caching.git",
                 "reference": "2a38f0f1ed3554cf2da272d66c4d08a7885f196b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mikebronner/laravel-model-caching/zipball/2a38f0f1ed3554cf2da272d66c4d08a7885f196b",
+                "url": "https://api.github.com/repos/mike-bronner/laravel-model-caching/zipball/2a38f0f1ed3554cf2da272d66c4d08a7885f196b",
                 "reference": "2a38f0f1ed3554cf2da272d66c4d08a7885f196b",
                 "shasum": ""
             },
@@ -18537,11 +18537,11 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.2"
+        "php": "^8.2 || ^8.4"
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "8.2.0"
+        "php": "8.4.19"
     },
     "plugin-api-version": "2.9.0"
 }

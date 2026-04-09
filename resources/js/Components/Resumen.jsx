@@ -28,10 +28,11 @@ const Resumen = ({
                     </span>
                     <div className="mt-2">
                         <progress
-                            className={`progress w-full ${porcentajeEnvioGratis < 100
-                                ? 'progress-warning'
-                                : 'progress-success'
-                                }`}
+                            className={`progress w-full ${
+                                porcentajeEnvioGratis < 100
+                                    ? 'progress-warning'
+                                    : 'progress-success'
+                            }`}
                             value={porcentajeEnvioGratis}
                             max="100"
                         ></progress>
@@ -64,7 +65,7 @@ const Resumen = ({
             <Link
                 href={ruta}
                 disabled={processing}
-                className="btn btn-zinc mt-2 w-full rounded-lg py-2 font-semibold text-white"
+                className="btn-zinc btn mt-2 w-full rounded-lg py-2 font-semibold text-white"
             >
                 {botonTexto}
             </Link>
