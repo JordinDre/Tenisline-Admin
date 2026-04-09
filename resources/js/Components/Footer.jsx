@@ -116,7 +116,7 @@ export default function Footer() {
 
                         <div>
                             <h6 className="mb-4 text-sm font-semibold uppercase">
-                                Ventas en línea 
+                                Ventas en línea
                             </h6>
                             <ul className="space-y-3">
                                 {/* <li>
