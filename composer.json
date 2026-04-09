@@ -5,7 +5,7 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.2 || ^8.4",
         "barryvdh/laravel-dompdf": "^3.0",
         "bezhansalleh/filament-panel-switch": "^1.0",
         "bezhansalleh/filament-shield": "^3.2",
@@ -100,7 +100,7 @@
     },
     "config": {
         "platform": {
-            "php": "8.2.0"
+            "php": "8.4.19"
         },
         "optimize-autoloader": true,
         "preferred-install": "dist",
