@@ -20,37 +20,41 @@ class UserController extends Controller
             return 'CF';
         }
 
-        $entity = '96457635';
-        $requesor = 'CA067F23-8E6E-4E2D-AA21-9A1EA44B9DCC';
         $curl = curl_init();
         curl_setopt_array($curl, [
-            CURLOPT_URL => "https://fel.g4sdocumenta.com/ConsultaNIT/ConsultaNIT.asmx/getNIT?vNIT=$nit&Entity=$entity&Requestor=$requesor",
+            CURLOPT_URL => 'https://consultace.feel.com.gt/api/consulta-nit',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_TIMEOUT => 0,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode(['nit' => $normalizedNit]),
+            CURLOPT_HTTPHEADER => [
+                'UsuarioApi: '.config('services.fel.usuario_api'),
+                'LlaveApi: '.config('services.fel.llave_api'),
+                'Content-Type: application/json',
+            ],
         ]);
 
         $response = curl_exec($curl);
-        $arregloNit = json_decode(json_encode(simplexml_load_string($response)), true);
+        $arregloNit = json_decode($response, true);
 
-        if ($arregloNit['Response']['Result'] === 'true') {
+        if (isset($arregloNit['resultado']) && $arregloNit['resultado'] === true) {
             Notification::make()
                 ->color('success')
                 ->title('NIT Correcto')
-                ->body($arregloNit['Response']['nombre'])
+                ->body($arregloNit['nombre'])
                 ->success()
                 ->send();
 
-            return $arregloNit['Response']['nombre'];
+            return $arregloNit['nombre'];
         } else {
             Notification::make()
                 ->color('danger')
                 ->title('Error al buscar NIT')
-                ->body($arregloNit['Response']['error'])
+                ->body($arregloNit['error'] ?? 'No se encontró el NIT')
                 ->danger()
                 ->send();
 
