@@ -8,6 +8,7 @@ use App\Models\User;
 use Exception;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Utils\Functions;
 
 class UserController extends Controller
 {
@@ -21,8 +22,9 @@ class UserController extends Controller
         }
 
         $curl = curl_init();
+
         curl_setopt_array($curl, [
-            CURLOPT_URL => 'https://consultace.feel.com.gt/api/consulta-nit',
+            CURLOPT_URL => 'https://consultareceptores.feel.com.gt/rest/action',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -30,31 +32,48 @@ class UserController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode(['nit' => $normalizedNit]),
+            CURLOPT_POSTFIELDS => json_encode([
+                'emisor_codigo' => config('services.fel.usuario_api'),
+                'emisor_clave' => config('services.fel.llave_api'),
+                'nit_consulta' => $normalizedNit,
+            ]),
             CURLOPT_HTTPHEADER => [
-                'UsuarioApi: '.config('services.fel.usuario_api'),
-                'LlaveApi: '.config('services.fel.llave_api'),
                 'Content-Type: application/json',
             ],
         ]);
 
         $response = curl_exec($curl);
+        $httpStatusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        if ($httpStatusCode !== 200) {
+            curl_close($curl);
+            Notification::make()
+                ->color('danger')
+                ->title('Error de conexión')
+                ->body('No se pudo conectar con el servicio de consulta de NIT.')
+                ->danger()
+                ->send();
+            return 'CF';
+        }
+
+        curl_close($curl);
         $arregloNit = json_decode($response, true);
 
-        if (isset($arregloNit['resultado']) && $arregloNit['resultado'] === true) {
+        if (isset($arregloNit['nombre']) && $arregloNit['nombre'] !== '') {
+            $nombre = Functions::formatText($arregloNit['nombre']);
             Notification::make()
                 ->color('success')
                 ->title('NIT Correcto')
-                ->body($arregloNit['nombre'])
+                ->body($nombre)
                 ->success()
                 ->send();
 
-            return $arregloNit['nombre'];
+            return $nombre;
         } else {
             Notification::make()
                 ->color('danger')
                 ->title('Error al buscar NIT')
-                ->body($arregloNit['error'] ?? 'No se encontró el NIT')
+                ->body('Número de NIT incorrecto o no encontrado.')
                 ->danger()
                 ->send();
 
