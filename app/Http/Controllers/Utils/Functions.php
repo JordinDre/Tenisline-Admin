@@ -69,6 +69,22 @@ class Functions
         ];
     }
 
+    public static function formatText($text)
+    {
+        $listado = [
+            ['id' => '&', 'value' => ''],
+            ['id' => 'acute;', 'value' => ''],
+            ['id' => 'Ntilde;', 'value' => 'Ñ'],
+            ['id' => 'ntilde;', 'value' => 'ñ'],
+        ];
+
+        foreach ($listado as $value) {
+            $text = str_replace($value['id'], $value['value'], $text);
+        }
+
+        return $text;
+    }
+
     public static function obtenerAnios()
     {
         return range(now()->year - 3, now()->year + 1);
