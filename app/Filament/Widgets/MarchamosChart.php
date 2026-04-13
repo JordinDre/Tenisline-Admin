@@ -103,6 +103,11 @@ class MarchamosChart extends Widget
                 'text' => 'text-yellow-600 dark:text-yellow-400',
                 'textBold' => 'text-yellow-900 dark:text-yellow-100',
             ],
+            'verde' => [
+                'bg' => 'bg-green-50 dark:bg-green-900/20',
+                'text' => 'text-green-600 dark:text-green-400',
+                'textBold' => 'text-green-900 dark:text-green-100',
+            ],
         ];
 
         // Preparar datos de marchamos con sus costos, cantidades y colores
