@@ -297,7 +297,7 @@ class PagoResource extends Resource implements HasShieldPermissions
                             }
                         }
                     }),
-            ])->poll('10s');
+            ]);
     }
 
     public static function getRelations(): array

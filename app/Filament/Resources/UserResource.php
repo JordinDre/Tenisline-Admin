@@ -485,14 +485,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->link()
                     ->label('Acciones'),
 
-            ], position: ActionsPosition::BeforeColumns)
-            /* ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label('Desactivar'),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ]) */
-            ->poll('10s');
+            ], position: ActionsPosition::BeforeColumns);
     }
 
     public static function getRelations(): array

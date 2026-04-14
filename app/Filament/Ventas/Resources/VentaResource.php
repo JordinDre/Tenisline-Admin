@@ -956,7 +956,6 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->link()
                     ->label('Acciones'),
             ], position: ActionsPosition::BeforeColumns)
-            ->poll('60s')
             ->bulkActions([
                 BulkAction::make('liquidar')
                     ->label('Liquidar')

@@ -28,16 +28,17 @@ class MarchamosChart extends Widget
             $ofertadosQuery->where('genero', $genero);
         }
 
-        // Verificar que la suma de existencias sea >= 1
-        if ($bodegaFilter !== '') {
-            if (is_numeric($bodegaFilter)) {
-                $ofertadosQuery->whereRaw('(SELECT SUM(existencia) FROM inventarios WHERE inventarios.producto_id = productos.id AND inventarios.bodega_id = ?) >= 1', [(int) $bodegaFilter]);
-            } else {
-                $ofertadosQuery->whereRaw('(SELECT SUM(inventarios.existencia) FROM inventarios INNER JOIN bodegas ON inventarios.bodega_id = bodegas.id WHERE inventarios.producto_id = productos.id AND bodegas.bodega = ?) >= 1', [$bodegaFilter]);
+        // Verificar que tenga existencia disponible
+        $ofertadosQuery->whereHas('inventarios', function (Builder $query) use ($bodegaFilter) {
+            $query->where('existencia', '>', 0);
+            if ($bodegaFilter !== '') {
+                if (is_numeric($bodegaFilter)) {
+                    $query->where('bodega_id', (int) $bodegaFilter);
+                } else {
+                    $query->whereHas('bodega', fn($q) => $q->where('bodega', $bodegaFilter));
+                }
             }
-        } else {
-            $ofertadosQuery->whereRaw('(SELECT SUM(existencia) FROM inventarios WHERE inventarios.producto_id = productos.id) >= 1');
-        }
+        });
 
         $costoOfertados = (float) $ofertadosQuery->sum('precio_costo');
         $cantidadOfertados = (int) $ofertadosQuery->count();
@@ -50,16 +51,17 @@ class MarchamosChart extends Widget
             $marchamoQuery->where('genero', $genero);
         }
 
-        // Verificar que la suma de existencias sea >= 1
-        if ($bodegaFilter !== '') {
-            if (is_numeric($bodegaFilter)) {
-                $marchamoQuery->whereRaw('(SELECT SUM(existencia) FROM inventarios WHERE inventarios.producto_id = productos.id AND inventarios.bodega_id = ?) >= 1', [(int) $bodegaFilter]);
-            } else {
-                $marchamoQuery->whereRaw('(SELECT SUM(inventarios.existencia) FROM inventarios INNER JOIN bodegas ON inventarios.bodega_id = bodegas.id WHERE inventarios.producto_id = productos.id AND bodegas.bodega = ?) >= 1', [$bodegaFilter]);
+        // Verificar que tenga existencia disponible
+        $marchamoQuery->whereHas('inventarios', function (Builder $query) use ($bodegaFilter) {
+            $query->where('existencia', '>', 0);
+            if ($bodegaFilter !== '') {
+                if (is_numeric($bodegaFilter)) {
+                    $query->where('bodega_id', (int) $bodegaFilter);
+                } else {
+                    $query->whereHas('bodega', fn($q) => $q->where('bodega', $bodegaFilter));
+                }
             }
-        } else {
-            $marchamoQuery->whereRaw('(SELECT SUM(existencia) FROM inventarios WHERE inventarios.producto_id = productos.id) >= 1');
-        }
+        });
 
         $costosPorMarchamo = $marchamoQuery
             ->selectRaw('marchamo, SUM(COALESCE(precio_costo, 0)) as total, COUNT(*) as cantidad')

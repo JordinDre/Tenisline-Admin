@@ -170,7 +170,7 @@ class KardexResource extends Resource implements HasShieldPermissions
 
                         return $query;
                     }),
-            ], layout: FiltersLayout::AboveContent)->poll('10s');
+            ], layout: FiltersLayout::AboveContent);
     }
 
     public static function getRelations(): array

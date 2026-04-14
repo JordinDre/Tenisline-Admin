@@ -104,7 +104,7 @@ class InventarioResource extends Resource implements HasShieldPermissions
                 SelectFilter::make('bodega_id')
                     ->label('Bodega')
                     ->options(fn () => Bodega::pluck('bodega', 'id')->toArray()),
-            ])->poll('10s');
+            ]);
     }
 
     public static function getRelations(): array
