@@ -639,14 +639,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ))
                     ->label('Desactivar'),
                 Tables\Actions\RestoreAction::make(),
-            ])
-            /* ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label('Desactivar'),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ]) */
-            ->poll('10s');
+            ]);
     }
 
     public static function getRelations(): array
@@ -679,7 +672,6 @@ class ProductoResource extends Resource implements HasShieldPermissions
         }
 
         $query->withSum('inventario as total_existencia', 'existencia')
-            ->distinct()
             ->orderByDesc('total_existencia');
 
         return $query;

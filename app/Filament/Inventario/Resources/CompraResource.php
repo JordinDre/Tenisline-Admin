@@ -449,7 +449,7 @@ class CompraResource extends Resource implements HasShieldPermissions
                 ])
                     ->link()
                     ->label('Acciones'),
-            ], position: ActionsPosition::BeforeColumns)->poll('10s');
+            ], position: ActionsPosition::BeforeColumns);
     }
 
     public static function getPages(): array

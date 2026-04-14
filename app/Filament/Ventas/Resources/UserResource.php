@@ -513,7 +513,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     Tables\Actions\DeleteBulkAction::make()->label('Desactivar'),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ])->poll('10s');
+            ]);
     }
 
     public static function getRelations(): array
