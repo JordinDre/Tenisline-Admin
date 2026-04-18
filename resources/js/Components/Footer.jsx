@@ -134,22 +134,12 @@ export default function Footer() {
                                 </li> */}
                                 <li>
                                     <a
-                                        href="https://wa.me/50241490090"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="hover:underline"
-                                    >
-                                        Ventas en Línea 01: +502 41490090
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
                                         href="https://wa.me/50239901122"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="hover:underline"
                                     >
-                                        Ventas en Línea 02: +502 39901122
+                                        Ventas en Línea: +502 39901122
                                     </a>
                                 </li>
                             </ul>

@@ -535,9 +535,24 @@ class UserResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        $user = auth()->user();
+
+        if ($user && !$user->hasAnyRole(User::ROLES_ADMIN)) {
+            $bodegaIds = $user->bodegas->pluck('id')->toArray();
+            if (!empty($bodegaIds)) {
+                $query->whereHas('bodegas', function ($q) use ($bodegaIds) {
+                    $q->whereIn('bodegas.id', $bodegaIds);
+                });
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        return $query;
     }
 }

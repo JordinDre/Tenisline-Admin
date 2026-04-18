@@ -4,6 +4,7 @@ namespace App\Filament\Ventas\Resources;
 
 use App\Filament\Ventas\Resources\CaidosResource\Pages;
 use App\Models\Venta;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -63,14 +64,14 @@ class CaidosResource extends Resource
             ->selectRaw('ventas.*, s.primer_seguimiento')
             ->with(['cliente', 'asesor']);
 
-        // Filtrar por bodega del vendedor si es vendedor
-        if (Auth::check()) {
-            $user = Auth::user();
-            if ($user && method_exists($user, 'hasRole') && $user->hasRole('vendedor')) {
-                $bodegaIds = $user->bodegas()->pluck('bodegas.id')->toArray();
-                if (!empty($bodegaIds)) {
-                    $query->whereIn('ventas.bodega_id', $bodegaIds);
-                }
+        $user = Auth::user();
+
+        if ($user && !$user->hasAnyRole(User::ROLES_ADMIN)) {
+            $bodegaIds = $user->bodegas()->pluck('bodegas.id')->toArray();
+            if (!empty($bodegaIds)) {
+                $query->whereIn('ventas.bodega_id', $bodegaIds);
+            } else {
+                $query->whereRaw('1 = 0');
             }
         }
 
