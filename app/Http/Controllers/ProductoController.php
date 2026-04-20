@@ -45,7 +45,7 @@ class ProductoController extends Controller
     public static function renderProductos(Producto $record, string $tipo, $bodega_id = null, $cliente_id = null): string
     {
 
-        $inventario =Inventario::where('producto_id', $record->producto_id)->where('bodega_id', $bodega_id)->first();
+        $inventario = Inventario::where('producto_id', $record->id)->where('bodega_id', $bodega_id)->first();
         
         $stock = $inventario ? $inventario->existencia : 0;
         $precioVenta = $record->precio_venta;
@@ -219,10 +219,14 @@ class ProductoController extends Controller
     public static function searchProductos(string $search, string $tipo, $bodega_id = null): array
     {
 
-        $query = Producto::query()
-        ->join('inventarios', 'inventarios.producto_id', '=', 'productos.id')
-        ->where('inventarios.existencia', '>=', 1)
-        ->where('bodega_id', '=', $bodega_id);
+        $query = Producto::query();
+
+        if ($tipo !== 'ajustar') {
+            $query->join('inventarios', 'inventarios.producto_id', '=', 'productos.id')
+                  ->where('inventarios.existencia', '>=', 1)
+                  ->where('bodega_id', '=', $bodega_id)
+                  ->select('productos.*');
+        }
         
         $terms = explode(' ', $search);
         $terms = array_filter($terms);
@@ -253,8 +257,8 @@ class ProductoController extends Controller
         return $query->limit(10)
             ->get()
             ->mapWithKeys(function (Producto $record) use ($tipo, $bodega_id) {
-                return [$record->producto_id => ProductoController::renderProductos($record, $tipo, $bodega_id)];
-                
+                return [$record->id => ProductoController::renderProductos($record, $tipo, $bodega_id)];
+
             })
             ->toArray();
 
