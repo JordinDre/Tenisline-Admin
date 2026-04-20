@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Producto;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 
