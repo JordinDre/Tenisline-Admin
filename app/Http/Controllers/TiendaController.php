@@ -102,7 +102,7 @@ class TiendaController extends Controller
         $user = Auth::user();
         $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
 
-        $productos = Producto::with('marca', 'inventario')
+        $productos = Producto::with(['marca', 'inventario.bodega.municipio'])
             ->whereHas('inventario', function ($query) use ($bodega) {
                 $query->where('existencia', '>', 0)
                     ->whereNotIn('bodega_id', [6, 7]);
@@ -291,11 +291,6 @@ class TiendaController extends Controller
             })
             ->values();
 
-        $tallasDisponibles = Producto::select('talla')->distinct()->pluck('talla');
-        $marcasDisponibles = Marca::select('marca')->distinct()->pluck('marca');
-        $colores = Producto::select('color')->whereNotNull('color')->distinct()->pluck('color');
-        $generosDisponibles = Producto::select('genero')->distinct()->pluck('genero')->filter()->values();
-
         return Inertia::render('Catalogo', [
             'productos' => $productos,
             'search' => $search,
@@ -308,10 +303,8 @@ class TiendaController extends Controller
             'precioMin' => $precioMin,
             'precioMax' => $precioMax,
             'ofertados' => $ofertados,
-            'tallasDisponibles' => $tallasDisponibles,
-            'marcasDisponibles' => $marcasDisponibles,
-            'coloresDisponibles' => $colores,
-            'generosDisponibles' => $generosDisponibles,
+            'marcasDisponibles' => Inertia::defer(fn () => \Illuminate\Support\Facades\Cache::remember('marcas_disponibles', 3600, fn () => Marca::select('marca')->distinct()->pluck('marca'))),
+            'generosDisponibles' => Inertia::defer(fn () => \Illuminate\Support\Facades\Cache::remember('generos_disponibles', 3600, fn () => Producto::select('genero')->distinct()->pluck('genero')->filter()->values())),
             'marchamo' => $marchamo,
             'puedeVerMarchamo' => $esAdmin,
             'marchamosDisponibles' => ['rojo', 'naranja', 'celeste', 'amarillo'],
