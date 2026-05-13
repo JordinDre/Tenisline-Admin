@@ -371,6 +371,7 @@ export default function Catalogo({
                                             <img
                                                 src={producto.imagen}
                                                 alt={producto.descripcion}
+                                                loading="lazy"
                                                 className="h-52 w-full object-contain p-4"
                                             />
                                             <div className="px-4 pb-4">
@@ -568,7 +569,7 @@ function Filtros({
                     className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                     <option value="">Todos los géneros</option>
-                    {generosDisponibles.map((g, index) => (
+                    {generosDisponibles?.map((g, index) => (
                         <option key={index} value={g}>
                             {g}
                         </option>
@@ -634,7 +635,7 @@ function Filtros({
                     className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                     <option value="">Todas las marcas</option>
-                    {marcasDisponibles.map((m, index) => (
+                    {marcasDisponibles?.map((m, index) => (
                         <option key={index} value={m}>
                             {m}
                         </option>

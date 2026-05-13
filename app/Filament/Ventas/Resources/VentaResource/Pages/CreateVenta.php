@@ -263,9 +263,11 @@ class CreateVenta extends CreateRecord
                                                 ->required()
                                                 ->unique(table: User::class)
                                                 ->label('Nombre/Nombre Comercial')
-                                                ->rules(['regex:/^[^a-z]+$/'])
+                                                ->minLength(5)
+                                                ->rules(['regex:/^[^a-z]+$/', 'regex:/[A-Z]/'])
                                                 ->validationMessages([
-                                                    'regex' => 'No se permiten letras minúsculas.',
+                                                    'regex' => 'El nombre debe contener al menos una letra y estar en MAYÚSCULAS.',
+                                                    'min' => 'El nombre debe tener al menos 5 caracteres.',
                                                 ]),
                                             TextInput::make('telefono')
                                                 ->label('Teléfono')
