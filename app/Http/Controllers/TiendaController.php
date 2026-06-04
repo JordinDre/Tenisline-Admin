@@ -102,10 +102,23 @@ class TiendaController extends Controller
         $user = Auth::user();
         $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
 
-        $productos = Producto::with(['marca', 'inventario.bodega.municipio'])
+        $productos = Producto::with([
+            'marca',
+            'inventario' => function ($query) {
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
+            },
+            'inventario.bodega.municipio'
+        ])
             ->whereHas('inventario', function ($query) use ($bodega) {
                 $query->where('existencia', '>', 0)
-                    ->whereNotIn('bodega_id', [6, 7]);
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
 
                 if ($bodega) {
                     // Si se selecciona una bodega, buscar en todas las bodegas que contengan el nombre del municipio
@@ -231,13 +244,8 @@ class TiendaController extends Controller
                                 }
 
                                 // Excluir bodegas específicas que no deben mostrar existencia
-                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado']) || in_array($bodega->id, [6, 7])) {
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega']) || in_array($bodega->id, [6, 7])) {
                                     return false;
-                                }
-
-                                // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
-                                if ($bodega->bodega === 'Central Bodega') {
-                                    return true;
                                 }
 
                                 $municipio = $bodega->municipio;
@@ -248,11 +256,6 @@ class TiendaController extends Controller
                                 return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                             })
                                 ->groupBy(function ($inv) {
-                                    // Si es Central Bodega, agrupar con "*", sino usar el municipio
-                                    if ($inv->bodega->bodega === 'Central Bodega') {
-                                        return '*';
-                                    }
-
                                     return $inv->bodega->municipio->municipio ?? 'Desconocida';
                                 })
                                 ->map(function ($inventarios, $municipio) {
@@ -303,8 +306,8 @@ class TiendaController extends Controller
             'precioMin' => $precioMin,
             'precioMax' => $precioMax,
             'ofertados' => $ofertados,
-            'marcasDisponibles' => Inertia::defer(fn () => \Illuminate\Support\Facades\Cache::remember('marcas_disponibles', 3600, fn () => Marca::select('marca')->distinct()->pluck('marca'))),
-            'generosDisponibles' => Inertia::defer(fn () => \Illuminate\Support\Facades\Cache::remember('generos_disponibles', 3600, fn () => Producto::select('genero')->distinct()->pluck('genero')->filter()->values())),
+            'marcasDisponibles' => Marca::select('marca')->distinct()->pluck('marca'),
+            'generosDisponibles' => Producto::select('genero')->distinct()->pluck('genero')->filter()->values(),
             'marchamo' => $marchamo,
             'puedeVerMarchamo' => $esAdmin,
             'marchamosDisponibles' => ['rojo', 'naranja', 'celeste', 'amarillo'],
@@ -313,7 +316,17 @@ class TiendaController extends Controller
 
     public function producto($slug)
     {
-        $producto = Producto::where('slug', $slug)->first();
+        $producto = Producto::with([
+            'marca',
+            'inventario' => function ($query) {
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
+            },
+            'inventario.bodega.municipio'
+        ])->where('slug', $slug)->first();
 
         // Verificar si el producto existe, si no existe devolver 404
         if (! $producto) {
@@ -355,13 +368,8 @@ class TiendaController extends Controller
                             }
 
                             // Excluir bodegas específicas que no deben mostrar existencia
-                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
+                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
                                 return false;
-                            }
-
-                            // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
-                            if ($bodega->bodega === 'Central Bodega') {
-                                return true;
                             }
 
                             $municipio = $bodega->municipio;
@@ -372,11 +380,6 @@ class TiendaController extends Controller
                             return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                         })
                             ->groupBy(function ($inv) {
-                                // Si es Central Bodega, agrupar con "*", sino usar el municipio
-                                if ($inv->bodega->bodega === 'Central Bodega') {
-                                    return '*';
-                                }
-
                                 return $inv->bodega->municipio->municipio ?? 'Desconocida';
                             })
                             ->map(function ($inventarios, $municipio) {
@@ -396,18 +399,13 @@ class TiendaController extends Controller
                 'bodega_destacada' => $producto->inventario
                     ? $producto->inventario->filter(function ($inv) {
                         $bodega = $inv->bodega;
-                        if (! $bodega) {
+                        if (! $inv->bodega) {
                             return false;
                         }
 
                         // Excluir bodegas específicas que no deben mostrar existencia
-                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado']) || in_array($bodega->id, [6, 7])) {
+                        if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega']) || in_array($bodega->id, [6, 7])) {
                             return false;
-                        }
-
-                        // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
-                        if ($bodega->bodega === 'Central Bodega') {
-                            return true;
                         }
 
                         $municipio = $bodega->municipio;
@@ -419,7 +417,7 @@ class TiendaController extends Controller
                     })
                         ->sortByDesc('existencia')
                         ->map(fn ($inv) => [
-                            'bodega' => $inv->bodega->bodega === 'Central Bodega' ? '*' : ($inv->bodega->municipio->municipio ?? 'Desconocida'), // Mostrar "*" para Central Bodega, sino el municipio
+                            'bodega' => $inv->bodega->municipio->municipio ?? 'Desconocida',
                             'existencia' => $inv->existencia,
                         ])
                         ->first()
@@ -511,10 +509,22 @@ class TiendaController extends Controller
 
         $marchamo = $request->marchamo;
 
-        $productos = Producto::with('marca', 'inventario')
+        $productos = Producto::with([
+            'marca',
+            'inventario' => function ($query) {
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
+            }
+        ])
             ->whereHas('inventario', function ($query) use ($bodega) {
                 $query->where('existencia', '>', 0)
-                    ->whereNotIn('bodega_id', [6, 7]);
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
 
                 if ($bodega) {
                     // Si se selecciona una bodega, buscar en todas las bodegas que contengan el nombre del municipio
