@@ -89,7 +89,35 @@ class CompraResource extends Resource implements HasShieldPermissions
                                         ->schema([
                                             TextInput::make('fel_uuid')
                                                 ->required()
-                                                ->label('No. Autorización'),
+                                                ->label('No. Autorización')
+                                                ->rules([
+                                                    fn (Get $get, ?\Illuminate\Database\Eloquent\Model $record): Closure => function (string $attribute, $value, Closure $fail) use ($get, $record) {
+                                                        $fel_uuid = $value;
+                                                        $fel_serie = $get('fel_serie');
+                                                        $fel_numero = $get('fel_numero');
+
+                                                        if (empty($fel_uuid) || empty($fel_serie) || empty($fel_numero)) {
+                                                            return;
+                                                        }
+
+                                                        $query = \App\Models\Factura::where('facturable_type', \App\Models\Compra::class)
+                                                            ->where('fel_uuid', $fel_uuid)
+                                                            ->where('fel_serie', $fel_serie)
+                                                            ->where('fel_numero', $fel_numero);
+
+                                                        if ($record) {
+                                                            if ($record instanceof \App\Models\Compra) {
+                                                                $query->where('facturable_id', '!=', $record->id);
+                                                            } elseif ($record instanceof \App\Models\Factura) {
+                                                                $query->where('id', '!=', $record->id);
+                                                            }
+                                                        }
+
+                                                        if ($query->exists()) {
+                                                            $fail('La combinación de No. Autorización, Serie y No. DTE ya existe en otra compra.');
+                                                        }
+                                                    }
+                                                ]),
                                             TextInput::make('fel_numero')
                                                 ->required()
                                                 ->label('No. DTE'),

@@ -247,9 +247,23 @@ class PDFController extends Controller
     public function catalogo()
     {
         // Obtener máximo 10 productos con sus relaciones
-        $productos = Producto::with(['marca', 'inventario.bodega.municipio'])
+        $productos = Producto::with([
+            'marca',
+            'inventario' => function ($query) {
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
+            },
+            'inventario.bodega.municipio'
+        ])
             ->whereHas('inventario', function ($query) {
-                $query->where('existencia', '>', 0);
+                $query->where('existencia', '>', 0)
+                    ->whereNotIn('bodega_id', [6, 7])
+                    ->whereHas('bodega', function ($q) {
+                        $q->where('bodega', '!=', 'Central Bodega');
+                    });
             })
             ->limit(10)
             ->get()
@@ -275,13 +289,8 @@ class PDFController extends Controller
                                 }
 
                                 // Excluir bodegas específicas que no deben mostrar existencia
-                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado'])) {
+                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
                                     return false;
-                                }
-
-                                // Incluir Central Bodega o bodegas que estén en Zacapa, Chiquimula o Esquipulas
-                                if ($bodega->bodega === 'Central Bodega') {
-                                    return true;
                                 }
 
                                 $municipio = $bodega->municipio;
@@ -292,11 +301,6 @@ class PDFController extends Controller
                                 return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
                             })
                             ->groupBy(function ($inv) {
-                                // Si es Central Bodega, agrupar con "*", sino usar el municipio
-                                if ($inv->bodega->bodega === 'Central Bodega') {
-                                    return '*';
-                                }
-
                                 return $inv->bodega->municipio->municipio ?? 'Desconocida';
                             })
                             ->map(function ($inventarios, $municipio) {
