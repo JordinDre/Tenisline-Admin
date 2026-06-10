@@ -246,24 +246,31 @@ class PDFController extends Controller
 
     public function catalogo()
     {
+        $user = auth()->user();
+        $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
+
         // Obtener máximo 10 productos con sus relaciones
         $productos = Producto::with([
             'marca',
-            'inventario' => function ($query) {
-                $query->where('existencia', '>', 0)
-                    ->whereNotIn('bodega_id', [6, 7])
-                    ->whereHas('bodega', function ($q) {
-                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                    });
+            'inventario' => function ($query) use ($esAdmin) {
+                $query->where('existencia', '>', 0);
+                if (!$esAdmin) {
+                    $query->whereNotIn('bodega_id', [6, 7])
+                        ->whereHas('bodega', function ($q) {
+                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                        });
+                }
             },
             'inventario.bodega.municipio'
         ])
-            ->whereHas('inventario', function ($query) {
-                $query->where('existencia', '>', 0)
-                    ->whereNotIn('bodega_id', [6, 7])
-                    ->whereHas('bodega', function ($q) {
-                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                    });
+            ->whereHas('inventario', function ($query) use ($esAdmin) {
+                $query->where('existencia', '>', 0);
+                if (!$esAdmin) {
+                    $query->whereNotIn('bodega_id', [6, 7])
+                        ->whereHas('bodega', function ($q) {
+                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                        });
+                }
             })
             ->limit(10)
             ->get()
@@ -282,15 +289,18 @@ class PDFController extends Controller
                     'marca' => $producto->marca->marca ?? null,
                     'bodegas' => $user
                         ? $producto->inventario
-                            ->filter(function ($inv) {
+                            ->filter(function ($inv) use ($user) {
+                                $esAdmin = $user && $user->hasAnyRole(['administrador', 'super_admin']);
                                 $bodega = $inv->bodega;
                                 if (! $bodega) {
                                     return false;
                                 }
 
-                                // Excluir bodegas específicas que no deben mostrar existencia
-                                if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
-                                    return false;
+                                if (!$esAdmin) {
+                                    // Excluir bodegas específicas que no deben mostrar existencia
+                                    if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
+                                        return false;
+                                    }
                                 }
 
                                 $municipio = $bodega->municipio;
@@ -298,7 +308,10 @@ class PDFController extends Controller
                                     return false;
                                 }
 
-                                return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
+                                if (!$esAdmin) {
+                                    return in_array(strtolower($municipio->municipio), ['zacapa', 'chiquimula', 'esquipulas']);
+                                }
+                                return true;
                             })
                             ->groupBy(function ($inv) {
                                 return $inv->bodega->municipio->municipio ?? 'Desconocida';
