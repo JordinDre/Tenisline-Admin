@@ -108,7 +108,7 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0)
                     ->whereNotIn('bodega_id', [6, 7])
                     ->whereHas('bodega', function ($q) {
-                        $q->where('bodega', '!=', 'Central Bodega');
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
                     });
             },
             'inventario.bodega.municipio'
@@ -117,7 +117,7 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0)
                     ->whereNotIn('bodega_id', [6, 7])
                     ->whereHas('bodega', function ($q) {
-                        $q->where('bodega', '!=', 'Central Bodega');
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
                     });
 
                 if ($bodega) {
@@ -322,7 +322,7 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0)
                     ->whereNotIn('bodega_id', [6, 7])
                     ->whereHas('bodega', function ($q) {
-                        $q->where('bodega', '!=', 'Central Bodega');
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
                     });
             },
             'inventario.bodega.municipio'
@@ -515,7 +515,7 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0)
                     ->whereNotIn('bodega_id', [6, 7])
                     ->whereHas('bodega', function ($q) {
-                        $q->where('bodega', '!=', 'Central Bodega');
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
                     });
             }
         ])
@@ -523,7 +523,7 @@ class TiendaController extends Controller
                 $query->where('existencia', '>', 0)
                     ->whereNotIn('bodega_id', [6, 7])
                     ->whereHas('bodega', function ($q) {
-                        $q->where('bodega', '!=', 'Central Bodega');
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
                     });
 
                 if ($bodega) {
