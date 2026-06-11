@@ -21,63 +21,92 @@ class MarchamosChart extends Widget
         $genero = $this->filters['genero'] ?? '';
 
         // Costos de ofertados: productos con precio_oferta y al menos 1 en inventario
-        $ofertadosQuery = Producto::query()
-            ->whereNotNull('precio_oferta')
-            ->where('precio_oferta', '>', 0);
+        $ofertadosQuery = \App\Models\Inventario::query()
+            ->join('productos', 'productos.id', '=', 'inventarios.producto_id')
+            ->join('bodegas', 'bodegas.id', '=', 'inventarios.bodega_id')
+            ->whereNotNull('productos.precio_oferta')
+            ->where('productos.precio_oferta', '>', 0)
+            ->where('inventarios.existencia', '>', 0)
+            ->whereNull('productos.deleted_at');
 
         if ($genero !== '') {
-            $ofertadosQuery->where('genero', $genero);
+            $ofertadosQuery->where('productos.genero', $genero);
         }
 
-        // Verificar que tenga existencia disponible
-        $ofertadosQuery->whereHas('inventarios', function (Builder $query) use ($bodegaFilter) {
-            $query->where('existencia', '>', 0);
-            if ($bodegaFilter !== '') {
-                if (is_numeric($bodegaFilter)) {
-                    $query->where('bodega_id', (int) $bodegaFilter);
-                } else {
-                    $query->whereHas('bodega', fn($q) => $q->where('bodega', $bodegaFilter));
-                }
+        if ($bodegaFilter !== '') {
+            if (is_numeric($bodegaFilter)) {
+                $ofertadosQuery->where('inventarios.bodega_id', (int) $bodegaFilter);
+            } else {
+                $ofertadosQuery->where('bodegas.bodega', $bodegaFilter);
             }
-        });
+        }
 
-        $costoOfertados = (float) $ofertadosQuery->sum('precio_costo');
-        $cantidadOfertados = (int) $ofertadosQuery->count();
+        $ofertadosRaw = $ofertadosQuery
+            ->selectRaw('bodegas.bodega, SUM(COALESCE(productos.precio_costo, 0)) as total, COUNT(inventarios.id) as cantidad')
+            ->groupBy('bodegas.bodega')
+            ->get();
 
-        // Costos por marchamo: productos con marchamo y al menos 1 en inventario, agrupados por marchamo
-        $marchamoQuery = Producto::query()
-            ->whereNotNull('marchamo');
+        $costoOfertados = 0;
+        $cantidadOfertados = 0;
+        $bodegasOfertados = [];
+
+        foreach ($ofertadosRaw as $item) {
+            $costoOfertados += (float) $item->total;
+            $cantidadOfertados += (int) $item->cantidad;
+            $bodegasOfertados[] = [
+                'nombre' => $item->bodega,
+                'costo' => (float) $item->total,
+                'cantidad' => (int) $item->cantidad,
+            ];
+        }
+
+        // Costos por marchamo: productos con marchamo y al menos 1 en inventario, agrupados por marchamo y bodega
+        $marchamoQuery = \App\Models\Inventario::query()
+            ->join('productos', 'productos.id', '=', 'inventarios.producto_id')
+            ->join('bodegas', 'bodegas.id', '=', 'inventarios.bodega_id')
+            ->whereNotNull('productos.marchamo')
+            ->where('inventarios.existencia', '>', 0)
+            ->whereNull('productos.deleted_at');
 
         if ($genero !== '') {
-            $marchamoQuery->where('genero', $genero);
+            $marchamoQuery->where('productos.genero', $genero);
         }
 
-        // Verificar que tenga existencia disponible
-        $marchamoQuery->whereHas('inventarios', function (Builder $query) use ($bodegaFilter) {
-            $query->where('existencia', '>', 0);
-            if ($bodegaFilter !== '') {
-                if (is_numeric($bodegaFilter)) {
-                    $query->where('bodega_id', (int) $bodegaFilter);
-                } else {
-                    $query->whereHas('bodega', fn($q) => $q->where('bodega', $bodegaFilter));
-                }
+        if ($bodegaFilter !== '') {
+            if (is_numeric($bodegaFilter)) {
+                $marchamoQuery->where('inventarios.bodega_id', (int) $bodegaFilter);
+            } else {
+                $marchamoQuery->where('bodegas.bodega', $bodegaFilter);
             }
-        });
+        }
 
-        $costosPorMarchamo = $marchamoQuery
-            ->selectRaw('marchamo, SUM(COALESCE(precio_costo, 0)) as total, COUNT(*) as cantidad')
-            ->groupBy('marchamo')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->marchamo => [
-                    'costo' => (float) $item->total,
-                    'cantidad' => (int) $item->cantidad,
-                ]];
-            })
-            ->toArray();
+        $costosPorMarchamoRaw = $marchamoQuery
+            ->selectRaw('productos.marchamo, bodegas.bodega, SUM(COALESCE(productos.precio_costo, 0)) as total, COUNT(inventarios.id) as cantidad')
+            ->groupBy('productos.marchamo', 'bodegas.bodega')
+            ->get();
 
-        // Obtener solo los marchamos que tienen productos con existencia disponible
-        // Usamos las claves de $costosPorMarchamo ya que solo contiene marchamos con existencia >= 1
+        $costosPorMarchamo = [];
+        foreach ($costosPorMarchamoRaw as $item) {
+            $marchamo = $item->marchamo;
+            $bodega = $item->bodega;
+            
+            if (!isset($costosPorMarchamo[$marchamo])) {
+                $costosPorMarchamo[$marchamo] = [
+                    'costo' => 0,
+                    'cantidad' => 0,
+                    'bodegas' => []
+                ];
+            }
+            
+            $costosPorMarchamo[$marchamo]['costo'] += (float) $item->total;
+            $costosPorMarchamo[$marchamo]['cantidad'] += (int) $item->cantidad;
+            $costosPorMarchamo[$marchamo]['bodegas'][] = [
+                'nombre' => $bodega,
+                'costo' => (float) $item->total,
+                'cantidad' => (int) $item->cantidad,
+            ];
+        }
+
         $marchamosDisponibles = collect($costosPorMarchamo)
             ->keys()
             ->sort()
@@ -117,12 +146,13 @@ class MarchamosChart extends Widget
         $marchamosData = [];
         $totalCostosPorMarchamo = 0;
         foreach ($marchamosDisponibles as $marchamo) {
-            $data = $costosPorMarchamo[$marchamo] ?? ['costo' => 0, 'cantidad' => 0];
+            $data = $costosPorMarchamo[$marchamo];
             $totalCostosPorMarchamo += $data['costo'];
             $marchamosData[] = [
                 'nombre' => $marchamo,
                 'costo' => $data['costo'],
                 'cantidad' => $data['cantidad'],
+                'bodegas' => $data['bodegas'],
                 'colores' => $coloresMarchamo[$marchamo] ?? [
                     'bg' => 'bg-gray-50 dark:bg-gray-900/20',
                     'text' => 'text-gray-600 dark:text-gray-400',
@@ -134,6 +164,7 @@ class MarchamosChart extends Widget
         return [
             'costoOfertados' => $costoOfertados,
             'cantidadOfertados' => $cantidadOfertados,
+            'bodegasOfertados' => $bodegasOfertados,
             'marchamosData' => $marchamosData,
             'totalCostosPorMarchamo' => $totalCostosPorMarchamo,
         ];
