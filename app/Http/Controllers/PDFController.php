@@ -255,10 +255,9 @@ class PDFController extends Controller
             'inventario' => function ($query) use ($esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
             },
             'inventario.bodega.municipio'
@@ -266,10 +265,9 @@ class PDFController extends Controller
             ->whereHas('inventario', function ($query) use ($esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
             })
             ->limit(10)

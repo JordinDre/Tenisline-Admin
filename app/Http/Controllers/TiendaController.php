@@ -107,10 +107,9 @@ class TiendaController extends Controller
             'inventario' => function ($query) use ($esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
             },
             'inventario.bodega.municipio'
@@ -118,10 +117,9 @@ class TiendaController extends Controller
             ->whereHas('inventario', function ($query) use ($bodega, $esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
 
                 if ($bodega) {
@@ -131,8 +129,7 @@ class TiendaController extends Controller
                         $nombreMunicipio = strtolower($bodegaSeleccionada->municipio->municipio);
                         $query->whereHas('bodega', function ($q) use ($nombreMunicipio, $esAdmin) {
                             if (!$esAdmin) {
-                                $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
-                                    ->whereNotIn('id', [6, 7]);
+                                $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
                             }
                             $q->where(function ($subQuery) use ($nombreMunicipio) {
                                 $subQuery->whereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio}%"])
@@ -252,7 +249,7 @@ class TiendaController extends Controller
 
                                 if (!$esAdmin) {
                                     // Excluir bodegas específicas que no deben mostrar existencia
-                                    if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega']) || in_array($bodega->id, [6, 7])) {
+                                    if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
                                         return false;
                                     }
                                 }
@@ -289,7 +286,6 @@ class TiendaController extends Controller
         $bodegasQuery = Bodega::with('municipio');
         if (!$esAdmin) {
             $bodegasQuery->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                ->whereNotIn('id', [6, 7])
                 ->whereHas('municipio', function ($query) {
                     $query->whereIn('municipio', ['Zacapa', 'Chiquimula', 'Esquipulas']);
                 });
@@ -338,10 +334,9 @@ class TiendaController extends Controller
             'inventario' => function ($query) use ($esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
             },
             'inventario.bodega.municipio'
@@ -429,7 +424,7 @@ class TiendaController extends Controller
 
                         if (!$esAdmin) {
                             // Excluir bodegas específicas que no deben mostrar existencia
-                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega']) || in_array($bodega->id, [6, 7])) {
+                            if (in_array($bodega->bodega, ['Mal estado', 'Traslado', 'Central Bodega'])) {
                                 return false;
                             }
                         }
@@ -543,20 +538,18 @@ class TiendaController extends Controller
             'inventario' => function ($query) use ($esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
             }
         ])
             ->whereHas('inventario', function ($query) use ($bodega, $esAdmin) {
                 $query->where('existencia', '>', 0);
                 if (!$esAdmin) {
-                    $query->whereNotIn('bodega_id', [6, 7])
-                        ->whereHas('bodega', function ($q) {
-                            $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
-                        });
+                    $query->whereHas('bodega', function ($q) {
+                        $q->whereNotIn('bodega', ['Central Bodega', 'Traslado']);
+                    });
                 }
 
                 if ($bodega) {
@@ -566,8 +559,7 @@ class TiendaController extends Controller
                         $nombreMunicipio = strtolower($bodegaSeleccionada->municipio->municipio);
                         $query->whereHas('bodega', function ($q) use ($nombreMunicipio, $esAdmin) {
                             if (!$esAdmin) {
-                                $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega'])
-                                    ->whereNotIn('id', [6, 7]);
+                                $q->whereNotIn('bodega', ['Mal estado', 'Traslado', 'Central Bodega']);
                             }
                             $q->where(function ($subQuery) use ($nombreMunicipio) {
                                 $subQuery->whereRaw('LOWER(bodega) LIKE ?', ["%{$nombreMunicipio}%"])
