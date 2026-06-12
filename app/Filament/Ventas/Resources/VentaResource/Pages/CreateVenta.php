@@ -512,18 +512,7 @@ class CreateVenta extends CreateRecord
 
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $cantidad, 2));
-
-                                                    $productos = $get('../../detalles') ?? [];
-                                                    $totalGeneral = 0;
-                                                    $subtotalGeneral = 0;
-                                                    foreach ($productos as $productoItem) {
-                                                        $cantidad = (float) ($productoItem['cantidad'] ?? 0);
-                                                        $precio = (float) ($productoItem['precio'] ?? 0);
-                                                        $totalGeneral += ($cantidad * $precio);
-                                                        $subtotalGeneral += ($cantidad * $precio);
-                                                    }
-                                                    $set('../../subtotal', round($subtotalGeneral, 2));
-                                                    $set('../../total', round($totalGeneral, 2));
+                                                    $this->updateOrderTotals($get, $set);
                                                 })
                                                 ->required(),
                                             Select::make('tipo_precio')
@@ -884,18 +873,7 @@ class CreateVenta extends CreateRecord
                                                     }
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
-
-                                                    $productos = $get('../../detalles') ?? [];
-                                                    $totalGeneral = 0;
-                                                    $subtotalGeneral = 0;
-                                                    foreach ($productos as $productoItem) {
-                                                        $cantidad = (float) ($productoItem['cantidad'] ?? 0);
-                                                        $precio = (float) ($productoItem['precio'] ?? 0);
-                                                        $totalGeneral += ($cantidad * $precio);
-                                                        $subtotalGeneral += ($cantidad * $precio);
-                                                    }
-                                                    $set('../../subtotal', round($subtotalGeneral, 2));
-                                                    $set('../../total', round($totalGeneral, 2));
+                                                    $this->updateOrderTotals($get, $set);
                                                 })
                                                 ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 4, 'xl' => 2])
                                                 ->required(),
@@ -928,19 +906,10 @@ class CreateVenta extends CreateRecord
                                         ->reactive()
                                         ->visible(fn (Get $get): bool => ! empty($get('bodega_id')))
                                         ->afterStateUpdated(function (Get $get, Set $set) {
+                                            $this->updateOrderTotals($get, $set);
+
                                             $productos = $get('detalles') ?? [];
-                                            $totalGeneral = 0;
-                                            $subtotalGeneral = 0;
-
-                                            foreach ($productos as $productoItem) {
-                                                $cantidad = (float) ($productoItem['cantidad'] ?? 0);
-                                                $precio = (float) ($productoItem['precio'] ?? 0);
-                                                $totalGeneral += ($cantidad * $precio);
-                                                $subtotalGeneral += ($cantidad * $precio);
-                                            }
-
-                                            $set('../../subtotal', round($subtotalGeneral, 2));
-                                            $set('../../total', round($totalGeneral, 2));
+                                            $totalGeneral = collect($productos)->sum(fn($p) => ($p['cantidad'] ?? 0) * ($p['precio'] ?? 0));
 
                                             // Validar límite de 2500 cuando facturar_cf está activo o el NIT es CF
                                             $facturarCf = $get('facturar_cf') ?? false;
