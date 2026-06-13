@@ -58,7 +58,7 @@ trait ManageDiscountLogic
             $precioItem = $item['precio'] ?? 0;
             $cantidadItem = $item['cantidad'] ?? 0;
 
-            return round($precioItem * $cantidadItem, 2);
+            return round((float) $precioItem * (float) $cantidadItem, 2);
         });
 
         $set('../../subtotal', round($totalGeneral, 2));
@@ -75,7 +75,7 @@ trait ManageDiscountLogic
             $precioItem = $item['precio'] ?? 0;
             $cantidadItem = $item['cantidad'] ?? 0;
 
-            return round($precioItem * $cantidadItem, 2);
+            return round((float) $precioItem * (float) $cantidadItem, 2);
         });
 
         $set('subtotal', $totalGeneral);
@@ -88,7 +88,7 @@ trait ManageDiscountLogic
     {
         $precioOriginal = $get('precio_original') ?? 0;
         $set('precio', $precioOriginal);
-        $set('subtotal', round($precioOriginal * ($get('cantidad') ?? 1), 2));
+        $set('subtotal', round((float) $precioOriginal * (float) ($get('cantidad') ?? 1), 2));
     }
 
     protected function getAvailableDiscountSlots(array $detalles): int
@@ -159,7 +159,7 @@ trait ManageDiscountLogic
         $precioFinal = $priceCalculationFn($precioOriginal);
 
         $set('precio', $precioFinal);
-        $set('subtotal', round($precioFinal * ($get('cantidad') ?? 1), 2));
+        $set('subtotal', round((float) $precioFinal * (float) ($get('cantidad') ?? 1), 2));
 
         $this->updateOrderTotals($get, $set);
     }

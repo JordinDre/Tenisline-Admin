@@ -855,7 +855,7 @@ class CreateVenta extends CreateRecord
                                                 ->reactive()
                                                 ->readOnly()
                                                 ->columnSpan(['default' => 2,  'md' => 3, 'lg' => 4, 'xl' => 2])
-                                                ->afterStateUpdated(fn (Set $set, Get $get) => $set('subtotal', $get('cantidad') * $get('precio'))
+                                                ->afterStateUpdated(fn (Set $set, Get $get) => $set('subtotal', (float) $get('cantidad') * (float) $get('precio'))
                                                 ),
                                         ])->collapsible()->columnSpanFull()->reorderableWithButtons()->reorderable()->addActionLabel('Agregar Producto')
                                         ->live()
@@ -865,7 +865,7 @@ class CreateVenta extends CreateRecord
                                             $this->updateOrderTotals($get, $set);
 
                                             $productos = $get('detalles') ?? [];
-                                            $totalGeneral = collect($productos)->sum(fn($p) => ($p['cantidad'] ?? 0) * ($p['precio'] ?? 0));
+                                            $totalGeneral = collect($productos)->sum(fn($p) => (float) ($p['cantidad'] ?? 0) * (float) ($p['precio'] ?? 0));
 
                                             // Validar límite de 2500 cuando facturar_cf está activo o el NIT es CF
                                             $facturarCf = $get('facturar_cf') ?? false;
