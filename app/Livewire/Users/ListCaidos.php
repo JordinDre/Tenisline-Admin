@@ -70,7 +70,7 @@ class ListCaidos extends Component implements HasForms, HasTable
                 Tables\Columns\TextColumn::make('dpi')->searchable()->copyable(),
                 Tables\Columns\TextColumn::make('razon_social')->searchable()->copyable(),
                 Tables\Columns\TextColumn::make('telefono')->searchable()->copyable(),
-                Tables\Columns\TextColumn::make('whatsapp')->copyable(),
+                Tables\Columns\TextColumn::make('whatsapp')->searchable()->copyable(),
                 Tables\Columns\TextColumn::make('email')->copyable(),
                 Tables\Columns\TextColumn::make('ultimoSeguimiento.seguimiento')
                     ->label('Ultimo Seguimiento')
