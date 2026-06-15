@@ -368,10 +368,12 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->sortable(), */
                 TextColumn::make('telefono')
                     ->label('Teléfono')
+                    ->searchable()
                     ->copyable()
                     ->sortable(),
                 TextColumn::make('whatsapp')
                     ->label('Whatsapp')
+                    ->searchable()
                     ->copyable()
                     ->sortable(),
                 /* Tables\Columns\TextColumn::make('saldo')

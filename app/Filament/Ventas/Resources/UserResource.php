@@ -395,6 +395,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 TextColumn::make('whatsapp')
+                    ->searchable()
                     ->label('Whatsapp')
                     ->copyable()
                     ->sortable(),
