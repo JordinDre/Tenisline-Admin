@@ -179,7 +179,6 @@ class CreateVenta extends CreateRecord
                         Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
-                                    'contado' => 'Contado / Efectivo (5% descuento)',
                                     'normal' => 'Normal / Crédito / Mixto',
                                 ])
                                 ->default('normal')
@@ -899,7 +898,6 @@ class CreateVenta extends CreateRecord
                             /* Select::make('condicion_pago')
                                 ->label('Condición de la venta')
                                 ->options([
-                                    'contado' => 'Contado / Efectivo (5% descuento)',
                                     'normal' => 'Normal / Crédito / Mixto',
                                 ])
                                 ->default('normal')
