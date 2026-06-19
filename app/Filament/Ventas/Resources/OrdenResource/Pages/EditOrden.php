@@ -327,10 +327,17 @@ class EditOrden extends EditRecord
                                             fn (User $record) => collect([
                                                 $record->id,
                                                 $record->nit ? $record->nit : 'CF',
-                                                $record->name,
+                                                $record->name . ($record->apellido ? " {$record->apellido}" : ""),
                                                 $record->razon_social,
                                             ])->filter()->join(' - ')
-                                        ),
+                                        )
+                                        ->searchable([
+                                            'id',
+                                            'nit',
+                                            'name',
+                                            'apellido',
+                                            'razon_social',
+                                        ]),
                                     DateTimePicker::make('created_at')
                                         ->label('Fecha de Creación')
                                         ->format('d/m/Y H:i:s')

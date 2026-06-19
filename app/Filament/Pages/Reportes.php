@@ -104,7 +104,8 @@ class Reportes extends Page
                         ->options(
                             User::all()
                                 ->mapWithKeys(function ($user) {
-                                    $label = trim(($user->name ?? '').' — '.($user->razon_social ?? ''));
+                                    $fullName = trim(($user->name ?? '') . ($user->apellido ? ' ' . $user->apellido : ''));
+                                    $label = trim($fullName . ' — ' . ($user->razon_social ?? ''));
 
                                     return [$user->id => $label];
                                 })

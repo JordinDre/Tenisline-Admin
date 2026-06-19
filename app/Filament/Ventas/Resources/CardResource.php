@@ -69,9 +69,19 @@ class CardResource extends Resource implements HasShieldPermissions
                         Select::make('cliente_id')
                             ->label('Cliente')
                             ->relationship('user', 'name', fn (Builder $query) => $query->role(['cliente', 'colaborador']))
+                            ->getOptionLabelFromRecordUsing(
+                                fn ($record) => "{$record->name}" . ($record->apellido ? " {$record->apellido}" : "")
+                            )
+                            ->searchable([
+                                'id',
+                                'nit',
+                                'name',
+                                'apellido',
+                                'razon_social',
+                                'telefono'
+                            ])
                             ->optionsLimit(20)
-                            ->required()
-                            ->searchable(),
+                            ->required(),
                         Hidden::make('user_id')
                             ->default(Auth::user()?->id),
                         TextInput::make('dpi')

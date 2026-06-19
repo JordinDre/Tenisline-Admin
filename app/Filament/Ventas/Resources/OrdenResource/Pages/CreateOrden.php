@@ -294,7 +294,7 @@ class CreateOrden extends CreateRecord
                                     fn (User $record) => collect([
                                         $record->id,
                                         $record->nit ? $record->nit : 'CF',
-                                        $record->name,
+                                        $record->name . ($record->apellido ? " {$record->apellido}" : ""),
                                         $record->razon_social,
                                         $record->ordenes()->whereIn('estado', ['enviada'])->count() > 0 ? '(Ordenes Pendientes de Entrega) ' : '',
                                         ($record->creditosOrdenesAtrasados->count() > 0 || $record->creditosVentasAtrasados->count() > 0)
@@ -327,7 +327,14 @@ class CreateOrden extends CreateRecord
                                     $set('tipo_pago_id', null);
                                     $set('guatex_destino', null);
                                 })
-                                ->searchable(),
+                                ->searchable([
+                                    'id',
+                                    'nit',
+                                    'name',
+                                    'apellido',
+                                    'razon_social',
+                                    'telefono'
+                                ]),
                             Select::make('direccion_id')
                                 ->required()
                                 ->label('Dirección')

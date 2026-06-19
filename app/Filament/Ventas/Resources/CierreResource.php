@@ -225,6 +225,7 @@ class CierreResource extends Resource
                     ->color('success')
                     ->visible(fn (Cierre $record) => 
                         Auth::user()->can('view_costs_producto') && 
+                        !Auth::user()->hasRole('auxiliar') &&
                         !$record->liquidado_completo && 
                         $record->puedeLiquidar()
                     )
@@ -249,7 +250,7 @@ class CierreResource extends Resource
                     ->label('Agregar Pago')
                     ->icon('heroicon-o-currency-dollar')
                     ->visible(fn (Cierre $record) => 
-                        Auth::user()->can('view_costs_producto') && 
+                        (Auth::user()->can('view_costs_producto') || Auth::user()->hasRole('auxiliar')) && 
                         !$record->liquidado_completo && 
                         !$record->puedeLiquidar()
                     )
@@ -414,7 +415,7 @@ class CierreResource extends Resource
             ->with(['bodega', 'user'])
             ->orderByDesc('apertura');
 
-        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+        if ($user->hasAnyRole(['administrador', 'super_admin', 'auxiliar'])) {
             return $query;
         }
 
