@@ -13,7 +13,7 @@ class FELController extends Controller
     {
         $cliente = User::withTrashed()->find($orden->cliente_id);
         $receptorID = $orden->facturar_cf ? 'CF' : $cliente->nit;
-        $receptorNombre = $orden->facturar_cf ? $cliente->name : $cliente->razon_social;
+        $receptorNombre = $orden->facturar_cf ? $cliente->name . ($cliente->apellido ? ' ' . $cliente->apellido : '') : $cliente->razon_social;
         $tipo = $orden->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
 
         $totalMontoImpuesto = 0;
@@ -219,7 +219,7 @@ class FELController extends Controller
     {
         $cliente = User::withTrashed()->find($orden->cliente_id);
         $receptorID = $orden->facturar_cf ? 'CF' : $cliente->nit;
-        $receptorNombre = $orden->facturar_cf ? $cliente->name : $cliente->razon_social;
+        $receptorNombre = $orden->facturar_cf ? $cliente->name . ($cliente->apellido ? ' ' . $cliente->apellido : '') : $cliente->razon_social;
 
         $totalMontoImpuesto = 0;
         $granTotal = 0;
@@ -371,7 +371,7 @@ class FELController extends Controller
     {
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf == false ? $cliente->nit : 'CF';
-        $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name;
+        $receptorNombre = $venta->facturar_cf == false ? $cliente->razon_social : $cliente->name . ($cliente->apellido ? ' ' . $cliente->apellido : '');
         $tipo = $venta->pagos->first()->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
 
         $emisor = $bodega == 6 ? config('services.fel2')
@@ -561,7 +561,7 @@ class FELController extends Controller
 
         $cliente = User::withTrashed()->find($venta->cliente_id);
         $receptorID = $venta->facturar_cf ? 'CF' : $cliente->nit;
-        $receptorNombre = $venta->facturar_cf ? $cliente->name : $cliente->razon_social;
+        $receptorNombre = $venta->facturar_cf ? $cliente->name . ($cliente->apellido ? ' ' . $cliente->apellido : '') : $cliente->razon_social;
 
         $asesor = User::withTrashed()->find($venta->asesor_id);
 

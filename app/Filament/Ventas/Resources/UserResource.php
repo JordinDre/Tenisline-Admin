@@ -129,6 +129,13 @@ class UserResource extends Resource implements HasShieldPermissions
                                 'regex' => 'El nombre debe contener al menos una letra y estar en MAYÚSCULAS.',
                                 'min' => 'El nombre debe tener al menos 5 caracteres.',
                             ]),
+                        TextInput::make('apellido')
+                            ->required()
+                            ->label('Apellido')
+                            ->rules(['regex:/^[^a-z]+$/', 'regex:/[A-Z]/'])
+                            ->validationMessages([
+                                'regex' => 'El apellido debe contener al menos una letra y estar en MAYÚSCULAS.',
+                            ]),
                         TextInput::make('telefono')
                             ->label('Teléfono')
                             ->tel()
@@ -374,6 +381,11 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 TextColumn::make('name')
                     ->label('Nombre/Nombre Comercial')
+                    ->searchable()
+                    ->copyable()
+                    ->sortable(),
+                TextColumn::make('apellido')
+                    ->label('Apellido')
                     ->searchable()
                     ->copyable()
                     ->sortable(),

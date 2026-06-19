@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
             'asesor telemarketing',
             'empaquetador',
             'creditos',
-            'diseñador',
+            'auxiliar',
             'bodeguero',
             'piloto',
             'cliente',

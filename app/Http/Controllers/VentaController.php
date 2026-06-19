@@ -424,7 +424,7 @@ class VentaController extends Controller
                 $cierre->pagos()->create($pagoData);
 
                 // Verificar si ya se completaron todos los pagos necesarios
-                if ($cierre->puedeLiquidar()) {
+                if ($cierre->puedeLiquidar() && !Auth::user()->hasRole('auxiliar')) {
                     // Si se completaron todos los pagos, liquidar automáticamente todas las ventas
                     self::liquidar_ventas_cierre_completo($cierre);
                 }
@@ -499,6 +499,10 @@ class VentaController extends Controller
     {
         try {
             DB::transaction(function () use ($cierre) {
+                if (Auth::user()->hasRole('auxiliar')) {
+                    throw new \Exception('Los usuarios con rol auxiliar no tienen permisos para liquidar cierres.');
+                }
+
                 // Verificar que el cierre esté cerrado
                 if ($cierre->cierre === null) {
                     throw new \Exception('El cierre debe estar cerrado antes de liquidar completamente');

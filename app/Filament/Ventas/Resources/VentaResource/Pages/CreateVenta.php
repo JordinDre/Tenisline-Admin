@@ -225,7 +225,7 @@ class CreateVenta extends CreateRecord
                                         ->label('Cliente')
                                         ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'cliente_apertura', 'colaborador']))
                                         ->getOptionLabelFromRecordUsing(
-                                            fn ($record) => "{$record->id} - {$record->nit} - {$record->razon_social} - {$record->name}"
+                                            fn ($record) => "{$record->id} - {$record->nit} - {$record->razon_social} - {$record->name}" . ($record->apellido ? " {$record->apellido}" : "")
                                         )
                                         ->optionsLimit(20)
                                         ->required()
@@ -279,7 +279,7 @@ class CreateVenta extends CreateRecord
                                                         // Solo validar unique si el NIT no es CF
                                                         if (strtoupper(trim($value)) !== 'CF') {
                                                             if (User::where('nit', $value)->exists()) {
-                                                                $fail('El campo NIT ya ha sido registrado.');
+                                                                 $fail('El campo NIT ya ha sido registrado.');
                                                             }
                                                         }
                                                     },
@@ -309,6 +309,13 @@ class CreateVenta extends CreateRecord
                                                 ->validationMessages([
                                                     'regex' => 'El nombre debe contener al menos una letra y estar en MAYÚSCULAS.',
                                                     'min' => 'El nombre debe tener al menos 5 caracteres.',
+                                                ]),
+                                            TextInput::make('apellido')
+                                                ->required()
+                                                ->label('Apellido')
+                                                ->rules(['regex:/^[^a-z]+$/', 'regex:/[A-Z]/'])
+                                                ->validationMessages([
+                                                    'regex' => 'El apellido debe contener al menos una letra y estar en MAYÚSCULAS.',
                                                 ]),
                                             TextInput::make('telefono')
                                                 ->label('Teléfono')
@@ -384,6 +391,7 @@ class CreateVenta extends CreateRecord
                                             'id',
                                             'nit',
                                             'name',
+                                            'apellido',
                                             'razon_social',
                                             'telefono'
                                         ]),

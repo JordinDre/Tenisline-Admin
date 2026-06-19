@@ -220,12 +220,22 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ])
                                         ->preload(), */
                                     Select::make('cliente_id')
-                                        ->label('Cliente')
-                                        ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'colaborador']))
-                                        ->optionsLimit(20)
-                                        ->required()
-                                        ->columnSpan(['sm' => 1, 'md' => 9])
-                                        ->searchable(),
+                                         ->label('Cliente')
+                                         ->relationship('cliente', 'name', fn (Builder $query) => $query->role(['cliente', 'colaborador']))
+                                         ->getOptionLabelFromRecordUsing(
+                                             fn ($record) => "{$record->id} - {$record->nit} - {$record->razon_social} - {$record->name}" . ($record->apellido ? " {$record->apellido}" : "")
+                                         )
+                                         ->searchable([
+                                             'id',
+                                             'nit',
+                                             'name',
+                                             'apellido',
+                                             'razon_social',
+                                             'telefono'
+                                         ])
+                                         ->optionsLimit(20)
+                                         ->required()
+                                         ->columnSpan(['sm' => 1, 'md' => 9]),
                                     /* Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()

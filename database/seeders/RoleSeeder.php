@@ -181,7 +181,7 @@ class RoleSeeder extends Seeder
         $recolector = Role::create(['name' => 'recolector']);
         $empaquetador = Role::create(['name' => 'empaquetador']);
         $creditos = Role::create(['name' => 'creditos']);
-        $diseñador = Role::create(['name' => 'diseñador']);
+        $auxiliar = Role::create(['name' => 'auxiliar']);
         $bodeguero = Role::create(['name' => 'bodeguero']);
         $piloto = Role::create(['name' => 'piloto']);
         $rrhh = Role::create(['name' => 'rrhh']);
