@@ -370,14 +370,25 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cliente.name')
-                    ->searchable()
-                    ->numeric()
+                    ->label('Cliente')
+                    ->formatStateUsing(fn ($record) => $record->cliente ? "{$record->cliente->name} {$record->cliente->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('cliente', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('asesor.name')
-                    ->searchable()
                     ->label('Vendedor')
-                    ->numeric()
+                    ->formatStateUsing(fn ($record) => $record->asesor ? "{$record->asesor->name} {$record->asesor->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('asesor', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('estado')->badge(),

@@ -107,14 +107,26 @@ class CardResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 TextColumn::make('user.name')
                     ->label('Usuario')
-                    ->searchable()
+                    ->formatStateUsing(fn ($record) => $record->user ? "{$record->user->name} {$record->user->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('user', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->listWithLineBreaks(),
                 TextColumn::make('correlativo')
                     ->searchable()
                     ->listWithLineBreaks(),
                 TextColumn::make('cliente.name')
-                    ->searchable()
                     ->label('Cliente')
+                    ->formatStateUsing(fn ($record) => $record->cliente ? "{$record->cliente->name} {$record->cliente->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('cliente', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->listWithLineBreaks(),
                 TextColumn::make('dpi')
                     ->searchable()
