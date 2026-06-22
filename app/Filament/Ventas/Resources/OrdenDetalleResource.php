@@ -65,7 +65,13 @@ class OrdenDetalleResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 Tables\Columns\TextColumn::make('orden.asesor.name')
                     ->label('Asesor')
-                    ->searchable()
+                    ->formatStateUsing(fn ($record) => $record->orden && $record->orden->asesor ? "{$record->orden->asesor->name} {$record->orden->asesor->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('orden.asesor', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('comision')
@@ -223,10 +229,10 @@ class OrdenDetalleResource extends Resource implements HasShieldPermissions
                             ->options(function () {
                                 $user = auth()->user();
                                 if ($user->hasAnyRole(['administrador', 'super_admin', 'facturador', 'creditos', 'rrhh', 'gerente'])) {
-                                    return User::role(User::ORDEN_ROLES)->pluck('name', 'id');
+                                    return User::role(User::ORDEN_ROLES)->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->name} " . ($u->apellido ?? '')])->toArray();
                                 }
                                 if ($user->hasAnyRole(User::SUPERVISORES_ORDEN)) {
-                                    return $user->asesoresSupervisados->pluck('name', 'id');
+                                    return $user->asesoresSupervisados->mapWithKeys(fn ($u) => [$u->id => "{$u->name} " . ($u->apellido ?? '')])->toArray();
                                 }
 
                                 return [];

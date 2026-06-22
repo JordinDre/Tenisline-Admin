@@ -221,7 +221,13 @@ class PagoResource extends Resource implements HasShieldPermissions
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Usuario')
-                    ->searchable()
+                    ->formatStateUsing(fn ($record) => $record->user ? "{$record->user->name} {$record->user->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('user', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('monto')

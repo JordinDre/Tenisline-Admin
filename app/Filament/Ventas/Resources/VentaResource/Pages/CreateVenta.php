@@ -141,7 +141,7 @@ class CreateVenta extends CreateRecord
 
                                 // Si el usuario actual es vendedor o telemarketing, lo agregamos primero
                                 if ($currentUser && $currentUser->hasAnyRole(['vendedor'])) {
-                                    $options[$currentUser->id] = $currentUser->name.' (Usuario actual)';
+                                    $options[$currentUser->id] = $currentUser->name . ($currentUser->apellido ? " {$currentUser->apellido}" : "") . ' (Usuario actual)';
                                 }
 
                                 // Agregamos otros vendedores y telemarketing
@@ -152,7 +152,7 @@ class CreateVenta extends CreateRecord
                                 $otherVendedores = $query->get();
 
                                 foreach ($otherVendedores as $vendedor) {
-                                    $options[$vendedor->id] = $vendedor->name;
+                                    $options[$vendedor->id] = $vendedor->name . ($vendedor->apellido ? " {$vendedor->apellido}" : "");
                                 }
 
                                 return $options;

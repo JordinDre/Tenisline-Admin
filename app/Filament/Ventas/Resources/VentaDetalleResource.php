@@ -71,7 +71,13 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                     ->sortable(), */
                 Tables\Columns\TextColumn::make('venta.asesor.name')
                     ->label('Vendedor')
-                    ->searchable()
+                    ->formatStateUsing(fn ($record) => $record->venta && $record->venta->asesor ? "{$record->venta->asesor->name} {$record->venta->asesor->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('venta.asesor', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 /* Tables\Columns\TextColumn::make('comision')
@@ -234,10 +240,10 @@ class VentaDetalleResource extends Resource implements HasShieldPermissions
                             ->options(function () {
                                 $user = auth()->user();
                                 if ($user->hasAnyRole(['administrador', 'super_admin', 'vendedor'])) {
-                                    return User::role(User::VENTA_ROLES)->pluck('name', 'id');
+                                    return User::role(User::VENTA_ROLES)->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->name} " . ($u->apellido ?? '')])->toArray();
                                 }
                                 if ($user->hasAnyRole(User::SUPERVISORES_VENTA)) {
-                                    return $user->asesoresSupervisados->pluck('name', 'id');
+                                    return $user->asesoresSupervisados->mapWithKeys(fn ($u) => [$u->id => "{$u->name} " . ($u->apellido ?? '')])->toArray();
                                 }
 
                                 return [];

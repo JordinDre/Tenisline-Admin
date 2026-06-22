@@ -57,8 +57,13 @@ class OrdenesRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cliente.name')
                     ->label('Nombre Comercial')
-
-                    ->numeric()
+                    ->formatStateUsing(fn ($record) => $record->cliente ? "{$record->cliente->name} {$record->cliente->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('cliente', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cliente.razon_social')
@@ -69,8 +74,13 @@ class OrdenesRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('asesor.name')
                     ->label('Asesor')
-
-                    ->numeric()
+                    ->formatStateUsing(fn ($record) => $record->asesor ? "{$record->asesor->name} {$record->asesor->apellido}" : '')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('asesor', function (Builder $q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('apellido', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('tipo_envio')

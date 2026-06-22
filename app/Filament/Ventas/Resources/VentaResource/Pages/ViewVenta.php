@@ -85,9 +85,11 @@ class ViewVenta extends ViewRecord
                             ->schema([
                                 TextEntry::make('cliente.name')
                                     ->label('Cliente')
+                                    ->formatStateUsing(fn ($record) => $record->cliente ? "{$record->cliente->name} {$record->cliente->apellido}" : '')
                                     ->icon('heroicon-o-user'),
                                 TextEntry::make('asesor.name')
                                     ->label('Vendedor')
+                                    ->formatStateUsing(fn ($record) => $record->asesor ? "{$record->asesor->name} {$record->asesor->apellido}" : '')
                                     ->icon('heroicon-o-user-group'),
                                 TextEntry::make('bodega.bodega')
                                     ->label('Bodega')
