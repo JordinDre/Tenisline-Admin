@@ -47,6 +47,10 @@ class TrasladoPolicy
             return false;
         }
         if ($traslado->estado->value == 'recibido') {
+            if ($user->hasRole('auxiliar')) {
+                return false;
+            }
+
             if ($user->bodegas->contains('id', $traslado->entrada_id) && $user->can('confirm_traslado')) {
                 return true;
             }
@@ -151,6 +155,10 @@ class TrasladoPolicy
 
     public static function confirm(User $user, Traslado $traslado): bool
     {
+        if ($user->hasRole('auxiliar')) {
+            return false;
+        }
+
         $estadosPermitidos = ['recibido'];
 
         return $user->can('confirm_traslado') && in_array($traslado->estado->value, $estadosPermitidos) && $user->bodegas->contains('id', $traslado->entrada_id);
