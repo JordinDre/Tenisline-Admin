@@ -40,7 +40,6 @@ class ListInventarios extends ListRecords
                                 ->whereHas('user', fn ($q) => $q->where('user_id', auth()->id())
                                 )
                                 ->whereNotIn('bodega', ['Mal estado', 'Traslado'])
-                                ->where('bodega', 'not like', '%bodega%')
                         )
                         ->searchable()
                         ->preload()
