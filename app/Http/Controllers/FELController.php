@@ -333,7 +333,7 @@ class FELController extends Controller
                         </dte:Totales>
                         <dte:Complementos>
                         <dte:Complemento IDComplemento="TEXT" NombreComplemento="TEXT" URIComplemento="TEXT">
-                            <cno:ReferenciasNota xmlns:cno="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0" FechaEmisionDocumentoOrigen="'.Carbon::parse($orden->factura->fel_fecha)->format('Y-m-d').'" MotivoAjuste="'.$motivo.'" NumeroAutorizacionDocumentoOrigen="'.$orden->factura->fel_uuid.'" NumeroDocumentoOrigen="'.$orden->factura->fel_serie.'" SerieDocumentoOrigen="'.$orden->factura->fel_numero.'" Version="0.0" xsi:schemaLocation="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0 C:\Users\User\Desktop\FEL\Esquemas\GT_Complemento_Referencia_Nota-0.1.0.xsd"></cno:ReferenciasNota>
+                            <cno:ReferenciasNota xmlns:cno="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0" FechaEmisionDocumentoOrigen="'.Carbon::parse($orden->factura->fel_fecha)->format('Y-m-d').'" MotivoAjuste="'.$motivo.'" NumeroAutorizacionDocumentoOrigen="'.$orden->factura->fel_uuid.'" NumeroDocumentoOrigen="'.$orden->factura->fel_numero.'" SerieDocumentoOrigen="'.$orden->factura->fel_serie.'" Version="0.0" xsi:schemaLocation="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0 C:\Users\User\Desktop\FEL\Esquemas\GT_Complemento_Referencia_Nota-0.1.0.xsd"></cno:ReferenciasNota>
                         </dte:Complemento>
                         </dte:Complementos>
                     </dte:DatosEmision>
@@ -657,7 +657,7 @@ class FELController extends Controller
                         </dte:Totales>
                         <dte:Complementos>
                         <dte:Complemento IDComplemento="TEXT" NombreComplemento="TEXT" URIComplemento="TEXT">
-                            <cno:ReferenciasNota xmlns:cno="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0" FechaEmisionDocumentoOrigen="'.Carbon::parse($venta->factura->fel_fecha)->format('Y-m-d').'" MotivoAjuste="'.$motivo.'" NumeroAutorizacionDocumentoOrigen="'.$venta->factura->fel_uuid.'" NumeroDocumentoOrigen="'.$venta->factura->fel_serie.'" SerieDocumentoOrigen="'.$venta->factura->fel_numero.'" Version="0.0" xsi:schemaLocation="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0 C:\Users\User\Desktop\FEL\Esquemas\GT_Complemento_Referencia_Nota-0.1.0.xsd"></cno:ReferenciasNota>
+                            <cno:ReferenciasNota xmlns:cno="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0" FechaEmisionDocumentoOrigen="'.Carbon::parse($venta->factura->fel_fecha)->format('Y-m-d').'" MotivoAjuste="'.$motivo.'" NumeroAutorizacionDocumentoOrigen="'.$venta->factura->fel_uuid.'" NumeroDocumentoOrigen="'.$venta->factura->fel_numero.'" SerieDocumentoOrigen="'.$venta->factura->fel_serie.'" Version="0.0" xsi:schemaLocation="http://www.sat.gob.gt/face2/ComplementoReferenciaNota/0.1.0 C:\Users\User\Desktop\FEL\Esquemas\GT_Complemento_Referencia_Nota-0.1.0.xsd"></cno:ReferenciasNota>
                         </dte:Complemento>
                         </dte:Complementos>
                     </dte:DatosEmision>
