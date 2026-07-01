@@ -107,9 +107,13 @@ class MarchamosChart extends Widget
             ];
         }
 
+        $order = ['rojo', 'celeste', 'amarillo', 'naranja', 'verde'];
         $marchamosDisponibles = collect($costosPorMarchamo)
             ->keys()
-            ->sort()
+            ->sortBy(function ($marchamo) use ($order) {
+                $pos = array_search(strtolower($marchamo), $order);
+                return $pos !== false ? $pos : 999;
+            })
             ->values()
             ->toArray();
 

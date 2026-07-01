@@ -81,10 +81,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         Select::make('marchamo')
                             ->options([
                                 'rojo' => 'ROJO',
-                                'naranja' => 'NARANJA',
                                 'celeste' => 'CELESTE',
-                                'verde' => 'VERDE',
                                 'amarillo' => 'AMARILLO',
+                                'naranja' => 'NARANJA',
+                                'verde' => 'VERDE',
                             ])
                             ->native(false)
                             ->required(),
@@ -518,10 +518,10 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->label('Marchamo')
                     ->options([
                         'rojo' => 'ROJO',
-                        'naranja' => 'NARANJA',
                         'celeste' => 'CELESTE',
-                        'verde' => 'VERDE',
                         'amarillo' => 'AMARILLO',
+                        'naranja' => 'NARANJA',
+                        'verde' => 'VERDE',
                     ])
                     ->multiple(),
 

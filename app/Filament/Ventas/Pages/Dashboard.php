@@ -43,7 +43,8 @@ class Dashboard extends \Filament\Pages\Dashboard
 
                                 return array_combine(range(1, $daysInMonth), range(1, $daysInMonth));
                             })
-                            ->default(now()->day),
+                            ->default(now()->day)
+                            ->reactive(),
                     ])
                     ->columns(3),
                 Section::make('Filtros de Datos')
