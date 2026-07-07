@@ -241,7 +241,7 @@ trait ManageDiscountLogic
         return false;
     }
 
-    protected function idMenorCostoElegible(array $detalles): ?int
+    protected function idsMenorCostoElegibles(array $detalles): array
     {
         $productos = $this->mapProductosDesdeDetalles($detalles);
 
@@ -250,30 +250,50 @@ trait ManageDiscountLogic
         });
 
         if ($productosValidos->isEmpty()) {
-            return null;
+            return [];
         }
 
         $precios = $productosValidos->pluck('precio_venta')->unique();
 
         if ($precios->count() === 1) {
-            return null; 
+            return [];
         }
 
-        return $productosValidos
-            ->sortBy('precio_venta')
-            ->first()
-            ->id ?? null;
+        $totalPares = $this->totalPares($detalles);
+        $permitidos = $this->paresPermitidos($totalPares);
+
+        if ($permitidos <= 0) {
+            return [];
+        }
+
+        $cantidadPorProducto = collect($detalles)
+            ->groupBy('producto_id')
+            ->map(fn ($items) => collect($items)->sum(fn ($i) => (int) ($i['cantidad'] ?? 0)));
+
+        $acumulado = 0;
+        $ids = [];
+
+        foreach ($productosValidos->sortBy('precio_venta') as $producto) {
+            if ($acumulado >= $permitidos) {
+                break;
+            }
+
+            $ids[] = $producto->id;
+            $acumulado += (int) ($cantidadPorProducto[$producto->id] ?? 1);
+        }
+
+        return $ids;
     }
 
     protected function esProductoMenorCostoElegible(int $productoId, array $detalles): bool
     {
-        $minId = $this->idMenorCostoElegible($detalles);
+        $ids = $this->idsMenorCostoElegibles($detalles);
 
-        if ($minId === null) {
+        if (empty($ids)) {
             return true;
         }
 
-        return $productoId === $minId;
+        return in_array($productoId, $ids, true);
     }
 
     protected function totalPares(array $detalles): int
