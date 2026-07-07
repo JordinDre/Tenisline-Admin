@@ -546,26 +546,39 @@ class CreateVenta extends CreateRecord
                                                         'normal' => 'Precio Normal (Q'.$producto->precio_venta.')',
                                                     ];
 
-                                                    if ($producto->precio_liquidacion > 0) {
+                                                    $detalles = $get('../../detalles') ?? [];
+                                                    $currentUuid = $get('uuid') ?? null;
+
+                                                    $haySegundoPar = collect($detalles)->contains(function ($item) use ($currentUuid) {
+                                                        return (($item['uuid'] ?? null) !== $currentUuid)
+                                                            && ($item['tipo_precio'] ?? null) === 'segundo_par';
+                                                    });
+
+                                                    $hayOtrasOfertas = collect($detalles)->contains(function ($item) use ($currentUuid) {
+                                                        return (($item['uuid'] ?? null) !== $currentUuid)
+                                                            && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
+                                                    });
+
+                                                    if ($producto->precio_liquidacion > 0 && !$haySegundoPar) {
                                                         $precioCalculado = self::calcularPrecioLiquidacion($producto);
                                                         $precios['liquidacion'] = 'Liquidación ('.$producto->precio_liquidacion.'% descuento → Q'.$precioCalculado.')';
                                                     }
 
-                                                    if ($producto->precio_oferta > 0) {
+                                                    if ($producto->precio_oferta > 0 && !$haySegundoPar) {
                                                         $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
                                                     }
 
-                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_venta > 0) {
+                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_venta > 0 && !$hayOtrasOfertas) {
                                                         $precioCalculado = self::calcularPrecioSegundoPar($producto);
                                                         $precios['segundo_par'] = 'Segundo Par ('.$producto->precio_segundo_par.'% descuento → Q'.$precioCalculado.')';
                                                     }
 
-                                                    if ($producto->precio_descuento > 0) {
+                                                    if ($producto->precio_descuento > 0 && !$haySegundoPar) {
                                                         $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
                                                     }
 
                                                     $clienteId = $get('../../cliente_id');
-                                                    if ($clienteId) {
+                                                    if ($clienteId && !$haySegundoPar) {
                                                         $roles = \App\Models\User::with('roles')
                                                             ->find($clienteId)?->getRoleNames() ?? collect();
 
@@ -632,6 +645,19 @@ class CreateVenta extends CreateRecord
                                                             return (($item['uuid'] ?? null) !== $currentUuid)
                                                                 && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
                                                         });
+
+                                                        if ($hayOtrasOfertasEnOtros) {
+                                                            Notification::make()
+                                                                ->title('Conflicto de promociones')
+                                                                ->body('No puedes aplicar el descuento de "Segundo Par" si ya hay otros productos con descuento o promoción.')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
 
                                                         $permitidos = $this->paresPermitidos($totalPares);
                                                         $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
@@ -701,6 +727,19 @@ class CreateVenta extends CreateRecord
                                                                     && ($item['tipo_precio'] ?? null) === 'segundo_par';
                                                             });
 
+                                                        if ($haySegundoParEnOtros) {
+                                                            Notification::make()
+                                                                ->title('Conflicto de promociones')
+                                                                ->body('No puedes aplicar esta promoción si ya hay productos con descuento de "Segundo Par".')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
                                                         $precio = $producto->precio_venta;
                                                         switch ($state) {
                                                             case 'oferta':
@@ -752,6 +791,28 @@ class CreateVenta extends CreateRecord
                                                                 ->body('Solo los clientes de apertura pueden usar esta promoción.')
                                                                 ->danger()
                                                                 ->send();
+                                                            $set('tipo_precio', 'normal');
+                                                            $set('precio', $producto->precio_venta);
+                                                            $set('precio_base', $producto->precio_venta);
+                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
+                                                            $set('oferta_cliente_20', false);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        $haySegundoParEnOtros = collect($detalles)
+                                                            ->contains(function ($item) use ($currentUuid) {
+                                                                return (($item['uuid'] ?? null) !== $currentUuid)
+                                                                    && ($item['tipo_precio'] ?? null) === 'segundo_par';
+                                                            });
+
+                                                        if ($haySegundoParEnOtros) {
+                                                            Notification::make()
+                                                                ->title('Conflicto de promociones')
+                                                                ->body('No puedes aplicar el descuento de "Cliente Apertura" si ya hay productos con descuento de "Segundo Par".')
+                                                                ->danger()->send();
+
                                                             $set('tipo_precio', 'normal');
                                                             $set('precio', $producto->precio_venta);
                                                             $set('precio_base', $producto->precio_venta);
@@ -1145,6 +1206,17 @@ class CreateVenta extends CreateRecord
                         'total' => 'Las ventas no pueden ser mayores a Q'.Factura::CF.' cuando "Facturar CF" está activo o el NIT del cliente es "CF".',
                     ]);
                 }
+            }
+
+            // Validar que no se mezclen promociones (segundo_par y apertura_20 u otras)
+            $detallesData = $this->data['detalles'] ?? [];
+            $tieneSegundoPar = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par');
+            $tieneOtrasPromos = collect($detallesData)->contains(fn ($d) => in_array($d['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true));
+
+            if ($tieneSegundoPar && $tieneOtrasPromos) {
+                throw ValidationException::withMessages([
+                    'total' => 'No se puede combinar el descuento de "Segundo Par" con otras promociones o descuentos en la misma venta.',
+                ]);
             }
         } catch (\Exception $e) {
             Notification::make()
