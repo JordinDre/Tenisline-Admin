@@ -10,6 +10,7 @@ use App\Models\Orden;
 use App\Models\Pago;
 use App\Models\TipoPago;
 use App\Models\User;
+use App\Models\ValeRegalo;
 use App\Models\Venta;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Closure;
@@ -92,7 +93,38 @@ class PagoResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->live()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->afterStateUpdated(function (Set $set, $state) {
+                                $tipo = optional(TipoPago::find($state))->tipo_pago;
+                                if ($tipo !== 'VALE DE REGALO') {
+                                    $set('vale_regalo_id', null);
+                                }
+                            }),
+                        Select::make('vale_regalo_id')
+                            ->label('Vale de Regalo')
+                            ->visible(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago === 'VALE DE REGALO')
+                            ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago === 'VALE DE REGALO')
+                            ->options(function ($record) {
+                                return ValeRegalo::where('estado', 'disponible')
+                                    ->when($record?->vale_regalo_id, fn ($q) => $q->orWhere('id', $record->vale_regalo_id))
+                                    ->get()
+                                    ->mapWithKeys(fn ($vale) => [
+                                        $vale->id => "No. {$vale->correlativo} - Q{$vale->monto} (De: {$vale->de} / Para: {$vale->para})"
+                                    ]);
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, $state) {
+                                if ($state) {
+                                    $vale = ValeRegalo::find($state);
+                                    if ($vale) {
+                                        $set('monto', $vale->monto);
+                                        $set('total', $vale->monto);
+                                        $set('no_documento', $vale->correlativo);
+                                    }
+                                }
+                            }),
                     ]),
                 Grid::make(2)
                     ->schema([
@@ -168,7 +200,7 @@ class PagoResource extends Resource implements HasShieldPermissions
                             ->required(),
                         Select::make('banco_id')
                             ->label('Banco')
-                            ->required()
+                            ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago !== 'VALE DE REGALO')
                             ->searchable()
                             ->preload()
                             ->relationship(

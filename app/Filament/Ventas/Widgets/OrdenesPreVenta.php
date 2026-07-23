@@ -14,7 +14,7 @@ class OrdenesPreVenta extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $pollingInterval = '10s';
+    protected static ?string $pollingInterval = '120s';
 
     protected static ?string $heading = 'Ordenes Pre-Venta';
 

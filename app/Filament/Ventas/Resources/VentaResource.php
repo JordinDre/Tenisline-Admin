@@ -10,6 +10,7 @@ use App\Models\Direccion;
 use Filament\Forms\Get;
 use App\Models\Producto;
 use App\Models\TipoPago;
+use App\Models\ValeRegalo;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Services\GuatexService;
@@ -259,14 +260,45 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->defaultItems(1)
                                 ->columns(7)
                                 ->schema([
-                                    Select::make('tipo_pago_id')
-                                        ->label('Forma de Pago')
-                                        ->relationship('tipo_pago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
-                                        ->required()
-                                        ->live()
-                                        ->columnSpan(['sm' => 1, 'md' => 1])
-                                        ->searchable()
-                                        ->preload(),
+                                     Select::make('tipo_pago_id')
+                                         ->label('Forma de Pago')
+                                         ->relationship('tipo_pago', 'tipo_pago', fn (Builder $query) => $query->whereIn('tipo_pago', TipoPago::FORMAS_PAGO_VENTA))
+                                         ->required()
+                                         ->live()
+                                         ->columnSpan(['sm' => 1, 'md' => 1])
+                                         ->searchable()
+                                         ->preload()
+                                         ->afterStateUpdated(function (\Filament\Forms\Set $set, $state) {
+                                             $tipo = optional(TipoPago::find($state))->tipo_pago;
+                                             if ($tipo !== 'VALE DE REGALO') {
+                                                 $set('vale_regalo_id', null);
+                                             }
+                                         }),
+                                     Select::make('vale_regalo_id')
+                                         ->label('Vale de Regalo')
+                                         ->columnSpan(['sm' => 1, 'md' => 2])
+                                         ->visible(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago === 'VALE DE REGALO')
+                                         ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago === 'VALE DE REGALO')
+                                         ->options(function ($record) {
+                                             return ValeRegalo::where('estado', 'disponible')
+                                                 ->when($record?->vale_regalo_id, fn ($q) => $q->orWhere('id', $record->vale_regalo_id))
+                                                 ->get()
+                                                 ->mapWithKeys(fn ($vale) => [
+                                                     $vale->id => "No. {$vale->correlativo} - Q{$vale->monto} (De: {$vale->de} / Para: {$vale->para})"
+                                                 ]);
+                                         })
+                                         ->searchable()
+                                         ->preload()
+                                         ->live()
+                                         ->afterStateUpdated(function (\Filament\Forms\Set $set, $state) {
+                                             if ($state) {
+                                                 $vale = ValeRegalo::find($state);
+                                                 if ($vale) {
+                                                     $set('monto', $vale->monto);
+                                                     $set('no_documento', $vale->correlativo);
+                                                 }
+                                             }
+                                         }),
                                     TextInput::make('monto')
                                         ->label('Monto')
                                         ->prefix('Q')
@@ -276,30 +308,11 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->required(),
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
-                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA'])),
-                                    /* TextInput::make('no_autorizacion')
-                                        ->label('No. Autorización')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    TextInput::make('no_auditoria')
-                                        ->label('No. Auditoría')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    TextInput::make('afiliacion')
-                                        ->label('Afiliación')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    Select::make('cuotas')
-                                        ->options([1 => 1, 3 => 3, 6 => 6, 9 => 9, 12 => 12])
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 7 && $get('tipo_pago_id') != null)
-                                        ->required(),
-                                    TextInput::make('nombre_cuenta')
-                                        ->visible(fn(Get $get) => $get('tipo_pago_id') == 6 && $get('tipo_pago_id') != null)
-                                        ->required(), */
+                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA', 'VALE DE REGALO'])),
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA']))
+                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA', 'VALE DE REGALO']))
                                         ->relationship('banco', 'banco', function ($query) {
                                             return $query->whereIn('banco', Banco::BANCOS_DISPONIBLES);
                                         })

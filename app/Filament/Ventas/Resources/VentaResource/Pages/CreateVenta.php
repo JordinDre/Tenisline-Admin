@@ -16,6 +16,7 @@ use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\TipoPago;
 use App\Models\User;
+use App\Models\ValeRegalo;
 use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -1077,6 +1078,36 @@ class CreateVenta extends CreateRecord
                                                 $set('nombre_tarjeta', null);
                                                 $set('ult_dgt', null);
                                             }
+
+                                            $tipo = optional(TipoPago::find($state))->tipo_pago;
+                                            if ($tipo !== 'VALE DE REGALO') {
+                                                $set('vale_regalo_id', null);
+                                            }
+                                        }),
+                                    Select::make('vale_regalo_id')
+                                        ->label('Vale de Regalo')
+                                        ->columnSpan(['sm' => 1, 'md' => 2])
+                                        ->visible(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago === 'VALE DE REGALO')
+                                        ->required(fn (Get $get) => optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago === 'VALE DE REGALO')
+                                        ->options(function () {
+                                            return ValeRegalo::where('estado', 'disponible')
+                                                ->get()
+                                                ->mapWithKeys(fn ($vale) => [
+                                                    $vale->id => "No. {$vale->correlativo} - Q{$vale->monto} (De: {$vale->de} / Para: {$vale->para})"
+                                                ]);
+                                        })
+                                        ->searchable()
+                                        ->preload()
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, $state) {
+                                            if ($state) {
+                                                $vale = ValeRegalo::find($state);
+                                                if ($vale) {
+                                                    $set('monto', $vale->monto);
+                                                    $set('total', $vale->monto);
+                                                    $set('no_documento', $vale->correlativo);
+                                                }
+                                            }
                                         }),
                                     TextInput::make('nombre_tarjeta')
                                         ->label('Nombre de la Tarjeta')
@@ -1109,7 +1140,7 @@ class CreateVenta extends CreateRecord
                                     TextInput::make('no_documento')
                                         ->label('No. Documento o Autorización')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA']))
+                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA', 'VALE DE REGALO']))
                                         ->rules([
                                             fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) {
                                                 // Solo validar si el valor no está vacío
@@ -1126,7 +1157,7 @@ class CreateVenta extends CreateRecord
                                     Select::make('banco_id')
                                         ->label('Banco')
                                         ->columnSpan(['sm' => 1, 'md' => 2])
-                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA']))
+                                        ->required(fn (Get $get) => ! in_array(optional(TipoPago::find($get('tipo_pago_id')))->tipo_pago, ['CONTADO', 'PAGO CONTRA ENTREGA', 'VALE DE REGALO']))
                                         ->searchable()
                                         ->preload()
                                         ->relationship(

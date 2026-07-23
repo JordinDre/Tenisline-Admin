@@ -337,6 +337,8 @@ class PDFController extends Controller
             ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
+    private static ?string $defaultImageBase64 = null;
+
     private function getImageAsBase64($producto)
     {
         try {
@@ -344,16 +346,18 @@ class PDFController extends Controller
                 ? config('filesystems.disks.s3.url').$producto->imagenes[0]
                 : public_path('images/icono.png');
 
-            // Si es una URL externa, intentar obtener el contenido
             if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-                $imageContent = @file_get_contents($imageUrl);
-                if ($imageContent !== false) {
+                $context = stream_context_create([
+                    'http' => ['timeout' => 2],
+                    'https' => ['timeout' => 2],
+                ]);
+                $imageContent = @file_get_contents($imageUrl, false, $context, 0, 500000);
+                if ($imageContent !== false && ! empty($imageContent)) {
                     $mimeType = $this->getMimeTypeFromContent($imageContent);
 
                     return 'data:'.$mimeType.';base64,'.base64_encode($imageContent);
                 }
             } else {
-                // Si es una ruta local
                 if (file_exists($imageUrl)) {
                     $imageContent = file_get_contents($imageUrl);
                     $mimeType = $this->getMimeTypeFromContent($imageContent);
@@ -365,12 +369,16 @@ class PDFController extends Controller
             // En caso de error, usar imagen por defecto
         }
 
-        // Fallback a imagen por defecto
+        if (self::$defaultImageBase64 !== null) {
+            return self::$defaultImageBase64;
+        }
+
         $defaultImagePath = public_path('images/icono.png');
         if (file_exists($defaultImagePath)) {
             $imageContent = file_get_contents($defaultImagePath);
+            self::$defaultImageBase64 = 'data:image/png;base64,'.base64_encode($imageContent);
 
-            return 'data:image/png;base64,'.base64_encode($imageContent);
+            return self::$defaultImageBase64;
         }
 
         return '';
