@@ -14,7 +14,7 @@ class ResumenVentas extends BaseWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $pollingInterval = '10s';
+    protected static ?string $pollingInterval = null;
 
     protected static ?int $sort = 1;
 

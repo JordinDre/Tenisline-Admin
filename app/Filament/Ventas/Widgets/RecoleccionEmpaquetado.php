@@ -12,7 +12,7 @@ class RecoleccionEmpaquetado extends BaseWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $pollingInterval = '10s';
+    protected static ?string $pollingInterval = '120s';
 
     protected static ?int $sort = 1;
 

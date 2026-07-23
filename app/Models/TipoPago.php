@@ -42,6 +42,7 @@ class TipoPago extends Model
         'TARJETA 6 CUOTAS',
         'DEPÓSITO',
         'TRANSFERENCIA',
+        'VALE DE REGALO',
     ];
 
     public const FORMAS_PAGO = [
@@ -50,6 +51,7 @@ class TipoPago extends Model
         'CHEQUE',
         'TARJETA',
         'NOTA DE CRÉDITO',
+        'VALE DE REGALO',
     ];
 
     public const FORMAS_PAGO_ARRAY = [

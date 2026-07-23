@@ -16,8 +16,8 @@ class ReporteController extends Controller
 {
     public function VentasGeneral(Request $request)
     {
-        $fecha_inicial = $request->fecha_inicial ?? $request->fecha_incial;
-        $fecha_final = $request->fecha_final ?? $request->fecha_final;
+        $fecha_inicial = $request->fecha_inicial ?? $request->fecha_incial ?? now()->startOfMonth()->toDateString();
+        $fecha_final = $request->fecha_final ?? now()->toDateString();
 
         $sql = "
         WITH base AS (
@@ -74,6 +74,7 @@ class ReporteController extends Controller
     ";
 
         $data = DB::select($sql, [$fecha_inicial, $fecha_final]);
+        gc_collect_cycles();
 
         return Excel::download(
             new ReporteVentasGeneralExport($data),
