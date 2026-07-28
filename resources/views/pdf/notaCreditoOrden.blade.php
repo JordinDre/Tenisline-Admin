@@ -69,7 +69,7 @@
                     </div>
                     <div>
                         @if ($orden->facturar_cf)
-                            {{ @$orden->cliente->name }}
+                            {{ @$orden->cliente->name . (@$orden->cliente->apellido ? ' ' . @$orden->cliente->apellido : '') }}
                         @else
                             Razon Social: {{ @$orden->cliente->razon_social }}
                         @endif
