@@ -36,7 +36,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->prefechado }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->estado }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->cliente->nit ?? 'N/A' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">{{ $orden->cliente->name ?? 'N/A' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ $orden->cliente ? trim($orden->cliente->name . ($orden->cliente->apellido ? ' ' . $orden->cliente->apellido : '')) : 'N/A' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->cliente->razon_social ?? 'N/A' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->asesor->name ?? 'N/A' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ $orden->tipo_envio }}</td>

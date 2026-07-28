@@ -100,7 +100,7 @@
         <div>Código Cliente: {{ $venta->cliente->id }}</div>
         <div>NIT: {{ $venta->cliente->nit }}</div>
         <div class="descripcion">Razón Social: {{ $venta->cliente->razon_social }}</div>
-        <div class="descripcion">Nombre Comercial: {{ $venta->cliente->name }}</div>
+        <div class="descripcion">Nombre Comercial: {{ $venta->cliente->name . ($venta->cliente->apellido ? ' ' . $venta->cliente->apellido : '') }}</div>
         {{-- <div>Contacto: {{ @$venta->cliente->telefono }}</div> --}}
         <div>Teléfono: {{ @$venta->cliente->telefono }}</div>
     </section>

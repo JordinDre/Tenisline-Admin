@@ -125,7 +125,7 @@
             </tr>
             <tr>
                 <td><b>Razón Social:</b> {{ @$orden->cliente->razon_social }}</td>
-                <td><b>Nombre Comercial:</b> {{ @$orden->cliente->name }}</td>
+                <td><b>Nombre Comercial:</b> {{ @$orden->cliente->name . (@$orden->cliente->apellido ? ' ' . @$orden->cliente->apellido : '') }}</td>
             </tr>
         </table>
     </div>

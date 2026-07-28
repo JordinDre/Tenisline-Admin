@@ -135,7 +135,7 @@
                 </div>
                 <div class="descripcion">
                     @if ($venta->facturar_cf)
-                        {{ @$venta->cliente->name }}
+                        {{ @$venta->cliente->name . (@$venta->cliente->apellido ? ' ' . @$venta->cliente->apellido : '') }}
                     @else
                         @if ($venta->cliente->nit)
                             Razon Social: {{ @$venta->cliente->razon_social }}
