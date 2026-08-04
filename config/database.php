@@ -62,6 +62,14 @@ return [
             ]) : [],
             'dump' => [
                 'useSingleTransaction' => true,
+                'excludeTables' => [
+                    'activity_log',
+                    'failed_jobs',
+                    'notifications',
+                    'password_reset_tokens',
+                    'kardex',
+                    'personal_access_tokens',
+                ],
             ],
         ],
 
