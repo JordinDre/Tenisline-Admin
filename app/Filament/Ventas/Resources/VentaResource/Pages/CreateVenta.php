@@ -70,6 +70,9 @@ class CreateVenta extends CreateRecord
             case 'segundo_par':
                 $precioBase = $this->calcularPrecioSegundoPar($producto);
                 break;
+            case 'segundo_par_marchamo':
+                $precioBase = $this->calcularPrecioSegundoParMarchamo($producto);
+                break;
             case 'apertura_20':
                 $precioBase = round($producto->precio_venta * 0.80, 2);
                 break;
@@ -555,6 +558,11 @@ class CreateVenta extends CreateRecord
                                                             && ($item['tipo_precio'] ?? null) === 'segundo_par';
                                                     });
 
+                                                    $haySegundoParMarchamo = collect($detalles)->contains(function ($item) use ($currentUuid) {
+                                                        return (($item['uuid'] ?? null) !== $currentUuid)
+                                                            && ($item['tipo_precio'] ?? null) === 'segundo_par_marchamo';
+                                                    });
+
                                                     $hayOtrasOfertas = collect($detalles)->contains(function ($item) use ($currentUuid) {
                                                         return (($item['uuid'] ?? null) !== $currentUuid)
                                                             && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
@@ -562,12 +570,12 @@ class CreateVenta extends CreateRecord
 
                                                     $esMarchamoRojo = strtolower($producto->marchamo ?? '') === 'rojo';
 
-                                                    if ($producto->precio_liquidacion > 0 && (!$haySegundoPar || $esMarchamoRojo)) {
+                                                    if ($producto->precio_liquidacion > 0 && (!$haySegundoPar || $esMarchamoRojo) && !$haySegundoParMarchamo) {
                                                         $precioCalculado = self::calcularPrecioLiquidacion($producto);
                                                         $precios['liquidacion'] = 'Liquidación ('.$producto->precio_liquidacion.'% descuento → Q'.$precioCalculado.')';
                                                     }
 
-                                                    if ($producto->precio_oferta > 0 && !$haySegundoPar) {
+                                                    if ($producto->precio_oferta > 0 && !$haySegundoPar && !$haySegundoParMarchamo) {
                                                         $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
                                                     }
 
@@ -589,17 +597,23 @@ class CreateVenta extends CreateRecord
                                                         }
                                                     }
 
-                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo) {
+                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo && !$haySegundoParMarchamo) {
                                                         $precioCalculado = self::calcularPrecioSegundoPar($producto);
                                                         $precios['segundo_par'] = 'Segundo Par ('.$producto->precio_segundo_par.'% descuento → Q'.$precioCalculado.')';
                                                     }
 
-                                                    if ($producto->precio_descuento > 0 && !$haySegundoPar) {
+                                                    $grupoMarchamoProducto = $this->grupoMarchamo($producto->marchamo ?? null);
+                                                    if ($grupoMarchamoProducto !== null && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo && !$haySegundoPar && !$haySegundoParMarchamo) {
+                                                        $precioCalculado = round($producto->precio_venta * 0.5, 2);
+                                                        $precios['segundo_par_marchamo'] = 'Segundo Par 50% (Marchamo) (50% descuento → Q'.$precioCalculado.')';
+                                                    }
+
+                                                    if ($producto->precio_descuento > 0 && !$haySegundoPar && !$haySegundoParMarchamo) {
                                                         $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
                                                     }
 
                                                     $clienteId = $get('../../cliente_id');
-                                                    if ($clienteId && !$haySegundoPar) {
+                                                    if ($clienteId && !$haySegundoPar && !$haySegundoParMarchamo) {
                                                         $roles = \App\Models\User::with('roles')
                                                             ->find($clienteId)?->getRoleNames() ?? collect();
 
@@ -668,7 +682,7 @@ class CreateVenta extends CreateRecord
                                                         $productosOtros = \App\Models\Producto::whereIn('id', $productoIdsOtros)->get()->keyBy('id');
 
                                                         foreach ($otrosDetalles as $item) {
-                                                            if (in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true)) {
+                                                            if (in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20', 'segundo_par_marchamo'], true)) {
                                                                 $pOtro = $productosOtros->get($item['producto_id'] ?? null);
                                                                 $esMRLiq = $item['tipo_precio'] === 'liquidacion' && $pOtro && strtolower($pOtro->marchamo ?? '') === 'rojo';
                                                                 if (!$esMRLiq) {
@@ -751,12 +765,52 @@ class CreateVenta extends CreateRecord
                                                         return;
                                                     }
 
+                                                    if ($state === 'segundo_par_marchamo') {
+                                                        $detalles = $this->getDetallesArray($get);
+                                                        $currentUuid = $get('uuid') ?? null;
+
+                                                        $resultado = $this->evaluarSegundoParMarchamo(
+                                                            $producto,
+                                                            $detalles,
+                                                            fn ($item) => ($item['uuid'] ?? null) === $currentUuid
+                                                        );
+
+                                                        if (! $resultado['ok']) {
+                                                            Notification::make()
+                                                                ->title('Descuento no aplicable')
+                                                                ->body($resultado['motivo'] ?? 'Esta promoción no aplica para esta combinación de productos.')
+                                                                ->danger()->send();
+
+                                                            $set('tipo_precio', 'normal');
+                                                            $this->restoreOriginalPrice($get, $set);
+                                                            $this->updateOrderTotals($get, $set);
+
+                                                            return;
+                                                        }
+
+                                                        $precioBase = $this->calcularPrecioSegundoParMarchamo($producto);
+                                                        $descuento5 = (bool) $get('5%');
+                                                        $precioFinal = $this->calcularPrecioDetalle((int) $producto->id, 'segundo_par_marchamo', $cantidadActual, $descuento5);
+
+                                                        $set('precio', $precioFinal);
+                                                        $set('precio_base', $precioBase);
+                                                        $set('subtotal', round($precioFinal * $cantidadActual, 2));
+                                                        $this->updateOrderTotals($get, $set);
+
+                                                        Notification::make()
+                                                            ->title('Segundo Par 50% (Marchamo) aplicado')
+                                                            ->body('Se aplicó el 50% de descuento sobre el precio de venta.')
+                                                            ->success()->send();
+
+                                                        return;
+                                                    }
+
                                                     // Si seleccionan alguna oferta distinta a segundo_par (oferta, liquidacion, descuento)
                                                     if (in_array($state, ['oferta', 'liquidacion', 'descuento'])) {
                                                         $haySegundoParEnOtros = collect($detalles)
                                                             ->contains(function ($item) use ($currentUuid) {
                                                                 return (($item['uuid'] ?? null) !== $currentUuid)
-                                                                    && ($item['tipo_precio'] ?? null) === 'segundo_par';
+                                                                    && in_array($item['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true);
                                                             });
 
                                                         $esMarchamoRojo = strtolower($producto->marchamo ?? '') === 'rojo';
@@ -838,7 +892,7 @@ class CreateVenta extends CreateRecord
                                                         $haySegundoParEnOtros = collect($detalles)
                                                             ->contains(function ($item) use ($currentUuid) {
                                                                 return (($item['uuid'] ?? null) !== $currentUuid)
-                                                                    && ($item['tipo_precio'] ?? null) === 'segundo_par';
+                                                                    && in_array($item['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true);
                                                             });
 
                                                         if ($haySegundoParEnOtros) {
@@ -1285,7 +1339,7 @@ class CreateVenta extends CreateRecord
                 return $p && strtolower($p->marchamo ?? '') === 'rojo';
             };
 
-            $tieneSegundoPar = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par');
+            $tieneSegundoPar = collect($detallesData)->contains(fn ($d) => in_array($d['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true));
             $tieneOtrasPromos = collect($detallesData)->contains(function ($d) use ($esMarchamoRojoLiq) {
                 if ($esMarchamoRojoLiq($d)) {
                     return false;
@@ -1299,8 +1353,41 @@ class CreateVenta extends CreateRecord
                 ]);
             }
 
+            $tieneSegundoParClasico = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par');
+            $tieneSegundoParMarchamo = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par_marchamo');
+
+            if ($tieneSegundoParClasico && $tieneSegundoParMarchamo) {
+                throw ValidationException::withMessages([
+                    'total' => 'No se puede combinar el "Segundo Par" clásico con "Segundo Par 50% (Marchamo)" en la misma venta.',
+                ]);
+            }
+
+            // Re-validar cada línea con "Segundo Par 50% (Marchamo)" contra las reglas de grupos de color y precio.
+            foreach ($detallesData as $indice => $detalle) {
+                if (($detalle['tipo_precio'] ?? null) !== 'segundo_par_marchamo') {
+                    continue;
+                }
+
+                $productoDetalle = $productos->get($detalle['producto_id'] ?? null);
+                if (! $productoDetalle) {
+                    continue;
+                }
+
+                $resultado = $this->evaluarSegundoParMarchamo(
+                    $productoDetalle,
+                    $detallesData,
+                    fn ($item, $key) => $key === $indice
+                );
+
+                if (! $resultado['ok']) {
+                    throw ValidationException::withMessages([
+                        'total' => $resultado['motivo'] ?? 'La promoción "Segundo Par 50% (Marchamo)" no es válida para esta combinación de productos.',
+                    ]);
+                }
+            }
+
             // Validar restricción de Marchamo Rojo: requiere un par a precio normal por cada par en liquidación.
-            // Si también hay segundo_par, la suma de segundo_par y liquidaciones de Marchamo Rojo no puede exceder el total de pares a precio normal.
+            // Si también hay segundo_par o segundo_par_marchamo, la suma no puede exceder el total de pares a precio normal.
             $cantNormal = collect($detallesData)
                 ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'normal')
                 ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
@@ -1309,14 +1396,18 @@ class CreateVenta extends CreateRecord
                 ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par')
                 ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
 
+            $cantSegundoParMarchamo = collect($detallesData)
+                ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par_marchamo')
+                ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
+
             $cantMarchamoRojoLiq = collect($detallesData)
                 ->filter(fn ($d) => $esMarchamoRojoLiq($d))
                 ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
 
-            if ($cantMarchamoRojoLiq > 0) {
-                if ($cantSegundoPar + $cantMarchamoRojoLiq > $cantNormal) {
+            if ($cantMarchamoRojoLiq > 0 || $cantSegundoParMarchamo > 0) {
+                if ($cantSegundoPar + $cantMarchamoRojoLiq + $cantSegundoParMarchamo > $cantNormal) {
                     throw ValidationException::withMessages([
-                        'total' => 'Para aplicar la liquidación de Marchamo Rojo a Q100 (o el descuento de Segundo Par), debe llevar un par a precio normal por cada par en promoción. Actualmente no tiene suficientes pares a precio normal.',
+                        'total' => 'Para aplicar la liquidación de Marchamo Rojo a Q100, el "Segundo Par" o "Segundo Par 50% (Marchamo)", debe llevar un par a precio normal por cada par en promoción. Actualmente no tiene suficientes pares a precio normal.',
                     ]);
                 }
             }

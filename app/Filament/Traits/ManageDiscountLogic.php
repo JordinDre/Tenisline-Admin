@@ -193,6 +193,99 @@ trait ManageDiscountLogic
         return round($precio, 2);
     }
 
+    protected const MARCHAMO_GRUPO_A = ['naranja', 'verde'];
+    protected const MARCHAMO_GRUPO_B = ['rojo', 'celeste', 'amarillo'];
+
+    protected function grupoMarchamo(?string $marchamo): ?string
+    {
+        $valor = strtolower(trim($marchamo ?? ''));
+
+        if (in_array($valor, self::MARCHAMO_GRUPO_A, true)) {
+            return 'A';
+        }
+
+        if (in_array($valor, self::MARCHAMO_GRUPO_B, true)) {
+            return 'B';
+        }
+
+        return null;
+    }
+
+    protected function calcularPrecioSegundoParMarchamo(\App\Models\Producto $p): float
+    {
+        $precioVenta = (float) ($p->precio_venta ?? 0);
+
+        if ($precioVenta <= 0.0) {
+            return $precioVenta;
+        }
+
+        return round($precioVenta * 0.5, 2);
+    }
+
+    /**
+     * Evalúa si el descuento "Segundo Par 50% (Marchamo)" aplica al producto dado, dentro del
+     * contexto de una venta con exactamente 2 pares:
+     * - Validación 1: 1 par Grupo A (naranja/verde) + 1 par Grupo B (rojo/celeste/amarillo)
+     *   → 50% al par del Grupo B, sin importar el precio.
+     * - Validación 2: 2 pares del Grupo B → 50% al de menor precio de los dos.
+     *
+     * @param  callable(array, mixed): bool  $esActual  Predicado que identifica, dentro de $detalles, cuál es la fila actual.
+     * @return array{ok: bool, motivo: ?string}
+     */
+    protected function evaluarSegundoParMarchamo(\App\Models\Producto $producto, array $detalles, callable $esActual): array
+    {
+        $grupoActual = $this->grupoMarchamo($producto->marchamo ?? null);
+
+        if ($grupoActual === null) {
+            return ['ok' => false, 'motivo' => 'Este producto no tiene un marchamo válido (rojo, celeste, amarillo, naranja o verde) para esta promoción.'];
+        }
+
+        $totalPares = $this->totalPares($detalles);
+        if ($totalPares !== 2) {
+            return ['ok' => false, 'motivo' => 'Esta promoción solo aplica cuando la venta tiene exactamente 2 pares en total.'];
+        }
+
+        $otrosDetalles = collect($detalles)->reject($esActual)->values();
+
+        if ($otrosDetalles->count() !== 1 || (int) ($otrosDetalles->first()['cantidad'] ?? 0) !== 1) {
+            return ['ok' => false, 'motivo' => 'Esta promoción requiere exactamente dos productos (un par cada uno) en la venta.'];
+        }
+
+        $otro = $otrosDetalles->first();
+
+        if (! in_array($otro['tipo_precio'] ?? 'normal', [null, 'normal'], true)) {
+            return ['ok' => false, 'motivo' => 'El otro par debe estar a precio normal para poder aplicar esta promoción.'];
+        }
+
+        $otroProducto = Producto::find($otro['producto_id'] ?? null);
+        if (! $otroProducto) {
+            return ['ok' => false, 'motivo' => 'No se pudo determinar el segundo producto de la venta.'];
+        }
+
+        $grupoOtro = $this->grupoMarchamo($otroProducto->marchamo ?? null);
+
+        if ($grupoActual === 'B' && $grupoOtro === 'A') {
+            return ['ok' => true, 'motivo' => null];
+        }
+
+        if ($grupoActual === 'B' && $grupoOtro === 'B') {
+            $precioActual = (float) ($producto->precio_venta ?? 0);
+            $precioOtro = (float) ($otroProducto->precio_venta ?? 0);
+
+            if ($precioActual > $precioOtro) {
+                return ['ok' => false, 'motivo' => 'El 50% de descuento solo puede aplicarse al par de menor precio entre los dos productos de marchamo rojo, celeste o amarillo.'];
+            }
+
+            return ['ok' => true, 'motivo' => null];
+        }
+
+        if ($grupoActual === 'A' && $grupoOtro === 'B') {
+            return ['ok' => false, 'motivo' => 'Esta promoción aplica el 50% al par de marchamo rojo, celeste o amarillo, no al de naranja/verde. Selecciónala en el otro producto.'];
+        }
+
+        return ['ok' => false, 'motivo' => 'Esta combinación de marchamos no aplica para la promoción "Segundo Par 50% (Marchamo)".'];
+    }
+
     protected function calcularPrecioLiquidacion(\App\Models\Producto $p): float
     {
         $porcentaje = (float) ($p->precio_liquidacion ?? 0); 

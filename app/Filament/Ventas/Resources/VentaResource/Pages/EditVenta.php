@@ -2,6 +2,7 @@
 
 namespace App\Filament\Ventas\Resources\VentaResource\Pages;
 
+use App\Filament\Traits\ManageDiscountLogic;
 use App\Filament\Ventas\Resources\VentaResource;
 use Filament\Actions;
 use Filament\Forms\Form;
@@ -11,6 +12,7 @@ use Kenepa\ResourceLock\Resources\Pages\Concerns\UsesResourceLock;
 class EditVenta extends EditRecord
 {
     use UsesResourceLock;
+    use ManageDiscountLogic;
 
     protected static string $resource = VentaResource::class;
 
@@ -45,7 +47,7 @@ class EditVenta extends EditRecord
                 return $p && strtolower($p->marchamo ?? '') === 'rojo';
             };
 
-            $tieneSegundoPar = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par');
+            $tieneSegundoPar = collect($detallesData)->contains(fn ($d) => in_array($d['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true));
             $tieneOtrasPromos = collect($detallesData)->contains(function ($d) use ($esMarchamoRojoLiq) {
                 if ($esMarchamoRojoLiq($d)) {
                     return false;
@@ -59,8 +61,41 @@ class EditVenta extends EditRecord
                 ]);
             }
 
+            $tieneSegundoParClasico = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par');
+            $tieneSegundoParMarchamo = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par_marchamo');
+
+            if ($tieneSegundoParClasico && $tieneSegundoParMarchamo) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'total' => 'No se puede combinar el "Segundo Par" clásico con "Segundo Par 50% (Marchamo)" en la misma venta.',
+                ]);
+            }
+
+            // Re-validar cada línea con "Segundo Par 50% (Marchamo)" contra las reglas de grupos de color y precio.
+            foreach ($detallesData as $indice => $detalle) {
+                if (($detalle['tipo_precio'] ?? null) !== 'segundo_par_marchamo') {
+                    continue;
+                }
+
+                $productoDetalle = $productos->get($detalle['producto_id'] ?? null);
+                if (! $productoDetalle) {
+                    continue;
+                }
+
+                $resultado = $this->evaluarSegundoParMarchamo(
+                    $productoDetalle,
+                    $detallesData,
+                    fn ($item, $key) => $key === $indice
+                );
+
+                if (! $resultado['ok']) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'total' => $resultado['motivo'] ?? 'La promoción "Segundo Par 50% (Marchamo)" no es válida para esta combinación de productos.',
+                    ]);
+                }
+            }
+
             // Validar restricción de Marchamo Rojo: requiere un par a precio normal por cada par en liquidación.
-            // Si también hay segundo_par, la suma de segundo_par y liquidaciones de Marchamo Rojo no puede exceder el total de pares a precio normal.
+            // Si también hay segundo_par o segundo_par_marchamo, la suma no puede exceder el total de pares a precio normal.
             $cantNormal = collect($detallesData)
                 ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'normal')
                 ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
@@ -69,14 +104,18 @@ class EditVenta extends EditRecord
                 ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par')
                 ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
 
+            $cantSegundoParMarchamo = collect($detallesData)
+                ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par_marchamo')
+                ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
+
             $cantMarchamoRojoLiq = collect($detallesData)
                 ->filter(fn ($d) => $esMarchamoRojoLiq($d))
                 ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
 
-            if ($cantMarchamoRojoLiq > 0) {
-                if ($cantSegundoPar + $cantMarchamoRojoLiq > $cantNormal) {
+            if ($cantMarchamoRojoLiq > 0 || $cantSegundoParMarchamo > 0) {
+                if ($cantSegundoPar + $cantMarchamoRojoLiq + $cantSegundoParMarchamo > $cantNormal) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'total' => 'Para aplicar la liquidación de Marchamo Rojo a Q100 (o el descuento de Segundo Par), debe llevar un par a precio normal por cada par en promoción. Actualmente no tiene suficientes pares a precio normal.',
+                        'total' => 'Para aplicar la liquidación de Marchamo Rojo a Q100, el "Segundo Par" o "Segundo Par 50% (Marchamo)", debe llevar un par a precio normal por cada par en promoción. Actualmente no tiene suficientes pares a precio normal.',
                     ]);
                 }
             }
