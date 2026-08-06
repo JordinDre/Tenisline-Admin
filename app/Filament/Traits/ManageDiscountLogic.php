@@ -223,67 +223,112 @@ trait ManageDiscountLogic
     }
 
     /**
-     * Evalúa si el descuento "Segundo Par 50% (Marchamo)" aplica al producto dado, dentro del
-     * contexto de una venta con exactamente 2 pares:
-     * - Validación 1: 1 par Grupo A (naranja/verde) + 1 par Grupo B (rojo/celeste/amarillo)
-     *   → 50% al par del Grupo B, sin importar el precio.
-     * - Validación 2: 2 pares del Grupo B → 50% al de menor precio de los dos.
+     * Agrupa, dentro de la venta, las unidades candidatas a la promoción "Segundo Par 50%
+     * (Marchamo)": filas con marchamo Grupo A (naranja/verde) o Grupo B (rojo/celeste/amarillo)
+     * cuyo tipo_precio actual es 'normal' o 'segundo_par_marchamo' (sin otra oferta activa).
      *
-     * @param  callable(array, mixed): bool  $esActual  Predicado que identifica, dentro de $detalles, cuál es la fila actual.
+     * @return array{0: int, 1: int, 2: \Illuminate\Support\Collection} [countA, countB, filasB ordenadas por precio_venta asc]
+     */
+    protected function candidatosSegundoParMarchamo(array $detalles): array
+    {
+        $productos = $this->mapProductosDesdeDetalles($detalles);
+
+        $cantidadPorProducto = collect($detalles)
+            ->filter(fn ($d) => in_array($d['tipo_precio'] ?? 'normal', [null, 'normal', 'segundo_par_marchamo'], true))
+            ->groupBy('producto_id')
+            ->map(fn ($items) => collect($items)->sum(fn ($i) => (int) ($i['cantidad'] ?? 0)));
+
+        $countA = 0;
+        $countB = 0;
+        $filasB = collect();
+
+        foreach ($cantidadPorProducto as $productoId => $cantidad) {
+            $p = $productos[$productoId] ?? null;
+            if (! $p) {
+                continue;
+            }
+
+            $grupo = $this->grupoMarchamo($p->marchamo ?? null);
+
+            if ($grupo === 'A') {
+                $countA += $cantidad;
+            } elseif ($grupo === 'B') {
+                $countB += $cantidad;
+                $filasB->push([
+                    'producto_id' => $productoId,
+                    'cantidad' => $cantidad,
+                    'precio_venta' => (float) ($p->precio_venta ?? 0),
+                ]);
+            }
+        }
+
+        return [$countA, $countB, $filasB->sortBy('precio_venta')->values()];
+    }
+
+    /**
+     * IDs de producto (Grupo B) elegibles para el 50% de "Segundo Par (Marchamo)": siempre los
+     * de menor precio, hasta el cupo disponible = floor((countA + countB) / 2), sin exceder countB.
+     * Esto implementa ambas validaciones de forma unificada:
+     * - Grupo A nunca recibe el 50% (solo sirve de "respaldo" para descontar un par del Grupo B).
+     * - Entre varios pares del Grupo B, siempre se descuentan primero los más baratos.
+     */
+    protected function idsElegiblesSegundoParMarchamo(array $detalles): array
+    {
+        [$countA, $countB, $filasB] = $this->candidatosSegundoParMarchamo($detalles);
+
+        $cupo = min(intdiv($countA + $countB, 2), $countB);
+
+        if ($cupo <= 0) {
+            return [];
+        }
+
+        $acumulado = 0;
+        $ids = [];
+
+        foreach ($filasB as $fila) {
+            if ($acumulado >= $cupo) {
+                break;
+            }
+
+            $ids[] = $fila['producto_id'];
+            $acumulado += $fila['cantidad'];
+        }
+
+        return $ids;
+    }
+
+    protected function esProductoElegibleSegundoParMarchamo(int $productoId, array $detalles): bool
+    {
+        return in_array($productoId, $this->idsElegiblesSegundoParMarchamo($detalles), true);
+    }
+
+    /**
+     * Evalúa si el descuento "Segundo Par 50% (Marchamo)" aplica al producto dado, considerando
+     * TODOS los pares de marchamo Grupo A/Grupo B en la venta (no solo 2). El 50% siempre recae
+     * en los pares del Grupo B (rojo/celeste/amarillo) de menor precio, hasta el cupo disponible:
+     * - Validación 1: cada par del Grupo A (naranja/verde) habilita el cupo para descontar un par
+     *   del Grupo B, sin importar cuál sea más caro.
+     * - Validación 2: entre pares del propio Grupo B, se descuentan siempre los de menor precio.
+     *
      * @return array{ok: bool, motivo: ?string}
      */
-    protected function evaluarSegundoParMarchamo(\App\Models\Producto $producto, array $detalles, callable $esActual): array
+    protected function evaluarSegundoParMarchamo(\App\Models\Producto $producto, array $detalles): array
     {
-        $grupoActual = $this->grupoMarchamo($producto->marchamo ?? null);
+        $grupo = $this->grupoMarchamo($producto->marchamo ?? null);
 
-        if ($grupoActual === null) {
+        if ($grupo === null) {
             return ['ok' => false, 'motivo' => 'Este producto no tiene un marchamo válido (rojo, celeste, amarillo, naranja o verde) para esta promoción.'];
         }
 
-        $totalPares = $this->totalPares($detalles);
-        if ($totalPares !== 2) {
-            return ['ok' => false, 'motivo' => 'Esta promoción solo aplica cuando la venta tiene exactamente 2 pares en total.'];
+        if ($grupo === 'A') {
+            return ['ok' => false, 'motivo' => 'Esta promoción aplica el 50% solo al par de marchamo rojo, celeste o amarillo, no al de naranja/verde.'];
         }
 
-        $otrosDetalles = collect($detalles)->reject($esActual)->values();
-
-        if ($otrosDetalles->count() !== 1 || (int) ($otrosDetalles->first()['cantidad'] ?? 0) !== 1) {
-            return ['ok' => false, 'motivo' => 'Esta promoción requiere exactamente dos productos (un par cada uno) en la venta.'];
+        if (! $this->esProductoElegibleSegundoParMarchamo($producto->id, $detalles)) {
+            return ['ok' => false, 'motivo' => 'El 50% solo puede aplicarse a los pares de marchamo rojo/celeste/amarillo de menor precio dentro del cupo disponible (se necesita un par de naranja/verde o de rojo/celeste/amarillo a precio normal por cada par en promoción).'];
         }
 
-        $otro = $otrosDetalles->first();
-
-        if (! in_array($otro['tipo_precio'] ?? 'normal', [null, 'normal'], true)) {
-            return ['ok' => false, 'motivo' => 'El otro par debe estar a precio normal para poder aplicar esta promoción.'];
-        }
-
-        $otroProducto = Producto::find($otro['producto_id'] ?? null);
-        if (! $otroProducto) {
-            return ['ok' => false, 'motivo' => 'No se pudo determinar el segundo producto de la venta.'];
-        }
-
-        $grupoOtro = $this->grupoMarchamo($otroProducto->marchamo ?? null);
-
-        if ($grupoActual === 'B' && $grupoOtro === 'A') {
-            return ['ok' => true, 'motivo' => null];
-        }
-
-        if ($grupoActual === 'B' && $grupoOtro === 'B') {
-            $precioActual = (float) ($producto->precio_venta ?? 0);
-            $precioOtro = (float) ($otroProducto->precio_venta ?? 0);
-
-            if ($precioActual > $precioOtro) {
-                return ['ok' => false, 'motivo' => 'El 50% de descuento solo puede aplicarse al par de menor precio entre los dos productos de marchamo rojo, celeste o amarillo.'];
-            }
-
-            return ['ok' => true, 'motivo' => null];
-        }
-
-        if ($grupoActual === 'A' && $grupoOtro === 'B') {
-            return ['ok' => false, 'motivo' => 'Esta promoción aplica el 50% al par de marchamo rojo, celeste o amarillo, no al de naranja/verde. Selecciónala en el otro producto.'];
-        }
-
-        return ['ok' => false, 'motivo' => 'Esta combinación de marchamos no aplica para la promoción "Segundo Par 50% (Marchamo)".'];
+        return ['ok' => true, 'motivo' => null];
     }
 
     protected function calcularPrecioLiquidacion(\App\Models\Producto $p): float

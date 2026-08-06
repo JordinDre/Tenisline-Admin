@@ -71,7 +71,7 @@ class EditVenta extends EditRecord
             }
 
             // Re-validar cada línea con "Segundo Par 50% (Marchamo)" contra las reglas de grupos de color y precio.
-            foreach ($detallesData as $indice => $detalle) {
+            foreach ($detallesData as $detalle) {
                 if (($detalle['tipo_precio'] ?? null) !== 'segundo_par_marchamo') {
                     continue;
                 }
@@ -81,11 +81,7 @@ class EditVenta extends EditRecord
                     continue;
                 }
 
-                $resultado = $this->evaluarSegundoParMarchamo(
-                    $productoDetalle,
-                    $detallesData,
-                    fn ($item, $key) => $key === $indice
-                );
+                $resultado = $this->evaluarSegundoParMarchamo($productoDetalle, $detallesData);
 
                 if (! $resultado['ok']) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
