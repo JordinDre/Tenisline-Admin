@@ -603,7 +603,7 @@ class CreateVenta extends CreateRecord
                                                     }
 
                                                     $grupoMarchamoProducto = $this->grupoMarchamo($producto->marchamo ?? null);
-                                                    if ($grupoMarchamoProducto !== null && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo && !$haySegundoPar && !$haySegundoParMarchamo) {
+                                                    if ($grupoMarchamoProducto === 'B' && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo && !$haySegundoPar && !$haySegundoParMarchamo) {
                                                         $precioCalculado = round($producto->precio_venta * 0.5, 2);
                                                         $precios['segundo_par_marchamo'] = 'Segundo Par 50% (Marchamo) (50% descuento → Q'.$precioCalculado.')';
                                                     }
@@ -767,13 +767,8 @@ class CreateVenta extends CreateRecord
 
                                                     if ($state === 'segundo_par_marchamo') {
                                                         $detalles = $this->getDetallesArray($get);
-                                                        $currentUuid = $get('uuid') ?? null;
 
-                                                        $resultado = $this->evaluarSegundoParMarchamo(
-                                                            $producto,
-                                                            $detalles,
-                                                            fn ($item) => ($item['uuid'] ?? null) === $currentUuid
-                                                        );
+                                                        $resultado = $this->evaluarSegundoParMarchamo($producto, $detalles);
 
                                                         if (! $resultado['ok']) {
                                                             Notification::make()
@@ -1363,7 +1358,7 @@ class CreateVenta extends CreateRecord
             }
 
             // Re-validar cada línea con "Segundo Par 50% (Marchamo)" contra las reglas de grupos de color y precio.
-            foreach ($detallesData as $indice => $detalle) {
+            foreach ($detallesData as $detalle) {
                 if (($detalle['tipo_precio'] ?? null) !== 'segundo_par_marchamo') {
                     continue;
                 }
@@ -1373,11 +1368,7 @@ class CreateVenta extends CreateRecord
                     continue;
                 }
 
-                $resultado = $this->evaluarSegundoParMarchamo(
-                    $productoDetalle,
-                    $detallesData,
-                    fn ($item, $key) => $key === $indice
-                );
+                $resultado = $this->evaluarSegundoParMarchamo($productoDetalle, $detallesData);
 
                 if (! $resultado['ok']) {
                     throw ValidationException::withMessages([
