@@ -101,6 +101,10 @@ class CierreResource extends Resource
 
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('No. Cierre')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('bodega.bodega')
                     ->label('Bodega')
                     ->numeric()
