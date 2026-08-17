@@ -157,6 +157,7 @@ class Cierre extends Model
     {
         return Venta::where('bodega_id', $this->bodega_id)
             ->whereBetween('created_at', [$this->apertura, $this->cierre ?? now()])
+            ->whereNotIn('estado', Venta::ESTADOS_EXCLUIDOS)
             ->whereHas('pagos', function ($q) {
                 $q->whereHas('tipoPago', function ($t) {
                     $t->whereIn('tipo_pago', [
