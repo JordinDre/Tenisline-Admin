@@ -37,8 +37,8 @@ class Dashboard extends \Filament\Pages\Dashboard
                         Select::make('dia')
                             ->label('Día')
                             ->options(function ($get) {
-                                $year = $get('year');
-                                $month = $get('mes');
+                                $year = $get('year') ?: now()->year;
+                                $month = $get('mes') ?: now()->month;
                                 $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
 
                                 return array_combine(range(1, $daysInMonth), range(1, $daysInMonth));
