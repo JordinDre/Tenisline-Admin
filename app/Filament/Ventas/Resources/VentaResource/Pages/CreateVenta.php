@@ -179,42 +179,23 @@ class CreateVenta extends CreateRecord
                             ->preload()
                             ->live()
                             ->searchable()
-                            ->required(),
-                        Select::make('condicion_pago')
-                                ->label('Condición de la venta')
-                                ->options([
-                                    'normal' => 'Normal / Crédito / Mixto',
-                                ])
-                                ->default('normal')
-                                ->live()
-                                ->dehydrated(false)
-                                /* ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                                if ($state !== 'guatex') {
+                                    return;
+                                }
 
-                                    $detalles = $get('detalles') ?? [];
+                                $pagos = $get('pagos') ?? [];
 
-                                    $nuevoSubtotal = 0;
-
-                                    foreach ($detalles as $index => $item) {
-                                        $precioBase = (float) ($item['precio_base'] ?? $item['precio'] ?? 0);
-                                        $cantidad = (int) ($item['cantidad'] ?? 1);
-
-                                        if ($state === 'contado') {
-                                            $precioFinal = round($precioBase * 0.95, 2);
-                                        } else {
-                                            $precioFinal = $precioBase;
-                                        }
-
-                                        $set("detalles.$index.precio", $precioFinal);
-                                        $set("detalles.$index.subtotal", round($precioFinal * $cantidad, 2));
-
-                                        $nuevoSubtotal += $precioFinal * $cantidad;
+                                foreach ($pagos as $key => $pago) {
+                                    $tipo = TipoPago::find($pago['tipo_pago_id'] ?? null)?->tipo_pago;
+                                    if ($tipo !== 'PRONTO PAGO') {
+                                        $pagos[$key]['tipo_pago_id'] = null;
                                     }
+                                }
 
-                                    $set('subtotal', round($nuevoSubtotal, 2));
-                                    $set('total', round($nuevoSubtotal, 2));
-
-                                    $set('pagos', []);
-                                }) */,
+                                $set('pagos', $pagos);
+                            }),
                     ]),
                     
                 Wizard::make([
@@ -1104,6 +1085,12 @@ class CreateVenta extends CreateRecord
 
                                             $condicion = $get('../../condicion_pago');
 
+                                            if ($get('../../tipo_envio') === 'guatex') {
+                                                return TipoPago::whereIn('tipo_pago', ['PRONTO PAGO'])
+                                                    ->pluck('tipo_pago', 'id')
+                                                    ->toArray();
+                                            }
+
                                             if ($condicion === 'contado') {
                                                 return TipoPago::whereIn('tipo_pago', ['CONTADO'])
                                                     ->pluck('tipo_pago', 'id')
@@ -1115,6 +1102,13 @@ class CreateVenta extends CreateRecord
                                                 ->toArray();
                                         })
                                         ->afterStateUpdated(function (Set $set, Get $get, $state) {
+
+                                            if ($get('../../tipo_envio') === 'guatex') {
+                                                $tipo = TipoPago::find($state)?->tipo_pago;
+                                                if ($tipo !== 'PRONTO PAGO') {
+                                                    $set('tipo_pago_id', null);
+                                                }
+                                            }
 
                                             if ($get('../../condicion_pago') === 'contado') {
                                                 $tipo = TipoPago::find($state)?->tipo_pago;
