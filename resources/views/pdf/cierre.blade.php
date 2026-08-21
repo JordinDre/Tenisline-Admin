@@ -76,10 +76,28 @@
             width: 25%;
             white-space: nowrap;
         }
+
+        .watermark {
+            position: fixed;
+            top: 45%;
+            left: -65px;
+            width: 350px;
+            text-align: center;
+            transform: rotate(-25deg);
+            color: red;
+            font-size: 42px;
+            font-weight: bold;
+            opacity: 0.6;
+            z-index: 1000;
+        }
     </style>
 </head>
 
 <body>
+    @if (is_null($cierre->cierre))
+        <div class="watermark">CIERRE ABIERTO</div>
+    @endif
+
     <header style="text-align: center;">
         <h3>Cierre #{{ $cierre->id }}</h3>
         <img src="{{ public_path('/images/logo.png') }}" alt="Logo"
