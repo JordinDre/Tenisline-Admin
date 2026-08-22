@@ -67,6 +67,14 @@ class TipoPago extends Model
         'CRÉDITO',
     ];
 
+    public const FORMAS_PAGO_GUATEX = [
+        'PRONTO PAGO',
+        'LINK CONTADO',
+        'LINK 2 CUOTAS',
+        'LINK 3 CUOTAS',
+        'LINK 6 CUOTAS',
+    ];
+
     public const FORMAS_PAGO_TARJETA = [
         7 => 'TARJETA',
         13 => 'LINK DE PAGO',

@@ -39,7 +39,32 @@ class Venta extends Model
     {
         return [
             'estado' => EstadoVentaStatus::class,
+            'requiere_validacion_pago' => 'boolean',
+            'requiere_evidencia_oferta20' => 'boolean',
+            'foto_evidencia_lat' => 'decimal:7',
+            'foto_evidencia_lng' => 'decimal:7',
+            'foto_evidencia_capturada_en' => 'datetime',
         ];
+    }
+
+    /**
+     * Motivos legibles por los que la venta está pendiente de validación.
+     */
+    public function motivosPendientes(): array
+    {
+        $motivos = [];
+
+        if ($this->requiere_validacion_pago) {
+            $motivos[] = 'Pago pendiente de validar';
+        }
+
+        if ($this->requiere_evidencia_oferta20) {
+            $motivos[] = $this->foto_evidencia_oferta20
+                ? 'Oferta 20% (foto subida, falta validar)'
+                : 'Oferta 20% (falta foto de evidencia)';
+        }
+
+        return $motivos;
     }
 
     public function cliente(): BelongsTo

@@ -22,6 +22,7 @@ use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
@@ -405,6 +406,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->copyable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('estado')->badge(),
+                Tables\Columns\TextColumn::make('motivo_pendiente')
+                    ->label('Motivo pendiente')
+                    ->state(fn ($record) => $record->estado === EstadoVentaStatus::ValidacionPago
+                        ? implode(' / ', $record->motivosPendientes())
+                        : null)
+                    ->color('warning')
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('tracking')
                     ->label('Tracking')
                     ->searchable()
@@ -599,8 +607,79 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->slideOver()
                         ->stickyModalHeader()
                         ->modalSubmitAction(false),
+                    Action::make('subirFotoEvidencia')
+                        ->label('Subir Foto de Evidencia')
+                        ->icon('heroicon-o-camera')
+                        ->color('warning')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            if (! $record->requiere_evidencia_oferta20 || $record->foto_evidencia_oferta20) {
+                                return false;
+                            }
+
+                            return $user
+                                && ($user->id === $record->asesor_id || $user->hasAnyRole(['admin', 'administrador', 'super_admin', 'supervisor']));
+                        })
+                        ->form([
+                            Placeholder::make('instrucciones')
+                                ->label('')
+                                ->content('Debes permitir el acceso a la cámara y a tu ubicación. La foto debe tomarse en este momento, no se permite seleccionar desde la galería.'),
+                            FileUpload::make('foto_evidencia')
+                                ->label('Foto de evidencia')
+                                ->required()
+                                ->image()
+                                ->disk(config('filesystems.disks.s3.driver'))
+                                ->directory(config('filesystems.default'))
+                                ->visibility('public')
+                                ->extraInputAttributes([
+                                    'capture' => 'environment',
+                                    'accept' => 'image/*',
+                                ])
+                                ->maxSize(5000)
+                                ->optimize('webp'),
+                            Grid::make(1)
+                                ->extraAttributes(['x-data' => '{}'])
+                                ->schema([
+                                    Hidden::make('lat')
+                                        ->required()
+                                        ->extraAttributes(['x-ref' => 'lat']),
+                                    Hidden::make('lng')
+                                        ->required()
+                                        ->extraAttributes(['x-ref' => 'lng']),
+                                    Placeholder::make('gps_js')
+                                        ->label('')
+                                        ->content(new \Illuminate\Support\HtmlString('
+                                            <div x-init="
+                                                navigator.geolocation.getCurrentPosition(
+                                                    (pos) =&gt; {
+                                                        $refs.lat.value = pos.coords.latitude;
+                                                        $refs.lat.dispatchEvent(new Event(\'input\'));
+                                                        $refs.lng.value = pos.coords.longitude;
+                                                        $refs.lng.dispatchEvent(new Event(\'input\'));
+                                                    },
+                                                    () =&gt; {}
+                                                )
+                                            "></div>
+                                        ')),
+                                ]),
+                        ])
+                        ->modalSubmitActionLabel('Guardar foto')
+                        ->action(function ($record, array $data) {
+                            $record->foto_evidencia_oferta20 = $data['foto_evidencia'];
+                            $record->foto_evidencia_lat = $data['lat'] ?: null;
+                            $record->foto_evidencia_lng = $data['lng'] ?: null;
+                            $record->foto_evidencia_capturada_en = now();
+                            $record->save();
+
+                            Notification::make()
+                                ->title('Foto de evidencia guardada')
+                                ->body('Un administrador debe validar la venta para continuar.')
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('validarPago')
-                        ->label('Validar Pago')
+                        ->label('Validar')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->visible(function ($record) {
@@ -612,19 +691,29 @@ class VentaResource extends Resource implements HasShieldPermissions
                         })
                         ->requiresConfirmation()
                         ->action(function ($record) {
+                            if ($record->requiere_evidencia_oferta20 && ! $record->foto_evidencia_oferta20) {
+                                Notification::make()
+                                    ->title('Falta la foto de evidencia')
+                                    ->body('Debe subirse la foto de evidencia antes de validar esta venta.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
                             $record->estado = 'creada';
                             $record->save();
 
                             VentaController::facturar($record);
 
                             Notification::make()
-                                ->title('Pago validado')
-                                ->body('El pago ha sido confirmado y se generó la factura.')
+                                ->title('Venta validada')
+                                ->body('La venta ha sido confirmada y se generó la factura.')
                                 ->success()
                                 ->send();
                         }),
                     Action::make('anularPago')
-                        ->label('Anular Pago')
+                        ->label('Anular Venta')
                         ->icon('heroicon-o-check-circle')
                         ->color('danger')
                         ->visible(function ($record) {
@@ -640,8 +729,8 @@ class VentaResource extends Resource implements HasShieldPermissions
                             $record->save();
 
                             Notification::make()
-                                ->title('Pago anulado')
-                                ->body('El pago ha sido anulado, la venta ha sido colocada en anuladas.')
+                                ->title('Venta anulada')
+                                ->body('La venta ha sido anulada.')
                                 ->success()
                                 ->send();
                         }),
@@ -1083,6 +1172,7 @@ class VentaResource extends Resource implements HasShieldPermissions
     public static function hayBloqueo(): bool
     {
         return Venta::where('estado', 'validacion_pago')
+            ->where('requiere_validacion_pago', true)
             ->where('created_at', '<=', now()->subHour())
             ->exists();
     }
