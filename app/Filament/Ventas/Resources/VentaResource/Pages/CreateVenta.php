@@ -189,7 +189,7 @@ class CreateVenta extends CreateRecord
 
                                 foreach ($pagos as $key => $pago) {
                                     $tipo = TipoPago::find($pago['tipo_pago_id'] ?? null)?->tipo_pago;
-                                    if ($tipo !== 'PRONTO PAGO') {
+                                    if (! in_array($tipo, TipoPago::FORMAS_PAGO_GUATEX)) {
                                         $pagos[$key]['tipo_pago_id'] = null;
                                     }
                                 }
@@ -1086,7 +1086,7 @@ class CreateVenta extends CreateRecord
                                             $condicion = $get('../../condicion_pago');
 
                                             if ($get('../../tipo_envio') === 'guatex') {
-                                                return TipoPago::whereIn('tipo_pago', ['PRONTO PAGO'])
+                                                return TipoPago::whereIn('tipo_pago', TipoPago::FORMAS_PAGO_GUATEX)
                                                     ->pluck('tipo_pago', 'id')
                                                     ->toArray();
                                             }
@@ -1105,7 +1105,7 @@ class CreateVenta extends CreateRecord
 
                                             if ($get('../../tipo_envio') === 'guatex') {
                                                 $tipo = TipoPago::find($state)?->tipo_pago;
-                                                if ($tipo !== 'PRONTO PAGO') {
+                                                if (! in_array($tipo, TipoPago::FORMAS_PAGO_GUATEX)) {
                                                     $set('tipo_pago_id', null);
                                                 }
                                             }
@@ -1416,6 +1416,9 @@ class CreateVenta extends CreateRecord
         }
         $data['estado'] = 'creada';
 
+        $cliente = ! empty($data['cliente_id']) ? User::with('roles')->find($data['cliente_id']) : null;
+        $data['requiere_evidencia_oferta20'] = $cliente?->getRoleNames()->contains('cliente_apertura') ?? false;
+
         return $data;
     }
 
@@ -1433,13 +1436,19 @@ class CreateVenta extends CreateRecord
                 }
 
                 $tipoPagoPrincipal = $this->record->pagos()->first()?->tipo_pago_id;
+                $requiereValidacionPago = in_array($tipoPagoPrincipal, [5, 9]);
 
-                if (in_array($tipoPagoPrincipal, [5, 9])) {
-                    $this->record->update(['estado' => 'validacion_pago']);
+                if ($requiereValidacionPago) {
+                    $this->record->requiere_validacion_pago = true;
+                }
+
+                if ($requiereValidacionPago || $this->record->requiere_evidencia_oferta20) {
+                    $this->record->estado = 'validacion_pago';
+                    $this->record->save();
 
                     Notification::make()
-                        ->title('Venta registrada con pago pendiente')
-                        ->body('El pago es por depósito o transferencia. Debe ser validado por un administrador antes de generar factura.')
+                        ->title('Venta registrada pendiente de validación')
+                        ->body('Motivo(s): '.implode(', ', $this->record->motivosPendientes()).'. Debe ser validada por un administrador antes de generar factura.')
                         ->warning()
                         ->send();
 

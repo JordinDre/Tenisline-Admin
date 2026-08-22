@@ -79,13 +79,14 @@
 
         .watermark {
             position: fixed;
-            top: 45%;
-            left: -65px;
-            width: 350px;
+            top: 42%;
+            left: -85px;
+            width: 400px;
             text-align: center;
             transform: rotate(-25deg);
             color: red;
-            font-size: 42px;
+            font-size: 62px;
+            line-height: 1.05;
             font-weight: bold;
             opacity: 0.6;
             z-index: 1000;

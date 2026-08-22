@@ -30,6 +30,7 @@ class BloquearSistemaPorVentaPendiente
         }
 
         $ventaBloqueante = Venta::where('estado', 'validacion_pago')
+            ->where('requiere_validacion_pago', true)
             ->where('created_at', '<=', now()->subHour())
             ->first();
 
