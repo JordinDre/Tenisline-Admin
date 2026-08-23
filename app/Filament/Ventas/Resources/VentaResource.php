@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Actions as InfolistActions;
+use Filament\Infolists\Components\Actions\Action as InfolistAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
@@ -703,12 +705,17 @@ class VentaResource extends Resource implements HasShieldPermissions
                             TextEntry::make('ubicacion_gps')
                                 ->label('Ubicación GPS')
                                 ->state(fn ($record) => ($record->foto_evidencia_lat && $record->foto_evidencia_lng)
-                                    ? "{$record->foto_evidencia_lat}, {$record->foto_evidencia_lng} (ver en el mapa)"
-                                    : 'No disponible')
-                                ->url(fn ($record) => ($record->foto_evidencia_lat && $record->foto_evidencia_lng)
-                                    ? "https://www.google.com/maps?q={$record->foto_evidencia_lat},{$record->foto_evidencia_lng}"
-                                    : null)
-                                ->openUrlInNewTab(),
+                                    ? "{$record->foto_evidencia_lat}, {$record->foto_evidencia_lng}"
+                                    : 'No disponible'),
+                            InfolistActions::make([
+                                InfolistAction::make('abrirEnGoogleMaps')
+                                    ->label('Abrir ubicación en Google Maps')
+                                    ->icon('heroicon-o-map-pin')
+                                    ->color('info')
+                                    ->url(fn ($record) => "https://www.google.com/maps?q={$record->foto_evidencia_lat},{$record->foto_evidencia_lng}")
+                                    ->openUrlInNewTab()
+                                    ->visible(fn ($record) => $record->foto_evidencia_lat && $record->foto_evidencia_lng),
+                            ]),
                         ]),
                     Action::make('validarPago')
                         ->label('Validar')
