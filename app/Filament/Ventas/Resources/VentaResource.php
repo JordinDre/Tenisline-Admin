@@ -23,6 +23,8 @@ use Illuminate\Contracts\View\View;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
@@ -678,6 +680,32 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->success()
                                 ->send();
                         }),
+                    Action::make('verFotoEvidencia')
+                        ->label('Ver Foto de Evidencia')
+                        ->icon('heroicon-o-eye')
+                        ->color('info')
+                        ->visible(fn ($record) => filled($record->foto_evidencia_oferta20))
+                        ->modalHeading('Foto de Evidencia - Oferta 20%')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Cerrar')
+                        ->infolist([
+                            ImageEntry::make('foto_evidencia_oferta20')
+                                ->label('Foto')
+                                ->disk(config('filesystems.disks.s3.driver'))
+                                ->height(400),
+                            TextEntry::make('foto_evidencia_capturada_en')
+                                ->label('Fecha y hora de la foto')
+                                ->dateTime('d/m/Y H:i:s'),
+                            TextEntry::make('ubicacion_gps')
+                                ->label('Ubicación GPS')
+                                ->state(fn ($record) => ($record->foto_evidencia_lat && $record->foto_evidencia_lng)
+                                    ? "{$record->foto_evidencia_lat}, {$record->foto_evidencia_lng} (ver en el mapa)"
+                                    : 'No disponible')
+                                ->url(fn ($record) => ($record->foto_evidencia_lat && $record->foto_evidencia_lng)
+                                    ? "https://www.google.com/maps?q={$record->foto_evidencia_lat},{$record->foto_evidencia_lng}"
+                                    : null)
+                                ->openUrlInNewTab(),
+                        ]),
                     Action::make('validarPago')
                         ->label('Validar')
                         ->icon('heroicon-o-check-circle')
