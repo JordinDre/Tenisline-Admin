@@ -17,6 +17,8 @@ use App\Services\GuatexService;
 use App\Enums\EstadoVentaStatus;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManagerStatic as InterventionImage;
 use Filament\Forms\Components\Grid;
 use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
@@ -674,6 +676,8 @@ class VentaResource extends Resource implements HasShieldPermissions
                             $record->foto_evidencia_capturada_en = now();
                             $record->save();
 
+                            static::estamparEvidenciaEnFoto($record);
+
                             Notification::make()
                                 ->title('Foto de evidencia guardada')
                                 ->body('Un administrador debe validar la venta para continuar.')
@@ -1203,6 +1207,60 @@ class VentaResource extends Resource implements HasShieldPermissions
             ->where('requiere_validacion_pago', true)
             ->where('created_at', '<=', now()->subHour())
             ->exists();
+    }
+
+    /**
+     * Graba la ubicación GPS y la fecha/hora de captura directamente sobre los
+     * píxeles de la foto de evidencia, para que el dato viaje con la imagen
+     * aunque se descargue por separado.
+     */
+    protected static function estamparEvidenciaEnFoto(Venta $record): void
+    {
+        if (! $record->foto_evidencia_oferta20) {
+            return;
+        }
+
+        $disco = Storage::disk(config('filesystems.disks.s3.driver'));
+        $contenido = $disco->get($record->foto_evidencia_oferta20);
+
+        if (! $contenido) {
+            return;
+        }
+
+        $imagen = InterventionImage::make($contenido);
+
+        $lineas = [
+            sprintf('GPS: %s, %s', $record->foto_evidencia_lat, $record->foto_evidencia_lng),
+            $record->foto_evidencia_capturada_en->format('d/m/Y H:i:s'),
+        ];
+
+        $tamanoFuente = max(16, (int) round($imagen->width() * 0.03));
+        $alturaLinea = $tamanoFuente + 10;
+        $alturaBanda = ($alturaLinea * count($lineas)) + 10;
+        $fuente = base_path('vendor/dompdf/dompdf/lib/fonts/DejaVuSans-Bold.ttf');
+
+        $imagen->rectangle(
+            0,
+            $imagen->height() - $alturaBanda,
+            $imagen->width(),
+            $imagen->height(),
+            fn ($draw) => $draw->background('rgba(0, 0, 0, 0.55)')
+        );
+
+        $y = $imagen->height() - $alturaBanda + 5;
+
+        foreach ($lineas as $linea) {
+            $imagen->text($linea, 15, $y, function ($font) use ($fuente, $tamanoFuente) {
+                $font->file($fuente);
+                $font->size($tamanoFuente);
+                $font->color('#ffffff');
+                $font->valign('top');
+            });
+
+            $y += $alturaLinea;
+        }
+
+        $disco->put($record->foto_evidencia_oferta20, (string) $imagen->encode());
     }
 
     protected static function opcionesGuatex($direccionId): array
