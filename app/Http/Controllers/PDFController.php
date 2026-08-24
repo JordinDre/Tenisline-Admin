@@ -46,6 +46,11 @@ class PDFController extends Controller
             'bodega',
             'user',
         ])->findOrFail($id);
+
+        if ($cierre->cierre === null && ! auth()->user()->hasAnyRole(['administrador', 'super_admin', 'auxiliar'])) {
+            abort(403, 'El cierre aún está abierto. Solo se puede imprimir una vez cerrado.');
+        }
+
         $html = view('pdf.cierre', compact('cierre'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');
 

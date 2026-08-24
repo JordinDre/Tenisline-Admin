@@ -182,6 +182,7 @@ class CierreResource extends Resource
                     }),
                 Action::make('cierre')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->visible(fn (Cierre $record) => $record->cierre !== null || Auth::user()->hasAnyRole(['administrador', 'super_admin', 'auxiliar']))
                     ->modalContent(fn (Cierre $record): View => view(
                         'filament.pages.actions.iframe',
                         [
