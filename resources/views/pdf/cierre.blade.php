@@ -194,6 +194,10 @@
         <br>
         <div><strong>TOTAL GENERAL:</strong> Q{{ number_format(($cierre->total_ventas - $cierre->total_caja_chica), 2) }}</div>
     </section>
+
+    <div style="text-align: center; margin-top: 10px; font-size: 10px;">
+        Impreso: {{ now()->format('d/m/Y H:i:s') }}
+    </div>
 </body>
 
 </html>
