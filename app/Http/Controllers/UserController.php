@@ -50,10 +50,10 @@ class UserController extends Controller
             Notification::make()
                 ->color('danger')
                 ->title('Error de conexión')
-                ->body('No se pudo conectar con el servicio de consulta de NIT.')
+                ->body('No se pudo conectar con el servicio de consulta de NIT. Intenta de nuevo.')
                 ->danger()
                 ->send();
-            return 'CF';
+            return null;
         }
 
         curl_close($curl);
