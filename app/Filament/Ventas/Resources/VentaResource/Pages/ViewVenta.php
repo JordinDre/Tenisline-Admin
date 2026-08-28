@@ -26,6 +26,7 @@ class ViewVenta extends ViewRecord
             Actions\EditAction::make(),
             Action::make('venta')
                 ->icon('heroicon-o-document-arrow-down')
+                ->visible(fn () => auth()->user()?->hasAnyRole(['administrador', 'super_admin', 'auxiliar']))
                 ->modalContent(fn (Venta $record): View => view(
                     'filament.pages.actions.iframe',
                     [

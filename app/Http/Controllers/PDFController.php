@@ -30,6 +30,10 @@ class PDFController extends Controller
 
     public function venta($id)
     {
+        if (! auth()->user()?->hasAnyRole(['administrador', 'super_admin', 'auxiliar'])) {
+            abort(403, 'Solo un administrador o auxiliar puede generar el comprobante de venta. Usa la factura.');
+        }
+
         $venta = Venta::find($id);
         $html = view('pdf.venta', compact('venta'))->render();
         $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 227, 842], 'portrait');

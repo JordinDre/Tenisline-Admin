@@ -596,6 +596,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                     Tables\Actions\ViewAction::make(),
                     Action::make('venta')
                         ->icon('heroicon-o-document-arrow-down')
+                        ->visible(fn () => Auth::user()?->hasAnyRole(['administrador', 'super_admin', 'auxiliar']))
                         ->modalContent(fn (Venta $record): View => view(
                             'filament.pages.actions.iframe',
                             [
