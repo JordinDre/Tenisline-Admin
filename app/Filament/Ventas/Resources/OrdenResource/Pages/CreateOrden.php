@@ -453,12 +453,40 @@ class CreateOrden extends CreateRecord
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
-                                        ->disabled(fn (Get $get) => $get('total') >= Factura::CF)
+                                        ->disabled(function (Get $get) {
+                                            if ($get('total') >= Factura::CF) {
+                                                return true;
+                                            }
+
+                                            $cliente = $get('cliente_id') ? User::find($get('cliente_id')) : null;
+                                            $nit = strtoupper(trim($cliente->nit ?? ''));
+
+                                            return $nit !== '' && $nit !== 'CF';
+                                        })
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             if (! $get('facturar_cf')) {
                                                 $set('comp', false);
                                             }
                                         })
+                                        ->rules([
+                                            fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                                if (! $value) {
+                                                    return;
+                                                }
+
+                                                $clienteId = $get('cliente_id');
+                                                if (! $clienteId) {
+                                                    return;
+                                                }
+
+                                                $cliente = User::find($clienteId);
+                                                $nit = strtoupper(trim($cliente->nit ?? ''));
+
+                                                if ($nit !== '' && $nit !== 'CF') {
+                                                    $fail('El cliente tiene un NIT registrado, no puede facturarse como Consumidor Final (CF).');
+                                                }
+                                            },
+                                        ])
                                         ->label('Facturar CF'),
                                     Toggle::make('comp')
                                         ->inline(false)

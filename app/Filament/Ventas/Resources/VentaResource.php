@@ -495,27 +495,23 @@ class VentaResource extends Resource implements HasShieldPermissions
                     ->sortable()
                     ->copyable()
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->visible(fn ($record) => $record && ! $record->debeOcultarFactura()),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('factura.fel_numero')
                     ->label('Fel No. DTE')
                     ->sortable()
                     ->copyable()
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->visible(fn ($record) => $record && ! $record->debeOcultarFactura()),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('factura.fel_serie')
                     ->label('Fel No. Serie')
                     ->sortable()
                     ->copyable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->visible(fn ($record) => $record && ! $record->debeOcultarFactura()),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('factura.fel_fecha')
                     ->label('Fel Fecha')
                     ->dateTime('d/m/Y H:i:s')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->visible(fn ($record) => $record && ! $record->debeOcultarFactura()),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('anulacion.fel_uuid')
                     ->label('Anulación Autorización')
@@ -740,16 +736,27 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 return;
                             }
 
-                            $record->estado = 'creada';
-                            $record->save();
+                            try {
+                                DB::transaction(function () use ($record) {
+                                    $record->estado = 'creada';
+                                    $record->save();
 
-                            VentaController::facturar($record);
+                                    VentaController::facturar($record);
+                                });
 
-                            Notification::make()
-                                ->title('Venta validada')
-                                ->body('La venta ha sido confirmada y se generó la factura.')
-                                ->success()
-                                ->send();
+                                Notification::make()
+                                    ->title('Venta validada')
+                                    ->body('La venta ha sido confirmada y se generó la factura.')
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('Error al validar la venta')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+                            }
                         }),
                     Action::make('anularPago')
                         ->label('Anular Venta')
@@ -775,8 +782,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         }),
                     Action::make('factura')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->visible(fn ($record) => $record && Auth::user()->can('factura', $record) && ! $record->debeOcultarFactura())
-                        ->disabled(fn ($record) => $record && $record->debeOcultarFactura())
+                        ->visible(fn ($record) => $record && Auth::user()->can('factura', $record))
                         ->modalContent(fn (Venta $record): View => view(
                             'filament.pages.actions.iframe',
                             [

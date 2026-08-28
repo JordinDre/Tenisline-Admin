@@ -42,8 +42,7 @@ class ViewVenta extends ViewRecord
                 ->modalSubmitAction(false),
             Action::make('factura')
                 ->icon('heroicon-o-document-arrow-down')
-                ->visible(fn ($record) => $record && auth()->user()->can('factura', $record) && ! $record->debeOcultarFactura())
-                ->disabled(fn ($record) => $record && $record->debeOcultarFactura())
+                ->visible(fn ($record) => $record && auth()->user()->can('factura', $record))
                 ->modalContent(fn (Venta $record): View => view(
                     'filament.pages.actions.iframe',
                     [

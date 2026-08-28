@@ -123,11 +123,6 @@ class PDFController extends Controller
     {
         $venta = Venta::with('pagos')->findOrFail($id);
 
-        // Validar que no se permita generar el PDF de factura si se cumplen las condiciones
-        if ($venta->debeOcultarFactura()) {
-            abort(403, 'No se puede generar el comprobante de factura para esta venta. Solo se permite generar el comprobante de venta.');
-        }
-
         $emisor = $venta->bodega_id == 6 ? config('services.fel2')
         : ($venta->bodega_id == 1 ? config('services.fel')
         : ($venta->bodega_id == 8 ? config('services.fel3') : config('services.fel')));

@@ -53,42 +53,7 @@ class CreateVenta extends CreateRecord
             return 0.0;
         }
 
-        $precioBase = (float) $producto->precio_venta;
-
-        switch ($tipoPrecio) {
-            case 'oferta':
-                $precioBase = ($producto->precio_oferta > 0) ? (float) $producto->precio_oferta : (float) $producto->precio_venta;
-                break;
-            case 'liquidacion':
-                $precioBase = $this->calcularPrecioLiquidacion($producto);
-                break;
-            case 'descuento':
-                if ($producto->precio_descuento > 0) {
-                    $precioBase = round($producto->precio_venta * (1 - ($producto->precio_descuento / 100)), 2);
-                }
-                break;
-            case 'segundo_par':
-                $precioBase = $this->calcularPrecioSegundoPar($producto);
-                break;
-            case 'segundo_par_marchamo':
-                $precioBase = $this->calcularPrecioSegundoParMarchamo($producto);
-                break;
-            case 'apertura_20':
-                $precioBase = round($producto->precio_venta * 0.80, 2);
-                break;
-            default:
-                $precioBase = (float) $producto->precio_venta;
-                break;
-        }
-
-        $precioFinal = $precioBase;
-
-        if ($descuento5) {
-            $descuento5Porciento = round($producto->precio_venta * 0.05, 2);
-            $precioFinal = round($precioBase - $descuento5Porciento, 2);
-        }
-
-        return (float) $precioFinal;
+        return (float) $producto->precio_venta;
     }
 
     public function form(Form $form): Form
@@ -219,12 +184,18 @@ class CreateVenta extends CreateRecord
                                         ->afterStateUpdated(function (Set $set, Get $get, $state) {
                                             $set('detalles', []);
 
-                                            // Validar si el cliente tiene NIT "CF" y el total actual excede 2500
                                             if ($state) {
                                                 $cliente = User::find($state);
                                                 if ($cliente) {
                                                     $nit = strtoupper(trim($cliente->nit ?? ''));
                                                     $total = (float) ($get('total') ?? 0);
+
+                                                    // El cliente tiene NIT real: no puede facturarse como CF
+                                                    if ($nit !== '' && $nit !== 'CF') {
+                                                        $set('facturar_cf', false);
+                                                    }
+
+                                                    // Validar si el cliente tiene NIT "CF" y el total actual excede 2500
                                                     if ($nit === 'CF' && $total > Factura::CF) {
                                                         Notification::make()
                                                             ->title('Venta excede el límite')
@@ -274,7 +245,9 @@ class CreateVenta extends CreateRecord
                                                 ])
                                                 ->afterStateUpdated(function (Set $set, $state) {
                                                     $nit = UserController::nit($state);
-                                                    $set('razon_social', $nit);
+                                                    if ($nit !== null) {
+                                                        $set('razon_social', $nit);
+                                                    }
                                                 }),
                                             TextInput::make('razon_social')
                                                 ->required()
@@ -383,11 +356,18 @@ class CreateVenta extends CreateRecord
                                     Toggle::make('facturar_cf')
                                         ->inline(false)
                                         ->live()
-                                        ->disabled(fn (Get $get) => $get('total') >= Factura::CF)
+                                        ->disabled(function (Get $get) {
+                                            if ($get('total') >= Factura::CF) {
+                                                return true;
+                                            }
+
+                                            $cliente = $get('cliente_id') ? User::find($get('cliente_id')) : null;
+                                            $nit = strtoupper(trim($cliente->nit ?? ''));
+
+                                            return $nit !== '' && $nit !== 'CF';
+                                        })
                                         ->afterStateUpdated(function (Set $set, Get $get) {
-                                            if (! $get('facturar_cf')) {
-                                                $set('comp', false);
-                                            } else {
+                                            if ($get('facturar_cf')) {
                                                 // Validar que el total no exceda 2500 cuando se activa facturar_cf
                                                 $total = (float) ($get('total') ?? 0);
                                                 if ($total > Factura::CF) {
@@ -406,9 +386,14 @@ class CreateVenta extends CreateRecord
                                                 if ($clienteId) {
                                                     $cliente = User::find($clienteId);
                                                     $razonSocial = strtoupper(trim($cliente->razon_social ?? ''));
+                                                    $nit = strtoupper(trim($cliente->nit ?? ''));
 
                                                     if ($razonSocial === 'CF' && ! $value) {
                                                         $fail('El cliente tiene razón social CF, debe activar esta opción.');
+                                                    }
+
+                                                    if ($value && $nit !== '' && $nit !== 'CF') {
+                                                        $fail('El cliente tiene un NIT registrado, no puede facturarse como Consumidor Final (CF).');
                                                     }
                                                 }
 
@@ -423,15 +408,6 @@ class CreateVenta extends CreateRecord
                                         ])
                                         ->label('Facturar CF')
                                         ->columnSpan(2),
-                                        Toggle::make('comp')
-                                            ->inline(false)
-                                            ->live()
-                                            ->afterStateUpdated(function (Set $set, Get $get) {
-                                            })
-                                            ->rules([
-                                            ])
-                                            ->label('COMP')
-                                            ->columnSpan(1),
                                     Repeater::make('detalles')
                                         ->label('')
                                         ->relationship()
@@ -444,30 +420,6 @@ class CreateVenta extends CreateRecord
                                             'xl' => 2,
                                         ])
                                         ->schema([
-                                            Toggle::make('5%')
-                                                ->inline(false)
-                                                ->live()
-                                                ->visible(fn (Get $get) => $get('../../condicion_pago') === 'contado')
-                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                                    $productoId = $get('producto_id');
-                                                    if (!$productoId) {
-                                                        return;
-                                                    }
-
-                                                    $tipoPrecio = $get('tipo_precio') ?? 'normal';
-                                                    $cantidad = (int) ($get('cantidad') ?? 1);
-
-                                                    $precioBase = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, $cantidad, false);
-                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, $cantidad, (bool) $state);
-
-                                                    $set('precio', $precioFinal);
-                                                    $set('precio_base', $precioBase);
-                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
-                                                    $this->updateOrderTotals($get, $set);
-                                                })
-                                                ->label('5% extra')
-                                                ->dehydrated(false)
-                                                ->columnSpan(1),
                                             Hidden::make('uuid')
                                                 ->default(fn () => (string) Str::uuid())
                                                 ->dehydrated(false),
@@ -486,10 +438,9 @@ class CreateVenta extends CreateRecord
                                                 ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6])
                                                 ->live()
                                                 ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                                    $clienteId = $get('../../cliente_id');
                                                     $cantidad = (int) ($get('cantidad') ?? 1);
 
-                                                    if (! $clienteId || ! $state) {
+                                                    if (! $state) {
                                                         return;
                                                     }
 
@@ -497,427 +448,18 @@ class CreateVenta extends CreateRecord
                                                     if (!$producto) {
                                                         return;
                                                     }
-                                                    $precioOriginal = $producto->precio_venta;
-                                                    $precioOferta = $producto->precio_oferta;
 
-                                                    $set('precio_original', $precioOriginal);
-                                                    $set('precio_oferta', $precioOferta);
-                                                    $set('tipo_precio', 'normal');
+                                                    $precio = (float) $producto->precio_venta;
 
-                                                    $descuento5 = (bool) $get('5%');
-                                                    $precioBase = $this->calcularPrecioDetalle((int) $state, 'normal', $cantidad, false);
-                                                    $precioFinal = $this->calcularPrecioDetalle((int) $state, 'normal', $cantidad, $descuento5);
-
-                                                    $set('precio', $precioFinal);
-                                                    $set('precio_base', $precioBase);
-                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
+                                                    $set('precio', $precio);
+                                                    $set('precio_base', $precio);
+                                                    $set('subtotal', round($precio * $cantidad, 2));
                                                     $this->updateOrderTotals($get, $set);
                                                 })
                                                 ->required(),
-                                            Select::make('tipo_precio')
-                                                ->label('Tipo de precio')
-                                                ->options(function (Get $get) {
-                                                    $productoId = $get('producto_id');
-                                                    if (! $productoId) {
-                                                        return [];
-                                                    }
-
-                                                    $producto = \App\Models\Producto::find($productoId);
-                                                    if (! $producto) {
-                                                        return [];
-                                                    }
-
-                                                    $precios = [
-                                                        'normal' => 'Precio Normal (Q'.$producto->precio_venta.')',
-                                                    ];
-
-                                                    $detalles = $get('../../detalles') ?? [];
-                                                    $currentUuid = $get('uuid') ?? null;
-
-                                                    $haySegundoPar = collect($detalles)->contains(function ($item) use ($currentUuid) {
-                                                        return (($item['uuid'] ?? null) !== $currentUuid)
-                                                            && ($item['tipo_precio'] ?? null) === 'segundo_par';
-                                                    });
-
-                                                    $haySegundoParMarchamo = collect($detalles)->contains(function ($item) use ($currentUuid) {
-                                                        return (($item['uuid'] ?? null) !== $currentUuid)
-                                                            && ($item['tipo_precio'] ?? null) === 'segundo_par_marchamo';
-                                                    });
-
-                                                    $hayOtrasOfertas = collect($detalles)->contains(function ($item) use ($currentUuid) {
-                                                        return (($item['uuid'] ?? null) !== $currentUuid)
-                                                            && in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
-                                                    });
-
-                                                    $esMarchamoRojo = strtolower($producto->marchamo ?? '') === 'rojo';
-
-                                                    if ($producto->precio_liquidacion > 0 && (!$haySegundoPar || $esMarchamoRojo) && !$haySegundoParMarchamo) {
-                                                        $precioCalculado = self::calcularPrecioLiquidacion($producto);
-                                                        $precios['liquidacion'] = 'Liquidación ('.$producto->precio_liquidacion.'% descuento → Q'.$precioCalculado.')';
-                                                    }
-
-                                                    if ($producto->precio_oferta > 0 && !$haySegundoPar && !$haySegundoParMarchamo) {
-                                                        $precios['oferta'] = 'Precio Oferta (Q'.$producto->precio_oferta.')';
-                                                    }
-
-                                                    $tieneOtrasOfertasNoMarchamoRojo = false;
-                                                    if ($hayOtrasOfertas) {
-                                                        $otrosDetalles = collect($detalles)->filter(fn($item) => ($item['uuid'] ?? null) !== $currentUuid);
-                                                        $productoIdsOtros = $otrosDetalles->pluck('producto_id')->filter()->unique();
-                                                        $productosOtros = \App\Models\Producto::whereIn('id', $productoIdsOtros)->get()->keyBy('id');
-
-                                                        foreach ($otrosDetalles as $item) {
-                                                            if (in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true)) {
-                                                                $pOtro = $productosOtros->get($item['producto_id'] ?? null);
-                                                                $esMRLiq = $item['tipo_precio'] === 'liquidacion' && $pOtro && strtolower($pOtro->marchamo ?? '') === 'rojo';
-                                                                if (!$esMRLiq) {
-                                                                    $tieneOtrasOfertasNoMarchamoRojo = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    if ($producto->precio_segundo_par > 0 && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo && !$haySegundoParMarchamo) {
-                                                        $precioCalculado = self::calcularPrecioSegundoPar($producto);
-                                                        $precios['segundo_par'] = 'Segundo Par ('.$producto->precio_segundo_par.'% descuento → Q'.$precioCalculado.')';
-                                                    }
-
-                                                    $grupoMarchamoProducto = $this->grupoMarchamo($producto->marchamo ?? null);
-                                                    if ($grupoMarchamoProducto === 'B' && $producto->precio_venta > 0 && !$tieneOtrasOfertasNoMarchamoRojo && !$haySegundoPar && !$haySegundoParMarchamo) {
-                                                        $precioCalculado = round($producto->precio_venta * 0.5, 2);
-                                                        $precios['segundo_par_marchamo'] = 'Segundo Par 50% (Marchamo) (50% descuento → Q'.$precioCalculado.')';
-                                                    }
-
-                                                    if ($producto->precio_descuento > 0 && !$haySegundoPar && !$haySegundoParMarchamo) {
-                                                        $precios['descuento'] = 'Precio con Descuento '.$producto->precio_descuento.'%';
-                                                    }
-
-                                                    $clienteId = $get('../../cliente_id');
-                                                    if ($clienteId && !$haySegundoPar && !$haySegundoParMarchamo) {
-                                                        $roles = \App\Models\User::with('roles')
-                                                            ->find($clienteId)?->getRoleNames() ?? collect();
-
-                                                        if ($roles->contains('cliente_apertura')) {
-                                                            $precios['apertura_20'] = 'Cliente Apertura (20% descuento)';
-                                                        }
-                                                    }
-
-                                                    return $precios;
-                                                })
-                                                ->reactive()
-                                                ->dehydrated(false)
-                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                                    $productoId = $get('producto_id');
-                                                    if (! $productoId) {
-                                                        return;
-                                                    }
-
-                                                    $producto = \App\Models\Producto::find($productoId);
-                                                    if (! $producto) {
-                                                        return;
-                                                    }
-
-                                                    $detalles = $get('../../detalles') ?? [];
-                                                    $currentUuid = $get('uuid') ?? null;
-                                                    $cantidadActual = (int) ($get('cantidad') ?? 1);
-
-                                                    // total pares en toda la orden (suma de cantidades)
-                                                    $totalPares = collect($detalles)->sum(fn ($i) => (int) ($i['cantidad'] ?? 0));
-
-                                                    if ($state === 'segundo_par') {
-                                                        $detalles = $this->getDetallesArray($get);
-                                                        $currentUuid = $get('uuid') ?? null;
-                                                        $cantidadActual = (int) ($get('cantidad') ?? 1);
-
-                                                        if (! $this->hayAlgunoConPorcentajeSegundoPar($detalles)) {
-                                                            Notification::make()
-                                                                ->title('Oferta no disponible')
-                                                                ->body('Ningún producto tiene configurado porcentaje de "Segundo Par".')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $totalPares = $this->totalPares($detalles);
-                                                        if ($totalPares < 2) {
-                                                            Notification::make()
-                                                                ->title('Descuento no aplicable')
-                                                                ->body('El precio de "Segundo Par" requiere al menos 2 pares en total.')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $hayOtrasOfertasEnOtros = false;
-                                                        $otrosDetalles = collect($detalles)->filter(fn($item) => ($item['uuid'] ?? null) !== $currentUuid);
-                                                        $productoIdsOtros = $otrosDetalles->pluck('producto_id')->filter()->unique();
-                                                        $productosOtros = \App\Models\Producto::whereIn('id', $productoIdsOtros)->get()->keyBy('id');
-
-                                                        foreach ($otrosDetalles as $item) {
-                                                            if (in_array($item['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20', 'segundo_par_marchamo'], true)) {
-                                                                $pOtro = $productosOtros->get($item['producto_id'] ?? null);
-                                                                $esMRLiq = $item['tipo_precio'] === 'liquidacion' && $pOtro && strtolower($pOtro->marchamo ?? '') === 'rojo';
-                                                                if (!$esMRLiq) {
-                                                                    $hayOtrasOfertasEnOtros = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-
-                                                        if ($hayOtrasOfertasEnOtros) {
-                                                            Notification::make()
-                                                                ->title('Conflicto de promociones')
-                                                                ->body('No puedes aplicar el descuento de "Segundo Par" si ya hay otros productos con descuento o promoción.')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $permitidos = $this->paresPermitidos($totalPares);
-                                                        $yaConSegundoPar = $this->paresConSegundoParExcluyendo($detalles, $currentUuid);
-                                                        $despuesDeEste = $yaConSegundoPar + $cantidadActual;
-
-                                                        if ($despuesDeEste > $permitidos) {
-                                                            Notification::make()
-                                                                ->title('Límite alcanzado')
-                                                                ->body("Solo se puede aplicar 'Segundo Par' a {$permitidos} par(es) en total.")
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        if (! $this->esProductoMenorCostoElegible((int) $producto->id, $detalles)) {
-                                                            Notification::make()
-                                                                ->title('Regla del menor precio')
-                                                                ->body('El descuento de "Segundo Par" solo aplica al producto de menor precio de venta en la orden.')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        if (($producto->precio_segundo_par ?? 0) <= 0 || ($producto->precio_venta ?? 0) <= 0) {
-                                                            Notification::make()
-                                                                ->title('Descuento no aplicable')
-                                                                ->body('Este producto no tiene porcentaje de "Segundo Par" o precio de venta configurado.')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $precioBase = $this->calcularPrecioSegundoPar($producto);
-                                                        $descuento5 = (bool) $get('5%');
-                                                        $precioFinal = $this->calcularPrecioDetalle((int) $producto->id, 'segundo_par', $cantidadActual, $descuento5);
-
-                                                        $set('precio', $precioFinal);
-                                                        $set('precio_base', $precioBase);
-                                                        $set('subtotal', round($precioFinal * $cantidadActual, 2));
-                                                        $this->updateOrderTotals($get, $set);
-
-                                                        Notification::make()
-                                                            ->title('Segundo Par aplicado')
-                                                            ->body('Se aplicó el descuento del '.$producto->precio_segundo_par.'% sobre el precio de venta.')
-                                                            ->success()->send();
-
-                                                        return;
-                                                    }
-
-                                                    if ($state === 'segundo_par_marchamo') {
-                                                        $detalles = $this->getDetallesArray($get);
-
-                                                        $resultado = $this->evaluarSegundoParMarchamo($producto, $detalles);
-
-                                                        if (! $resultado['ok']) {
-                                                            Notification::make()
-                                                                ->title('Descuento no aplicable')
-                                                                ->body($resultado['motivo'] ?? 'Esta promoción no aplica para esta combinación de productos.')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $precioBase = $this->calcularPrecioSegundoParMarchamo($producto);
-                                                        $descuento5 = (bool) $get('5%');
-                                                        $precioFinal = $this->calcularPrecioDetalle((int) $producto->id, 'segundo_par_marchamo', $cantidadActual, $descuento5);
-
-                                                        $set('precio', $precioFinal);
-                                                        $set('precio_base', $precioBase);
-                                                        $set('subtotal', round($precioFinal * $cantidadActual, 2));
-                                                        $this->updateOrderTotals($get, $set);
-
-                                                        Notification::make()
-                                                            ->title('Segundo Par 50% (Marchamo) aplicado')
-                                                            ->body('Se aplicó el 50% de descuento sobre el precio de venta.')
-                                                            ->success()->send();
-
-                                                        return;
-                                                    }
-
-                                                    // Si seleccionan alguna oferta distinta a segundo_par (oferta, liquidacion, descuento)
-                                                    if (in_array($state, ['oferta', 'liquidacion', 'descuento'])) {
-                                                        $haySegundoParEnOtros = collect($detalles)
-                                                            ->contains(function ($item) use ($currentUuid) {
-                                                                return (($item['uuid'] ?? null) !== $currentUuid)
-                                                                    && in_array($item['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true);
-                                                            });
-
-                                                        $esMarchamoRojo = strtolower($producto->marchamo ?? '') === 'rojo';
-
-                                                        if ($haySegundoParEnOtros && !($state === 'liquidacion' && $esMarchamoRojo)) {
-                                                            Notification::make()
-                                                                ->title('Conflicto de promociones')
-                                                                ->body('No puedes aplicar esta promoción si ya hay productos con descuento de "Segundo Par".')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $this->restoreOriginalPrice($get, $set);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $precio = $producto->precio_venta;
-                                                        switch ($state) {
-                                                            case 'oferta':
-                                                                $precio = ($producto->precio_oferta > 0) ? $producto->precio_oferta : $producto->precio_venta;
-                                                                break;
-                                                            case 'liquidacion':
-                                                                $precio = $this->calcularPrecioLiquidacion($producto);
-                                                                break;
-                                                            case 'descuento':
-                                                                if ($producto->precio_descuento > 0) {
-                                                                    $precio = round($producto->precio_venta * (1 - ($producto->precio_descuento / 100)), 2);
-                                                                } else {
-                                                                    Notification::make()
-                                                                        ->title('Descuento no aplicable')
-                                                                        ->body('No hay porcentaje de descuento disponible para este producto.')
-                                                                        ->danger()
-                                                                        ->send();
-
-                                                                    $set('tipo_precio', 'normal');
-                                                                    $set('precio', $producto->precio_venta);
-                                                                    $set('precio_base', $producto->precio_venta);
-                                                                    $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
-                                                                    $this->updateOrderTotals($get, $set);
-
-                                                                    return;
-                                                                }
-                                                                break;
-                                                        }
-
-                                                        $descuento5 = (bool) $get('5%');
-                                                        $precioFinal = $this->calcularPrecioDetalle((int) $producto->id, $state, $cantidadActual, $descuento5);
-
-                                                        $set('precio', $precioFinal);
-                                                        $set('precio_base', $precio);
-                                                        $set('subtotal', round($precioFinal * $cantidadActual, 2));
-                                                        $this->updateOrderTotals($get, $set);
-
-                                                        return;
-                                                    }
-
-                                                    if ($state === 'apertura_20') {
-                                                        $clienteId = $get('../../cliente_id');
-                                                        $cliente = \App\Models\User::with('roles')->find($clienteId);
-                                                        $roles = $cliente?->getRoleNames() ?? collect();
-
-                                                        if (! $roles->contains('cliente_apertura')) {
-                                                            Notification::make()
-                                                                ->title('Descuento no disponible')
-                                                                ->body('Solo los clientes de apertura pueden usar esta promoción.')
-                                                                ->danger()
-                                                                ->send();
-                                                            $set('tipo_precio', 'normal');
-                                                            $set('precio', $producto->precio_venta);
-                                                            $set('precio_base', $producto->precio_venta);
-                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
-                                                            $set('oferta_cliente_20', false);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $haySegundoParEnOtros = collect($detalles)
-                                                            ->contains(function ($item) use ($currentUuid) {
-                                                                return (($item['uuid'] ?? null) !== $currentUuid)
-                                                                    && in_array($item['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true);
-                                                            });
-
-                                                        if ($haySegundoParEnOtros) {
-                                                            Notification::make()
-                                                                ->title('Conflicto de promociones')
-                                                                ->body('No puedes aplicar el descuento de "Cliente Apertura" si ya hay productos con descuento de "Segundo Par".')
-                                                                ->danger()->send();
-
-                                                            $set('tipo_precio', 'normal');
-                                                            $set('precio', $producto->precio_venta);
-                                                            $set('precio_base', $producto->precio_venta);
-                                                            $set('subtotal', round($producto->precio_venta * $cantidadActual, 2));
-                                                            $set('oferta_cliente_20', false);
-                                                            $this->updateOrderTotals($get, $set);
-
-                                                            return;
-                                                        }
-
-                                                        $precioBase = round($producto->precio_venta * 0.80, 2);
-                                                        $descuento5 = (bool) $get('5%');
-                                                        $precioFinal = $this->calcularPrecioDetalle((int) $producto->id, 'apertura_20', $cantidadActual, $descuento5);
-
-                                                        $set('precio', $precioFinal);
-                                                        $set('precio_base', $precioBase);
-                                                        $set('subtotal', round($precioFinal * $cantidadActual, 2));
-                                                        $set('oferta_cliente_20', true);
-
-                                                        Notification::make()
-                                                            ->title('Descuento aplicado')
-                                                            ->body('Se aplicó el 20% de descuento del cliente apertura.')
-                                                            ->success()
-                                                            ->send();
-                                                        $this->updateOrderTotals($get, $set);
-
-                                                        return;
-                                                    }
-
-                                                    // si es 'normal' u otro, dejar precio por defecto
-                                                    $precioBase = $producto->precio_venta;
-                                                    $descuento5 = (bool) $get('5%');
-                                                    $precioFinal = $this->calcularPrecioDetalle((int) $producto->id, 'normal', $cantidadActual, $descuento5);
-
-                                                    $set('precio', $precioFinal);
-                                                    $set('precio_base', $precioBase);
-                                                    $set('subtotal', round($precioFinal * $cantidadActual, 2));
-                                                    $this->updateOrderTotals($get, $set);
-                                                })
-                                                ->required()
-                                                ->columnSpan(['default' => 2, 'md' => 3, 'lg' => 2]),
+                                            Hidden::make('tipo_precio')
+                                                ->default('normal')
+                                                ->dehydrated(false),
                                             TextInput::make('cantidad')
                                                 ->label('Cantidad')
                                                 ->default(1)
@@ -954,10 +496,7 @@ class CreateVenta extends CreateRecord
                                                         return;
                                                     }
 
-                                                    $tipoPrecio = $get('tipo_precio') ?? 'normal';
-                                                    $descuento5 = (bool) $get('5%');
-
-                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, (int) $state, $descuento5);
+                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, 'normal', (int) $state, false);
 
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
@@ -1313,86 +852,11 @@ class CreateVenta extends CreateRecord
                         'total' => 'Las ventas no pueden ser mayores a Q'.Factura::CF.' cuando "Facturar CF" está activo o el NIT del cliente es "CF".',
                     ]);
                 }
-            }
 
-            // Validar que no se mezclen promociones (segundo_par y apertura_20 u otras)
-            $detallesData = $this->data['detalles'] ?? [];
-            $productoIds = collect($detallesData)->pluck('producto_id')->filter()->unique();
-            $productos = \App\Models\Producto::whereIn('id', $productoIds)->get()->keyBy('id');
-
-            $esMarchamoRojoLiq = function ($d) use ($productos) {
-                if (($d['tipo_precio'] ?? null) !== 'liquidacion') {
-                    return false;
-                }
-                $p = $productos->get($d['producto_id'] ?? null);
-                return $p && strtolower($p->marchamo ?? '') === 'rojo';
-            };
-
-            $tieneSegundoPar = collect($detallesData)->contains(fn ($d) => in_array($d['tipo_precio'] ?? null, ['segundo_par', 'segundo_par_marchamo'], true));
-            $tieneOtrasPromos = collect($detallesData)->contains(function ($d) use ($esMarchamoRojoLiq) {
-                if ($esMarchamoRojoLiq($d)) {
-                    return false;
-                }
-                return in_array($d['tipo_precio'] ?? null, ['oferta', 'liquidacion', 'descuento', 'apertura_20'], true);
-            });
-
-            if ($tieneSegundoPar && $tieneOtrasPromos) {
-                throw ValidationException::withMessages([
-                    'total' => 'No se puede combinar el descuento de "Segundo Par" con otras promociones o descuentos en la misma venta.',
-                ]);
-            }
-
-            $tieneSegundoParClasico = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par');
-            $tieneSegundoParMarchamo = collect($detallesData)->contains(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par_marchamo');
-
-            if ($tieneSegundoParClasico && $tieneSegundoParMarchamo) {
-                throw ValidationException::withMessages([
-                    'total' => 'No se puede combinar el "Segundo Par" clásico con "Segundo Par 50% (Marchamo)" en la misma venta.',
-                ]);
-            }
-
-            // Re-validar cada línea con "Segundo Par 50% (Marchamo)" contra las reglas de grupos de color y precio.
-            foreach ($detallesData as $detalle) {
-                if (($detalle['tipo_precio'] ?? null) !== 'segundo_par_marchamo') {
-                    continue;
-                }
-
-                $productoDetalle = $productos->get($detalle['producto_id'] ?? null);
-                if (! $productoDetalle) {
-                    continue;
-                }
-
-                $resultado = $this->evaluarSegundoParMarchamo($productoDetalle, $detallesData);
-
-                if (! $resultado['ok']) {
+                // Un cliente con NIT real no puede facturarse como Consumidor Final (CF)
+                if ($facturarCf && $nit !== '' && $nit !== 'CF') {
                     throw ValidationException::withMessages([
-                        'total' => $resultado['motivo'] ?? 'La promoción "Segundo Par 50% (Marchamo)" no es válida para esta combinación de productos.',
-                    ]);
-                }
-            }
-
-            // Validar restricción de Marchamo Rojo: requiere un par a precio normal por cada par en liquidación.
-            // Si también hay segundo_par o segundo_par_marchamo, la suma no puede exceder el total de pares a precio normal.
-            $cantNormal = collect($detallesData)
-                ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'normal')
-                ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
-
-            $cantSegundoPar = collect($detallesData)
-                ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par')
-                ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
-
-            $cantSegundoParMarchamo = collect($detallesData)
-                ->filter(fn ($d) => ($d['tipo_precio'] ?? null) === 'segundo_par_marchamo')
-                ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
-
-            $cantMarchamoRojoLiq = collect($detallesData)
-                ->filter(fn ($d) => $esMarchamoRojoLiq($d))
-                ->sum(fn ($d) => (int) ($d['cantidad'] ?? 0));
-
-            if ($cantMarchamoRojoLiq > 0 || $cantSegundoParMarchamo > 0) {
-                if ($cantSegundoPar + $cantMarchamoRojoLiq + $cantSegundoParMarchamo > $cantNormal) {
-                    throw ValidationException::withMessages([
-                        'total' => 'Para aplicar la liquidación de Marchamo Rojo a Q100, el "Segundo Par" o "Segundo Par 50% (Marchamo)", debe llevar un par a precio normal por cada par en promoción. Actualmente no tiene suficientes pares a precio normal.',
+                        'facturar_cf' => 'El cliente tiene un NIT registrado, no puede facturarse como Consumidor Final (CF).',
                     ]);
                 }
             }

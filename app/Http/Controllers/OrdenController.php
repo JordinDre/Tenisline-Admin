@@ -263,21 +263,33 @@ class OrdenController extends Controller
                 if ($orden->factura()->exists()) {
                     throw new Exception('La Orden ya ha sido facturada');
                 }
-                /* $res = FELController::facturaOrden($orden);
-                if (! $res['resultado']) {
-                    throw new Exception($res['descripcion_errores'][0]['mensaje_error']);
-                } */
+
+                $res = FELController::facturaOrden($orden);
+
+                if (
+                    ! isset($res['resultado']) ||
+                    ! $res['resultado'] ||
+                    ! isset($res['uuid'], $res['serie'], $res['numero'], $res['fecha'])
+                ) {
+                    $errorMessage = $res['descripcion_errores'][0]['mensaje_error'] ?? 'No se pudo generar la factura.';
+                    \Log::error('Error en facturación FEL', [
+                        'orden_id' => $orden->id,
+                        'error' => $errorMessage,
+                        'response' => $res,
+                    ]);
+                    throw new Exception($errorMessage);
+                }
+
                 $factura = new Factura;
                 $factura->fel_tipo = $orden->tipo_pago_id == 2 ? 'FCAM' : 'FACT';
-                $factura->fel_uuid = /* $res['uuid'] */ 'asfds';
-                $factura->fel_serie = /* $res['serie'] */ 'asfds';
-                $factura->fel_numero = /* $res['numero'] */ 'asfds';
-                $factura->fel_fecha = /* $res['fecha'] */ now();
+                $factura->fel_uuid = $res['uuid'];
+                $factura->fel_serie = $res['serie'];
+                $factura->fel_numero = $res['numero'];
+                $factura->fel_fecha = $res['fecha'];
                 $factura->user_id = auth()->user()->id;
                 $factura->tipo = 'factura';
                 $orden->factura()->save($factura);
                 activity()->performedOn($orden)->causedBy(auth()->user())->withProperties($orden)->event('facturación')->log('Orden facturada');
-                redirect()->back();
             });
             Notification::make()
                 ->color('success')

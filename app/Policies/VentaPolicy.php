@@ -172,11 +172,6 @@ class VentaPolicy
             return false;
         }
 
-        // Validar que no se permita ver factura si se cumplen las condiciones específicas
-        if ($venta->debeOcultarFactura()) {
-            return false;
-        }
-
         // Administradores y super admins pueden ver factura de cualquier venta
         if ($user->hasAnyRole(['administrador', 'super_admin'])) {
             return true;

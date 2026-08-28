@@ -121,28 +121,4 @@ class Venta extends Model
     {
         return $this->morphMany(Guia::class, 'guiable');
     }
-
-    /**
-     * Verifica si la venta debe mostrar información de factura
-     * No debe mostrar factura si: comp == false && facturar_cf == true && tipo_pago_id == 1
-     */
-    public function debeOcultarFactura(): bool
-    {
-        // Si comp es true, no ocultar
-        if ($this->comp == true) {
-            return false;
-        }
-
-        // Si facturar_cf es false, no ocultar
-        if ($this->facturar_cf != true) {
-            return false;
-        }
-
-        // Verificar que exista al menos un pago y que el tipo_pago_id sea 1
-        $primerPago = $this->relationLoaded('pagos')
-            ? $this->pagos->first()
-            : $this->pagos()->first();
-
-        return $primerPago !== null && $primerPago->tipo_pago_id == 1;
-    }
 }

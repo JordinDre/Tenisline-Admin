@@ -102,7 +102,9 @@ class UserResource extends Resource implements HasShieldPermissions
                             ])
                             ->afterStateUpdated(function (Set $set, $state) {
                                 $nit = UserController::nit($state);
-                                $set('razon_social', $nit);
+                                if ($nit !== null) {
+                                    $set('razon_social', $nit);
+                                }
                             }),
                         /* TextInput::make('dpi')
                             ->label('DPI')
