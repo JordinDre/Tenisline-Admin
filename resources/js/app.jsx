@@ -2,10 +2,8 @@ import { createInertiaApp } from '@inertiajs/react';
 import * as inertiaHelpers from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => `${title} - Tenisline Encontrados`,
     resolve: (name) =>
         inertiaHelpers.resolvePageComponent(
             `./Pages/${name}.jsx`,
