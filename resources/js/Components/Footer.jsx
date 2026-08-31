@@ -171,6 +171,11 @@ export default function Footer() {
                             <ApplicationLogoBlanco className="inline-block h-14 w-auto fill-current" />
                         </Link>
                     </div>
+
+                    {/* Razón social */}
+                    <div className="mt-4 text-center text-xs text-gray-400">
+                        Encontrados, S.A.
+                    </div>
                 </div>
             </div>
         </footer>
