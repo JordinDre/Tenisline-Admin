@@ -173,7 +173,7 @@ export default function Footer() {
                     </div>
 
                     {/* Razón social */}
-                    <div className="mt-4 text-center text-lg font-bold text-white">
+                    <div className="mt-4 text-center text-2xl font-extrabold tracking-wide text-white sm:text-3xl">
                         Tenisline Encontrados, S.A.
                     </div>
                 </div>
