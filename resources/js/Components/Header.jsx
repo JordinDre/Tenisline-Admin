@@ -9,6 +9,9 @@ export default function Header() {
             <div className="mx-auto flex max-w-screen-xl items-center justify-between p-2">
                 <Link href="/" className="flex items-center">
                     <ApplicationLogo className="h-12 w-auto text-zinc-800 dark:text-zinc-200" />
+                    <span className="ml-2 text-xl font-bold text-zinc-800 dark:text-zinc-200">
+                        Tenisline Encontrados
+                    </span>
                 </Link>
                 <div className="flex items-center lg:space-x-2">
                     {/* <Carrito /> */}
