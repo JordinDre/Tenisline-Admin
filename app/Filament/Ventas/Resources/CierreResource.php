@@ -188,7 +188,7 @@ class CierreResource extends Resource
                         [
                             'record' => $record,
                             'title' => 'Cierre #'.$record->id,
-                            'route' => route('pdf.cierre', ['id' => $record->id]),
+                            'route' => route('pdf.cierre', ['id' => $record->id, 't' => now()->timestamp]),
                             'open' => true,
                         ],
                     ))
