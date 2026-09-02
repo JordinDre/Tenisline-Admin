@@ -61,7 +61,9 @@ class PDFController extends Controller
         return response($pdf->output())
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="Cierre-'.$id.'.pdf"')
-            ->header('X-Frame-Options', 'SAMEORIGIN');
+            ->header('X-Frame-Options', 'SAMEORIGIN')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
 
     public function compra($id)
