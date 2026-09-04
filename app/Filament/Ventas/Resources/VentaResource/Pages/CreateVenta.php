@@ -53,7 +53,23 @@ class CreateVenta extends CreateRecord
             return 0.0;
         }
 
+        if ($tipoPrecio === 'liquidacion') {
+            return $this->calcularPrecioLiquidacion($producto);
+        }
+
         return (float) $producto->precio_venta;
+    }
+
+    protected function calcularPrecioLiquidacion(Producto $producto): float
+    {
+        $porcentaje = (float) ($producto->precio_liquidacion ?? 0);
+        $precioVenta = (float) ($producto->precio_venta ?? 0);
+
+        if ($porcentaje <= 0.0 || $porcentaje >= 100.0 || $precioVenta <= 0.0) {
+            return $precioVenta;
+        }
+
+        return round($precioVenta - ($precioVenta * ($porcentaje / 100.0)), 2);
     }
 
     public function form(Form $form): Form
@@ -451,6 +467,7 @@ class CreateVenta extends CreateRecord
 
                                                     $precio = (float) $producto->precio_venta;
 
+                                                    $set('aplica_liquidacion', false);
                                                     $set('precio', $precio);
                                                     $set('precio_base', $precio);
                                                     $set('subtotal', round($precio * $cantidad, 2));
@@ -460,6 +477,26 @@ class CreateVenta extends CreateRecord
                                             Hidden::make('tipo_precio')
                                                 ->default('normal')
                                                 ->dehydrated(false),
+                                            Toggle::make('aplica_liquidacion')
+                                                ->label('Aplicar precio de liquidación')
+                                                ->inline(false)
+                                                ->dehydrated(false)
+                                                ->live()
+                                                ->visible(fn (Get $get): bool => (float) (Producto::find($get('producto_id'))?->precio_liquidacion ?? 0) > 0)
+                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                    $productoId = $get('producto_id');
+                                                    if (! $productoId) {
+                                                        return;
+                                                    }
+
+                                                    $cantidad = (int) ($get('cantidad') ?? 1);
+                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $state ? 'liquidacion' : 'normal', $cantidad, false);
+
+                                                    $set('precio', $precioFinal);
+                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
+                                                    $this->updateOrderTotals($get, $set);
+                                                })
+                                                ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6]),
                                             TextInput::make('cantidad')
                                                 ->label('Cantidad')
                                                 ->default(1)
@@ -496,7 +533,8 @@ class CreateVenta extends CreateRecord
                                                         return;
                                                     }
 
-                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, 'normal', (int) $state, false);
+                                                    $tipoPrecio = $get('aplica_liquidacion') ? 'liquidacion' : 'normal';
+                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, (int) $state, false);
 
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $state, 2));
