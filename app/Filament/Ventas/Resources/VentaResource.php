@@ -1197,7 +1197,7 @@ class VentaResource extends Resource implements HasShieldPermissions
 
         $user = \Filament\Facades\Filament::auth()->user();
 
-        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+        if ($user->hasAnyRole(['administrador', 'super_admin', 'auxiliar'])) {
             return $query;
         }
 
