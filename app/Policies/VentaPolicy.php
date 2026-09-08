@@ -28,8 +28,8 @@ class VentaPolicy
             return false;
         }
 
-        // Administradores y super admins pueden ver cualquier venta
-        if ($user->hasAnyRole(['administrador', 'super_admin'])) {
+        // Administradores, super admins y auxiliares pueden ver cualquier venta
+        if ($user->hasAnyRole(['administrador', 'super_admin', 'auxiliar'])) {
             return true;
         }
 
