@@ -2,6 +2,7 @@
 
 namespace App\Filament\Ventas\Widgets;
 
+use App\Filament\Concerns\CalculaRangoFechas;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class VentasPorTallaCompleto extends Widget
 {
     use InteractsWithPageFilters;
+    use CalculaRangoFechas;
 
     protected static ?string $pollingInterval = null;
 
@@ -52,14 +54,14 @@ class VentasPorTallaCompleto extends Widget
         $titulo .= $generoFilter ? " - {$generoFilter}" : ' - Todos los Géneros';
         static::$heading = $titulo;
 
+        [$inicio, $fin] = static::rangoFechas($year, $month, $day !== '' ? (int) $day : null);
+
         // Obtener datos agrupados
         $data = DB::table('venta_detalles')
             ->join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
-            ->whereYear('ventas.created_at', $year)
-            ->whereMonth('ventas.created_at', $month)
-            ->when($day !== '', fn ($q) => $q->whereDay('ventas.created_at', $day))
+            ->whereBetween('ventas.created_at', [$inicio, $fin])
             ->when($bodegaFilter !== '', fn ($q) => $q->where('bodegas.bodega', $bodegaFilter))
             ->when($generoFilter !== '', fn ($q) => $q->where('productos.genero', $generoFilter))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])

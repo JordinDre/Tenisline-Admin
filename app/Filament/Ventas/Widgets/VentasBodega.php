@@ -2,6 +2,7 @@
 
 namespace App\Filament\Ventas\Widgets;
 
+use App\Filament\Concerns\CalculaRangoFechas;
 use App\Models\VentaDetalle;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 class VentasBodega extends Widget
 {
     use InteractsWithPageFilters;
+    use CalculaRangoFechas;
 
     protected static ?string $pollingInterval = null;
 
@@ -46,14 +48,14 @@ class VentasBodega extends Widget
             $bodegaIds = $user->bodegas()->pluck('bodegas.id')->toArray();
         }
 
-        // Obtener datos agrupados por asesor para mostrar totales
+        [$inicio, $fin] = static::rangoFechas($year, $month, $day);
+
+        // Obtener datos agrupados por asesor para mostrar totales (agregado en SQL para no cargar todas las filas en memoria)
         $dataAgrupada = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->join('users', 'ventas.asesor_id', '=', 'users.id')
-            ->whereYear('ventas.created_at', $year)
-            ->whereMonth('ventas.created_at', $month)
-            ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
+            ->whereBetween('ventas.created_at', [$inicio, $fin])
             ->when($bodegaFilter, fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega))
             ->when($generoFilter, fn ($query, $genero) => $query->where('productos.genero', $genero))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
@@ -62,18 +64,26 @@ class VentasBodega extends Widget
                 $user && !$user->hasAnyRole(['administrador', 'super_admin']),
                 fn ($query) => $query->whereIn('ventas.bodega_id', $bodegaIds)
             )
+            ->selectRaw('
+                ventas.asesor_id as asesor_id,
+                users.name as asesor,
+                SUM(venta_detalles.precio) as total,
+                COUNT(*) as cantidad,
+                SUM(venta_detalles.cantidad * COALESCE(productos.precio_costo, 0)) as costo,
+                COUNT(DISTINCT ventas.cliente_id) as clientes
+            ')
+            ->groupBy('ventas.asesor_id', 'users.name')
             ->get()
-            ->groupBy('asesor_id')
-            ->map(function ($ordenes) {
-                $total = $ordenes->sum('precio');
-                $costo = $ordenes->sum(fn ($d) => $d->cantidad * ($d->producto->precio_costo ?? 0));
-                $clientes = $ordenes->pluck('venta.cliente_id')->unique()->count();
-                $rentabilidad = $costo > 0 ? round(($total - $costo) / $total, 4) : 0;
+            ->map(function ($fila) {
+                $total = (float) $fila->total;
+                $costo = (float) $fila->costo;
+                $clientes = (int) $fila->clientes;
+                $rentabilidad = $costo > 0 && $total > 0 ? round(($total - $costo) / $total, 4) : 0;
 
                 return [
-                    'asesor' => $ordenes->first()->venta->asesor->name ?? 'Sin Asesor',
+                    'asesor' => $fila->asesor ?? 'Sin Asesor',
                     'total' => $total,
-                    'cantidad' => $ordenes->count(),
+                    'cantidad' => (int) $fila->cantidad,
                     'costo' => $costo,
                     'rentabilidad' => $rentabilidad,
                     'clientes' => $clientes,

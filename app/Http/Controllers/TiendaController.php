@@ -14,6 +14,7 @@ use App\Models\VentaDetalle;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -316,8 +317,8 @@ class TiendaController extends Controller
             'precioMin' => $precioMin,
             'precioMax' => $precioMax,
             'ofertados' => $ofertados,
-            'marcasDisponibles' => Marca::select('marca')->distinct()->pluck('marca'),
-            'generosDisponibles' => Producto::select('genero')->distinct()->pluck('genero')->filter()->values(),
+            'marcasDisponibles' => Cache::remember('catalogo:marcas_disponibles', 300, fn () => Marca::select('marca')->distinct()->pluck('marca')),
+            'generosDisponibles' => Cache::remember('catalogo:generos_disponibles', 300, fn () => Producto::select('genero')->distinct()->pluck('genero')->filter()->values()),
             'marchamo' => $marchamo,
             'puedeVerMarchamo' => $esAdmin,
             'marchamosDisponibles' => ['rojo', 'naranja', 'celeste', 'amarillo'],
@@ -347,13 +348,13 @@ class TiendaController extends Controller
             abort(404, 'Producto no encontrado');
         }
 
-        $marcas = Marca::whereHas('productos', function ($q) {
+        $marcas = Cache::remember('catalogo:marcas_con_stock', 300, fn () => Marca::whereHas('productos', function ($q) {
             $q->whereHas('inventario', function ($q2) {
                 $q2->where('existencia', '>', 0);
             });
         })
             ->orderBy('marca')
-            ->pluck('marca');
+            ->pluck('marca'));
 
         return Inertia::render('Producto', [
             'producto' => [
