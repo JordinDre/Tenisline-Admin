@@ -37,17 +37,29 @@ class ExistenciaPorBodega extends BaseWidget
         $month = $this->filters['mes'] ?? now()->month;
         $day = $this->filters['dia'] ?? null;
 
-        // Obtener todas las bodegas con existencia
+        // Una sola consulta agregada por bodega (evita 3 queries por bodega + 2 al final)
+        $porBodega = Inventario::query()
+            ->join('productos', 'productos.id', '=', 'inventarios.producto_id')
+            ->selectRaw('
+                inventarios.bodega_id as bodega_id,
+                SUM(CASE WHEN productos.deleted_at IS NULL THEN inventarios.existencia ELSE 0 END) as existencia_activos,
+                SUM(CASE WHEN productos.deleted_at IS NOT NULL THEN inventarios.existencia ELSE 0 END) as existencia_anulados,
+                COUNT(CASE WHEN productos.deleted_at IS NULL AND inventarios.existencia > 0 THEN 1 END) as productos_unicos
+            ')
+            ->groupBy('inventarios.bodega_id')
+            ->get()
+            ->filter(fn ($fila) => ((int) $fila->existencia_activos + (int) $fila->existencia_anulados) > 0)
+            ->keyBy('bodega_id');
+
+        // Obtener solo las bodegas con existencia (activa o anulada) registrada
         $bodegas = Bodega::with(['municipio', 'departamento'])
-            ->whereHas('inventario', function ($query) {
-                $query->where('existencia', '>', 0);
-            })
-            ->get();
+            ->whereIn('id', $porBodega->keys())
+            ->get()
+            ->keyBy('id');
 
         // Orden personalizado de bodegas: 1, 5, 6, 7, 8, 9, 2, 3
         $ordenBodegas = [1, 5, 6, 7, 8, 9, 2, 3];
 
-        // Ordenar las bodegas según el orden personalizado
         $bodegasOrdenadas = $bodegas->sortBy(function ($bodega) use ($ordenBodegas) {
             $posicion = array_search($bodega->id, $ordenBodegas);
 
@@ -57,26 +69,14 @@ class ExistenciaPorBodega extends BaseWidget
         $stats = [];
 
         foreach ($bodegasOrdenadas as $bodega) {
-            // Existencia de productos activos
-            $existenciaActivos = Inventario::where('bodega_id', $bodega->id)
-                ->whereHas('producto', function ($query) {
-                    $query->whereNull('deleted_at');
-                })
-                ->sum('existencia');
+            $fila = $porBodega->get($bodega->id);
+            if (! $fila) {
+                continue;
+            }
 
-            // Existencia de productos anulados/eliminados
-            $existenciaAnulados = Inventario::where('bodega_id', $bodega->id)
-                ->whereHas('producto', function ($query) {
-                    $query->whereNotNull('deleted_at');
-                })
-                ->sum('existencia');
-
-            $productosUnicos = Inventario::where('bodega_id', $bodega->id)
-                ->where('existencia', '>', 0)
-                ->whereHas('producto', function ($query) {
-                    $query->whereNull('deleted_at');
-                })
-                ->count();
+            $existenciaActivos = (int) $fila->existencia_activos;
+            $existenciaAnulados = (int) $fila->existencia_anulados;
+            $productosUnicos = (int) $fila->productos_unicos;
 
             $ubicacion = $bodega->municipio ? $bodega->municipio->municipio : 'N/A';
             if ($bodega->departamento) {
@@ -98,21 +98,10 @@ class ExistenciaPorBodega extends BaseWidget
                 ]);
         }
 
-        // Agregar estadística total
-        $totalExistenciaActivos = Inventario::whereHas('producto', function ($query) {
-            $query->whereNull('deleted_at');
-        })->sum('existencia');
-
-        $totalExistenciaAnulados = Inventario::whereHas('producto', function ($query) {
-            $query->whereNotNull('deleted_at');
-        })->sum('existencia');
-
-        $totalProductos = Inventario::where('existencia', '>', 0)
-            ->whereHas('producto', function ($query) {
-                $query->whereNull('deleted_at');
-            })
-            ->count();
-
+        // Agregar estadística total (a partir de los mismos datos ya agregados)
+        $totalExistenciaActivos = $porBodega->sum('existencia_activos');
+        $totalExistenciaAnulados = $porBodega->sum('existencia_anulados');
+        $totalProductos = $porBodega->sum('productos_unicos');
         $totalGeneral = $totalExistenciaActivos + $totalExistenciaAnulados;
 
         $stats[] = Stat::make('Total Existencia', number_format($totalGeneral).' pares')

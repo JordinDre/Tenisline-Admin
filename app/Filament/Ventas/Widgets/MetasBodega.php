@@ -2,6 +2,7 @@
 
 namespace App\Filament\Ventas\Widgets;
 
+use App\Filament\Concerns\CalculaRangoFechas;
 use App\Models\Bodega;
 use App\Models\Meta;
 use App\Models\VentaDetalle;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class MetasBodega extends Widget
 {
     use InteractsWithPageFilters;
+    use CalculaRangoFechas;
 
     protected static ?string $pollingInterval = null;
 
@@ -47,12 +49,12 @@ class MetasBodega extends Widget
             $bodegaIds = $user->bodegas()->pluck('bodegas.id')->toArray();
         }
 
+        [$inicio, $fin] = static::rangoFechas($year, $month, $day);
+
         // Obtener datos de ventas por bodega
         $ventasData = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
-            ->whereYear('ventas.created_at', $year)
-            ->whereMonth('ventas.created_at', $month)
-            ->when($day, fn ($query, $day) => $query->whereDay('ventas.created_at', $day))
+            ->whereBetween('ventas.created_at', [$inicio, $fin])
             ->when($bodegaFilter, fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega))
             ->whereIn('ventas.estado', ['creada', 'liquidada', 'parcialmente_devuelta'])
             ->where('venta_detalles.devuelto', 0)

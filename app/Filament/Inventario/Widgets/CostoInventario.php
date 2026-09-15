@@ -29,37 +29,22 @@ class CostoInventario extends BaseWidget
     {
         $bodegas = [1 => 'Zacapa', 2 => 'Capital', 3 => 'Mal Estado', 4 => 'Traslado', 5 => 'Abura'];
 
-        // Obtener inventarios con productos activos
-        $inventariosActivos = Inventario::whereIn('bodega_id', array_keys($bodegas))
-            ->where('existencia', '>', 0)
-            ->whereHas('producto', function ($query) {
-                $query->whereNull('deleted_at');
-            })
-            ->with('producto')
-            ->get();
+        // Agregación en SQL (SUM/GROUP BY) en vez de traer todas las filas a PHP para sumarlas ahí
+        $porBodega = Inventario::query()
+            ->join('productos', 'productos.id', '=', 'inventarios.producto_id')
+            ->whereIn('inventarios.bodega_id', array_keys($bodegas))
+            ->where('inventarios.existencia', '>', 0)
+            ->selectRaw('
+                inventarios.bodega_id as bodega_id,
+                SUM(CASE WHEN productos.deleted_at IS NULL THEN productos.precio_compra * inventarios.existencia ELSE 0 END) as costo_activo,
+                SUM(CASE WHEN productos.deleted_at IS NOT NULL THEN productos.precio_compra * inventarios.existencia ELSE 0 END) as costo_anulado
+            ')
+            ->groupBy('inventarios.bodega_id')
+            ->get()
+            ->keyBy('bodega_id');
 
-        // Obtener inventarios con productos anulados
-        $inventariosAnulados = Inventario::whereIn('bodega_id', array_keys($bodegas))
-            ->where('existencia', '>', 0)
-            ->whereHas('producto', function ($query) {
-                $query->whereNotNull('deleted_at');
-            })
-            ->with('producto')
-            ->get();
-
-        // Agrupar por bodega y calcular los costos de productos activos
-        $costosActivos = $inventariosActivos->groupBy('bodega_id')->map(
-            fn ($items) => $items->sum(
-                fn ($inventario) => ($inventario->producto->precio_compra + $inventario->producto->envase) * $inventario->existencia
-            )
-        );
-
-        // Agrupar por bodega y calcular los costos de productos anulados
-        $costosAnulados = $inventariosAnulados->groupBy('bodega_id')->map(
-            fn ($items) => $items->sum(
-                fn ($inventario) => ($inventario->producto->precio_compra + $inventario->producto->envase) * $inventario->existencia
-            )
-        );
+        $costosActivos = $porBodega->map(fn ($fila) => (float) $fila->costo_activo);
+        $costosAnulados = $porBodega->map(fn ($fila) => (float) $fila->costo_anulado);
 
         // Calcular el total
         $totalActivos = $costosActivos->sum();

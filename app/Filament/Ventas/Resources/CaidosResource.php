@@ -61,7 +61,18 @@ class CaidosResource extends Resource
             )
             ->addBinding(\App\Models\User::class, 'join')
             ->addBinding('seguimiento', 'join')
-            ->selectRaw('ventas.*, s.primer_seguimiento')
+            ->selectRaw(
+                'ventas.*, s.primer_seguimiento,
+                (SELECT se.seguimiento FROM seguimientos se
+                    WHERE se.seguimientable_id = ventas.cliente_id
+                    AND se.seguimientable_type = ? AND se.tipo = ?
+                    ORDER BY se.created_at DESC LIMIT 1) as ultimo_seguimiento_texto,
+                (SELECT se.created_at FROM seguimientos se
+                    WHERE se.seguimientable_id = ventas.cliente_id
+                    AND se.seguimientable_type = ? AND se.tipo = ?
+                    ORDER BY se.created_at DESC LIMIT 1) as ultimo_seguimiento_fecha',
+                [\App\Models\User::class, 'seguimiento', \App\Models\User::class, 'seguimiento']
+            )
             ->with(['cliente', 'asesor']);
 
         $user = Auth::user();
@@ -155,8 +166,10 @@ class CaidosResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('ultimo_seguimiento')
                     ->label('Último seguimiento')
-                    ->getStateUsing(fn ($record) => $record->cliente?->ultimoSeguimiento()?->seguimiento ?? '—')
-                    ->description(fn ($record) => $record->cliente?->ultimoSeguimiento()?->created_at?->format('d/m/Y H:i') ?? ''),
+                    ->getStateUsing(fn ($record) => $record->ultimo_seguimiento_texto ?? '—')
+                    ->description(fn ($record) => $record->ultimo_seguimiento_fecha
+                        ? \Illuminate\Support\Carbon::parse($record->ultimo_seguimiento_fecha)->format('d/m/Y H:i')
+                        : ''),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizado')
                     ->dateTime('d/m/Y H:i:s')
