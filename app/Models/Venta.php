@@ -63,16 +63,16 @@ class Venta extends Model
 
         if ($this->requiere_evidencia_oferta20) {
             $motivos[] = $this->foto_evidencia_oferta20
-                ? 'Oferta 20% (foto subida, falta validar)'
-                : 'Oferta 20% (falta foto de evidencia)';
+                ? 'Descuento aplicado (foto subida, falta validar)'
+                : 'Descuento aplicado (falta foto de evidencia)';
         }
 
         if ($this->requiere_codigo_confirmacion) {
             $motivos[] = match (true) {
-                (bool) $this->codigo_confirmado_en => 'Oferta apertura 20% (código confirmado, falta validar)',
-                blank($this->codigo_confirmacion) => 'Oferta apertura 20% (falta que el asesor envíe el código)',
-                $this->codigoExpirado() => 'Oferta apertura 20% (código expirado, debe reenviarse)',
-                default => 'Oferta apertura 20% (esperando que el cliente confirme el código)',
+                (bool) $this->codigo_confirmado_en => 'Descuento aplicado (código confirmado, falta validar)',
+                blank($this->codigo_confirmacion) => 'Descuento aplicado (falta que el asesor envíe el código)',
+                $this->codigoExpirado() => 'Descuento aplicado (código expirado, debe reenviarse)',
+                default => 'Descuento aplicado (esperando que el cliente confirme el código)',
             };
         }
 
@@ -105,7 +105,7 @@ class Venta extends Model
         $totalOriginal = $this->detalles()
             ->with('producto')
             ->get()
-            ->sum(fn (VentaDetalle $detalle) => $detalle->oferta_cliente_20
+            ->sum(fn (VentaDetalle $detalle) => ($detalle->oferta_cliente_20 || $detalle->aplica_liquidacion)
                 ? round(((float) ($detalle->producto?->precio_venta ?? 0)) * $detalle->cantidad, 2)
                 : (float) $detalle->subtotal);
 

@@ -3,13 +3,16 @@
 declare(strict_types=1);
 
 use App\Enums\EstadoVentaStatus;
+use App\Filament\Ventas\Resources\VentaResource\Pages\CreateVenta;
 use App\Filament\Ventas\Resources\VentaResource\Pages\ListVentas;
 use App\Models\Bodega;
 use App\Models\Cierre;
 use App\Models\Departamento;
+use App\Models\Inventario;
 use App\Models\Municipio;
 use App\Models\Pais;
 use App\Models\Producto;
+use App\Models\TipoPago;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
@@ -218,4 +221,72 @@ it('validarPago exige que el código esté confirmado antes de poder validar la 
     $venta->refresh();
 
     expect($venta->estado)->toBe(EstadoVentaStatus::ValidacionPago);
+});
+
+it('el descuento de liquidación también exige foto y código, incluso para un cliente normal (no apertura)', function () {
+    $entorno = crearEntornoVentaApertura();
+
+    Role::firstOrCreate(['name' => 'cliente', 'guard_name' => 'web']);
+    $clienteNormal = \App\Models\User::factory()->create(['name' => 'QA Cliente Normal']);
+    $clienteNormal->assignRole('cliente');
+
+    $entorno['producto']->update(['precio_liquidacion' => 20]);
+    Inventario::create([
+        'producto_id' => $entorno['producto']->id,
+        'bodega_id' => $entorno['bodega']->id,
+        'existencia' => 10,
+    ]);
+    $tipoPagoContado = TipoPago::firstOrCreate(['tipo_pago' => 'CONTADO']);
+
+    $this->actingAs($entorno['asesor']);
+
+    $component = Livewire::test(CreateVenta::class);
+
+    // El Repeater crea un ítem por defecto (defaultItems(1)) con una clave UUID propia;
+    // reutilizamos esa misma clave para que fillForm() sobrescriba el ítem en vez de
+    // dejar uno adicional vacío que fallaría la validación.
+    $detalleKey = array_key_first($component->get('data.detalles') ?? []);
+    $pagoKey = array_key_first($component->get('data.pagos') ?? []);
+
+    $component
+        ->fillForm([
+            'bodega_id' => $entorno['bodega']->id,
+            'asesor_id' => $entorno['asesor']->id,
+            'tipo_envio' => 'propio',
+            'cliente_id' => $clienteNormal->id,
+            'facturar_cf' => false,
+            'detalles' => [
+                $detalleKey => [
+                    'producto_id' => $entorno['producto']->id,
+                    'cantidad' => 1,
+                    'precio' => 800,
+                    'subtotal' => 800,
+                    'aplica_liquidacion' => true,
+                    'oferta_cliente_20' => false,
+                ],
+            ],
+            'pagos' => [
+                $pagoKey => [
+                    'tipo_pago_id' => $tipoPagoContado->id,
+                    'monto' => 800,
+                    'total' => 800,
+                    'fecha_transaccion' => now()->toDateString(),
+                ],
+            ],
+            'subtotal' => 800,
+            'total' => 800,
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $venta = Venta::where('cliente_id', $clienteNormal->id)->latest('id')->first();
+
+    expect($venta)->not->toBeNull();
+    expect($venta->estado)->toBe(EstadoVentaStatus::ValidacionPago);
+    expect($venta->requiere_evidencia_oferta20)->toBeTrue();
+    expect($venta->requiere_codigo_confirmacion)->toBeTrue();
+
+    $detalle = $venta->detalles()->first();
+    expect($detalle->aplica_liquidacion)->toBeTrue();
+    expect($detalle->oferta_cliente_20)->toBeFalse();
 });

@@ -689,7 +689,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('heroicon-o-eye')
                         ->color('info')
                         ->visible(fn ($record) => filled($record->foto_evidencia_oferta20))
-                        ->modalHeading('Foto de Evidencia - Oferta 20%')
+                        ->modalHeading('Foto de Evidencia - Descuento aplicado')
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Cerrar')
                         ->infolist([
@@ -758,7 +758,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 && $user
                                 && $user->hasAnyRole(['super_admin', 'administrador']);
                         })
-                        ->modalHeading('Código de confirmación - Oferta apertura 20%')
+                        ->modalHeading('Código de confirmación - Descuento aplicado')
                         ->modalWidth(MaxWidth::Large)
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Cerrar')
@@ -771,13 +771,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->label('')
                                         ->state('Valida la foto de evidencia ("Ver Foto de Evidencia") y confirma que el descuento esté aplicado correctamente antes de enviar el código.'),
                                     TextEntry::make('productos_oferta')
-                                        ->label('Producto(s) con descuento apertura 20%')
+                                        ->label('Producto(s) con descuento aplicado')
                                         ->weight('medium')
                                         ->state(fn ($record) => $record->detalles()
-                                            ->where('oferta_cliente_20', true)
+                                            ->where(fn ($q) => $q->where('oferta_cliente_20', true)->orWhere('aplica_liquidacion', true))
                                             ->with('producto')
                                             ->get()
-                                            ->pluck('producto.descripcion')
+                                            ->map(fn ($detalle) => $detalle->producto?->descripcion.($detalle->oferta_cliente_20 ? ' (apertura 20%)' : ' (liquidación)'))
                                             ->filter()
                                             ->implode(', ') ?: 'N/A'),
                                 ]),

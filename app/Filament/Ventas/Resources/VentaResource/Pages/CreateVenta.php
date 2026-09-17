@@ -1012,9 +1012,10 @@ class CreateVenta extends CreateRecord
         }
         $data['estado'] = 'creada';
 
-        $aplicaOfertaApertura = collect($this->data['detalles'] ?? [])->contains(fn ($d) => $d['oferta_cliente_20'] ?? false);
-        $data['requiere_evidencia_oferta20'] = $aplicaOfertaApertura;
-        $data['requiere_codigo_confirmacion'] = $aplicaOfertaApertura;
+        $aplicaAlgunDescuento = collect($this->data['detalles'] ?? [])
+            ->contains(fn ($d) => ($d['oferta_cliente_20'] ?? false) || ($d['aplica_liquidacion'] ?? false));
+        $data['requiere_evidencia_oferta20'] = $aplicaAlgunDescuento;
+        $data['requiere_codigo_confirmacion'] = $aplicaAlgunDescuento;
 
         return $data;
     }
@@ -1025,8 +1026,19 @@ class CreateVenta extends CreateRecord
             DB::transaction(function () {
                 foreach ($this->record->detalles as $detalle) {
                     $detalleData = collect($this->data['detalles'])->first(fn ($d) => ($d['producto_id'] ?? null) == $detalle->producto_id && ($d['cantidad'] ?? null) == $detalle->cantidad);
-                    if ($detalleData && ($detalleData['oferta_cliente_20'] ?? false)) {
+                    if (! $detalleData) {
+                        continue;
+                    }
+
+                    if ($detalleData['oferta_cliente_20'] ?? false) {
                         $detalle->oferta_cliente_20 = true;
+                    }
+
+                    if ($detalleData['aplica_liquidacion'] ?? false) {
+                        $detalle->aplica_liquidacion = true;
+                    }
+
+                    if ($detalle->isDirty()) {
                         $detalle->save();
                     }
                 }
