@@ -57,6 +57,10 @@ class CreateVenta extends CreateRecord
             return $this->calcularPrecioLiquidacion($producto);
         }
 
+        if ($tipoPrecio === 'apertura_20') {
+            return $this->calcularPrecioApertura20($producto);
+        }
+
         return (float) $producto->precio_venta;
     }
 
@@ -70,6 +74,41 @@ class CreateVenta extends CreateRecord
         }
 
         return round($precioVenta - ($precioVenta * ($porcentaje / 100.0)), 2);
+    }
+
+    protected function calcularPrecioApertura20(Producto $producto): float
+    {
+        $precioVenta = (float) ($producto->precio_venta ?? 0);
+
+        if ($precioVenta <= 0.0) {
+            return $precioVenta;
+        }
+
+        return round($precioVenta * 0.80, 2);
+    }
+
+    /**
+     * Indica si el cliente seleccionado tiene el rol cliente_apertura.
+     */
+    protected function clienteEsApertura(?int $clienteId): bool
+    {
+        if (! $clienteId) {
+            return false;
+        }
+
+        return User::find($clienteId)?->hasRole('cliente_apertura') ?? false;
+    }
+
+    /**
+     * ¿El cliente ya usó el descuento de apertura 20% este mes (en otra venta)?
+     */
+    protected function clienteYaUsoOfertaApertura20EsteMes(int $clienteId): bool
+    {
+        return \App\Models\VentaDetalle::whereHas('venta', fn (Builder $q) => $q->where('cliente_id', $clienteId))
+            ->where('oferta_cliente_20', true)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->exists();
     }
 
     public function form(Form $form): Form
@@ -468,6 +507,7 @@ class CreateVenta extends CreateRecord
                                                     $precio = (float) $producto->precio_venta;
 
                                                     $set('aplica_liquidacion', false);
+                                                    $set('oferta_cliente_20', false);
                                                     $set('precio', $precio);
                                                     $set('precio_base', $precio);
                                                     $set('subtotal', round($precio * $cantidad, 2));
@@ -489,8 +529,50 @@ class CreateVenta extends CreateRecord
                                                         return;
                                                     }
 
+                                                    if ($state) {
+                                                        $set('oferta_cliente_20', false);
+                                                    }
+
                                                     $cantidad = (int) ($get('cantidad') ?? 1);
-                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $state ? 'liquidacion' : 'normal', $cantidad, false);
+                                                    $tipoPrecio = $state ? 'liquidacion' : 'normal';
+                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, $cantidad, false);
+
+                                                    $set('precio', $precioFinal);
+                                                    $set('subtotal', round($precioFinal * $cantidad, 2));
+                                                    $this->updateOrderTotals($get, $set);
+                                                })
+                                                ->columnSpan(['default' => 4, 'md' => 6, 'lg' => 1, 'xl' => 6]),
+                                            Toggle::make('oferta_cliente_20')
+                                                ->label('Aplicar descuento apertura 20%')
+                                                ->inline(false)
+                                                ->live()
+                                                ->visible(fn (Get $get): bool => $this->clienteEsApertura($get('../../cliente_id')))
+                                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                    $productoId = $get('producto_id');
+                                                    if (! $productoId) {
+                                                        return;
+                                                    }
+
+                                                    if ($state) {
+                                                        $clienteId = $get('../../cliente_id');
+                                                        if ($clienteId && $this->clienteYaUsoOfertaApertura20EsteMes((int) $clienteId)) {
+                                                            $set('oferta_cliente_20', false);
+
+                                                            Notification::make()
+                                                                ->title('Límite alcanzado')
+                                                                ->body('Este cliente ya utilizó el descuento de apertura 20% este mes.')
+                                                                ->warning()
+                                                                ->send();
+
+                                                            return;
+                                                        }
+
+                                                        $set('aplica_liquidacion', false);
+                                                    }
+
+                                                    $cantidad = (int) ($get('cantidad') ?? 1);
+                                                    $tipoPrecio = $state ? 'apertura_20' : 'normal';
+                                                    $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, $cantidad, false);
 
                                                     $set('precio', $precioFinal);
                                                     $set('subtotal', round($precioFinal * $cantidad, 2));
@@ -533,7 +615,11 @@ class CreateVenta extends CreateRecord
                                                         return;
                                                     }
 
-                                                    $tipoPrecio = $get('aplica_liquidacion') ? 'liquidacion' : 'normal';
+                                                    $tipoPrecio = match (true) {
+                                                        (bool) $get('oferta_cliente_20') => 'apertura_20',
+                                                        (bool) $get('aplica_liquidacion') => 'liquidacion',
+                                                        default => 'normal',
+                                                    };
                                                     $precioFinal = $this->calcularPrecioDetalle((int) $productoId, $tipoPrecio, (int) $state, false);
 
                                                     $set('precio', $precioFinal);
@@ -898,6 +984,14 @@ class CreateVenta extends CreateRecord
                     ]);
                 }
             }
+
+            // El descuento de apertura 20% solo puede aplicarse a clientes con el rol cliente_apertura
+            $aplicaOfertaApertura = collect($this->data['detalles'] ?? [])->contains(fn ($d) => $d['oferta_cliente_20'] ?? false);
+            if ($aplicaOfertaApertura && ! $this->clienteEsApertura($clienteId)) {
+                throw ValidationException::withMessages([
+                    'cliente_id' => 'El descuento de apertura 20% solo puede aplicarse a clientes con el rol "cliente apertura".',
+                ]);
+            }
         } catch (\Exception $e) {
             Notification::make()
                 ->warning()
@@ -918,8 +1012,9 @@ class CreateVenta extends CreateRecord
         }
         $data['estado'] = 'creada';
 
-        $cliente = ! empty($data['cliente_id']) ? User::with('roles')->find($data['cliente_id']) : null;
-        $data['requiere_evidencia_oferta20'] = $cliente?->getRoleNames()->contains('cliente_apertura') ?? false;
+        $aplicaOfertaApertura = collect($this->data['detalles'] ?? [])->contains(fn ($d) => $d['oferta_cliente_20'] ?? false);
+        $data['requiere_evidencia_oferta20'] = $aplicaOfertaApertura;
+        $data['requiere_codigo_confirmacion'] = $aplicaOfertaApertura;
 
         return $data;
     }
@@ -928,7 +1023,6 @@ class CreateVenta extends CreateRecord
     {
         try {
             DB::transaction(function () {
-                // dd($this->data['detalles']);
                 foreach ($this->record->detalles as $detalle) {
                     $detalleData = collect($this->data['detalles'])->first(fn ($d) => ($d['producto_id'] ?? null) == $detalle->producto_id && ($d['cantidad'] ?? null) == $detalle->cantidad);
                     if ($detalleData && ($detalleData['oferta_cliente_20'] ?? false)) {
@@ -944,13 +1038,13 @@ class CreateVenta extends CreateRecord
                     $this->record->requiere_validacion_pago = true;
                 }
 
-                if ($requiereValidacionPago || $this->record->requiere_evidencia_oferta20) {
+                if ($requiereValidacionPago || $this->record->requiere_evidencia_oferta20 || $this->record->requiere_codigo_confirmacion) {
                     $this->record->estado = 'validacion_pago';
                     $this->record->save();
 
                     Notification::make()
                         ->title('Venta registrada pendiente de validación')
-                        ->body('Motivo(s): '.implode(', ', $this->record->motivosPendientes()).'. Debe ser validada por un administrador antes de generar factura.')
+                        ->body('Motivo(s): '.implode(', ', $this->record->motivosPendientes()).'. Debe completarse la validación antes de generar factura.')
                         ->warning()
                         ->send();
 
