@@ -9,6 +9,7 @@ use App\Models\VentaDetalle;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class MetasBodega extends Widget
 {
@@ -51,8 +52,17 @@ class MetasBodega extends Widget
 
         [$inicio, $fin] = static::rangoFechas($year, $month, $day);
 
+        $cacheKey = sprintf(
+            'widget:metas_bodega:%s:%s:%s:%s:%s',
+            $year,
+            $month,
+            $day ?: 'all',
+            $bodegaFilter ?: 'all',
+            $bodegaIds ? implode(',', $bodegaIds) : 'all'
+        );
+
         // Obtener datos de ventas por bodega
-        $ventasData = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+        $ventasData = Cache::remember($cacheKey, 60, fn () => VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->whereBetween('ventas.created_at', [$inicio, $fin])
             ->when($bodegaFilter, fn ($query, $bodega) => $query->where('bodegas.bodega', $bodega))
@@ -70,7 +80,7 @@ class MetasBodega extends Widget
                 fn ($query) => $query->whereIn('ventas.bodega_id', $bodegaIds)
             )
             ->groupBy('bodegas.id', 'bodegas.bodega')
-            ->get();
+            ->get());
 
         // Obtener metas por bodega para el mes y año actual
         $metas = Meta::where('mes', $month)

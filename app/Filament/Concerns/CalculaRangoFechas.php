@@ -11,8 +11,10 @@ trait CalculaRangoFechas
      * (a diferencia de whereYear()/whereMonth(), que envuelven la columna en una función SQL
      * y fuerzan un escaneo completo de la tabla).
      */
-    protected static function rangoFechas(int $year, int $month, ?int $day): array
+    protected static function rangoFechas(int $year, int $month, mixed $day): array
     {
+        $day = filled($day) ? (int) $day : null;
+
         if ($day) {
             $inicio = Carbon::create($year, $month, $day)->startOfDay();
             $fin = $inicio->copy()->endOfDay();
