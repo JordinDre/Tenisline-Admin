@@ -22,6 +22,14 @@ class VentaDetalle extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'oferta_cliente_20' => 'boolean',
+            'aplica_liquidacion' => 'boolean',
+        ];
+    }
+
     public function venta(): BelongsTo
     {
         return $this->belongsTo(Venta::class);

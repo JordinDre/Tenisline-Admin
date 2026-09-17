@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ventas_estado_enum', function (Blueprint $table) {
-            DB::statement("ALTER TABLE ventas MODIFY COLUMN estado ENUM('creada', 'liquidada', 'anulada', 'devuelta', 'parcialmente_devuelta', 'enviado') DEFAULT 'creada'");
+            DB::statement("ALTER TABLE ventas MODIFY COLUMN estado ENUM('creada', 'liquidada', 'anulada', 'devuelta', 'parcialmente_devuelta', 'validacion_pago', 'enviado') DEFAULT 'creada'");
         });
     }
 

@@ -26,6 +26,7 @@ use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Actions as InfolistActions;
 use Filament\Infolists\Components\Actions\Action as InfolistAction;
@@ -688,7 +689,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                         ->icon('heroicon-o-eye')
                         ->color('info')
                         ->visible(fn ($record) => filled($record->foto_evidencia_oferta20))
-                        ->modalHeading('Foto de Evidencia - Oferta 20%')
+                        ->modalHeading('Foto de Evidencia - Descuento aplicado')
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Cerrar')
                         ->infolist([
@@ -714,6 +715,202 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     ->visible(fn ($record) => $record->foto_evidencia_lat && $record->foto_evidencia_lng),
                             ]),
                         ]),
+                    Action::make('enviarCodigo')
+                        ->label('Enviar Código')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->color('info')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            if (! $record->requiere_codigo_confirmacion || $record->codigo_confirmado_en) {
+                                return false;
+                            }
+
+                            if ($record->requiere_evidencia_oferta20 && ! $record->foto_evidencia_oferta20) {
+                                return false;
+                            }
+
+                            return $user
+                                && ($user->id === $record->asesor_id || $user->hasAnyRole(User::ROLES_ADMIN));
+                        })
+                        ->requiresConfirmation()
+                        ->modalDescription('Se generará un código de 6 dígitos válido por 30 minutos. El código será enviado al cliente para que te lo confirme.')
+                        ->action(function ($record) {
+                            $record->generarCodigoConfirmacion();
+                            $record->save();
+
+                            Notification::make()
+                                ->title('Código generado')
+                                ->body('En breve se validará la información y se le enviará el código al cliente. Espera a que te lo compartan para continuar.')
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('verCodigoConfirmacion')
+                        ->label('Ver Código')
+                        ->icon('heroicon-o-key')
+                        ->color('warning')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            return $record->requiere_codigo_confirmacion
+                                && filled($record->codigo_confirmacion)
+                                && ! $record->codigo_confirmado_en
+                                && $user
+                                && $user->hasAnyRole(['super_admin', 'administrador']);
+                        })
+                        ->modalHeading('Código de confirmación - Descuento aplicado')
+                        ->modalWidth(MaxWidth::Large)
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Cerrar')
+                        ->infolist([
+                            InfolistSection::make('Antes de enviar el código')
+                                ->icon('heroicon-o-exclamation-triangle')
+                                ->iconColor('warning')
+                                ->schema([
+                                    TextEntry::make('recordatorio')
+                                        ->label('')
+                                        ->state('Valida la foto de evidencia ("Ver Foto de Evidencia") y confirma que el descuento esté aplicado correctamente antes de enviar el código.'),
+                                    TextEntry::make('productos_oferta')
+                                        ->label('Producto(s) con descuento aplicado')
+                                        ->weight('medium')
+                                        ->state(fn ($record) => $record->detalles()
+                                            ->where(fn ($q) => $q->where('oferta_cliente_20', true)->orWhere('aplica_liquidacion', true))
+                                            ->with('producto')
+                                            ->get()
+                                            ->map(fn ($detalle) => $detalle->producto?->descripcion.($detalle->oferta_cliente_20 ? ' (apertura 20%)' : ' (liquidación)'))
+                                            ->filter()
+                                            ->implode(', ') ?: 'N/A'),
+                                ]),
+                            InfolistSection::make('Código de confirmación')
+                                ->icon('heroicon-o-key')
+                                ->iconColor('success')
+                                ->columns(2)
+                                ->schema([
+                                    TextEntry::make('codigo_confirmacion')
+                                        ->label('Código')
+                                        ->copyable()
+                                        ->copyMessage('Código copiado')
+                                        ->weight('bold')
+                                        ->size('xl')
+                                        ->badge()
+                                        ->color(fn ($record) => $record->codigoExpirado() ? 'danger' : 'success'),
+                                    TextEntry::make('estado_codigo')
+                                        ->label('Vigencia')
+                                        ->state(fn ($record) => $record->codigoExpirado()
+                                            ? 'Expirado. Debe reenviarse.'
+                                            : 'Vigente por 30 minutos desde que se generó.')
+                                        ->color(fn ($record) => $record->codigoExpirado() ? 'danger' : 'gray'),
+                                ]),
+                            InfolistSection::make('Mensaje para el cliente')
+                                ->description('Cópialo y envíaselo por el medio que uses (WhatsApp, SMS, etc.).')
+                                ->icon('heroicon-o-chat-bubble-left-right')
+                                ->iconColor('info')
+                                ->schema([
+                                    TextEntry::make('mensaje')
+                                        ->label('')
+                                        ->copyable()
+                                        ->copyMessage('Mensaje copiado')
+                                        ->columnSpanFull()
+                                        ->state(fn ($record) => $record->mensajeConfirmacionCliente()),
+                                ]),
+                        ]),
+                    Action::make('ingresarCodigo')
+                        ->label('Ingresar Código')
+                        ->icon('heroicon-o-lock-open')
+                        ->color('success')
+                        ->visible(function ($record) {
+                            $user = \Filament\Facades\Filament::auth()->user();
+
+                            return $record->estado === EstadoVentaStatus::ValidacionPago
+                                && $record->requiere_codigo_confirmacion
+                                && filled($record->codigo_confirmacion)
+                                && ! $record->codigo_confirmado_en
+                                && $user
+                                && ($user->id === $record->asesor_id || $user->hasAnyRole(User::ROLES_ADMIN));
+                        })
+                        ->modalWidth(MaxWidth::Small)
+                        ->form([
+                            Placeholder::make('instrucciones')
+                                ->label('')
+                                ->content('Pide al cliente el código de 6 dígitos que le compartieron y escríbelo aquí.'),
+                            TextInput::make('codigo')
+                                ->label('Código de confirmación')
+                                ->required()
+                                ->maxLength(6)
+                                ->rule('regex:/^[0-9]{6}$/')
+                                ->extraInputAttributes([
+                                    'inputmode' => 'numeric',
+                                    'autocomplete' => 'one-time-code',
+                                    'style' => 'text-align: center; font-size: 1.5rem; font-family: monospace; letter-spacing: 0.5em;',
+                                ]),
+                        ])
+                        ->action(function ($record, array $data) {
+                            if ($record->codigoExpirado()) {
+                                Notification::make()
+                                    ->title('El código expiró')
+                                    ->body('Deben pasar menos de 30 minutos desde que se generó. Usa "Enviar Código" para generar uno nuevo.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            if ($record->requiere_evidencia_oferta20 && ! $record->foto_evidencia_oferta20) {
+                                Notification::make()
+                                    ->title('Falta la foto de evidencia')
+                                    ->body('Debe subirse la foto de evidencia antes de confirmar el código.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            if (trim((string) $data['codigo']) !== $record->codigo_confirmacion) {
+                                Notification::make()
+                                    ->title('Código incorrecto')
+                                    ->body('El código ingresado no coincide.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $record->codigo_confirmado_en = now();
+
+                            if ($record->requiere_validacion_pago) {
+                                $record->save();
+
+                                Notification::make()
+                                    ->title('Código confirmado')
+                                    ->body('Falta validar el pago para generar la factura.')
+                                    ->success()
+                                    ->send();
+
+                                return;
+                            }
+
+                            try {
+                                DB::transaction(function () use ($record) {
+                                    $record->estado = 'creada';
+                                    $record->save();
+
+                                    VentaController::facturar($record);
+                                });
+
+                                Notification::make()
+                                    ->title('Venta confirmada')
+                                    ->body('El código fue validado y se generó la factura.')
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('Error al confirmar la venta')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+                            }
+                        }),
                     Action::make('validarPago')
                         ->label('Validar')
                         ->icon('heroicon-o-check-circle')
@@ -731,6 +928,16 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 Notification::make()
                                     ->title('Falta la foto de evidencia')
                                     ->body('Debe subirse la foto de evidencia antes de validar esta venta.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            if ($record->requiere_codigo_confirmacion && ! $record->codigo_confirmado_en) {
+                                Notification::make()
+                                    ->title('Falta confirmar el código')
+                                    ->body('El asesor debe ingresar el código de confirmación del cliente antes de validar esta venta.')
                                     ->danger()
                                     ->send();
 

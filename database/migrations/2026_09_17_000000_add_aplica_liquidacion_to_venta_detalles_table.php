@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (! Schema::hasColumn('venta_detalles', 'oferta_20')) {
-            return;
-        }
-
         Schema::table('venta_detalles', function (Blueprint $table) {
-            $table->dropColumn('oferta_20');
+            $table->boolean('aplica_liquidacion')->default(false)->after('oferta_cliente_20');
         });
     }
 
@@ -26,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('venta_detalles', function (Blueprint $table) {
-            $table->boolean('oferta_20')->default(0);
+            $table->dropColumn('aplica_liquidacion');
         });
     }
 };
