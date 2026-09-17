@@ -806,6 +806,12 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->icon('heroicon-o-chat-bubble-left-right')
                                 ->iconColor('info')
                                 ->schema([
+                                    TextEntry::make('telefono_cliente')
+                                        ->label('Número del cliente')
+                                        ->copyable()
+                                        ->copyMessage('Número copiado')
+                                        ->weight('medium')
+                                        ->state(fn ($record) => $record->cliente?->whatsapp ?: $record->cliente?->telefono ?: 'Sin número registrado'),
                                     TextEntry::make('mensaje')
                                         ->label('')
                                         ->copyable()
