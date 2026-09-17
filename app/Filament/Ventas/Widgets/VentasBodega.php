@@ -7,6 +7,7 @@ use App\Models\VentaDetalle;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class VentasBodega extends Widget
 {
@@ -50,8 +51,18 @@ class VentasBodega extends Widget
 
         [$inicio, $fin] = static::rangoFechas($year, $month, $day);
 
+        $cacheKey = sprintf(
+            'widget:ventas_bodega:%s:%s:%s:%s:%s:%s',
+            $year,
+            $month,
+            $day ?: 'all',
+            $bodegaFilter ?: 'all',
+            $generoFilter ?: 'all',
+            $bodegaIds ? implode(',', $bodegaIds) : 'all'
+        );
+
         // Obtener datos agrupados por asesor para mostrar totales (agregado en SQL para no cargar todas las filas en memoria)
-        $dataAgrupada = VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
+        $dataAgrupada = Cache::remember($cacheKey, 60, fn () => VentaDetalle::join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_detalles.producto_id')
             ->join('bodegas', 'ventas.bodega_id', '=', 'bodegas.id')
             ->join('users', 'ventas.asesor_id', '=', 'users.id')
@@ -73,7 +84,7 @@ class VentasBodega extends Widget
                 COUNT(DISTINCT ventas.cliente_id) as clientes
             ')
             ->groupBy('ventas.asesor_id', 'users.name')
-            ->get()
+            ->get())
             ->map(function ($fila) {
                 $total = (float) $fila->total;
                 $costo = (float) $fila->costo;
