@@ -330,6 +330,11 @@ class CreateVenta extends CreateRecord
                                                 ->validationMessages([
                                                     'regex' => 'El apellido debe contener al menos una letra y estar en MAYÚSCULAS.',
                                                 ]),
+                                            TextInput::make('codigo_area')
+                                                ->label('Código de área')
+                                                ->placeholder('+502')
+                                                ->helperText('Solo si el cliente es de otro país o región.')
+                                                ->maxLength(10),
                                             TextInput::make('telefono')
                                                 ->label('Teléfono')
                                                 ->tel()
