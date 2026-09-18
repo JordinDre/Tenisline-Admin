@@ -811,7 +811,16 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->copyable()
                                         ->copyMessage('Número copiado')
                                         ->weight('medium')
-                                        ->state(fn ($record) => $record->cliente?->whatsapp ?: $record->cliente?->telefono ?: 'Sin número registrado'),
+                                        ->state(function ($record) {
+                                            $cliente = $record->cliente;
+                                            $numero = $cliente?->whatsapp ?: $cliente?->telefono;
+
+                                            if (! $numero) {
+                                                return 'Sin número registrado';
+                                            }
+
+                                            return trim(($cliente?->codigo_area ? "{$cliente->codigo_area} " : '').$numero);
+                                        }),
                                     TextEntry::make('mensaje')
                                         ->label('')
                                         ->copyable()
