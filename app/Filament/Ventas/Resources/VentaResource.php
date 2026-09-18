@@ -640,7 +640,13 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     'capture' => 'environment',
                                     'accept' => 'image/*',
                                 ])
-                                ->maxSize(5000)
+                                // Redimensiona en el navegador ANTES de subir, para que una foto de
+                                // cámara de celular (que puede pesar varios MB) no choque con maxSize.
+                                ->imageResizeMode('contain')
+                                ->imageResizeTargetWidth('1600')
+                                ->imageResizeTargetHeight('1600')
+                                ->imageResizeUpscale(false)
+                                ->maxSize(8000)
                                 ->optimize('webp'),
                             Grid::make(1)
                                 ->extraAttributes(['x-data' => '{}'])
