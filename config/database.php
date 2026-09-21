@@ -159,6 +159,9 @@ return [
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
             'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'timeout' => env('REDIS_TIMEOUT', 2.5),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 2.5),
+            'retry_interval' => env('REDIS_RETRY_INTERVAL', 100),
         ],
 
         'default' => [
