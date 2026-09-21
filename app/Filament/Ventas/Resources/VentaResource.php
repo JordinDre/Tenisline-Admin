@@ -739,9 +739,23 @@ class VentaResource extends Resource implements HasShieldPermissions
                             return $user
                                 && ($user->id === $record->asesor_id || $user->hasAnyRole(User::ROLES_ADMIN));
                         })
+                        ->disabled(fn ($record) => filled($record->codigo_confirmacion) && ! $record->codigoExpirado())
+                        ->tooltip(fn ($record) => (filled($record->codigo_confirmacion) && ! $record->codigoExpirado())
+                            ? 'Ya se envió un código vigente hace menos de 30 minutos. Espera a que expire o a que el cliente lo confirme antes de reenviar.'
+                            : null)
                         ->requiresConfirmation()
                         ->modalDescription('Se generará un código de 6 dígitos válido por 30 minutos. El código será enviado al cliente para que te lo confirme.')
                         ->action(function ($record) {
+                            if (filled($record->codigo_confirmacion) && ! $record->codigoExpirado()) {
+                                Notification::make()
+                                    ->title('Código todavía vigente')
+                                    ->body('Ya existe un código enviado hace menos de 30 minutos. Espera a que expire o a que el cliente lo confirme antes de generar uno nuevo.')
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
                             $record->generarCodigoConfirmacion();
                             $record->save();
 
