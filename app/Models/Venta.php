@@ -94,7 +94,26 @@ class Venta extends Model
 
     public function codigoExpirado(): bool
     {
-        return $this->codigo_generado_en !== null && $this->codigo_generado_en->addMinutes(30)->isPast();
+        return $this->codigo_generado_en !== null && $this->codigo_generado_en->addMinutes(5)->isPast();
+    }
+
+    /**
+     * Número del cliente en formato E.164 para enviarlo por Twilio.
+     * Usa WhatsApp si existe, si no el teléfono. Todos los mensajes de Tenisline
+     * apuntan al código de país de Guatemala (+502), sin importar el codigo_area del cliente.
+     */
+    public function telefonoClienteE164(): ?string
+    {
+        $cliente = $this->cliente;
+        $numero = $cliente?->whatsapp ?: $cliente?->telefono;
+
+        if (blank($numero)) {
+            return null;
+        }
+
+        $numero = preg_replace('/\D/', '', $numero);
+
+        return '+502'.$numero;
     }
 
     /**

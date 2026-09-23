@@ -49,6 +49,7 @@
         "stechstudio/filament-impersonate": "^3.14",
         "tightenco/ziggy": "^2.0",
         "tomatophp/filament-pwa": "^1.0",
+        "twilio/sdk": "^8.12",
         "yemenopensource/filament-excel": "^0.1.0"
     },
     "require-dev": {

@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'verify_sid' => env('TWILIO_VERIFY_SID'),
+        // Plantilla pre-aprobada de Twilio Verify, única disponible en español:
+        // "{{code}} es su código de verificación para {{friendly_name}}."
+        'verify_template_sid' => env('TWILIO_VERIFY_TEMPLATE_SID', 'HJ4d9c5db569029bedab5b28ab79f4cc8d'),
+    ],
+
     'fel' => [
         'usuario_api' => env('FEL_USUARIO_API', 'CALIDADES_DEMO'),
         'llave_api' => env('FEL_LLAVE_API', '5885D496FAB7DF356E09C6734E34FC04'),
