@@ -35,6 +35,13 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        // Alphanumeric Sender ID ya registrado y aprobado para Guatemala en esa cuenta.
+        'alpha_sender' => env('TWILIO_ALPHA_SENDER', 'AUTHMSG'),
+    ],
+
     'fel' => [
         'usuario_api' => env('FEL_USUARIO_API', 'CALIDADES_DEMO'),
         'llave_api' => env('FEL_LLAVE_API', '5885D496FAB7DF356E09C6734E34FC04'),

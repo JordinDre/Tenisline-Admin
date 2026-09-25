@@ -14,6 +14,7 @@ use App\Models\ValeRegalo;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Services\GuatexService;
+use App\Services\TwilioSmsService;
 use App\Enums\EstadoVentaStatus;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\DB;
@@ -741,15 +742,15 @@ class VentaResource extends Resource implements HasShieldPermissions
                         })
                         ->disabled(fn ($record) => filled($record->codigo_confirmacion) && ! $record->codigoExpirado())
                         ->tooltip(fn ($record) => (filled($record->codigo_confirmacion) && ! $record->codigoExpirado())
-                            ? 'Ya se envió un código vigente hace menos de 30 minutos. Espera a que expire o a que el cliente lo confirme antes de reenviar.'
+                            ? 'Ya se envió un código vigente hace menos de 5 minutos. Espera a que expire o a que el cliente lo confirme antes de reenviar.'
                             : null)
                         ->requiresConfirmation()
-                        ->modalDescription('Se generará un código de 6 dígitos válido por 30 minutos. El código será enviado al cliente para que te lo confirme.')
+                        ->modalDescription('Se generará un código de 6 dígitos válido por 5 minutos. El código será enviado al cliente para que te lo confirme.')
                         ->action(function ($record) {
                             if (filled($record->codigo_confirmacion) && ! $record->codigoExpirado()) {
                                 Notification::make()
                                     ->title('Código todavía vigente')
-                                    ->body('Ya existe un código enviado hace menos de 30 minutos. Espera a que expire o a que el cliente lo confirme antes de generar uno nuevo.')
+                                    ->body('Ya existe un código enviado hace menos de 5 minutos. Espera a que expire o a que el cliente lo confirme antes de generar uno nuevo.')
                                     ->warning()
                                     ->send();
 
@@ -759,11 +760,35 @@ class VentaResource extends Resource implements HasShieldPermissions
                             $record->generarCodigoConfirmacion();
                             $record->save();
 
-                            Notification::make()
-                                ->title('Código generado')
-                                ->body('En breve se validará la información y se le enviará el código al cliente. Espera a que te lo compartan para continuar.')
-                                ->success()
-                                ->send();
+                            $numero = $record->telefonoClienteE164();
+
+                            if (! $numero) {
+                                Notification::make()
+                                    ->title('Código generado, falta número')
+                                    ->body('El cliente no tiene un teléfono registrado. Usa "Ver Código" para enviarlo manualmente.')
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
+                            try {
+                                app(TwilioSmsService::class)->enviar($numero, $record->mensajeConfirmacionCliente());
+
+                                Notification::make()
+                                    ->title('Código enviado')
+                                    ->body('Se envió el código por SMS al cliente. Espera a que te lo confirme.')
+                                    ->success()
+                                    ->send();
+                            } catch (\Throwable $e) {
+                                report($e);
+
+                                Notification::make()
+                                    ->title('Código generado, no se pudo enviar el SMS')
+                                    ->body('Ocurrió un error al enviar el SMS automático. Usa "Ver Código" para enviarlo manualmente.')
+                                    ->danger()
+                                    ->send();
+                            }
                         }),
                     Action::make('verCodigoConfirmacion')
                         ->label('Ver Código')
@@ -818,7 +843,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->label('Vigencia')
                                         ->state(fn ($record) => $record->codigoExpirado()
                                             ? 'Expirado. Debe reenviarse.'
-                                            : 'Vigente por 30 minutos desde que se generó.')
+                                            : 'Vigente por 5 minutos desde que se generó.')
                                         ->color(fn ($record) => $record->codigoExpirado() ? 'danger' : 'gray'),
                                 ]),
                             InfolistSection::make('Mensaje para el cliente')
@@ -883,7 +908,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                             if ($record->codigoExpirado()) {
                                 Notification::make()
                                     ->title('El código expiró')
-                                    ->body('Deben pasar menos de 30 minutos desde que se generó. Usa "Enviar Código" para generar uno nuevo.')
+                                    ->body('Deben pasar menos de 5 minutos desde que se generó. Usa "Enviar Código" para generar uno nuevo.')
                                     ->danger()
                                     ->send();
 

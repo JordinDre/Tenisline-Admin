@@ -164,13 +164,13 @@ it('rechaza un código incorrecto sin confirmar la venta', function () {
     expect($venta->estado)->toBe(EstadoVentaStatus::ValidacionPago);
 });
 
-it('rechaza un código expirado (más de 30 minutos)', function () {
+it('rechaza un código expirado (más de 5 minutos)', function () {
     $entorno = crearEntornoVentaApertura();
     $venta = crearVentaPendienteApertura($entorno, [
         'foto_evidencia_oferta20' => 'evidencias/qa-test.jpg',
     ]);
     $venta->generarCodigoConfirmacion();
-    $venta->codigo_generado_en = now()->subMinutes(31);
+    $venta->codigo_generado_en = now()->subMinutes(6);
     $venta->save();
 
     $this->actingAs($entorno['asesor']);
