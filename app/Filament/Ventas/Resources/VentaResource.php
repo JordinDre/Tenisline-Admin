@@ -773,7 +773,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                             }
 
                             try {
-                                app(TwilioSmsService::class)->enviarCodigo($numero, $record->codigo_confirmacion);
+                                app(TwilioSmsService::class)->enviar($numero, $record->mensajeConfirmacionCliente());
 
                                 Notification::make()
                                     ->title('Código enviado')
