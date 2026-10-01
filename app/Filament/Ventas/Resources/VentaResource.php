@@ -765,7 +765,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                             if (! $numero) {
                                 Notification::make()
                                     ->title('Código generado, falta número')
-                                    ->body('El cliente no tiene un teléfono registrado. Usa "Ver Código" para enviarlo manualmente.')
+                                    ->body('El cliente no tiene un teléfono registrado. Pide a un administrador que le envíe el código manualmente desde "Ver Código".')
                                     ->warning()
                                     ->send();
 
@@ -777,7 +777,7 @@ class VentaResource extends Resource implements HasShieldPermissions
 
                                 Notification::make()
                                     ->title('Código enviado')
-                                    ->body('Se envió el código por SMS al cliente. Espera a que te lo confirme.')
+                                    ->body('Se envió el código por SMS al cliente. Si no le llega, pide a un administrador que se lo envíe manualmente desde "Ver Código".')
                                     ->success()
                                     ->send();
                             } catch (\Throwable $e) {
@@ -785,7 +785,7 @@ class VentaResource extends Resource implements HasShieldPermissions
 
                                 Notification::make()
                                     ->title('Código generado, no se pudo enviar el SMS')
-                                    ->body('Ocurrió un error al enviar el SMS automático. Usa "Ver Código" para enviarlo manualmente.')
+                                    ->body('Ocurrió un error al enviar el SMS automático. Pide a un administrador que le envíe el código manualmente desde "Ver Código".')
                                     ->danger()
                                     ->send();
                             }
