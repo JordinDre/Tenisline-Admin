@@ -162,7 +162,7 @@ class TiendaController extends Controller
 
         $marchamo = $request->marchamo ? mb_strtolower($request->marchamo) : null;
 
-        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'], true)) {
             $productos->where('marchamo', $marchamo);
         }
 
@@ -321,7 +321,7 @@ class TiendaController extends Controller
             'generosDisponibles' => Cache::remember('catalogo:generos_disponibles', 300, fn () => Producto::select('genero')->distinct()->pluck('genero')->filter()->values()),
             'marchamo' => $marchamo,
             'puedeVerMarchamo' => $esAdmin,
-            'marchamosDisponibles' => ['rojo', 'naranja', 'celeste', 'amarillo'],
+            'marchamosDisponibles' => ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'],
         ]);
     }
 
@@ -592,7 +592,7 @@ class TiendaController extends Controller
 
         $marchamo = $request->marchamo ? mb_strtolower($request->marchamo) : null;
 
-        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'], true)) {
             $productos->where('marchamo', $marchamo);
         }
 
@@ -730,7 +730,7 @@ class TiendaController extends Controller
         }
 
         /* 🔍 MARCHAMO (SOLO ADMIN) */
-        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+        if ($esAdmin && $marchamo && in_array($marchamo, ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'], true)) {
             $vendidos->whereHas('producto', function ($q) use ($marchamo) {
                 $q->where('marchamo', $marchamo);
             });

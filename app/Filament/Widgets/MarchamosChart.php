@@ -107,7 +107,7 @@ class MarchamosChart extends Widget
             ];
         }
 
-        $order = ['rojo', 'celeste', 'amarillo', 'naranja', 'verde'];
+        $order = ['rojo', 'celeste', 'amarillo', 'naranja', 'verde', 'blanco'];
         $marchamosDisponibles = collect($costosPorMarchamo)
             ->keys()
             ->sortBy(function ($marchamo) use ($order) {
@@ -143,6 +143,11 @@ class MarchamosChart extends Widget
                 'bg' => 'bg-green-50 dark:bg-green-900/20',
                 'text' => 'text-green-600 dark:text-green-400',
                 'textBold' => 'text-green-900 dark:text-green-100',
+            ],
+            'blanco' => [
+                'bg' => 'bg-gray-50 dark:bg-gray-800/40',
+                'text' => 'text-gray-600 dark:text-gray-300',
+                'textBold' => 'text-gray-900 dark:text-gray-100',
             ],
         ];
 
