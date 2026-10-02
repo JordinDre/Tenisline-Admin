@@ -99,8 +99,8 @@ class Venta extends Model
 
     /**
      * Número del cliente en formato E.164 para enviarlo por Twilio.
-     * Usa WhatsApp si existe, si no el teléfono. Todos los mensajes de Tenisline
-     * apuntan al código de país de Guatemala (+502), sin importar el codigo_area del cliente.
+     * Usa WhatsApp si existe, si no el teléfono. Usa el codigo_area del cliente
+     * (ej. +504 Honduras) y, si no tiene, el de Guatemala (+502).
      */
     public function telefonoClienteE164(): ?string
     {
@@ -112,8 +112,9 @@ class Venta extends Model
         }
 
         $numero = preg_replace('/\D/', '', $numero);
+        $codigoArea = preg_replace('/\D/', '', (string) $cliente->codigo_area) ?: '502';
 
-        return '+502'.$numero;
+        return '+'.$codigoArea.$numero;
     }
 
     /**
