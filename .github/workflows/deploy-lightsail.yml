@@ -1,0 +1,27 @@
+name: Deploy Lightsail
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-lightsail
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      # La llave está restringida en el servidor: solo puede ejecutar
+      # "deploy-site tenisline main", sin importar el comando enviado.
+      - name: Desplegar
+        run: ssh -i ~/.ssh/deploy_key ubuntu@${{ secrets.LIGHTSAIL_HOST }} deploy
