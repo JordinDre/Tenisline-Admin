@@ -529,7 +529,7 @@ class EditOrden extends EditRecord
                                         ->downloadable()
                                         ->label('Imágen')
                                         ->disk(config('filesystems.disks.s3.driver'))
-                                        ->directory(config('filesystems.default'))
+                                        ->directory(config('filesystems.upload_directory'))
                                         ->visibility('public')
                                         ->appendFiles()
                                         ->maxSize(5000)
