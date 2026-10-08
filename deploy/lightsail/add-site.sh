@@ -42,9 +42,18 @@ server {
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
 
     location / {
         try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    location ~* \.(css|js|woff2?|ttf|svg|png|jpe?g|gif|webp|ico)\$ {
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+        try_files \$uri =404;
     }
 
     location ~ \.php\$ {
