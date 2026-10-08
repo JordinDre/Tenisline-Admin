@@ -37,6 +37,23 @@ for ini in /etc/php/8.4/fpm/php.ini /etc/php/8.4/cli/php.ini; do
   sed -i 's/^;\?date.timezone.*/date.timezone = America\/Guatemala/' "$ini"
 done
 sed -i 's/^;\?opcache.enable=.*/opcache.enable=1/' /etc/php/8.4/fpm/php.ini
+# Laravel + Filament tienen ~22k archivos PHP; el límite por defecto (10k) se queda corto
+cat > /etc/php/8.4/fpm/conf.d/99-laravel.ini <<INI
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=32
+opcache.max_accelerated_files=32531
+realpath_cache_size=4096K
+realpath_cache_ttl=600
+INI
+
+# Comprimir CSS/JS/JSON/SVG (Ubuntu solo comprime HTML por defecto)
+cat > /etc/nginx/conf.d/gzip.conf <<NGX
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 5;
+gzip_min_length 1024;
+gzip_types text/plain text/css text/xml application/json application/javascript application/xml image/svg+xml font/woff2;
+NGX
 
 # Pool FPM dimensionado para 4 GB de RAM (con 2 GB bajar a 8)
 sed -i 's/^pm.max_children.*/pm.max_children = 20/' /etc/php/8.4/fpm/pool.d/www.conf

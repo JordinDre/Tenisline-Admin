@@ -47,6 +47,13 @@ server {
         try_files \$uri \$uri/ /index.php?\$query_string;
     }
 
+    location ~* \.(css|js|woff2?|ttf|svg|png|jpe?g|gif|webp|ico)\$ {
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+        try_files \$uri =404;
+    }
+
     location ~ \.php\$ {
         fastcgi_pass unix:/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
