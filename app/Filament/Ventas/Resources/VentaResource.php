@@ -337,7 +337,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                         ->label('Imágen')
                                         ->imageEditor()
                                         ->disk(config('filesystems.disks.s3.driver'))
-                                        ->directory(config('filesystems.default'))
+                                        ->directory(config('filesystems.upload_directory'))
                                         ->visibility('public')
                                         ->appendFiles()
                                         ->maxSize(5000)
@@ -635,7 +635,7 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->required()
                                 ->image()
                                 ->disk(config('filesystems.disks.s3.driver'))
-                                ->directory(config('filesystems.default'))
+                                ->directory(config('filesystems.upload_directory'))
                                 ->visibility('public')
                                 ->extraInputAttributes([
                                     'capture' => 'environment',

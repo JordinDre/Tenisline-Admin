@@ -324,7 +324,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     ->imageEditor()
                     ->multiple()
                     ->disk(config('filesystems.disks.s3.driver'))
-                    ->directory(config('filesystems.default'))
+                    ->directory(config('filesystems.upload_directory'))
                     ->visibility('public')
                     ->maxSize(5000)
                     ->optimize('webp')
@@ -340,7 +340,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                 //             ->label('Videos')
                 //             ->multiple()
                 //             ->disk(config('filesystems.disks.s3.driver'))
-                //             ->directory(config('filesystems.default'))
+                //             ->directory(config('filesystems.upload_directory'))
                 //             ->visibility('public')
                 //             ->panelLayout('grid'),
                 //     ]),
