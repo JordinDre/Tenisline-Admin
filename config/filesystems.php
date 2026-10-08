@@ -17,7 +17,7 @@ return [
 
     // Carpeta del bucket donde se guardan las imágenes que suben los usuarios.
     // Antes se usaba el valor de FILESYSTEM_DISK ("local"), lo que llevó a borrarla por error.
-    'upload_directory' => env('UPLOAD_DIRECTORY', 'tenisline'),
+    'upload_directory' => env('UPLOAD_DIRECTORY', 'tenisline-produccion'),
 
     /*
     |--------------------------------------------------------------------------
