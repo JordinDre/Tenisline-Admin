@@ -53,7 +53,7 @@ server {
         expires 30d;
         add_header Cache-Control "public";
         access_log off;
-        try_files \$uri =404;
+        try_files \$uri /index.php?\$query_string;
     }
 
     location ~ \.php\$ {
