@@ -1,45 +1,22 @@
-var staticCacheName = "pwa-v" + new Date().getTime();
-var filesToCache = [
-    '/offline',
-    '/css/app.css',
-    '/js/app.js',
-"
-];
+// Service worker mínimo para que la PWA sea instalable.
+// No guarda nada en caché: así nunca sirve assets viejos después de un deploy.
 
-// Cache on install
-self.addEventListener("install", event => {
-    this.skipWaiting();
-    event.waitUntil(
-        caches.open(staticCacheName)
-            .then(cache => {
-                return cache.addAll(filesToCache);
-            })
-    )
+self.addEventListener("install", () => {
+    self.skipWaiting();
 });
 
-// Clear cache on activate
-self.addEventListener('activate', event => {
+// Borra cachés de versiones anteriores del service worker
+self.addEventListener("activate", event => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
+        caches.keys()
+            .then(cacheNames => Promise.all(
                 cacheNames
-                    .filter(cacheName => (cacheName.startsWith("pwa-")))
-                    .filter(cacheName => (cacheName !== staticCacheName))
+                    .filter(cacheName => cacheName.startsWith("pwa-"))
                     .map(cacheName => caches.delete(cacheName))
-            );
-        })
+            ))
+            .then(() => self.clients.claim())
     );
 });
 
-// Serve from Cache
-self.addEventListener("fetch", event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                return response || fetch(event.request);
-            })
-            .catch(() => {
-                return caches.match('offline');
-            })
-    )
-});
+// Sin evento "fetch": el navegador maneja todas las peticiones directo,
+// incluidos los envíos de Livewire y los formularios.
