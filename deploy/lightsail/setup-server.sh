@@ -55,8 +55,35 @@ gzip_min_length 1024;
 gzip_types text/plain text/css text/xml application/json application/javascript application/xml image/svg+xml font/woff2;
 NGX
 
-# Pool FPM dimensionado para 4 GB de RAM (con 2 GB bajar a 8)
-sed -i 's/^pm.max_children.*/pm.max_children = 20/' /etc/php/8.4/fpm/pool.d/www.conf
+# Pool FPM principal: cada proceso de Laravel+Filament usa ~230 MB, así que en 4 GB caben ~8
+# (con 20 el servidor se quedaba sin memoria y se caía). Los procesos se reciclan y no se dejan colgados.
+sed -i -E 's/^pm = .*/pm = dynamic/; s/^pm.max_children = .*/pm.max_children = 8/; s/^;?pm.start_servers = .*/pm.start_servers = 3/; s/^;?pm.min_spare_servers = .*/pm.min_spare_servers = 2/; s/^;?pm.max_spare_servers = .*/pm.max_spare_servers = 4/; s/^;?pm.max_requests = .*/pm.max_requests = 300/; s/^;?request_terminate_timeout = .*/request_terminate_timeout = 90s/' /etc/php/8.4/fpm/pool.d/www.conf
+grep -q '^request_terminate_timeout' /etc/php/8.4/fpm/pool.d/www.conf || echo 'request_terminate_timeout = 90s' >> /etc/php/8.4/fpm/pool.d/www.conf
+
+# Pool aparte para las fotos (/img): máximo 2 a la vez, para que nunca dejen sin servicio a las páginas
+cat > /etc/php/8.4/fpm/pool.d/img.conf <<'POOL'
+[img]
+user = www-data
+group = www-data
+listen = /run/php/php8.4-fpm-img.sock
+listen.owner = www-data
+listen.group = www-data
+pm = ondemand
+pm.max_children = 2
+pm.process_idle_timeout = 10s
+pm.max_requests = 100
+request_terminate_timeout = 60s
+php_admin_value[memory_limit] = 384M
+POOL
+
+# Límite de pedidos por segundo a los robots de Meta (anuncios de Facebook/Instagram), que revisan el sitio sin parar
+cat > /etc/nginx/conf.d/limites.conf <<'NGX'
+map $http_user_agent $clave_robot {
+    default "";
+    ~*(meta-externalads|meta-externalagent|facebookexternalhit) $binary_remote_addr;
+}
+limit_req_zone $clave_robot zone=robots:10m rate=3r/s;
+NGX
 
 # www-data necesita home para llaves SSH de GitHub y caché de composer/npm
 mkdir -p /var/www/.ssh && chown -R www-data:www-data /var/www && chmod 700 /var/www/.ssh

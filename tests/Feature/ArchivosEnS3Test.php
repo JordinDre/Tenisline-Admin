@@ -15,6 +15,7 @@ class ArchivosEnS3Test extends TestCase
         $this->assertSame('s3', $campo->getDiskName());
         $this->assertSame(config('filesystems.upload_directory'), $campo->getDirectory());
         $this->assertNotSame('local', $campo->getDirectory());
+        $this->assertSame('1600', (string) $campo->getImageResizeTargetWidth(), 'Las fotos deben reducirse antes de subirlas');
     }
 
     public function test_la_carpeta_de_subidas_no_se_llama_local(): void

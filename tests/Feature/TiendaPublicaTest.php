@@ -71,4 +71,15 @@ class TiendaPublicaTest extends TestCase
         $this->get('/img/og/otra-carpeta/abc.webp')->assertNotFound();
         $this->get('/img/og/local/no-existe-en-s3.webp')->assertNotFound();
     }
+
+    public function test_el_html_publico_no_expone_rutas_internas(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // Los robots (Meta, Google) visitan toda dirección que ven en el código de la página
+        foreach (['ventas\\/', 'inventario\\/', 'horizon', 'reporte\\/', 'pdf\\/'] as $interna) {
+            $this->assertStringNotContainsString('"uri":"'.$interna, $html, "El HTML publica la ruta interna {$interna}");
+        }
+        $this->assertStringContainsString('"producto"', $html, 'La tienda necesita la ruta de producto');
+    }
 }
