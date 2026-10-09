@@ -14,7 +14,7 @@ export default function ImagenProducto({ src, alt, className = '', ajuste = 'cov
     if (!src || error) {
         return (
             <div className={`flex items-center justify-center bg-neutral-100 ${className}`} role="img" aria-label={alt}>
-                <img src="/images/logo.png" alt="" className="w-2/5 max-w-[220px] opacity-20 mix-blend-multiply" loading="lazy" decoding="async" />
+                <img src="/images/logo.webp" alt="" className="w-2/5 max-w-[220px] opacity-20 mix-blend-multiply" loading="lazy" decoding="async" />
             </div>
         );
     }

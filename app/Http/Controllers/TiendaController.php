@@ -51,7 +51,7 @@ class TiendaController extends Controller
             'seo' => Seo::make(
                 'Tenisline | Tenis de marca en Zacapa, Chiquimula y Esquipulas',
                 'Nike, adidas, Puma, New Balance, On, Hoka y más a precios bajos. No box, sí precio. Compra por WhatsApp en Zacapa, Chiquimula y Esquipulas, Guatemala.',
-                $destacados[0]['imagen'] ?? null,
+                null,
                 url('/'),
                 'website',
                 true,
@@ -238,7 +238,7 @@ class TiendaController extends Controller
             'seo' => Seo::make(
                 $nombre.' | Tenisline',
                 $nombre.($precio ? ' desde Q'.number_format($precio, 2) : '').'. Tallas disponibles en Zacapa, Chiquimula y Esquipulas. No box, sí precio. Pide por WhatsApp.',
-                $foto, $enlace, 'product', true,
+                Seo::imagenOg($foto), $enlace, 'product', true,
                 array_values(array_filter([
                     $precio ? [
                         '@context' => 'https://schema.org', '@type' => 'Product',

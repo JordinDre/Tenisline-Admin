@@ -99,7 +99,7 @@ export default function Header() {
                         </SheetTrigger>
                         <SheetContent side="left" className="flex w-[86%] max-w-sm flex-col p-0">
                             <SheetHeader className="border-b px-5 py-4 text-left">
-                                <SheetTitle><img src="/images/logo.png" alt="Tenisline" className="h-10 mix-blend-multiply" /></SheetTitle>
+                                <SheetTitle><img src="/images/logo.webp" alt="Tenisline" className="h-10 mix-blend-multiply" /></SheetTitle>
                                 <SheetDescription className="sr-only">Menú de navegación</SheetDescription>
                             </SheetHeader>
                             <nav className="flex flex-col p-3">
@@ -132,7 +132,7 @@ export default function Header() {
                     </Sheet>
 
                     <Link href="/" className="flex shrink-0 items-center" aria-label="Tenisline, inicio">
-                        <img src="/images/logo.png" alt="Tenisline" className="h-11 w-auto mix-blend-multiply transition-transform duration-500 hover:scale-105 lg:h-14" />
+                        <img src="/images/logo.webp" alt="Tenisline" className="h-11 w-auto mix-blend-multiply transition-transform duration-500 hover:scale-105 lg:h-14" />
                     </Link>
 
                     <nav className="ml-4 hidden items-center gap-0.5 lg:flex xl:ml-8">

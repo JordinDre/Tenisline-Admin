@@ -20,11 +20,13 @@
     <meta property="og:title" content="{{ $seo['title'] ?? 'Tenisline' }}">
     <meta property="og:description" content="{{ $seo['description'] ?? '' }}">
     <meta property="og:url" content="{{ $seo['canonical'] ?? url()->current() }}">
-    <meta property="og:image" content="{{ $seo['image'] ?? url('/images/logo.png') }}">
+    <meta property="og:image" content="{{ $seo['image'] ?? url('/images/og-tenisline.jpg') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $seo['title'] ?? 'Tenisline' }}">
     <meta name="twitter:description" content="{{ $seo['description'] ?? '' }}">
-    <meta name="twitter:image" content="{{ $seo['image'] ?? url('/images/logo.png') }}">
+    <meta name="twitter:image" content="{{ $seo['image'] ?? url('/images/og-tenisline.jpg') }}">
     @foreach (($seo['jsonld'] ?? []) as $dato)
         <script type="application/ld+json">{!! json_encode($dato, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
     @endforeach
@@ -33,10 +35,10 @@
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link rel="dns-prefetch" href="{{ parse_url(config('filesystems.disks.s3.url'), PHP_URL_HOST) ? '//'.parse_url(config('filesystems.disks.s3.url'), PHP_URL_HOST) : '//s3.amazonaws.com' }}">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800|archivo-black:400&display=swap" rel="stylesheet" />
-    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
-    <link rel="apple-touch-icon" href="{{ asset('favicon.png') }}">
+    <link rel="icon" href="{{ asset('favicon-192.png') }}" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="{{ asset('favicon-192.png') }}">
     <link rel="sitemap" type="application/xml" href="{{ url('/sitemap.xml') }}">
-    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/png">
+    
 
     <!-- Scripts -->
     @routes
