@@ -11,8 +11,6 @@ import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import { Check, MapPin, MessageCircle, ShoppingBag, Store, Tag } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import Zoom from 'react-medium-image-zoom';
-import 'react-medium-image-zoom/dist/styles.css';
 
 const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
 
@@ -76,7 +74,7 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                             <CarouselContent className="ml-0">
                                 {imagenes.map((img, n) => (
                                     <CarouselItem key={n} className="pl-0">
-                                        <div className="relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
+                                        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-100">
                                             <ImagenProducto src={img} alt={producto.descripcion} sizes="100vw" ancho={800} className="h-full w-full" />
                                         </div>
                                     </CarouselItem>
@@ -90,9 +88,9 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                             )}
                         </Carousel>
 
-                        <div className="relative hidden aspect-square overflow-hidden rounded-3xl bg-neutral-100 lg:block">
+                        <div className="relative hidden aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-100 lg:block">
                             {imagenes[foto] ? (
-                                <Zoom><ImagenProducto src={imagenes[foto]} alt={producto.descripcion} sizes="(min-width: 1024px) 50vw, 100vw" ancho={1200} prioridad className="h-full w-full" /></Zoom>
+                                <ImagenProducto key={imagenes[foto]} src={imagenes[foto]} alt={producto.descripcion} sizes="(min-width: 1024px) 50vw, 100vw" ancho={1200} prioridad zoom className="h-full w-full" />
                             ) : (
                                 <ImagenProducto src={null} alt={producto.descripcion} className="h-full w-full" />
                             )}
