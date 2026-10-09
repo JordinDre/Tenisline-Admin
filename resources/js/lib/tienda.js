@@ -33,23 +33,30 @@ export const capitalizar = (texto = '') =>
         .toLowerCase()
         .replace(/(^|\s|\/)\S/g, (c) => c.toUpperCase());
 
-/** Enlace de WhatsApp con el pedido del carrito. */
+/** Enlace de WhatsApp con el pedido del carrito: cada producto con su talla, código, subtotal y enlace. */
 export function enlaceWhatsApp(telefono, items, sucursal) {
-    const lineas = items.map(
-        (i, n) =>
-            `${n + 1}. ${i.marca ?? ''} ${capitalizar(i.descripcion)}` +
-            `${i.color ? ` (${capitalizar(i.color)})` : ''}` +
-            ` · Talla ${i.talla} · Cód. ${i.codigo}` +
-            ` · ${i.cantidad} x ${quetzales(precioFinal(i))}`,
-    );
+    const origen = typeof window !== 'undefined' ? window.location.origin : '';
+    const piezas = items.reduce((s, i) => s + i.cantidad, 0);
+
+    const lineas = items.map((i, n) => {
+        const nombre = `${i.marca ? `${capitalizar(i.marca)} ` : ''}${capitalizar(i.descripcion)}${i.color ? ` (${capitalizar(i.color)})` : ''}`;
+        const unitario = precioFinal(i);
+        return [
+            `${n + 1}. *${nombre}*`,
+            `   Talla ${i.talla} · Cód. ${i.codigo}`,
+            `   ${i.cantidad} x ${quetzales(unitario)} = ${quetzales(unitario * i.cantidad)}`,
+            i.slug ? `   ${origen}/producto/${i.slug}` : null,
+        ].filter(Boolean).join('\n');
+    });
+
     const total = items.reduce((s, i) => s + precioFinal(i) * i.cantidad, 0);
     const texto = [
-        `¡Hola Tenisline ${sucursal}! 👋 Me interesan estos tenis:`,
+        `¡Hola Tenisline ${sucursal}! 👋 Quiero hacer este pedido (${piezas} ${piezas === 1 ? 'par' : 'pares'}):`,
         '',
-        ...lineas,
+        lineas.join('\n\n'),
         '',
-        `Total aproximado: ${quetzales(total)}`,
-        '¿Están disponibles?',
+        `*Total aproximado: ${quetzales(total)}*`,
+        '¿Me confirman disponibilidad y formas de pago?',
     ].join('\n');
 
     return `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
