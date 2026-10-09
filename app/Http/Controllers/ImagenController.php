@@ -59,21 +59,58 @@ class ImagenController extends Controller
         $destino = public_path("img/{$ancho}/{$ruta}");
 
         if (! is_file($destino)) {
-            $disco = Storage::disk('s3');
-            abort_unless($disco->exists($ruta), 404);
-
-            $imagen = Image::make($disco->get($ruta))
-                ->orientate()
-                ->widen($ancho, fn ($c) => $c->upsize())
-                ->encode('webp', 78);
-
-            @mkdir(dirname($destino), 0775, true);
-            file_put_contents($destino, (string) $imagen);
+            self::generar($ruta);
+            abort_unless(is_file($destino), 404);
         }
 
         return response()->file($destino, [
             'Content-Type' => 'image/webp',
             'Cache-Control' => 'public, max-age=31536000, immutable',
         ]);
+    }
+
+    /**
+     * Genera de una vez todos los tamaños de una foto (1200, 800, 480 y 240 px, WebP).
+     * Se lee y decodifica el original una sola vez y cada tamaño se saca del anterior; antes cada tamaño
+     * repetía todo el trabajo. Con candado por foto: si varias visitas piden la misma foto a la vez,
+     * una sola la genera y las demás esperan el resultado.
+     */
+    public static function generar(string $ruta): bool
+    {
+        $lock = fopen(storage_path('framework/cache/img-'.md5($ruta).'.lock'), 'c');
+        flock($lock, LOCK_EX);
+
+        try {
+            $faltan = array_filter(self::ANCHOS, fn ($w) => ! is_file(public_path("img/{$w}/{$ruta}")));
+            if (! $faltan) {
+                return true; // otro proceso ya la generó mientras esperábamos el candado
+            }
+
+            try {
+                $original = Storage::disk('s3')->get($ruta);
+                if (empty($original)) {
+                    return false; // no existe en S3
+                }
+                $imagen = Image::make($original)->orientate();
+            } catch (\Throwable) {
+                return false; // no existe o no es una imagen válida
+            }
+            unset($original);
+
+            foreach (array_reverse(self::ANCHOS) as $w) { // 1200 -> 800 -> 480 -> 240
+                $imagen->widen($w, fn ($c) => $c->upsize());
+                if (in_array($w, $faltan, true)) {
+                    $destino = public_path("img/{$w}/{$ruta}");
+                    @mkdir(dirname($destino), 0775, true);
+                    file_put_contents($destino, (string) $imagen->encode('webp', 78));
+                }
+            }
+            $imagen->destroy();
+
+            return true;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
     }
 }

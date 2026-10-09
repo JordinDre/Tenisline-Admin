@@ -45,6 +45,23 @@ server {
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin";
 
+    limit_req zone=robots burst=20 nodelay;
+    limit_req_status 429;
+
+    # Fotos redimensionadas: si el archivo ya existe lo sirve Nginx; si no, las genera un pool de PHP aparte (máx. 2)
+    location ^~ /img/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files \$uri @img;
+    }
+    location @img {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.4-fpm-img.sock;
+        fastcgi_param SCRIPT_FILENAME \$realpath_root/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_read_timeout 60;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.php?\$query_string;
     }
