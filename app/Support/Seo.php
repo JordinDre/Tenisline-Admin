@@ -13,12 +13,24 @@ class Seo
         return [
             'title' => $titulo,
             'description' => str($descripcion)->squish()->limit(160, '…')->toString(),
-            'image' => $imagen ?: url('/images/logo.png'),
+            'image' => $imagen ?: url('/images/og-tenisline.jpg'),
             'canonical' => $canonical ?: url()->current(),
             'type' => $tipo,
             'robots' => $indexar ? 'index,follow,max-image-preview:large' : 'noindex,follow',
             'jsonld' => $jsonld,
         ];
+    }
+
+    /** Foto de S3 -> versión 1200x630 en JPG (/img/og/...), el tamaño que piden WhatsApp, Facebook y X. */
+    public static function imagenOg(?string $urlS3): ?string
+    {
+        if (! $urlS3) {
+            return null;
+        }
+        $host = parse_url($urlS3, PHP_URL_HOST) ?: '';
+        $ruta = ltrim((string) parse_url($urlS3, PHP_URL_PATH), '/');
+
+        return str_contains($host, 'amazonaws.com') && $ruta ? url('/img/og/'.$ruta) : $urlS3;
     }
 
     /** Negocio local (una tienda por sucursal) y buscador interno del sitio. */

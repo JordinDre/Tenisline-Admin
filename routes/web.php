@@ -11,6 +11,7 @@ Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
 Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto');
 Route::get('/marcas', [TiendaController::class, 'marcas'])->name('marcas');
+Route::get('/img/og/{ruta}', [\App\Http\Controllers\ImagenController::class, 'og'])->where('ruta', '.+')->name('imagen.og');
 Route::get('/img/{ancho}/{ruta}', \App\Http\Controllers\ImagenController::class)->where(['ancho' => '[0-9]+', 'ruta' => '.+'])->name('imagen');
 Route::get('/sitemap.xml', [TiendaController::class, 'sitemap'])->name('sitemap');
 /* Route::get('/login', function () {

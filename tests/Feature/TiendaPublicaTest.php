@@ -58,4 +58,17 @@ class TiendaPublicaTest extends TestCase
         $this->get('/img/480/local/..%2F..%2F.env')->assertNotFound();      // intento de salir de la carpeta
         $this->get('/img/480/local/no-existe-en-s3.webp')->assertNotFound();
     }
+
+    public function test_vista_previa_usa_imagen_liviana_de_marca_y_la_ruta_og_valida_entradas(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertSee('og-tenisline.jpg', false)
+            ->assertSee('property="og:image:width" content="1200"', false);
+
+        $this->assertLessThan(100 * 1024, filesize(public_path('images/og-tenisline.jpg')), 'La imagen de vista previa debe pesar menos de 100 KB');
+        $this->assertLessThan(30 * 1024, filesize(public_path('images/logo.webp')), 'El logo del sitio debe pesar menos de 30 KB');
+
+        $this->get('/img/og/otra-carpeta/abc.webp')->assertNotFound();
+        $this->get('/img/og/local/no-existe-en-s3.webp')->assertNotFound();
+    }
 }

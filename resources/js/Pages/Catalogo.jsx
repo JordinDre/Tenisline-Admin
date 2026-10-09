@@ -249,7 +249,7 @@ export default function Catalogo({ productos, filtros = {}, marcas = [], categor
                         <div className={cn('transition-opacity duration-500', cargando && 'pointer-events-none opacity-50')}>
                             {productos.data.length === 0 ? (
                                 <div className="flex flex-col items-center rounded-3xl bg-neutral-50 px-6 py-20 text-center">
-                                    <img src="/images/logo.png" alt="" className="w-36 opacity-20 mix-blend-multiply" />
+                                    <img src="/images/logo.webp" alt="" className="w-36 opacity-20 mix-blend-multiply" />
                                     <h2 className="mt-6 text-xl font-bold">No encontramos modelos con esos filtros</h2>
                                     <p className="mt-2 max-w-sm text-neutral-500">Prueba quitando algún filtro o escríbenos por WhatsApp y te ayudamos.</p>
                                     <Button onClick={() => router.get('/catalogo')} className="mt-6 h-11 rounded-full bg-ink px-7">Ver todo el catálogo</Button>
