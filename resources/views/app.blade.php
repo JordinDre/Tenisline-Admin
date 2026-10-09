@@ -10,7 +10,17 @@
     <meta name="description" content="{{ $seo['description'] ?? 'Tenisline: tenis de las mejores marcas en Zacapa, Chiquimula y Esquipulas. No box, sí precio.' }}">
     <meta name="robots" content="{{ $seo['robots'] ?? 'index,follow' }}">
     <link rel="canonical" href="{{ $seo['canonical'] ?? url()->current() }}">
-    <meta name="theme-color" content="#0a0a0a">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="color-scheme" content="light dark">
+    <script>
+        // Modo oscuro de la tienda: lo guardado por el cliente o, si no hay, el del dispositivo. Se aplica antes de pintar para evitar el destello.
+        try {
+            if (/^\/(catalogo|producto\/|marcas|nosotros|carrito)?\/?$/.test(location.pathname)) {
+                var t = localStorage.getItem('tema');
+                if (t === 'oscuro' || (t !== 'claro' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+            }
+        } catch (e) {}
+    </script>
     <meta name="geo.region" content="GT">
 
     <!-- Open Graph / Twitter: vistas previas en WhatsApp, Facebook e Instagram -->

@@ -45,8 +45,9 @@ class Seo
                 'name' => $tienda['nombre'],
                 'slogan' => $tienda['eslogan'],
                 'url' => url('/'),
-                'logo' => url('/images/logo.png'),
-                'image' => url('/images/logo.png'),
+                'logo' => url('/images/logo-completo-negro.webp'),
+                'image' => url('/images/og-tenisline.jpg'),
+                'sameAs' => array_values($tienda['redes']),
                 'priceRange' => 'Q',
                 'areaServed' => ['Zacapa', 'Chiquimula', 'Esquipulas'],
                 'department' => collect($tienda['sucursales'])->map(fn ($s) => [

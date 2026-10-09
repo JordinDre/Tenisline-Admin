@@ -66,7 +66,7 @@ class TiendaPublicaTest extends TestCase
             ->assertSee('property="og:image:width" content="1200"', false);
 
         $this->assertLessThan(100 * 1024, filesize(public_path('images/og-tenisline.jpg')), 'La imagen de vista previa debe pesar menos de 100 KB');
-        $this->assertLessThan(30 * 1024, filesize(public_path('images/logo.webp')), 'El logo del sitio debe pesar menos de 30 KB');
+        $this->assertLessThan(30 * 1024, filesize(public_path('images/logo-negro.webp')), 'El logo del sitio debe pesar menos de 30 KB');
 
         $this->get('/img/og/otra-carpeta/abc.webp')->assertNotFound();
         $this->get('/img/og/local/no-existe-en-s3.webp')->assertNotFound();

@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { MapPin } from 'lucide-react';
 import { IconoWhatsApp } from './CarritoDrawer';
+import Redes from './Redes';
 
 const telefono = (t) => `+${t.slice(0, 3)} ${t.slice(3, 7)}-${t.slice(7)}`;
 
@@ -20,11 +21,11 @@ export default function Footer() {
             <div className="pointer-events-none absolute -right-40 -top-40 h-96 w-96 rounded-full bg-brand/20 blur-3xl" />
             <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-12 lg:px-8">
                 <div className="lg:col-span-3">
-                    <img src="/images/logo.webp" alt="Tenisline" className="h-16 w-auto invert mix-blend-screen" />
+                    <img src="/images/logo-completo-blanco.webp" alt="Tenisline, no box, sí precio" width="977" height="558" loading="lazy" className="h-24 w-auto" />
                     <p className="mt-5 max-w-xs text-sm leading-relaxed text-neutral-400">
                         Las mejores marcas de tenis, a precios que no vas a encontrar en otro lado.
                     </p>
-                    <p className="mt-2 font-display text-sm uppercase tracking-wide text-white">No box, sí precio.</p>
+                    <Redes className="-ml-2 mt-4" enlace="text-neutral-300 hover:bg-white/10 hover:text-white" />
                 </div>
 
                 <div className="lg:col-span-2">

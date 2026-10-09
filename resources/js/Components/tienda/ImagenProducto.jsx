@@ -1,3 +1,4 @@
+import Logo from '@/Components/tienda/Logo';
 import { imagenAncho } from '@/lib/tienda';
 import { cn } from '@/lib/utils';
 import { useCallback, useState } from 'react';
@@ -28,7 +29,7 @@ export default function ImagenProducto({ src, alt, className = '', sizes = '(min
     if (!src || estado === 'error') {
         return (
             <div className={cn('flex items-center justify-center bg-neutral-100', className)} role="img" aria-label={alt}>
-                <img src="/images/logo.webp" alt="" className="w-2/5 max-w-[220px] opacity-20 mix-blend-multiply" loading="lazy" decoding="async" />
+                <Logo alt="" className="w-2/5 max-w-[220px] opacity-20" loading="lazy" decoding="async" />
             </div>
         );
     }

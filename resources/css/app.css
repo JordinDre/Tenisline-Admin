@@ -136,3 +136,65 @@ html {
   height: 100%;
   width: 100%;
 }
+
+/*
+ * Modo oscuro de la tienda. El sitio usa una paleta fija (blanco, grises y negro), así que en vez de
+ * repetir "dark:" en cada elemento se redefinen aquí esos colores cuando <html> tiene la clase "dark".
+ * Los textos blancos sobre botones y fotos (text-white) no cambian.
+ */
+.dark {
+  color-scheme: dark;
+}
+.dark .bg-white,
+.dark .focus-within\:bg-white:focus-within { background-color: #0a0a0a; }
+.dark .bg-white\/95 { background-color: rgb(10 10 10 / 0.95); }
+.dark .bg-white\/90 { background-color: rgb(10 10 10 / 0.9); }
+.dark .bg-white\/85 { background-color: rgb(10 10 10 / 0.85); }
+.dark .bg-white\/80,
+.dark .supports-\[backdrop-filter\]\:bg-white\/80 { background-color: rgb(10 10 10 / 0.8); }
+.dark .bg-white\/70 { background-color: rgb(10 10 10 / 0.7); }
+.dark .bg-white\/60 { background-color: rgb(10 10 10 / 0.6); }
+.dark .bg-neutral-50 { background-color: #141414; }
+.dark .bg-neutral-100,
+.dark .hover\:bg-neutral-100:hover { background-color: #1c1c1c; }
+.dark .bg-neutral-200,
+.dark .hover\:bg-neutral-200:hover { background-color: #2a2a2a; }
+.dark .bg-brand-light,
+.dark .hover\:bg-brand-light:hover { background-color: rgb(255 79 23 / 0.16); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
+.dark .bg-ink { background-color: #262626; }
+.dark footer.bg-ink { background-color: #000; border-top: 1px solid #1f1f1f; }
+
+.dark .text-ink,
+.dark .hover\:text-ink:hover,
+.dark .text-neutral-900,
+.dark .text-neutral-800 { color: #fafafa; }
+.dark .text-neutral-700,
+.dark .text-neutral-600 { color: #d4d4d4; }
+.dark .text-neutral-500 { color: #a3a3a3; }
+.dark .text-brand-dark { color: #ff7a4d; }
+.dark .text-emerald-800 { color: #6ee7b7; }
+.dark .text-emerald-700 { color: #34d399; }
+.dark .placeholder\:text-neutral-500::placeholder { color: #a3a3a3; }
+
+.dark .border-neutral-200,
+.dark .ring-neutral-200 { border-color: #2a2a2a; --tw-ring-color: #2a2a2a; }
+.dark .border-neutral-300 { border-color: #3a3a3a; }
+.dark .border-neutral-400,
+.dark .border-neutral-500,
+.dark .hover\:border-neutral-500:hover { border-color: #525252; }
+.dark .border-ink { border-color: #fafafa; }
+.dark .ring-ink { --tw-ring-color: #fafafa; }
+.dark .ring-white { --tw-ring-color: #0a0a0a; }
+.dark .ring-black\/5 { --tw-ring-color: rgb(255 255 255 / 0.1); }
+
+.dark .to-white { --tw-gradient-to: #0a0a0a var(--tw-gradient-to-position); }
+.dark .from-neutral-100 { --tw-gradient-from: #1c1c1c var(--tw-gradient-from-position); --tw-gradient-to: rgb(28 28 28 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.dark .from-neutral-200 { --tw-gradient-from: #2a2a2a var(--tw-gradient-from-position); --tw-gradient-to: rgb(42 42 42 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.dark .via-neutral-100 { --tw-gradient-stops: var(--tw-gradient-from), #1c1c1c var(--tw-gradient-via-position), var(--tw-gradient-to); }
+
+/* Logos de marca: negros en modo claro, blancos en oscuro (al pasar el mouse recuperan su color) */
+.dark img.brightness-0 { filter: brightness(0) invert(1); }
+
+/* Foto ampliada: fondo oscuro */
+.dark [data-rmiz-modal-overlay='visible'] { background-color: rgb(10 10 10 / 0.95); }
