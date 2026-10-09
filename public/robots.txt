@@ -2,6 +2,7 @@ User-agent: *
 Disallow: /admin
 Disallow: /ventas
 Disallow: /inventario
+Disallow: /horizon
 Disallow: /livewire
 Disallow: /reporte
 Disallow: /pdf
