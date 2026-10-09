@@ -21,6 +21,9 @@ return [
         'ofertas' => ['label' => 'Ofertas', 'ofertas' => true],
     ],
 
+    // Marcas que no se muestran en el sitio (productos que no son calzado)
+    'marcas_ocultas' => ['4X'],
+
     // Logos de marca disponibles en public/images/marcas (nombre de marca en mayúsculas => archivo)
     'logos_marcas' => [
         'ADIDAS' => 'adidas.svg',

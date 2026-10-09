@@ -47,8 +47,8 @@ class TiendaResource extends Resource implements HasShieldPermissions
         return $form
             ->schema([
                 Builder::make('contenido')
-                    ->label('Promociones del inicio')
-                    ->helperText('Se muestran como carrusel al inicio del sitio web, en el orden de esta lista.')
+                    ->label('Promociones y avisos del sitio web')
+                    ->helperText('Las promociones se muestran como carrusel al inicio; los avisos rotan en la barra superior de todas las páginas.')
                     ->columnSpanFull()
                     ->cloneable()
                     ->collapsible()
@@ -91,6 +91,16 @@ class TiendaResource extends Resource implements HasShieldPermissions
                                 DatePicker::make('desde')->label('Mostrar desde'),
                                 DatePicker::make('hasta')->label('Mostrar hasta'),
                                 Toggle::make('activo')->label('Activa')->default(true),
+                            ])
+                            ->columns(2),
+                        Builder\Block::make('aviso')
+                            ->label(fn (?array $state) => 'Aviso de la barra superior'.(! empty($state['texto']) ? ': '.$state['texto'] : ''))
+                            ->icon('heroicon-o-bell-alert')
+                            ->schema([
+                                TextInput::make('texto')->label('Texto')->required()->maxLength(90),
+                                TextInput::make('boton')->label('Texto del enlace')->placeholder('Ver ofertas')->maxLength(25),
+                                TextInput::make('enlace')->label('Enlace')->placeholder('/catalogo?categoria=ofertas'),
+                                Toggle::make('activo')->label('Activo')->default(true),
                             ])
                             ->columns(2),
                     ]),

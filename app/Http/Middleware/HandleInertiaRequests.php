@@ -46,6 +46,13 @@ class HandleInertiaRequests extends Middleware
                 'nombre' => config('tienda.nombre'),
                 'eslogan' => config('tienda.eslogan'),
                 'sucursales' => config('tienda.sucursales'),
+                // Avisos de la barra superior, configurables en Filament > Promociones web
+                'avisos' => fn () => \Illuminate\Support\Facades\Cache::remember('tienda:avisos', 60, fn () => collect(\App\Models\Tienda::first()?->contenido ?? [])
+                    ->where('type', 'aviso')
+                    ->pluck('data')
+                    ->filter(fn ($a) => ! empty($a['texto']) && ($a['activo'] ?? true))
+                    ->map(fn ($a) => ['texto' => $a['texto'], 'enlace' => $a['enlace'] ?? null, 'cta' => $a['boton'] ?? null])
+                    ->values()),
             ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),

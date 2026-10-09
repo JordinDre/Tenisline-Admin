@@ -13,7 +13,7 @@ export default function ImagenProducto({ src, alt, className = '', ajuste = 'cov
                 <img
                     src="/images/logo.png"
                     alt="Tenisline"
-                    className="w-3/5 opacity-25 mix-blend-multiply"
+                    className="w-2/5 max-w-[220px] opacity-20 mix-blend-multiply"
                     loading="lazy"
                 />
             </div>

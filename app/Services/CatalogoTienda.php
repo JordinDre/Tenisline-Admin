@@ -164,6 +164,7 @@ class CatalogoTienda
             return self::consulta()
                 ->join('marcas', 'marcas.id', '=', 'productos.marca_id')
                 ->whereNull('marcas.deleted_at')
+                ->whereNotIn('marcas.marca', config('tienda.marcas_ocultas', []))
                 ->select('marcas.marca', DB::raw("COUNT(DISTINCT productos.descripcion, IFNULL(productos.color, '')) AS modelos"))
                 ->groupBy('marcas.marca')
                 ->orderByDesc('modelos')

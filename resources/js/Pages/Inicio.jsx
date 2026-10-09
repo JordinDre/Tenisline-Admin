@@ -1,231 +1,205 @@
 import LogoMarca from '@/Components/tienda/LogoMarca';
 import ProductoCard from '@/Components/tienda/ProductoCard';
+import { Button } from '@/Components/ui/button';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/Components/ui/carousel';
 import Layout from '@/Layouts/Layout';
+import { cn } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowRight, ChevronLeft, ChevronRight, MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
+import Autoplay from 'embla-carousel-autoplay';
+import { ArrowUpRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 function Hero({ promociones }) {
+    const autoplay = useRef(Autoplay({ delay: 6000, stopOnInteraction: true }));
+    const [api, setApi] = useState(null);
     const [actual, setActual] = useState(0);
-    const toque = useRef(null);
-    const total = promociones.length;
 
     useEffect(() => {
-        if (total < 2) return;
-        const t = setInterval(() => setActual((a) => (a + 1) % total), 6000);
-        return () => clearInterval(t);
-    }, [total]);
+        if (!api) return;
+        const sync = () => setActual(api.selectedScrollSnap());
+        sync();
+        api.on('select', sync);
+        return () => api.off('select', sync);
+    }, [api]);
 
-    if (!total) {
+    if (!promociones.length) {
         return (
-            <section className="relative overflow-hidden bg-ink text-white">
-                <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand/30 blur-3xl" />
-                <div className="absolute -bottom-32 left-1/3 h-80 w-80 rounded-full bg-brand/20 blur-3xl" />
-                <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-20 sm:px-6 md:py-28">
-                    <span className="inline-flex animate-fade-up items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest">
-                        <Sparkles className="h-3.5 w-3.5 text-brand" /> Tenis 100% originales
-                    </span>
-                    <h1 className="max-w-3xl animate-fade-up font-display text-5xl uppercase leading-[0.95] sm:text-6xl md:text-7xl" style={{ animationDelay: '80ms' }}>
-                        No box, <span className="text-brand">sí precio.</span>
-                    </h1>
-                    <p className="max-w-xl animate-fade-up text-lg text-neutral-300" style={{ animationDelay: '160ms' }}>
-                        Las mejores marcas para correr, entrenar y salir, a precios que no vas a encontrar en otro lado.
-                    </p>
-                    <div className="flex animate-fade-up flex-wrap gap-3" style={{ animationDelay: '240ms' }}>
-                        <Link href="/catalogo" className="inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 font-semibold text-white transition hover:bg-brand-dark">
-                            Ver catálogo <ArrowRight className="h-4 w-4" />
-                        </Link>
-                        <Link href="/catalogo?categoria=ofertas" className="rounded-full border border-white/30 px-7 py-3.5 font-semibold transition hover:bg-white hover:text-ink">
-                            Ofertas
-                        </Link>
+            <section className="mx-auto max-w-[1600px] px-4 pt-6 sm:px-6">
+                <div className="relative flex min-h-[520px] items-end overflow-hidden bg-neutral-100 p-8 sm:p-14 md:min-h-[620px]">
+                    <img src="/images/logo.png" alt="" aria-hidden="true"
+                        className="pointer-events-none absolute -right-10 top-1/2 w-[85%] max-w-[900px] -translate-y-1/2 opacity-[0.07] mix-blend-multiply md:right-0 md:w-[60%]" />
+                    <div className="relative max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h1 className="font-display text-6xl font-extrabold uppercase leading-[0.9] tracking-tight sm:text-7xl md:text-8xl">
+                            No box,<br />sí precio
+                        </h1>
+                        <p className="mt-5 max-w-md text-[17px] text-neutral-600">
+                            Nike, adidas, Puma, New Balance, On, Hoka y más, a precios que no vas a encontrar en otro lado.
+                        </p>
+                        <div className="mt-8 flex flex-wrap gap-3">
+                            <Button asChild size="lg" className="h-12 rounded-full px-7 text-[15px]"><Link href="/catalogo">Comprar</Link></Button>
+                            <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-black bg-transparent px-7 text-[15px] hover:bg-black hover:text-white"><Link href="/catalogo?categoria=ofertas">Ver ofertas</Link></Button>
+                        </div>
                     </div>
                 </div>
             </section>
         );
     }
 
-    const ir = (n) => setActual((n + total) % total);
-
     return (
-        <section
-            className="relative overflow-hidden bg-ink"
-            onTouchStart={(e) => (toque.current = e.touches[0].clientX)}
-            onTouchEnd={(e) => {
-                if (toque.current === null) return;
-                const dx = e.changedTouches[0].clientX - toque.current;
-                if (Math.abs(dx) > 40) ir(actual + (dx < 0 ? 1 : -1));
-                toque.current = null;
-            }}
-        >
-            <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${actual * 100}%)` }}>
-                {promociones.map((p, n) => {
-                    const Contenido = (
-                        <div className="relative h-[70vh] max-h-[720px] min-h-[420px] w-full shrink-0">
-                            {p.imagen && (
-                                <picture>
-                                    {p.imagen_movil && <source media="(max-width: 767px)" srcSet={p.imagen_movil} />}
-                                    <img src={p.imagen} alt={p.titulo || 'Promoción Tenisline'} className="absolute inset-0 h-full w-full object-cover" loading={n === 0 ? 'eager' : 'lazy'} />
-                                </picture>
-                            )}
-                            {(p.titulo || p.subtitulo || p.boton) && (
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
-                                    <div className="mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-16 sm:px-6">
-                                        {p.titulo && <h2 className="max-w-3xl font-display text-4xl uppercase leading-none text-white sm:text-6xl">{p.titulo}</h2>}
-                                        {p.subtitulo && <p className="mt-4 max-w-xl text-lg text-white/85">{p.subtitulo}</p>}
-                                        {p.boton && p.enlace && (
-                                            <span className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-ink transition hover:bg-brand hover:text-white">
-                                                {p.boton} <ArrowRight className="h-4 w-4" />
-                                            </span>
-                                        )}
+        <section className="mx-auto max-w-[1600px] px-4 pt-6 sm:px-6">
+            <Carousel setApi={setApi} opts={{ loop: true }} plugins={[autoplay.current]} className="group">
+                <CarouselContent className="-ml-0">
+                    {promociones.map((p, n) => {
+                        const tarjeta = (
+                            <div className="relative h-[72vh] max-h-[760px] min-h-[460px] overflow-hidden bg-neutral-200">
+                                {p.imagen && (
+                                    <picture>
+                                        {p.imagen_movil && <source media="(max-width: 767px)" srcSet={p.imagen_movil} />}
+                                        <img src={p.imagen} alt={p.titulo || 'Promoción Tenisline'} loading={n === 0 ? 'eager' : 'lazy'}
+                                            className="absolute inset-0 h-full w-full object-cover" />
+                                    </picture>
+                                )}
+                                {(p.titulo || p.subtitulo || p.boton) && (
+                                    <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/55 via-black/10 to-transparent p-8 sm:p-14">
+                                        <div className="max-w-2xl text-white">
+                                            {p.titulo && <h2 className="font-display text-5xl font-extrabold uppercase leading-[0.9] tracking-tight sm:text-7xl">{p.titulo}</h2>}
+                                            {p.subtitulo && <p className="mt-4 max-w-lg text-[17px] text-white/90">{p.subtitulo}</p>}
+                                            {p.boton && p.enlace && (
+                                                <span className="mt-7 inline-flex h-12 items-center rounded-full bg-white px-7 text-[15px] font-medium text-black transition-colors hover:bg-neutral-200">{p.boton}</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+                        );
+                        return (
+                            <CarouselItem key={n} className="pl-0">
+                                {p.enlace ? <Link href={p.enlace}>{tarjeta}</Link> : tarjeta}
+                            </CarouselItem>
+                        );
+                    })}
+                </CarouselContent>
+                {promociones.length > 1 && (
+                    <>
+                        <CarouselPrevious className="left-4 hidden h-11 w-11 border-0 bg-white/90 opacity-0 transition-opacity group-hover:opacity-100 md:flex" />
+                        <CarouselNext className="right-4 hidden h-11 w-11 border-0 bg-white/90 opacity-0 transition-opacity group-hover:opacity-100 md:flex" />
+                        <div className="absolute bottom-5 right-6 flex gap-1.5">
+                            {promociones.map((_, n) => (
+                                <button key={n} onClick={() => api?.scrollTo(n)} aria-label={`Promoción ${n + 1}`}
+                                    className={cn('h-1 rounded-full transition-all', n === actual ? 'w-8 bg-white' : 'w-4 bg-white/50')} />
+                            ))}
                         </div>
-                    );
-                    return p.enlace ? (
-                        <Link key={n} href={p.enlace} className="w-full shrink-0">{Contenido}</Link>
-                    ) : (
-                        <div key={n} className="w-full shrink-0">{Contenido}</div>
-                    );
-                })}
-            </div>
-
-            {total > 1 && (
-                <>
-                    <button onClick={() => ir(actual - 1)} className="absolute left-4 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/80 p-3 backdrop-blur transition hover:bg-white md:block" aria-label="Anterior">
-                        <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button onClick={() => ir(actual + 1)} className="absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/80 p-3 backdrop-blur transition hover:bg-white md:block" aria-label="Siguiente">
-                        <ChevronRight className="h-5 w-5" />
-                    </button>
-                    <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
-                        {promociones.map((_, n) => (
-                            <button key={n} onClick={() => ir(n)} aria-label={`Promoción ${n + 1}`}
-                                className={`h-1.5 rounded-full transition-all ${n === actual ? 'w-8 bg-white' : 'w-3 bg-white/50'}`} />
-                        ))}
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </Carousel>
         </section>
     );
 }
 
-function Titulo({ titulo, subtitulo, enlace, texto = 'Ver todo' }) {
+function Encabezado({ titulo, enlace, texto = 'Ver todo', children }) {
     return (
-        <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-                <h2 className="font-display text-3xl uppercase leading-none sm:text-4xl">{titulo}</h2>
-                {subtitulo && <p className="mt-2 text-neutral-500">{subtitulo}</p>}
+        <div className="mb-6 flex items-end justify-between gap-4">
+            <h2 className="text-2xl font-medium tracking-tight sm:text-[28px]">{titulo}</h2>
+            <div className="flex items-center gap-3">
+                {enlace && <Link href={enlace} className="text-[15px] font-medium underline-offset-4 hover:underline">{texto}</Link>}
+                {children}
             </div>
-            {enlace && (
-                <Link href={enlace} className="group hidden shrink-0 items-center gap-1 text-sm font-semibold sm:flex">
-                    {texto} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-            )}
         </div>
     );
 }
 
-const ESTILO_CATEGORIA = {
-    dama: 'from-rose-100 to-orange-50',
-    caballero: 'from-neutral-200 to-neutral-50',
-    nino: 'from-sky-100 to-cyan-50',
-    infante: 'from-amber-100 to-yellow-50',
-    ofertas: 'from-brand to-orange-400 text-white',
+function CarruselProductos({ titulo, enlace, productos }) {
+    if (!productos.length) return null;
+    return (
+        <section className="mx-auto mt-20 max-w-[1600px] px-4 sm:px-6">
+            <Carousel opts={{ align: 'start', dragFree: true }}>
+                <Encabezado titulo={titulo} enlace={enlace}>
+                    <div className="relative hidden h-11 w-24 sm:block">
+                        <CarouselPrevious className="static h-11 w-11 translate-y-0 border-0 bg-neutral-100 hover:bg-neutral-200" />
+                        <CarouselNext className="absolute right-0 top-0 h-11 w-11 translate-y-0 border-0 bg-neutral-100 hover:bg-neutral-200" />
+                    </div>
+                </Encabezado>
+                <CarouselContent className="-ml-3">
+                    {productos.map((p, n) => (
+                        <CarouselItem key={p.id} className="basis-[72%] pl-3 sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                            <ProductoCard producto={p} indice={n} />
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+        </section>
+    );
+}
+
+const FONDOS = {
+    dama: 'bg-[#f3e9e4]',
+    caballero: 'bg-[#e7e9ec]',
+    nino: 'bg-[#e4eef3]',
+    infante: 'bg-[#f3efe2]',
+    ofertas: 'bg-red-600 text-white',
 };
 
 export default function Inicio({ promociones = [], categorias = [], marcas = [], ofertas = [], novedades = [] }) {
     return (
         <Layout>
-            <Head title="Tenis originales" />
+            <Head title="Inicio" />
             <Hero promociones={promociones} />
 
             {/* Categorías */}
-            <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6">
-                <Titulo titulo="Compra por categoría" />
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
+            <section className="mx-auto mt-16 max-w-[1600px] px-4 sm:px-6">
+                <Encabezado titulo="Compra por categoría" />
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                     {categorias.map((c, n) => (
                         <Link
                             key={c.clave}
                             href={`/catalogo?categoria=${c.clave}`}
-                            className={`group relative flex aspect-[4/3] animate-fade-up flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-5 transition-transform hover:-translate-y-1 md:aspect-[3/4] ${ESTILO_CATEGORIA[c.clave] ?? 'from-neutral-100 to-white'} ${n === categorias.length - 1 && categorias.length % 2 ? 'col-span-2 aspect-[2.4/1] md:col-span-1 md:aspect-[3/4]' : ''}`}
+                            className={cn(
+                                'group relative flex aspect-square animate-in flex-col justify-between overflow-hidden p-5 fade-in fill-mode-both duration-500 sm:p-6 md:aspect-[3/4]',
+                                FONDOS[c.clave] ?? 'bg-neutral-100',
+                                n === categorias.length - 1 && categorias.length % 2 === 1 && 'col-span-2 aspect-[2/1] md:col-span-1 md:aspect-[3/4]',
+                            )}
                             style={{ animationDelay: `${n * 60}ms` }}
                         >
-                            <span className="text-sm font-semibold opacity-70">{c.modelos} modelos</span>
-                            <div className="flex items-end justify-between">
-                                <h3 className="font-display text-2xl uppercase leading-none sm:text-3xl">{c.label}</h3>
-                                <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+                            <ArrowUpRight className="h-6 w-6 self-end transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1" />
+                            <div>
+                                <h3 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">{c.label}</h3>
+                                <p className="mt-1 text-sm opacity-70">{c.modelos} modelos</p>
                             </div>
                         </Link>
                     ))}
                 </div>
             </section>
 
+            <CarruselProductos titulo="Lo más nuevo" enlace="/catalogo" productos={novedades} />
+            <CarruselProductos titulo="Ofertas" enlace="/catalogo?categoria=ofertas" productos={ofertas} />
+
             {/* Marcas */}
             {marcas.length > 0 && (
-                <section className="mt-20 border-y bg-neutral-50 py-10">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                        <Titulo titulo="Nuestras marcas" enlace="/marcas" />
-                    </div>
-                    <div className="group relative overflow-hidden">
-                        <div className="flex w-max animate-marquee gap-4 group-hover:[animation-play-state:paused]">
-                            {[...marcas, ...marcas].map((m, n) => (
-                                <Link
-                                    key={`${m.marca}-${n}`}
-                                    href={`/catalogo?marca=${encodeURIComponent(m.marca)}`}
-                                    className="flex h-24 w-44 shrink-0 items-center justify-center rounded-2xl bg-white px-6 ring-1 ring-neutral-200 grayscale transition hover:grayscale-0 hover:ring-neutral-900"
-                                >
-                                    <LogoMarca marca={m.marca} logo={m.logo} className="h-9" />
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {/* Ofertas */}
-            {ofertas.length > 0 && (
-                <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-6">
-                    <Titulo titulo="Ofertas" subtitulo="Precios especiales por tiempo limitado" enlace="/catalogo?categoria=ofertas" />
-                    <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-                        {ofertas.map((p, n) => (
-                            <div key={p.id} className="w-[46%] shrink-0 snap-start sm:w-[31%] lg:w-[23%]">
-                                <ProductoCard producto={p} indice={n} />
-                            </div>
+                <section className="mx-auto mt-20 max-w-[1600px] px-4 sm:px-6">
+                    <Encabezado titulo="Compra por marca" enlace="/marcas" />
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+                        {marcas.slice(0, 16).map((m) => (
+                            <Link key={m.marca} href={`/catalogo?marca=${encodeURIComponent(m.marca)}`}
+                                className="group flex aspect-[4/3] items-center justify-center bg-neutral-100 p-4 transition-colors hover:bg-neutral-200">
+                                <LogoMarca marca={m.marca} logo={m.logo} className="h-8 w-20 transition-transform duration-300 group-hover:scale-110 sm:h-9 sm:w-24" />
+                            </Link>
                         ))}
                     </div>
                 </section>
             )}
 
-            {/* Novedades */}
-            <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-6">
-                <Titulo titulo="Lo más nuevo" subtitulo="Recién llegados a nuestras tiendas" enlace="/catalogo" texto="Ver catálogo" />
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-                    {novedades.map((p, n) => (
-                        <ProductoCard key={p.id} producto={p} indice={n} />
-                    ))}
-                </div>
-                <div className="mt-12 text-center">
-                    <Link href="/catalogo" className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 font-semibold text-white transition hover:bg-neutral-800">
-                        Ver todo el catálogo <ArrowRight className="h-4 w-4" />
-                    </Link>
-                </div>
-            </section>
-
             {/* Cómo comprar */}
-            <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
-                <div className="grid gap-4 rounded-3xl bg-neutral-100 p-6 sm:p-10 md:grid-cols-3">
+            <section className="mx-auto mt-20 max-w-[1600px] px-4 sm:px-6">
+                <div className="grid gap-px overflow-hidden bg-neutral-200 md:grid-cols-3">
                     {[
-                        { icono: Sparkles, t: 'Elige tus tenis', d: 'Explora el catálogo y escoge tu talla.' },
-                        { icono: ShoppingBag, t: 'Agrégalos al carrito', d: 'Junta todos los modelos que te interesan.' },
-                        { icono: MessageCircle, t: 'Envíanos tu pedido', d: 'Te confirmamos disponibilidad por WhatsApp.' },
-                    ].map(({ icono: Icono, t, d }, n) => (
-                        <div key={t} className="flex gap-4 rounded-2xl bg-white p-6">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink font-display text-white">{n + 1}</span>
-                            <div>
-                                <h3 className="flex items-center gap-2 font-semibold"><Icono className="h-4 w-4 text-brand" />{t}</h3>
-                                <p className="mt-1 text-sm text-neutral-500">{d}</p>
-                            </div>
+                        ['01', 'Elige tus tenis', 'Explora el catálogo y escoge tu talla.'],
+                        ['02', 'Agrégalos a tu bolsa', 'Junta todos los modelos que te interesan.'],
+                        ['03', 'Envíanos tu pedido', 'Te confirmamos disponibilidad y forma de pago por WhatsApp.'],
+                    ].map(([n, t, d]) => (
+                        <div key={n} className="bg-white p-8">
+                            <span className="font-display text-sm font-bold text-neutral-400">{n}</span>
+                            <h3 className="mt-3 text-xl font-medium tracking-tight">{t}</h3>
+                            <p className="mt-1 text-[15px] text-neutral-500">{d}</p>
                         </div>
                     ))}
                 </div>

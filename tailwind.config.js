@@ -24,15 +24,25 @@ export default {
     	extend: {
     		fontFamily: {
     			sans: [
-    				'Figtree',
+    				'Inter',
                     ...defaultTheme.fontFamily.sans
                 ],
-    			display: ['"Archivo Black"', 'Figtree', ...defaultTheme.fontFamily.sans]
+    			display: [
+    				'"Inter Tight"',
+    				'Inter',
+                    ...defaultTheme.fontFamily.sans
+                ]
     		},
     		keyframes: {
     			'fade-up': {
-    				'0%': { opacity: '0', transform: 'translateY(16px)' },
-    				'100%': { opacity: '1', transform: 'translateY(0)' }
+    				'0%': {
+    					opacity: '0',
+    					transform: 'translateY(16px)'
+    				},
+    				'100%': {
+    					opacity: '1',
+    					transform: 'translateY(0)'
+    				}
     			},
     			marquee: {
     				'0%': {
@@ -41,11 +51,29 @@ export default {
     				'100%': {
     					transform: 'translateX(-50%)'
     				}
+    			},
+    			'accordion-down': {
+    				from: {
+    					height: '0'
+    				},
+    				to: {
+    					height: 'var(--radix-accordion-content-height)'
+    				}
+    			},
+    			'accordion-up': {
+    				from: {
+    					height: 'var(--radix-accordion-content-height)'
+    				},
+    				to: {
+    					height: '0'
+    				}
     			}
     		},
     		animation: {
     			marquee: 'marquee 40s linear infinite',
-    			'fade-up': 'fade-up .6s ease-out both'
+    			'fade-up': 'fade-up .6s ease-out both',
+    			'accordion-down': 'accordion-down 0.2s ease-out',
+    			'accordion-up': 'accordion-up 0.2s ease-out'
     		},
     		borderRadius: {
     			lg: 'var(--radius)',
