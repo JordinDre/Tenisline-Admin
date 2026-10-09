@@ -1,3 +1,6 @@
+import BotonTema from '@/Components/tienda/BotonTema';
+import Logo from '@/Components/tienda/Logo';
+import Redes from '@/Components/tienda/Redes';
 import { Button } from '@/Components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/Components/ui/sheet';
 import { useCarrito } from '@/Contexts/CarritoContext';
@@ -99,7 +102,7 @@ export default function Header() {
                         </SheetTrigger>
                         <SheetContent side="left" className="flex w-[86%] max-w-sm flex-col p-0">
                             <SheetHeader className="border-b px-5 py-4 text-left">
-                                <SheetTitle><img src="/images/logo.webp" alt="Tenisline" className="h-10 mix-blend-multiply" /></SheetTitle>
+                                <SheetTitle><Logo alt="Tenisline" className="h-10 w-auto" /></SheetTitle>
                                 <SheetDescription className="sr-only">Menú de navegación</SheetDescription>
                             </SheetHeader>
                             <nav className="flex flex-col p-3">
@@ -127,12 +130,14 @@ export default function Header() {
                                         </a>
                                     ))}
                                 </div>
+                                <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">Síguenos</p>
+                                <Redes className="-ml-2" enlace="hover:bg-neutral-100" />
                             </div>
                         </SheetContent>
                     </Sheet>
 
                     <Link href="/" className="flex shrink-0 items-center" aria-label="Tenisline, inicio">
-                        <img src="/images/logo.webp" alt="Tenisline" className="h-11 w-auto mix-blend-multiply transition-transform duration-500 hover:scale-105 lg:h-14" />
+                        <Logo alt="Tenisline" className="h-11 w-auto transition-transform duration-500 hover:scale-105 lg:h-14" />
                     </Link>
 
                     <nav className="ml-4 hidden items-center gap-0.5 lg:flex xl:ml-8">
@@ -155,6 +160,7 @@ export default function Header() {
                         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full md:hidden" onClick={() => setBuscando(true)} aria-label="Buscar">
                             <Search className="h-5 w-5" />
                         </Button>
+                        <BotonTema />
                         <Button variant="ghost" size="icon" className="group/bolsa relative h-10 w-10 rounded-full" onClick={() => setAbierto(true)} aria-label="Abrir carrito">
                             <ShoppingBag className="h-[22px] w-[22px] transition-transform duration-500 group-hover/bolsa:-rotate-6 group-hover/bolsa:scale-110" strokeWidth={1.9} />
                             {cantidad > 0 && (

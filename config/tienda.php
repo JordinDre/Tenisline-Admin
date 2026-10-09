@@ -12,6 +12,13 @@ return [
         ['nombre' => 'Esquipulas', 'telefono' => '50239999952', 'direccion' => env('DIRECCION3', '')],
     ],
 
+    // Redes sociales (footer, menú y datos estructurados para Google)
+    'redes' => [
+        'instagram' => 'https://www.instagram.com/tenisline_gt',
+        'tiktok' => 'https://www.tiktok.com/@tenisline.gt',
+        'facebook' => 'https://www.facebook.com/share/1C7FaFFoUF/',
+    ],
+
     // Categorías del catálogo: clave => [etiqueta, filtro]
     'categorias' => [
         'caballero' => ['label' => 'Caballero', 'genero' => 'CABALLERO'],
