@@ -13,11 +13,11 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="color-scheme" content="light dark">
     <script>
-        // Modo oscuro de la tienda: lo guardado por el cliente o, si no hay, el del dispositivo. Se aplica antes de pintar para evitar el destello.
+        // Modo oscuro de la tienda: claro por defecto; oscuro solo si el cliente lo eligió. Se aplica antes de pintar para evitar el destello.
         try {
             if (/^\/(catalogo|producto\/|marcas|nosotros|carrito)?\/?$/.test(location.pathname)) {
                 var t = localStorage.getItem('tema');
-                if (t === 'oscuro' || (t !== 'claro' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+                if (t === 'oscuro') document.documentElement.classList.add('dark');
             }
         } catch (e) {}
     </script>
