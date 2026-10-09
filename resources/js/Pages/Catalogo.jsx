@@ -1,850 +1,299 @@
+import ProductoCard from '@/Components/tienda/ProductoCard';
+import { Button } from '@/Components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/Components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/Components/ui/sheet';
+import { Switch } from '@/Components/ui/switch';
 import Layout from '@/Layouts/Layout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { motion } from 'framer-motion';
+import { capitalizar } from '@/lib/tienda';
+import { cn } from '@/lib/utils';
+import { Link, router } from '@inertiajs/react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { FaSearch } from 'react-icons/fa';
 
-export default function Catalogo({
-    productos,
-    search,
-    bodega,
-    bodegas,
-    marca,
-    tallas,
-    genero,
-    marcasDisponibles,
-    generosDisponibles,
-    marchamo,
-    puedeVerMarchamo,
-    marchamosDisponibles,
-    ofertados,
-}) {
-    const page = usePage();
-    const { auth, ziggy } = page.props;
-    const user = auth?.user;
-    const [mostrarFiltros, setMostrarFiltros] = useState(false);
+const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
 
-    const { data, setData, get } = useForm({
-        search: search || '',
-        bodega: bodega || '',
-        marca: marca || '',
-        genero: genero || '',
-        tallas: tallas || [],
-        marchamo: marchamo || '',
-        ofertados: ofertados || '',
-    });
+const ORDENES = {
+    recientes: 'Más recientes',
+    precio_asc: 'Precio: menor a mayor',
+    precio_desc: 'Precio: mayor a menor',
+    nombre: 'Nombre A-Z',
+};
 
-    // Guardar filtros en sessionStorage cuando cambien
-    useEffect(() => {
-        sessionStorage.setItem('catalogo_filtros', JSON.stringify(data));
-    }, [data]);
+const RANGOS = [
+    { label: 'Hasta Q500', min: null, max: 500 },
+    { label: 'Q500 – Q800', min: 500, max: 800 },
+    { label: 'Q800 – Q1,200', min: 800, max: 1200 },
+    { label: 'Más de Q1,200', min: 1200, max: null },
+];
 
-    useEffect(() => {
-        const delayDebounce = setTimeout(() => {
-            get(route('catalogo'), {
-                preserveScroll: true,
-                preserveState: true,
-            });
-        }, 300);
+const MARCHAMOS = ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'];
 
-        return () => clearTimeout(delayDebounce);
-    }, [data]);
+const limpiar = (obj) =>
+    Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && !v.length)));
 
-    const handleCheckboxChange = (e) => {
-        const value = e.target.value;
-        if (data.tallas.includes(value)) {
-            setData(
-                'tallas',
-                data.tallas.filter((t) => t !== value),
-            );
-        } else {
-            setData('tallas', [...data.tallas, value]);
-        }
-    };
+const mismo = (a, b) => String(a ?? '') === String(b ?? '');
 
-    const handleReset = () => {
-        setData({
-            search: '',
-            marca: '',
-            bodega: '',
-            tallas: [],
-            genero: '',
-            marchamo: '',
-            ofertados: '',
-        });
-    };
+const pastilla = (activa) =>
+    cn('inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium transition-all duration-300 active:scale-95',
+        activa ? 'border-ink bg-ink text-white ' : 'border-neutral-200 bg-white hover:border-neutral-400');
 
-    const handleAplicarFiltros = () => {
-        setMostrarFiltros(false); // cerrar modal
-        get(route('catalogo'), {
-            preserveScroll: true,
-            preserveState: true,
-        });
-    };
-
-    const tallasRango = Array.from({ length: 19 }, (_, i) =>
-        (4 + i * 0.5).toFixed(1),
-    );
-
-    const handleExportPdf = (e) => {
-        e?.preventDefault();
-        e?.stopPropagation();
-
-        const params = new URLSearchParams();
-
-        if (data.search) params.append('search', data.search);
-        if (data.bodega) params.append('bodega', data.bodega);
-        if (data.marchamo) params.append('marchamo', data.marchamo);
-        if (data.marca) params.append('marca', data.marca);
-        if (data.genero) params.append('genero', data.genero);
-        if (data.ofertados) params.append('ofertados', data.ofertados);
-        if (data.tallas?.length) {
-            data.tallas.forEach((t) => params.append('tallas[]', t));
-        }
-
-        const queryString = params.toString();
-        const url =
-            '/pdf/catalogo/pdf' + (queryString ? '?' + queryString : '');
-
-        // Intentar abrir en nueva pestaña, si falla usar location
-        const newWindow = window.open(url, '_blank');
-        if (
-            !newWindow ||
-            newWindow.closed ||
-            typeof newWindow.closed == 'undefined'
-        ) {
-            // Si el navegador bloquea popups, usar location directamente
-            window.location.href = url;
-        }
-
-        return false;
-    };
-
-    const handleExportPdf_historial = (e) => {
-        e?.preventDefault();
-        e?.stopPropagation();
-
-        const params = new URLSearchParams();
-
-        if (data.search) params.append('search', data.search);
-        if (data.bodega) params.append('bodega', data.bodega);
-        if (data.marchamo) params.append('marchamo', data.marchamo);
-        if (data.marca) params.append('marca', data.marca);
-        if (data.genero) params.append('genero', data.genero);
-        if (data.ofertados) params.append('ofertados', data.ofertados);
-        if (data.tallas?.length) {
-            data.tallas.forEach((t) => params.append('tallas[]', t));
-        }
-
-        const queryString = params.toString();
-        const url =
-            '/pdf/catalogo/pdf-historial' +
-            (queryString ? '?' + queryString : '');
-
-        // Intentar abrir en nueva pestaña, si falla usar location
-        const newWindow = window.open(url, '_blank');
-        if (
-            !newWindow ||
-            newWindow.closed ||
-            typeof newWindow.closed == 'undefined'
-        ) {
-            // Si el navegador bloquea popups, usar location directamente
-            window.location.href = url;
-        }
-
-        return false;
-    };
-
+function Grupo({ titulo, children }) {
     return (
-        <Layout>
-            <Head>
-                <title>Catálogo</title>
-                <meta
-                    name="Catalogo"
-                    content="Catálogo de productos - Tienda en línea"
-                />
-                <link
-                    rel="icon"
-                    type="image/svg+xml"
-                    href="/images/icono.png"
-                />
-            </Head>
-            <div className="container mx-auto px-4 py-6">
-                <div className="mb-6 flex flex-col items-center gap-4 md:flex-row md:justify-between">
-                    <h2 className="text-3xl font-bold text-zinc-800">
-                        Catálogo de Productos
-                    </h2>
-                    {/* <button
-                        type="button"
-                        onClick={handleExportPdf}
-                        className="flex items-center gap-2 rounded-lg bg-red-500 px-6 py-3 font-medium text-white shadow-lg transition hover:bg-red-600"
-                    >
-                        Exportar PDF
-                    </button> */}
-                    {/* Botón de exportar PDF */}
-                    {/*  <a
-                        href={route('pdf.catalogo')}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
-                    >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Exportar PDF
-                    </a> */}
-                </div>
-
-                {/* Botón para móviles */}
-                <button
-                    onClick={() => setMostrarFiltros(true)}
-                    className="mb-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-zinc-800 to-zinc-900 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-zinc-900 hover:to-black hover:shadow-xl md:hidden"
-                >
-                    <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                        />
-                    </svg>
-                    Mostrar filtros
-                </button>
-
-                {/* Panel móvil */}
-                {mostrarFiltros && (
-                    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 md:hidden">
-                        <div className="absolute left-0 top-0 h-full w-3/4 max-w-sm overflow-y-auto bg-white shadow-2xl">
-                            <div className="sticky top-0 border-b border-zinc-200 bg-gradient-to-r from-zinc-50 to-zinc-100 px-6 py-4">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-800">
-                                        <svg
-                                            className="h-5 w-5 text-zinc-600"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                                            />
-                                        </svg>
-                                        Filtros
-                                    </h3>
-                                    <button
-                                        className="rounded-full p-2 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-700"
-                                        onClick={() => setMostrarFiltros(false)}
-                                    >
-                                        <svg
-                                            className="h-5 w-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M6 18L18 6M6 6l12 12"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-6">
-                                <Filtros
-                                    data={data}
-                                    setData={setData}
-                                    handleCheckboxChange={handleCheckboxChange}
-                                    handleReset={handleReset}
-                                    bodegas={bodegas}
-                                    marcasDisponibles={marcasDisponibles}
-                                    generosDisponibles={generosDisponibles}
-                                    tallasRango={tallasRango}
-                                    handleExportPdf={handleExportPdf}
-                                    handleExportPdf_historial={
-                                        handleExportPdf_historial
-                                    }
-                                    puedeVerMarchamo={puedeVerMarchamo}
-                                    marchamosDisponibles={marchamosDisponibles}
-                                    ofertados={ofertados}
-                                    user={user}
-                                />
-
-                                {/* Botones de acción */}
-                                <div className="mt-8 space-y-3">
-                                    <button
-                                        onClick={handleAplicarFiltros}
-                                        className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl"
-                                    >
-                                        Aplicar filtros
-                                    </button>
-                                    <button
-                                        onClick={() => setMostrarFiltros(false)}
-                                        className="w-full rounded-lg border border-zinc-300 bg-white px-6 py-3 font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex flex-col gap-6 md:flex-row">
-                    {/* FORMULARIO ESCRITORIO */}
-                    <motion.form
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="hidden w-full space-y-6 md:block md:w-1/4"
-                    >
-                        <div className="rounded-2xl border border-zinc-200 bg-white shadow-lg">
-                            <div className="border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-zinc-100 px-6 py-4">
-                                <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-800">
-                                    <svg
-                                        className="h-5 w-5 text-zinc-600"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                                        />
-                                    </svg>
-                                    Filtros
-                                </h3>
-                            </div>
-                            <div className="p-6">
-                                <Filtros
-                                    data={data}
-                                    setData={setData}
-                                    handleCheckboxChange={handleCheckboxChange}
-                                    handleReset={handleReset}
-                                    bodegas={bodegas}
-                                    marcasDisponibles={marcasDisponibles}
-                                    generosDisponibles={generosDisponibles}
-                                    tallasRango={tallasRango}
-                                    handleExportPdf={handleExportPdf}
-                                    handleExportPdf_historial={
-                                        handleExportPdf_historial
-                                    }
-                                    puedeVerMarchamo={puedeVerMarchamo}
-                                    marchamosDisponibles={marchamosDisponibles}
-                                    ofertados={ofertados}
-                                    user={user}
-                                />
-                            </div>
-                        </div>
-                    </motion.form>
-
-                    <div className="w-full md:w-3/4">
-                        {productos.data.length > 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5 }}
-                                className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
-                            >
-                                {productos.data.map((producto) => (
-                                    <motion.div
-                                        key={producto.id}
-                                        whileHover={{ scale: 1.03 }}
-                                        whileTap={{ scale: 0.97 }}
-                                        className="rounded-2xl border border-zinc-200 bg-white p-0 shadow-lg transition duration-300 ease-in-out hover:shadow-2xl"
-                                    >
-                                        <a
-                                            href={`/producto/${producto.slug}`}
-                                            className="block"
-                                        >
-                                            <img
-                                                src={producto.imagen}
-                                                alt={producto.descripcion}
-                                                loading="lazy"
-                                                className="h-52 w-full object-contain p-4"
-                                            />
-                                            <div className="px-4 pb-4">
-                                                <h3 className="text-md whitespace-normal font-semibold text-zinc-800">
-                                                    {producto.descripcion}
-                                                </h3>
-                                                <p className="mt-1 text-xs text-zinc-500">
-                                                    Código:{' '}
-                                                    <span className="font-medium text-purple-600">
-                                                        {producto.codigo}
-                                                    </span>
-                                                </p>
-                                                <p className="mt-1 text-xs text-zinc-500">
-                                                    Marca:{' '}
-                                                    <span className="font-medium text-indigo-600">
-                                                        {producto.marca}
-                                                    </span>
-                                                </p>
-                                                <p className="text-xs text-zinc-500">
-                                                    Talla:{' '}
-                                                    <span className="font-medium text-emerald-600">
-                                                        {producto.talla}
-                                                    </span>
-                                                </p>
-                                                <p className="text-xs text-zinc-500">
-                                                    Género:{' '}
-                                                    <span className="font-medium text-blue-600">
-                                                        {producto.genero}
-                                                    </span>
-                                                </p>
-                                                {producto.precio_oferta ? (
-                                                    <div className="mt-2 flex flex-col items-end">
-                                                        <span className="text-sm text-gray-500 line-through">
-                                                            Q
-                                                            {parseFloat(
-                                                                producto.precio,
-                                                            ).toFixed(2)}
-                                                        </span>
-                                                        <span className="text-lg font-bold text-red-600">
-                                                            Q
-                                                            {parseFloat(
-                                                                producto.precio_oferta,
-                                                            ).toFixed(2)}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <p className="mt-2 text-lg font-bold text-green-600">
-                                                        Q
-                                                        {parseFloat(
-                                                            producto.precio,
-                                                        ).toFixed(2)}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </a>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        ) : (
-                            <div className="py-10 text-center text-zinc-500">
-                                <FaSearch className="mx-auto mb-4 text-5xl" />
-                                <p>No se encontró ningún producto</p>
-                            </div>
-                        )}
-
-                        <ul className="mt-6 flex flex-wrap justify-center gap-1">
-                            {productos.links.map((link, index) => (
-                                <li key={index}>
-                                    {link.url ? (
-                                        <button
-                                            onClick={() => {
-                                                get(link.url, {
-                                                    preserveState: true,
-                                                    preserveScroll: true,
-                                                    onSuccess: () => {
-                                                        window.scrollTo({
-                                                            top: 0,
-                                                            behavior: 'smooth',
-                                                        });
-                                                    },
-                                                });
-                                            }}
-                                            className={`min-w-[36px] rounded px-3 py-1 text-sm ${
-                                                link.active
-                                                    ? 'border border-black bg-black text-white'
-                                                    : 'border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100'
-                                            }`}
-                                            dangerouslySetInnerHTML={{
-                                                __html: link.label,
-                                            }}
-                                        />
-                                    ) : (
-                                        <span
-                                            className="min-w-[36px] rounded px-3 py-1 text-sm text-zinc-400"
-                                            dangerouslySetInnerHTML={{
-                                                __html: link.label,
-                                            }}
-                                        />
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </Layout>
+        <div className="border-b border-neutral-200 py-6 first:pt-0 last:border-0">
+            <h3 className="mb-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-500">{titulo}</h3>
+            {children}
+        </div>
     );
 }
 
-// Componente Filtros mejorado
-function Filtros({
-    data,
-    setData,
-    handleCheckboxChange,
-    handleReset,
-    bodegas,
-    marcasDisponibles,
-    generosDisponibles,
-    handleExportPdf,
-    handleExportPdf_historial,
-    tallasRango,
-    marchamo,
-    puedeVerMarchamo,
-    marchamosDisponibles,
-    ofertados,
-    user,
-}) {
+function Filtros({ f, set, marcas, categorias, bodegas, tallas, puedeVerMarchamo }) {
+    const [precio, setPrecio] = useState({ min: f.precioMin ?? '', max: f.precioMax ?? '' });
+    useEffect(() => setPrecio({ min: f.precioMin ?? '', max: f.precioMax ?? '' }), [f.precioMin, f.precioMax]);
+
     return (
-        <div className="space-y-6">
-            {/* Campo de búsqueda */}
-            <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg
-                        className="h-4 w-4 text-zinc-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                    </svg>
-                    Buscar producto
-                </label>
-                <div className="relative">
-                    <input
-                        type="text"
-                        name="search"
-                        placeholder="Escribe el nombre, código o modelo..."
-                        value={data.search}
-                        onChange={(e) => setData('search', e.target.value)}
-                        className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder-zinc-500 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    />
-                    <svg
-                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                    </svg>
+        <div>
+            <Grupo titulo="Categoría">
+                <div className="flex flex-wrap gap-2">
+                    {categorias.map((c) => (
+                        <button key={c.clave} onClick={() => set({ categoria: f.categoria === c.clave ? null : c.clave })}
+                            className={cn(pastilla(f.categoria === c.clave), c.clave === 'ofertas' && f.categoria !== c.clave && 'text-brand')}>
+                            {c.label}
+                        </button>
+                    ))}
                 </div>
-            </div>
+            </Grupo>
 
-            {/* Género */}
-            <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg
-                        className="h-4 w-4 text-zinc-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                    </svg>
-                    Género
-                </label>
-                <select
-                    name="genero"
-                    value={data.genero}
-                    onChange={(e) => setData('genero', e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                    <option value="">Todos los géneros</option>
-                    {generosDisponibles?.map((g, index) => (
-                        <option key={index} value={g}>
-                            {g}
-                        </option>
+            <Grupo titulo="Marca">
+                <div className="grid max-h-[17rem] grid-cols-2 gap-1.5 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                    {marcas.map((m) => (
+                        <button key={m.marca} onClick={() => set({ marca: f.marca === m.marca ? null : m.marca })}
+                            className={cn('flex h-9 items-center justify-between gap-1 rounded-lg px-3 text-left text-sm transition-colors',
+                                f.marca === m.marca ? 'bg-ink text-white' : 'bg-neutral-100 hover:bg-neutral-200')}>
+                            <span className="truncate font-medium">{capitalizar(m.marca)}</span>
+                            <span className="shrink-0 text-xs tabular-nums opacity-60">{m.modelos}</span>
+                        </button>
                     ))}
-                </select>
-            </div>
+                </div>
+            </Grupo>
 
-            {/* Bodega */}
-            <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg
-                        className="h-4 w-4 text-zinc-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                    </svg>
-                    Bodega
-                </label>
-                <select
-                    name="bodega"
-                    value={data.bodega}
-                    onChange={(e) => setData('bodega', e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                    <option value="">Todas las bodegas</option>
-                    {bodegas.map((b) => (
-                        <option key={b.id} value={b.id}>
-                            {b.bodega}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <Grupo titulo="Talla (US)">
+                <div className="grid grid-cols-5 gap-1.5">
+                    {tallas.map((t) => {
+                        const activa = (f.tallas ?? []).includes(t);
+                        return (
+                            <button key={t} onClick={() => set({ tallas: activa ? f.tallas.filter((x) => x !== t) : [...(f.tallas ?? []), t] })}
+                                className={cn('h-9 rounded-lg border text-sm font-medium tabular-nums transition-all duration-300 active:scale-95',
+                                    activa ? 'border-ink bg-ink text-white' : 'border-neutral-200 hover:border-neutral-500')}>
+                                {t}
+                            </button>
+                        );
+                    })}
+                </div>
+            </Grupo>
 
-            {/* Marca */}
-            <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg
-                        className="h-4 w-4 text-zinc-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                        />
-                    </svg>
-                    Marca
-                </label>
-                <select
-                    name="marca"
-                    value={data.marca}
-                    onChange={(e) => setData('marca', e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                    <option value="">Todas las marcas</option>
-                    {marcasDisponibles?.map((m, index) => (
-                        <option key={index} value={m}>
-                            {m}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <Grupo titulo="Precio">
+                <div className="flex flex-wrap gap-2">
+                    {RANGOS.map((r) => {
+                        const activo = mismo(f.precioMin, r.min) && mismo(f.precioMax, r.max);
+                        return (
+                            <button key={r.label} onClick={() => set(activo ? { precioMin: null, precioMax: null } : { precioMin: r.min, precioMax: r.max })} className={pastilla(activo)}>
+                                {r.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); set({ precioMin: precio.min || null, precioMax: precio.max || null }); }}
+                    className="mt-3 flex items-center gap-2">
+                    <input type="number" min="0" inputMode="numeric" placeholder="Mín" value={precio.min} onChange={(e) => setPrecio((p) => ({ ...p, min: e.target.value }))}
+                        className="h-9 w-full min-w-0 rounded-lg border-neutral-200 text-sm focus:border-ink focus:ring-ink" />
+                    <span className="text-neutral-400">–</span>
+                    <input type="number" min="0" inputMode="numeric" placeholder="Máx" value={precio.max} onChange={(e) => setPrecio((p) => ({ ...p, max: e.target.value }))}
+                        className="h-9 w-full min-w-0 rounded-lg border-neutral-200 text-sm focus:border-ink focus:ring-ink" />
+                    <Button type="submit" size="sm" className="h-9 shrink-0 rounded-lg bg-ink px-3">Ir</Button>
+                </form>
+            </Grupo>
 
-            {/* marchamo */}
-            {puedeVerMarchamo && (
-                <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                        <svg
-                            className="h-4 w-4 text-zinc-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                            />
-                        </svg>
-                        Marchamo
-                    </label>
-
-                    <select
-                        value={data.marchamo}
-                        onChange={(e) => setData('marchamo', e.target.value)}
-                        className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    >
-                        <option value="">Todos</option>
-
-                        {marchamosDisponibles.map((m) => (
-                            <option key={m} value={m}>
-                                {m.toUpperCase()}
-                            </option>
+            {bodegas.length > 0 && (
+                <Grupo titulo="Disponible en">
+                    <div className="flex flex-wrap gap-2">
+                        {bodegas.map((b) => (
+                            <button key={b.id} onClick={() => set({ bodega: mismo(f.bodega, b.id) ? null : b.id })} className={pastilla(mismo(f.bodega, b.id))}>
+                                {b.bodega}
+                            </button>
                         ))}
-                    </select>
-                </div>
+                    </div>
+                </Grupo>
             )}
 
-            {/* Filtro de Ofertados */}
-            <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg
-                        className="h-4 w-4 text-zinc-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                        />
-                    </svg>
-                    Productos Ofertados
+            <Grupo titulo="Ofertas">
+                <label className="flex cursor-pointer items-center justify-between gap-4">
+                    <span className="text-sm font-medium">Solo productos en oferta</span>
+                    <Switch checked={!!f.ofertas} onCheckedChange={(v) => set({ ofertas: v ? 1 : null })} className="data-[state=checked]:bg-brand" />
                 </label>
-                <select
-                    name="ofertados"
-                    value={data.ofertados}
-                    onChange={(e) => setData('ofertados', e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                    <option value="">Todos</option>
-                    <option value="con_oferta">Con Oferta</option>
-                    <option value="sin_oferta">Sin Oferta</option>
-                </select>
-            </div>
+            </Grupo>
 
-            {/* Tallas */}
-            <div className="space-y-3">
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <svg
-                        className="h-4 w-4 text-zinc-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
-                        />
-                    </svg>
-                    Tallas US
-                </label>
-                <div className="max-h-32 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                    <div className="grid grid-cols-4 gap-2">
-                        {tallasRango.map((t, index) => (
-                            <label
-                                key={index}
-                                className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-white hover:shadow-sm"
-                            >
-                                <input
-                                    type="checkbox"
-                                    value={t}
-                                    checked={data.tallas.includes(t)}
-                                    onChange={handleCheckboxChange}
-                                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                                />
-                                <span className="text-zinc-700 group-hover:text-zinc-900">
-                                    {t}
-                                </span>
-                            </label>
+            {puedeVerMarchamo && (
+                <Grupo titulo="Marchamo (administradores)">
+                    <div className="flex flex-wrap gap-2">
+                        {MARCHAMOS.map((m) => (
+                            <button key={m} onClick={() => set({ marchamo: f.marchamo === m ? null : m })} className={cn(pastilla(f.marchamo === m), 'capitalize')}>{m}</button>
                         ))}
+                    </div>
+                </Grupo>
+            )}
+        </div>
+    );
+}
+
+export default function Catalogo({ productos, filtros = {}, marcas = [], categorias = [], bodegas = [], tallas = [], puedeVerMarchamo = false }) {
+    const [panel, setPanel] = useState(false);
+    const [cargando, setCargando] = useState(false);
+    const f = filtros;
+
+    useEffect(() => {
+        const inicio = router.on('start', () => setCargando(true));
+        const fin = router.on('finish', () => setCargando(false));
+        return () => { inicio(); fin(); };
+    }, []);
+
+    const aplicar = (cambios) =>
+        router.get('/catalogo', limpiar({ ...f, ...cambios, page: null }), { preserveState: true, preserveScroll: true, replace: true });
+
+    const categoria = categorias.find((c) => c.clave === f.categoria);
+    const titulo = f.search ? `“${f.search}”` : f.marca ? capitalizar(f.marca) : categoria ? categoria.label : 'Catálogo';
+
+    const chips = [
+        f.search && { k: 'search', t: `Búsqueda: ${f.search}` },
+        categoria && { k: 'categoria', t: categoria.label },
+        f.marca && { k: 'marca', t: capitalizar(f.marca) },
+        ...(f.tallas ?? []).map((t) => ({ k: 'tallas', v: t, t: `Talla ${t}` })),
+        (f.precioMin || f.precioMax) && { k: 'precio', t: RANGOS.find((r) => mismo(r.min, f.precioMin) && mismo(r.max, f.precioMax))?.label ?? `Q${f.precioMin || 0} – Q${f.precioMax || '∞'}` },
+        f.bodega && { k: 'bodega', t: bodegas.find((b) => mismo(b.id, f.bodega))?.bodega ?? 'Tienda' },
+        f.ofertas && { k: 'ofertas', t: 'En oferta' },
+        f.marchamo && { k: 'marchamo', t: `Marchamo ${f.marchamo}` },
+    ].filter(Boolean);
+
+    const quitarChip = (c) => {
+        if (c.k === 'tallas') return aplicar({ tallas: f.tallas.filter((t) => t !== c.v) });
+        if (c.k === 'precio') return aplicar({ precioMin: null, precioMax: null });
+        aplicar({ [c.k]: null });
+    };
+
+    const props = { f, set: aplicar, marcas, categorias, bodegas, tallas, puedeVerMarchamo };
+
+    return (
+        <Layout>
+
+            <section className="relative overflow-hidden border-b bg-neutral-50">
+                <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />
+                <div className={cn(contenedor, 'relative py-10 sm:py-12')}>
+                    <nav className="text-sm text-neutral-500">
+                        <Link href="/" className="transition-colors hover:text-ink">Inicio</Link>
+                        <span className="mx-2">/</span>
+                        <span className="text-neutral-800">Catálogo</span>
+                    </nav>
+                    <h1 className="mt-3 animate-fade-up font-display text-4xl uppercase leading-none sm:text-5xl">{titulo}</h1>
+                    <p className="mt-3 text-neutral-500"><span className="font-semibold text-ink">{productos.total}</span> {productos.total === 1 ? 'modelo disponible' : 'modelos disponibles'}</p>
+                </div>
+            </section>
+
+            <div className={cn(contenedor, 'py-8')}>
+                <div className="flex gap-10 xl:gap-12">
+                    <aside className="hidden w-64 shrink-0 lg:block">
+                        <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pb-6 pr-2 [scrollbar-width:thin]">
+                            <Filtros {...props} />
+                        </div>
+                    </aside>
+
+                    <div className="min-w-0 flex-1">
+                        <div className="mb-6 flex flex-wrap items-center gap-2">
+                            <Button variant="outline" onClick={() => setPanel(true)} className="h-10 rounded-full border-neutral-200 px-4 font-semibold lg:hidden">
+                                <SlidersHorizontal className="h-4 w-4" /> Filtros
+                                {chips.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white">{chips.length}</span>}
+                            </Button>
+                            <div className="order-last flex w-full flex-wrap gap-2 sm:order-none sm:w-auto sm:flex-1">
+                                {chips.map((c, n) => (
+                                    <button key={n} onClick={() => quitarChip(c)}
+                                        className="inline-flex h-8 animate-in items-center gap-1.5 rounded-full bg-brand-light px-3 text-sm font-medium text-brand-dark transition-colors duration-300 zoom-in-95 hover:bg-brand hover:text-white">
+                                        {c.t} <X className="h-3.5 w-3.5" />
+                                    </button>
+                                ))}
+                                {chips.length > 1 && (
+                                    <button onClick={() => router.get('/catalogo')} className="h-8 px-2 text-sm font-semibold underline underline-offset-4 hover:text-brand">Limpiar todo</button>
+                                )}
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="ml-auto h-10 rounded-full border-neutral-200 px-4 font-semibold">
+                                        <ArrowUpDown className="h-4 w-4" />
+                                        <span className="hidden sm:inline">{ORDENES[f.orden ?? 'recientes']}</span>
+                                        <span className="sm:hidden">Ordenar</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
+                                    <DropdownMenuRadioGroup value={f.orden ?? 'recientes'} onValueChange={(v) => aplicar({ orden: v === 'recientes' ? null : v })}>
+                                        {Object.entries(ORDENES).map(([v, t]) => (
+                                            <DropdownMenuRadioItem key={v} value={v} className="rounded-lg py-2">{t}</DropdownMenuRadioItem>
+                                        ))}
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        <div className={cn('transition-opacity duration-500', cargando && 'pointer-events-none opacity-50')}>
+                            {productos.data.length === 0 ? (
+                                <div className="flex flex-col items-center rounded-3xl bg-neutral-50 px-6 py-20 text-center">
+                                    <img src="/images/logo.png" alt="" className="w-36 opacity-20 mix-blend-multiply" />
+                                    <h2 className="mt-6 text-xl font-bold">No encontramos modelos con esos filtros</h2>
+                                    <p className="mt-2 max-w-sm text-neutral-500">Prueba quitando algún filtro o escríbenos por WhatsApp y te ayudamos.</p>
+                                    <Button onClick={() => router.get('/catalogo')} className="mt-6 h-11 rounded-full bg-ink px-7">Ver todo el catálogo</Button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3">
+                                    {productos.data.map((p, n) => <ProductoCard key={p.id} producto={p} indice={n} />)}
+                                </div>
+                            )}
+                        </div>
+
+                        {productos.last_page > 1 && (
+                            <nav className="mt-14 flex items-center justify-center gap-1" aria-label="Paginación">
+                                {productos.links.map((l, n) => {
+                                    const extremo = n === 0 || n === productos.links.length - 1;
+                                    const contenido = n === 0 ? <ChevronLeft className="h-4 w-4" /> : extremo ? <ChevronRight className="h-4 w-4" /> : l.label;
+                                    const clase = cn('h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-semibold tabular-nums', extremo ? 'flex' : 'hidden sm:flex');
+                                    return l.url ? (
+                                        <Link key={n} href={l.url} className={cn(clase, 'transition-colors', l.active ? 'bg-ink text-white' : 'hover:bg-neutral-100')}>{contenido}</Link>
+                                    ) : (
+                                        <span key={n} className={cn(clase, 'text-neutral-300')}>{contenido}</span>
+                                    );
+                                })}
+                                <span className="px-3 text-sm text-neutral-500 sm:hidden">{productos.current_page} / {productos.last_page}</span>
+                            </nav>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Botón de reinicio */}
-            <div className="space-y-3 pt-4">
-                <button
-                    type="button"
-                    onClick={handleReset}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-400 hover:bg-zinc-50 hover:shadow-md"
-                >
-                    <div className="flex items-center justify-center gap-2">
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                        </svg>
-                        Limpiar filtros
-                    </div>
-                </button>
-                {user && handleExportPdf && (
-                    <a
-                        href="#"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (typeof handleExportPdf === 'function') {
-                                handleExportPdf(e);
-                            } else {
-                                console.error(
-                                    'handleExportPdf no es una función:',
-                                    handleExportPdf,
-                                );
-                            }
-                            return false;
-                        }}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-md"
-                    >
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                        </svg>
-                        Exportar PDF
-                    </a>
-                )}
-                {user && handleExportPdf_historial && (
-                    <a
-                        href="#"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (
-                                typeof handleExportPdf_historial === 'function'
-                            ) {
-                                handleExportPdf_historial(e);
-                            } else {
-                                console.error(
-                                    'handleExportPdf_historial no es una función:',
-                                    handleExportPdf_historial,
-                                );
-                            }
-                            return false;
-                        }}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-green-600 hover:to-green-700 hover:shadow-md"
-                    >
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                        </svg>
-                        Historial Tenis Vendidos
-                    </a>
-                )}
-            </div>
-        </div>
+            {/* Filtros en celular */}
+            <Sheet open={panel} onOpenChange={setPanel}>
+                <SheetContent side="bottom" className="flex max-h-[88vh] flex-col rounded-t-3xl p-0">
+                    <SheetHeader className="border-b px-5 py-4 text-left">
+                        <SheetTitle className="font-display text-xl uppercase">Filtros</SheetTitle>
+                        <SheetDescription className="sr-only">Filtra el catálogo por categoría, marca, talla y precio</SheetDescription>
+                    </SheetHeader>
+                    <div className="flex-1 overflow-y-auto px-5 py-6"><Filtros {...props} /></div>
+                    <SheetFooter className="grid grid-cols-[auto_1fr] gap-3 border-t p-4">
+                        <Button variant="outline" className="h-12 rounded-full px-6" onClick={() => router.get('/catalogo')}>Limpiar</Button>
+                        <Button className="h-12 rounded-full bg-ink" onClick={() => setPanel(false)}>Ver {productos.total} modelos</Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
+        </Layout>
     );
 }

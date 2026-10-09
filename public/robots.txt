@@ -1,2 +1,8 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /livewire
+Disallow: /reporte
+Disallow: /pdf
+Allow: /
+
+Sitemap: https://tenisline.com/sitemap.xml

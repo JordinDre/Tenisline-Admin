@@ -7,6 +7,8 @@ use App\Models\Tienda;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -25,7 +27,7 @@ class TiendaResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'tabler-world-www';
 
-    protected static ?string $navigationLabel = 'Tienda';
+    protected static ?string $navigationLabel = 'Promociones web';
 
     protected static ?string $navigationGroup = 'Gestiones';
 
@@ -45,115 +47,62 @@ class TiendaResource extends Resource implements HasShieldPermissions
         return $form
             ->schema([
                 Builder::make('contenido')
+                    ->label('Promociones y avisos del sitio web')
+                    ->helperText('Las promociones se muestran como carrusel al inicio; los avisos rotan en la barra superior de todas las páginas.')
                     ->columnSpanFull()
                     ->cloneable()
+                    ->collapsible()
                     ->reorderableWithButtons()
+                    ->addActionLabel('Agregar promoción')
                     ->blocks([
-                        Builder\Block::make('carrusel')
+                        Builder\Block::make('promocion')
+                            ->label(fn (?array $state) => 'Promoción'.(! empty($state['titulo']) ? ': '.$state['titulo'] : ''))
+                            ->icon('heroicon-o-megaphone')
                             ->schema([
                                 FileUpload::make('imagen')
+                                    ->label('Imagen (computadora)')
+                                    ->helperText('Horizontal, idealmente 1920 × 720 px.')
                                     ->image()
-                                    ->downloadable()
-                                    ->label('Imágenes')
                                     ->imageEditor()
                                     ->disk(config('filesystems.disks.s3.driver'))
-                                    ->directory(config('filesystems.upload_directory'))
+                                    ->directory(config('filesystems.upload_directory').'/promociones')
                                     ->visibility('public')
-                                    ->appendFiles()
                                     ->maxSize(5000)
-                                    ->resize(50)
-                                    ->openable()
-                                    ->columnSpan(['sm' => 1, 'md' => 3])
                                     ->optimize('webp')
-                                    ->multiple()
-                                    ->panelLayout('grid')
-                                    ->required(),
+                                    ->openable(),
+                                FileUpload::make('imagen_movil')
+                                    ->label('Imagen (celular, opcional)')
+                                    ->helperText('Vertical, idealmente 1080 × 1350 px. Si no se sube, se usa la de computadora.')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->disk(config('filesystems.disks.s3.driver'))
+                                    ->directory(config('filesystems.upload_directory').'/promociones')
+                                    ->visibility('public')
+                                    ->maxSize(5000)
+                                    ->optimize('webp')
+                                    ->openable(),
+                                TextInput::make('titulo')->label('Título')->maxLength(80),
+                                TextInput::make('subtitulo')->label('Subtítulo')->maxLength(160),
+                                TextInput::make('boton')->label('Texto del botón')->placeholder('Ver ofertas')->maxLength(30),
+                                TextInput::make('enlace')
+                                    ->label('Enlace del botón')
+                                    ->placeholder('/catalogo?categoria=ofertas')
+                                    ->helperText('Ej.: /catalogo?marca=NIKE, /catalogo?categoria=dama, /catalogo?categoria=ofertas'),
+                                DatePicker::make('desde')->label('Mostrar desde'),
+                                DatePicker::make('hasta')->label('Mostrar hasta'),
+                                Toggle::make('activo')->label('Activa')->default(true),
                             ])
                             ->columns(2),
-
-                        Builder\Block::make('banner')
-                            ->label('Banner')
+                        Builder\Block::make('aviso')
+                            ->label(fn (?array $state) => 'Aviso de la barra superior'.(! empty($state['texto']) ? ': '.$state['texto'] : ''))
+                            ->icon('heroicon-o-bell-alert')
                             ->schema([
-                                Textarea::make('contenido')
-                                    ->required(),
-                                Select::make('color')
-                                    ->label('Color del Banner')
-                                    ->options([
-                                        'blue' => 'Azul',
-                                        'green' => 'Verde',
-                                        'red' => 'Rojo',
-                                        'yellow' => 'Amarillo',
-                                    ])
-                                    ->default('black') // Color por defecto
-                                    ->required(),
-                            ]),
-
-                        Builder\Block::make('productos')
-                            ->label('Productos')
-                            ->schema([
-                                TextInput::make('titulo')
-                                    ->required(),
-                                FileUpload::make('imagen')
-                                    ->image()
-                                    ->downloadable()
-                                    ->label('Imágenes')
-                                    ->imageEditor()
-                                    ->disk(config('filesystems.disks.s3.driver'))
-                                    ->directory(config('filesystems.upload_directory'))
-                                    ->visibility('public')
-                                    ->appendFiles()
-                                    ->maxSize(5000)
-                                    ->resize(50)
-                                    ->openable()
-                                    ->columnSpan(['sm' => 1, 'md' => 3])
-                                    ->optimize('webp')
-                                    ->multiple()
-                                    ->panelLayout('grid')
-                                    ->required(),
-                            ]),
-                        Builder\Block::make('seccion')
-                            ->label('Sección')
-                            ->schema([
-                                FileUpload::make('imagen')
-                                    ->image()
-                                    ->downloadable()
-                                    ->label('Imágen')
-                                    ->imageEditor()
-                                    ->disk(config('filesystems.disks.s3.driver'))
-                                    ->directory(config('filesystems.upload_directory'))
-                                    ->visibility('public')
-                                    ->appendFiles()
-                                    ->maxSize(5000)
-                                    ->resize(50)
-                                    ->openable()
-                                    ->columnSpan(['sm' => 1, 'md' => 3])
-                                    ->optimize('webp')
-                                    ->required(),
-                                Textarea::make('contenido')
-                                    ->label('Contenido')
-                                    ->columnSpanFull()
-                                    ->required(),
+                                TextInput::make('texto')->label('Texto')->required()->maxLength(90),
+                                TextInput::make('boton')->label('Texto del enlace')->placeholder('Ver ofertas')->maxLength(25),
+                                TextInput::make('enlace')->label('Enlace')->placeholder('/catalogo?categoria=ofertas'),
+                                Toggle::make('activo')->label('Activo')->default(true),
                             ])
                             ->columns(2),
-                        Builder\Block::make('imagen')
-                            ->label('Imágen')
-                            ->schema([
-                                FileUpload::make('imagen')
-                                    ->image()
-                                    ->downloadable()
-                                    ->label('Imágen')
-                                    ->imageEditor()
-                                    ->disk(config('filesystems.disks.s3.driver'))
-                                    ->directory(config('filesystems.upload_directory'))
-                                    ->visibility('public')
-                                    ->appendFiles()
-                                    ->maxSize(5000)
-                                    ->resize(50)
-                                    ->openable()
-                                    ->columnSpan(['sm' => 1, 'md' => 3])
-                                    ->optimize('webp')
-                                    ->required(),
-                            ]),
                     ]),
             ]);
     }

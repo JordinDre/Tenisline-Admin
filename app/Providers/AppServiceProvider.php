@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
@@ -28,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Todo archivo que se suba desde el panel va a S3, en la carpeta de producción (tenisline-produccion/).
+        // Nada se guarda en el disco del servidor ni en una carpeta "local". Un campo puede cambiarlo con ->disk()/->directory().
+        FileUpload::configureUsing(fn (FileUpload $campo) => $campo
+            ->disk(config('filesystems.disks.s3.driver'))
+            ->directory(config('filesystems.upload_directory')));
+
         Filament::serving(function () {
 
             Filament::registerRenderHook(

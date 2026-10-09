@@ -1,237 +1,224 @@
+import { IconoWhatsApp } from '@/Components/tienda/CarritoDrawer';
+import ImagenProducto from '@/Components/tienda/ImagenProducto';
+import MuestraColor from '@/Components/tienda/MuestraColor';
+import ProductoCard from '@/Components/tienda/ProductoCard';
+import { Button } from '@/Components/ui/button';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/Components/ui/carousel';
+import { useCarrito } from '@/Contexts/CarritoContext';
 import Layout from '@/Layouts/Layout';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { capitalizar, descuento, enlaceWhatsApp, quetzales } from '@/lib/tienda';
+import { cn } from '@/lib/utils';
+import { Link, usePage } from '@inertiajs/react';
+import { Check, MapPin, MessageCircle, ShoppingBag, Store, Tag } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
 
-export default function Producto({ producto, marcas }) {
-    const user = usePage().props.auth.user;
-    const [isModalOpen, setIsModalOpen] = useState(false);
+const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
 
-    // Función para volver al catálogo preservando los filtros
-    const handleVolverCatalogo = () => {
-        const filtrosGuardados = sessionStorage.getItem('catalogo_filtros');
-        if (filtrosGuardados) {
-            const filtros = JSON.parse(filtrosGuardados);
-            // Construir la URL con los parámetros de filtros
-            const params = new URLSearchParams();
-            if (filtros.search) params.append('search', filtros.search);
-            if (filtros.bodega) params.append('bodega', filtros.bodega);
-            if (filtros.marca) params.append('marca', filtros.marca);
-            if (filtros.genero) params.append('genero', filtros.genero);
-            if (filtros.tallas && filtros.tallas.length > 0) {
-                filtros.tallas.forEach((talla) =>
-                    params.append('tallas[]', talla),
-                );
-            }
+function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
+    const { agregar, items } = useCarrito();
+    const sucursales = usePage().props.tienda?.sucursales ?? [];
+    const inicial = variantes.find((v) => v.slug === producto.slug) ?? variantes[0];
+    const [seleccion, setSeleccion] = useState(inicial?.id ?? null);
+    const [foto, setFoto] = useState(0);
+    const [agregado, setAgregado] = useState(false);
 
-            const queryString = params.toString();
-            const url = queryString
-                ? `${route('catalogo')}?${queryString}`
-                : route('catalogo');
-            router.visit(url);
-        } else {
-            router.visit(route('catalogo'));
-        }
+    const variante = variantes.find((v) => v.id === seleccion) ?? inicial;
+    const imagenes = producto.imagenes?.length ? producto.imagenes : [null];
+    const pct = descuento(variante);
+
+    const item = useMemo(
+        () =>
+            variante && {
+                id: variante.id,
+                slug: variante.slug,
+                codigo: variante.codigo,
+                talla: variante.talla,
+                precio: variante.precio,
+                precio_oferta: variante.precio_oferta,
+                descripcion: producto.descripcion,
+                marca: producto.marca,
+                color: producto.color,
+                imagen: producto.imagenes?.[0] ?? null,
+            },
+        [variante, producto],
+    );
+
+    const enCarrito = items.some((i) => i.id === variante?.id);
+
+    const alAgregar = () => {
+        if (!item) return;
+        agregar(item);
+        setAgregado(true);
+        setTimeout(() => setAgregado(false), 1800);
     };
 
     return (
-        <Layout>
-            <Head>
-                <title>
-                    {producto.codigo +
-                        ', ' +
-                        producto.descripcion +
-                        ', ' +
-                        producto.marca +
-                        ', ' +
-                        producto.talla +
-                        ', ' +
-                        producto.genero}
-                </title>
-                <meta
-                    name={producto.slug}
-                    content="Producto - Tienda en línea"
-                />
-                <link
-                    rel="icon"
-                    type="image/svg+xml"
-                    href="/images/icono.png"
-                />
-            </Head>
+        <>
+            <div className={cn(contenedor, 'py-6')}>
+                <nav className="truncate text-sm text-neutral-500">
+                    <Link href="/" className="transition-colors hover:text-ink">Inicio</Link>
+                    <span className="mx-2">/</span>
+                    <Link href="/catalogo" className="transition-colors hover:text-ink">Catálogo</Link>
+                    {producto.marca && (
+                        <>
+                            <span className="mx-2">/</span>
+                            <Link href={`/catalogo?marca=${encodeURIComponent(producto.marca)}`} className="transition-colors hover:text-ink">{capitalizar(producto.marca)}</Link>
+                        </>
+                    )}
+                </nav>
 
-            <section className="bg-white py-10 md:py-16">
-                <div className="mx-auto max-w-screen-xl px-4 md:px-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="grid gap-8 md:grid-cols-2 md:items-start"
-                    >
-                        {/* Imagen con click para abrir modal */}
-                        <div className="space-y-4">
-                            <div
-                                className="cursor-zoom-in rounded-xl bg-zinc-50 p-4 shadow-md"
-                                onClick={() => setIsModalOpen(true)}
-                            >
-                                <img
-                                    className="max-h-[400px] w-full object-contain"
-                                    src={producto.imagen}
-                                    alt={producto.descripcion}
-                                />
-                                <p className="mt-2 text-center text-xs text-zinc-500">
-                                    Haz clic para ampliar
-                                </p>
+                <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-14">
+                    {/* Galería */}
+                    <div className="animate-fade-up lg:sticky lg:top-28 lg:self-start">
+                        <Carousel className="lg:hidden" opts={{ loop: imagenes.length > 1 }}>
+                            <CarouselContent className="ml-0">
+                                {imagenes.map((img, n) => (
+                                    <CarouselItem key={n} className="pl-0">
+                                        <div className="relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
+                                            <ImagenProducto src={img} alt={producto.descripcion} sizes="100vw" ancho={800} className="h-full w-full" />
+                                        </div>
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            {imagenes.length > 1 && (
+                                <>
+                                    <CarouselPrevious className="left-3 border-0 bg-white/90 " />
+                                    <CarouselNext className="right-3 border-0 bg-white/90 " />
+                                </>
+                            )}
+                        </Carousel>
+
+                        <div className="relative hidden aspect-square overflow-hidden rounded-3xl bg-neutral-100 lg:block">
+                            {imagenes[foto] ? (
+                                <Zoom><ImagenProducto src={imagenes[foto]} alt={producto.descripcion} sizes="(min-width: 1024px) 50vw, 100vw" ancho={1200} prioridad className="h-full w-full" /></Zoom>
+                            ) : (
+                                <ImagenProducto src={null} alt={producto.descripcion} className="h-full w-full" />
+                            )}
+                            {pct > 0 && <span className="absolute left-5 top-5 rounded-full bg-brand px-3 py-1.5 text-sm font-bold leading-none text-white ">-{pct}%</span>}
+                        </div>
+                        {imagenes.length > 1 && (
+                            <div className="mt-3 hidden gap-3 lg:flex">
+                                {imagenes.map((img, n) => (
+                                    <button key={n} onClick={() => setFoto(n)} onMouseEnter={() => setFoto(n)}
+                                        className={cn('h-20 w-20 overflow-hidden rounded-2xl bg-neutral-100 ring-2 ring-offset-2 transition-all', foto === n ? 'ring-brand' : 'ring-transparent opacity-70 hover:opacity-100')}>
+                                        <ImagenProducto src={img} alt="" sizes="80px" ancho={240} className="h-full w-full" />
+                                    </button>
+                                ))}
                             </div>
+                        )}
+                    </div>
 
-                            {/* Precio debajo de la imagen */}
-                            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
-                                {producto.precio_oferta ? (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span className="text-xl text-gray-500 line-through">
-                                            Q
-                                            {parseFloat(
-                                                producto.precio,
-                                            ).toFixed(2)}
-                                        </span>
-                                        <span className="text-3xl font-extrabold text-red-600">
-                                            Q
-                                            {parseFloat(
-                                                producto.precio_oferta,
-                                            ).toFixed(2)}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="text-3xl font-extrabold text-green-600">
-                                        Q
-                                        {parseFloat(producto.precio).toFixed(2)}
-                                    </div>
+                    {/* Información */}
+                    <div className="animate-fade-up" style={{ animationDelay: '80ms' }}>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand">{producto.marca}</p>
+                        <h1 className="mt-2 font-display text-3xl uppercase leading-[1.05] sm:text-4xl">{producto.descripcion}</h1>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {producto.color && (
+                                <span className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800">
+                                    <MuestraColor color={producto.color} className="h-4 w-4" /> Color: {capitalizar(producto.color)}
+                                </span>
+                            )}
+                            {variante && <span className="rounded-full bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800">Talla {variante.talla}</span>}
+                            {producto.genero && <span className="rounded-full bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800">{capitalizar(producto.genero)}</span>}
+                        </div>
+
+                        {variante && (
+                            <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                <span className={cn('text-3xl font-extrabold tabular-nums', pct ? 'text-brand' : 'text-ink')}>{quetzales(variante.precio_oferta || variante.precio)}</span>
+                                {pct > 0 && (
+                                    <>
+                                        <span className="text-lg text-neutral-400 line-through">{quetzales(variante.precio)}</span>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-light px-2.5 py-1 text-sm font-bold text-brand-dark"><Tag className="h-3.5 w-3.5" /> Ahorras {pct}%</span>
+                                    </>
                                 )}
                             </div>
+                        )}
 
-                            {/* Existencia destacada debajo del precio */}
-                            {producto.bodega_destacada && (
-                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                                    <p className="mb-2 text-sm font-semibold text-blue-700">
-                                        📦 Existencia:
-                                    </p>
-                                    <div className="inline-block rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-blue-300">
-                                        <strong className="text-blue-800">
-                                            {producto.bodega_destacada.bodega}
-                                        </strong>
+                        <div className="mt-8">
+                            {variante && <p className="text-sm text-neutral-500">Código <span className="font-semibold text-ink">{variante.codigo}</span></p>}
+                            {variantes.length > 1 && (
+                                <div className="mt-4">
+                                    <h2 className="mb-2 text-sm font-semibold">Este modelo también está en</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {variantes.map((v) => (
+                                            <button key={v.id} onClick={() => setSeleccion(v.id)}
+                                                className={cn('h-10 min-w-12 rounded-xl border-2 px-3 text-sm font-semibold tabular-nums transition-colors duration-300',
+                                                    v.id === seleccion ? 'border-ink bg-ink text-white' : 'border-neutral-200 hover:border-neutral-500')}>
+                                                {v.talla}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             )}
-
-                            {/* Bodegas disponibles debajo del precio */}
-                            {user &&
-                                producto.bodegas &&
-                                producto.bodegas.length > 0 && (
-                                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                                        <p className="mb-3 text-sm font-semibold text-zinc-700">
-                                            🏬 Disponible en:
-                                        </p>
-                                        <div className="space-y-2">
-                                            {producto.bodegas.map(
-                                                (bodega, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="flex justify-between rounded-md bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-300"
-                                                    >
-                                                        <span className="font-medium text-zinc-800">
-                                                            {bodega.bodega}
-                                                        </span>
-                                                        <span className="text-sm text-zinc-600">
-                                                            {bodega.existencia}{' '}
-                                                            unidades
-                                                        </span>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                        </div>
-
-                        {/* Información del producto */}
-                        <div>
-                            <motion.h1
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="text-2xl font-bold text-zinc-800"
-                            >
-                                {producto.descripcion}
-                            </motion.h1>
-
-                            <div className="mt-5 space-y-2 text-sm text-zinc-700">
-                                <p>
-                                    <strong>Código:</strong> {producto.codigo}
-                                </p>
-                                <p>
-                                    <strong>Marca:</strong> {producto.marca}
-                                </p>
-                                <p>
-                                    <strong>Talla:</strong> US {producto.talla}{' '}
-                                    ({producto.genero})
-                                </p>
-                            </div>
-
-                            <div className="mt-8">
-                                <h2 className="mb-2 text-sm font-semibold text-zinc-500">
-                                    Otras marcas:
-                                </h2>
-                                <div className="flex flex-wrap gap-2">
-                                    {marcas.map((marca, index) => (
-                                        <Link
-                                            key={index}
-                                            href={route('catalogo', { marca })}
-                                            className="rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-800 shadow hover:bg-zinc-200"
-                                        >
-                                            {marca}
-                                        </Link>
+                            <p className="mt-5 flex items-center gap-2 text-sm font-medium text-emerald-700">
+                                <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" /></span>
+                                Disponible en tienda
+                            </p>
+                            {mostrarExistencia && variante?.sucursales?.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {variante.sucursales.map((s) => (
+                                        <span key={s.sucursal} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-800">
+                                            <MapPin className="h-3.5 w-3.5" /> {s.sucursal}: {s.existencia}
+                                        </span>
                                     ))}
                                 </div>
-                                <div className="mt-4">
-                                    <button
-                                        onClick={handleVolverCatalogo}
-                                        className="inline-block text-sm font-medium text-blue-600 hover:underline"
-                                    >
-                                        ← Volver al catálogo
-                                    </button>
-                                </div>
-                            </div>
-
-                            <hr className="my-6 border-zinc-200" />
-
-                            <div
-                                className="prose-sm prose max-w-none text-zinc-700"
-                                dangerouslySetInnerHTML={{
-                                    __html: producto.detalle,
-                                }}
-                            />
+                            )}
                         </div>
-                    </motion.div>
-                </div>
-            </section>
 
-            {/* Modal con efecto zoom */}
-            {isModalOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
-                    onClick={() => setIsModalOpen(false)}
-                >
-                    <Zoom>
-                        <img
-                            src={producto.imagen}
-                            alt={producto.descripcion}
-                            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-                            onClick={(e) => e.stopPropagation()} // evita cerrar modal al hacer zoom
-                        />
-                    </Zoom>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                            <Button onClick={alAgregar} disabled={!variante || enCarrito}
+                                className={cn('h-14 rounded-full text-base font-semibold transition-colors', agregado || enCarrito ? 'bg-emerald-600 hover:bg-emerald-600 disabled:opacity-100' : 'bg-ink hover:bg-brand')}>
+                                {agregado || enCarrito ? <><Check className="h-5 w-5" /> {agregado ? 'Agregado' : 'En tu carrito'}</> : <><ShoppingBag className="h-5 w-5" /> Agregar al carrito</>}
+                            </Button>
+                            {sucursales[0] && (
+                                <Button asChild variant="outline" className="h-14 rounded-full border-2 border-[#25D366] text-base font-semibold text-[#128C7E] hover:bg-[#25D366] hover:text-white">
+                                    <a href={item ? enlaceWhatsApp(sucursales[0].telefono, [{ ...item, cantidad: 1 }], sucursales[0].nombre) : `https://wa.me/${sucursales[0].telefono}`}
+                                        target="_blank" rel="noopener noreferrer">
+                                        <IconoWhatsApp className="h-5 w-5" /> Preguntar
+                                    </a>
+                                </Button>
+                            )}
+                        </div>
+
+                        <ul className="mt-10 divide-y rounded-3xl bg-neutral-50 px-6 text-sm">
+                            <li className="flex gap-3 py-4"><Store className="h-5 w-5 shrink-0 text-brand" /><span><b>Visítanos</b> en Zacapa, Chiquimula y Esquipulas, o pide por WhatsApp.</span></li>
+                            <li className="flex gap-3 py-4"><MessageCircle className="h-5 w-5 shrink-0 text-brand" /><span><b>Sin pagos en línea.</b> Confirmamos disponibilidad y forma de pago por WhatsApp.</span></li>
+                            <li className="flex gap-3 py-4"><Tag className="h-5 w-5 shrink-0 text-brand" /><span><b>Par único:</b> cada tenis es una sola pieza. Agrégalo y confirma por WhatsApp antes de que se venda.</span></li>
+                        </ul>
+                    </div>
                 </div>
+            </div>
+
+            {relacionados.length > 0 && (
+                <section className={cn(contenedor, 'mt-16')}>
+                    <Carousel opts={{ align: 'start', dragFree: true }}>
+                        <div className="mb-8 flex items-end justify-between gap-4">
+                            <h2 className="font-display text-[1.75rem] uppercase leading-none sm:text-4xl">También de {capitalizar(producto.marca)}</h2>
+                            <div className="flex shrink-0 gap-2">
+                                <CarouselPrevious className="static hidden h-10 w-10 translate-y-0 border-neutral-200 sm:flex" />
+                                <CarouselNext className="static hidden h-10 w-10 translate-y-0 border-neutral-200 sm:flex" />
+                            </div>
+                        </div>
+                        <CarouselContent className="-ml-4">
+                            {relacionados.map((p, n) => (
+                                <CarouselItem key={p.id} className="basis-[46%] pl-4 sm:basis-1/3 lg:basis-1/4">
+                                    <ProductoCard producto={p} indice={n} />
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                    </Carousel>
+                </section>
             )}
+        </>
+    );
+}
+
+export default function Producto(props) {
+    return (
+        <Layout>
+            <Contenido key={props.producto.slug} {...props} variantes={props.variantes ?? []} relacionados={props.relacionados ?? []} />
         </Layout>
     );
 }

@@ -26,20 +26,59 @@ export default {
     			sans: [
     				'Figtree',
                     ...defaultTheme.fontFamily.sans
+                ],
+    			display: [
+    				'"Archivo Black"',
+    				'Figtree',
+                    ...defaultTheme.fontFamily.sans
                 ]
     		},
     		keyframes: {
-    			marquee: {
+    			'fade-up': {
     				'0%': {
-    					transform: 'translateX(0)'
+    					opacity: '0',
+    					transform: 'translate3d(0, 16px, 0)'
     				},
     				'100%': {
-    					transform: 'translateX(-50%)'
+    					opacity: '1',
+    					transform: 'translate3d(0, 0, 0)'
+    				}
+    			},
+    			flotar: {
+    				'0%, 100%': { transform: 'translate3d(0, 0, 0) rotate(var(--giro, 0deg))' },
+    				'50%': { transform: 'translate3d(0, -12px, 0) rotate(var(--giro, 0deg))' }
+    			},
+    			marquee: {
+    				'0%': {
+    					transform: 'translate3d(0, 0, 0)'
+    				},
+    				'100%': {
+    					transform: 'translate3d(-50%, 0, 0)'
+    				}
+    			},
+    			'accordion-down': {
+    				from: {
+    					height: '0'
+    				},
+    				to: {
+    					height: 'var(--radix-accordion-content-height)'
+    				}
+    			},
+    			'accordion-up': {
+    				from: {
+    					height: 'var(--radix-accordion-content-height)'
+    				},
+    				to: {
+    					height: '0'
     				}
     			}
     		},
     		animation: {
-    			marquee: 'marquee 40s linear infinite'
+    			marquee: 'marquee 80s linear infinite',
+    			'fade-up': 'fade-up 1s cubic-bezier(.25,.8,.25,1) both',
+    			flotar: 'flotar 12s cubic-bezier(.45,.05,.55,.95) infinite',
+    			'accordion-down': 'accordion-down 0.2s ease-out',
+    			'accordion-up': 'accordion-up 0.2s ease-out'
     		},
     		borderRadius: {
     			lg: 'var(--radius)',
@@ -47,6 +86,12 @@ export default {
     			sm: 'calc(var(--radius) - 4px)'
     		},
     		colors: {
+    			brand: {
+    				DEFAULT: '#ff4f17',
+    				dark: '#e03e0a',
+    				light: '#fff1eb'
+    			},
+    			ink: '#0a0a0a',
     			background: 'hsl(var(--background))',
     			foreground: 'hsl(var(--foreground))',
     			card: {
