@@ -74,7 +74,7 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                                 {imagenes.map((img, n) => (
                                     <CarouselItem key={n} className="pl-0">
                                         <div className="relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
-                                            <ImagenProducto src={img} alt={producto.descripcion} className="h-full w-full" />
+                                            <ImagenProducto src={img} alt={producto.descripcion} sizes="100vw" ancho={800} className="h-full w-full" />
                                         </div>
                                     </CarouselItem>
                                 ))}
@@ -89,7 +89,7 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
 
                         <div className="relative hidden aspect-square overflow-hidden rounded-3xl bg-neutral-100 lg:block">
                             {imagenes[foto] ? (
-                                <Zoom><ImagenProducto src={imagenes[foto]} alt={producto.descripcion} className="h-full w-full" /></Zoom>
+                                <Zoom><ImagenProducto src={imagenes[foto]} alt={producto.descripcion} sizes="(min-width: 1024px) 50vw, 100vw" ancho={1200} prioridad className="h-full w-full" /></Zoom>
                             ) : (
                                 <ImagenProducto src={null} alt={producto.descripcion} className="h-full w-full" />
                             )}
@@ -100,7 +100,7 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                                 {imagenes.map((img, n) => (
                                     <button key={n} onClick={() => setFoto(n)} onMouseEnter={() => setFoto(n)}
                                         className={cn('h-20 w-20 overflow-hidden rounded-2xl bg-neutral-100 ring-2 ring-offset-2 transition-all', foto === n ? 'ring-brand' : 'ring-transparent opacity-70 hover:opacity-100')}>
-                                        <ImagenProducto src={img} alt="" className="h-full w-full" />
+                                        <ImagenProducto src={img} alt="" sizes="80px" ancho={240} className="h-full w-full" />
                                     </button>
                                 ))}
                             </div>

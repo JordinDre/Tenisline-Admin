@@ -52,7 +52,7 @@ export default function CarritoDrawer() {
                             {items.map((i) => (
                                 <li key={i.id} className="flex animate-fade-up gap-4 py-5">
                                     <Link href={route('producto', i.slug)} onClick={() => setAbierto(false)} className="shrink-0">
-                                        <ImagenProducto src={i.imagen} alt={i.descripcion} className="h-24 w-20 rounded-xl" />
+                                        <ImagenProducto src={i.imagen} alt={i.descripcion} sizes="80px" ancho={240} className="h-24 w-20 rounded-xl" />
                                     </Link>
                                     <div className="flex min-w-0 flex-1 flex-col">
                                         <div className="flex items-start justify-between gap-3">

@@ -6,6 +6,18 @@ const formato = new Intl.NumberFormat('es-GT', {
     minimumFractionDigits: 2,
 });
 
+// Foto de S3 -> versión liviana generada por /img/{ancho}/... (si no es de S3, se deja igual)
+export function imagenAncho(src, ancho) {
+    if (!src) return src;
+    try {
+        const { hostname, pathname } = new URL(src);
+        if (!hostname.includes('amazonaws.com')) return src;
+        return `/img/${ancho}${pathname}`;
+    } catch {
+        return src;
+    }
+}
+
 export const quetzales = (valor) => formato.format(Number(valor || 0));
 
 /** Precio a cobrar: el de oferta si existe, si no el normal. */

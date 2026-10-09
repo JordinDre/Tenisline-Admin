@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useCarrito } from '@/Contexts/CarritoContext';
 import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
-import { ChevronRight, Flame, House, Mars, Menu, MessageCircle, Percent, Search, ShoppingBag, Sparkles, Store, Tag, Truck, Venus, Baby, Crown, MapPin, X } from 'lucide-react';
+import { Baby, BadgeCheck, ChevronRight, House, MapPin, Mars, Menu, MessageCircle, PackagePlus, Search, ShoppingBag, Store, Tag, Truck, Venus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export const NAV = [
@@ -12,8 +12,8 @@ export const NAV = [
     { label: 'Dama', href: '/catalogo?categoria=dama', icono: Venus },
     { label: 'Caballero', href: '/catalogo?categoria=caballero', icono: Mars },
     { label: 'Niños', href: '/catalogo?categoria=nino', icono: Baby },
-    { label: 'Marcas', href: '/marcas', icono: Crown },
-    { label: 'Ofertas', href: '/catalogo?categoria=ofertas', icono: Flame, destacado: true },
+    { label: 'Marcas', href: '/marcas', icono: BadgeCheck },
+    { label: 'Ofertas', href: '/catalogo?categoria=ofertas', icono: Tag, destacado: true },
 ];
 
 // Textos por defecto de la cinta superior; se reemplazan con los avisos de Filament > Promociones web
@@ -25,8 +25,8 @@ function iconoAviso(texto = '') {
     if (/whatsapp|pide|escrib/.test(t)) return MessageCircle;
     if (/zacapa|chiquimula|esquipulas|tienda|sucursal/.test(t)) return MapPin;
     if (/env[ií]o|entrega/.test(t)) return Truck;
-    if (/oferta|descuento|%|precio/.test(t)) return Tag;
-    return Sparkles;
+    if (/nuevo|llega|novedad/.test(t)) return PackagePlus;
+    return Tag;
 }
 
 function Cinta({ avisos }) {

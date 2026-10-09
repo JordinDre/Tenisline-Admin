@@ -8,7 +8,7 @@ import { capitalizar, quetzales } from '@/lib/tienda';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import Autoplay from 'embla-carousel-autoplay';
-import { ArrowRight, ArrowUpRight, Tag, Baby, Crown, Flame, Footprints, MessageCircle, Percent, ShoppingBag, Sparkles, Store, Venus, Mars, Zap } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Baby, BadgeCheck, Clock, Footprints, Mars, MessageCircle, PackagePlus, Percent, Search, ShoppingBag, Store, Tag, Venus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
@@ -21,7 +21,7 @@ function FotoFlotante({ producto, className, giro, retraso }) {
         <Link href={route('producto', producto.slug)}
             className={cn('group absolute animate-flotar transform-gpu overflow-hidden rounded-3xl bg-white shadow-2xl shadow-black/40 ring-1 ring-white/10', className)}
             style={{ '--giro': `${giro}deg`, animationDelay: `${retraso}s` }}>
-            <ImagenProducto src={producto.imagen} alt={producto.descripcion} className="h-full w-full transition-transform duration-700 group-hover:scale-105" />
+            <ImagenProducto src={producto.imagen} alt={producto.descripcion} sizes="280px" prioridad className="h-full w-full transition-transform duration-700 group-hover:scale-105" />
             <span className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-2xl bg-white/90 px-3 py-2 text-ink backdrop-blur">
                 <span className="truncate text-xs font-semibold">{capitalizar(producto.marca)}</span>
                 <span className="ml-2 shrink-0 text-xs font-bold text-brand">{quetzales(producto.precio_oferta || producto.precio)}</span>
@@ -41,7 +41,7 @@ function Portada({ destacados }) {
             <div className={cn(contenedor, 'relative grid items-center gap-12 py-14 md:py-20 lg:grid-cols-2 lg:py-24')}>
                 <div>
                     <span className="inline-flex animate-fade-up items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] backdrop-blur">
-                        <Sparkles className="h-3.5 w-3.5 text-brand" /> Nuevos modelos cada semana
+                        <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-70" /><span className="relative inline-flex h-2 w-2 rounded-full bg-brand" /></span> Nuevos modelos cada semana
                     </span>
                     <h1 className="mt-6 animate-fade-up font-display text-[2.75rem] uppercase leading-[0.95] sm:text-6xl xl:text-7xl" style={{ animationDelay: '80ms' }}>
                         No box,<br /><span className="text-brand">sí precio.</span>
@@ -63,7 +63,7 @@ function Portada({ destacados }) {
                         <div className="mt-10 grid animate-fade-up grid-cols-3 gap-3 lg:hidden" style={{ animationDelay: '320ms' }}>
                             {[a, b, c].filter(Boolean).map((p) => (
                                 <Link key={p.id} href={route('producto', p.slug)} className="aspect-square overflow-hidden rounded-2xl bg-white">
-                                    <ImagenProducto src={p.imagen} alt={p.descripcion} className="h-full w-full" />
+                                    <ImagenProducto src={p.imagen} alt={p.descripcion} sizes="33vw" prioridad className="h-full w-full" />
                                 </Link>
                             ))}
                         </div>
@@ -243,7 +243,7 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
             {/* Recién publicados (con foto) */}
             {destacados.length > 0 && (
                 <section className={cn(contenedor, 'mt-20')}>
-                    <Titulo icono={Sparkles} titulo="Recién publicados" subtitulo="Los últimos modelos con foto en nuestras tiendas" enlace="/catalogo" />
+                    <Titulo icono={Clock} titulo="Recién publicados" subtitulo="Los últimos modelos con foto en nuestras tiendas" enlace="/catalogo" />
                     <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
                         {destacados.map((p, n) => <ProductoCard key={p.id} producto={p} indice={n} />)}
                     </div>
@@ -253,7 +253,7 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
             {/* Marcas */}
             {marcas.length > 0 && (
                 <section className="mt-20 border-y bg-neutral-50 py-12">
-                    <div className={contenedor}><Titulo titulo="Nuestras marcas" enlace="/marcas" icono={Crown} /></div>
+                    <div className={contenedor}><Titulo titulo="Nuestras marcas" enlace="/marcas" icono={BadgeCheck} /></div>
                     <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
                         <div className="marquee-track flex w-max py-2" style={{ animationDuration: `${Math.max(marcas.length * 3, 30)}s` }}>
                             {[0, 1].map((copia) => (
@@ -271,8 +271,8 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
                 </section>
             )}
 
-            <CarruselProductos titulo="Ofertas" subtitulo="Precios especiales por tiempo limitado" enlace="/catalogo?categoria=ofertas" productos={ofertas} icono={Flame} />
-            <CarruselProductos titulo="Lo más nuevo" subtitulo="Recién llegados a nuestras tiendas" enlace="/catalogo" productos={novedades} icono={Zap} />
+            <CarruselProductos titulo="Ofertas" subtitulo="Precios especiales por tiempo limitado" enlace="/catalogo?categoria=ofertas" productos={ofertas} icono={Percent} />
+            <CarruselProductos titulo="Lo más nuevo" subtitulo="Recién llegados a nuestras tiendas" enlace="/catalogo" productos={novedades} icono={PackagePlus} />
 
             {/* Cómo comprar */}
             <section className={cn(contenedor, 'mt-24')}>
@@ -281,7 +281,7 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
                     <h2 className="relative font-display text-2xl uppercase sm:text-3xl">Así de fácil es comprar</h2>
                     <div className="relative mt-8 grid gap-4 md:grid-cols-3">
                         {[
-                            { icono: Sparkles, t: 'Elige tus tenis', d: 'Explora el catálogo y escoge tu talla.' },
+                            { icono: Search, t: 'Elige tus tenis', d: 'Explora el catálogo y escoge tu talla.' },
                             { icono: ShoppingBag, t: 'Agrégalos al carrito', d: 'Junta todos los modelos que te interesan.' },
                             { icono: MessageCircle, t: 'Envíanos tu pedido', d: 'Te confirmamos disponibilidad por WhatsApp.' },
                         ].map(({ icono: Icono, t, d }, n) => (

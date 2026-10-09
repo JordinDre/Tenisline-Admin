@@ -136,7 +136,9 @@ class TiendaController extends Controller
         $categorias = config('tienda.categorias');
         $etiqueta = $categorias[$filtros['categoria'] ?? '']['label'] ?? null;
         $marca = $filtros['marca'] ?? null;
-        $titulo = trim('Tenis '.($etiqueta ? 'de '.$etiqueta.' ' : '').($marca ? $marca.' ' : '')).' en Guatemala';
+        $titulo = ($etiqueta || $marca)
+            ? trim('Tenis '.($etiqueta ? 'de '.$etiqueta.' ' : '').($marca ? $marca.' ' : '')).' en Guatemala'
+            : 'Catálogo de tenis en Guatemala';
         $titulo = ($etiqueta === 'Ofertas' ? 'Ofertas en tenis' : $titulo).' | Tenisline';
         // Las búsquedas y los filtros sueltos no se indexan; la categoría y la marca sí
         $soloCategoria = collect($filtros)->except(['categoria', 'marca'])->filter()->isEmpty();
@@ -169,7 +171,7 @@ class TiendaController extends Controller
 
             $modelos = CatalogoTienda::modelos(CatalogoTienda::consulta(), 'recientes', 0, 5000)
                 ->filter(fn ($m) => ! empty($m['slug']))
-                ->map(fn ($m) => ['loc' => url('/producto/'.$m['slug']), 'prio' => '0.8', 'mod' => null, 'img' => ($m['imagen'] ?? null) && ! str_contains($m['imagen'], '/local/') ? $m['imagen'] : null]);
+                ->map(fn ($m) => ['loc' => url('/producto/'.$m['slug']), 'prio' => '0.8', 'mod' => null, 'img' => $m['imagen'] ?? null]);
 
             $filas = $urls->merge($modelos)->map(fn ($u) => '<url><loc>'.e($u['loc']).'</loc><priority>'.$u['prio'].'</priority>'
                 .($u['img'] ? '<image:image><image:loc>'.e($u['img']).'</image:loc></image:image>' : '').'</url>')->implode('');
@@ -229,8 +231,7 @@ class TiendaController extends Controller
         $precios = $variantes->map(fn ($v) => $v['precio_oferta'] ?? $v['precio'])->filter();
         $precio = $precios->min();
         $enlace = url('/producto/'.$producto->slug);
-        // Las fotos perdidas (carpeta local/) no sirven para vistas previas ni buscadores
-        $fotosSeo = $imagenes->reject(fn ($i) => str_contains($i, '/local/'))->values();
+        $fotosSeo = $imagenes->values();
         $foto = $fotosSeo->first();
 
         return Inertia::render('Producto', [
