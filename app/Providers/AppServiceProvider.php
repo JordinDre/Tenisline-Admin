@@ -33,12 +33,7 @@ class AppServiceProvider extends ServiceProvider
         // Nada se guarda en el disco del servidor ni en una carpeta "local". Un campo puede cambiarlo con ->disk()/->directory().
         FileUpload::configureUsing(fn (FileUpload $campo) => $campo
             ->disk(config('filesystems.disks.s3.driver'))
-            ->directory(config('filesystems.upload_directory'))
-            // Las fotos de celular pesan mucho: se reducen en el navegador antes de subirlas (máx. 1600 px)
-            ->imageResizeMode('contain')
-            ->imageResizeTargetWidth('1600')
-            ->imageResizeTargetHeight('1600')
-            ->imageResizeUpscale(false));
+            ->directory(config('filesystems.upload_directory')));
 
         Filament::serving(function () {
 
