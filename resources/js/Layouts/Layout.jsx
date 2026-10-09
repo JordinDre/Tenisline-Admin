@@ -3,7 +3,7 @@ import Footer from '@/Components/tienda/Footer';
 import Header from '@/Components/tienda/Header';
 import { CarritoProvider } from '@/Contexts/CarritoContext';
 import { cn } from '@/lib/utils';
-import { usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -43,8 +43,11 @@ function BotonWhatsApp() {
 
 // Layout del sitio público de Tenisline (header, carrito, footer y botón de WhatsApp).
 export default function Layout({ children }) {
+    const seo = usePage().props.seo;
+
     return (
         <CarritoProvider>
+            {seo?.title && <Head title={seo.title} />}
             <div className="flex min-h-screen flex-col bg-white">
                 <Header />
                 <main className="flex-1">{children}</main>

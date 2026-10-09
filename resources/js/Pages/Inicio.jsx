@@ -6,9 +6,9 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import Layout from '@/Layouts/Layout';
 import { capitalizar, quetzales } from '@/lib/tienda';
 import { cn } from '@/lib/utils';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import Autoplay from 'embla-carousel-autoplay';
-import { ArrowRight, ArrowUpRight, MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Tag, Baby, Crown, Flame, Footprints, MessageCircle, Percent, ShoppingBag, Sparkles, Store, Venus, Mars, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
@@ -19,7 +19,7 @@ function FotoFlotante({ producto, className, giro, retraso }) {
     if (!producto) return null;
     return (
         <Link href={route('producto', producto.slug)}
-            className={cn('group absolute animate-flotar overflow-hidden rounded-3xl bg-white shadow-2xl shadow-black/40 ring-1 ring-white/10', className)}
+            className={cn('group absolute animate-flotar transform-gpu overflow-hidden rounded-3xl bg-white shadow-2xl shadow-black/40 ring-1 ring-white/10', className)}
             style={{ '--giro': `${giro}deg`, animationDelay: `${retraso}s` }}>
             <ImagenProducto src={producto.imagen} alt={producto.descripcion} className="h-full w-full transition-transform duration-700 group-hover:scale-105" />
             <span className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-2xl bg-white/90 px-3 py-2 text-ink backdrop-blur">
@@ -35,8 +35,8 @@ function Portada({ destacados }) {
 
     return (
         <section className="relative overflow-hidden bg-ink text-white">
-            <div className="pointer-events-none absolute -right-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-brand/30 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-40 left-1/4 h-96 w-96 rounded-full bg-brand/15 blur-3xl" />
+            <div className="pointer-events-none absolute -right-32 -top-32 h-[28rem] w-[28rem] transform-gpu rounded-full bg-brand/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-40 left-1/4 h-96 w-96 transform-gpu rounded-full bg-brand/15 blur-3xl" />
 
             <div className={cn(contenedor, 'relative grid items-center gap-12 py-14 md:py-20 lg:grid-cols-2 lg:py-24')}>
                 <div>
@@ -148,11 +148,18 @@ function CarruselPromociones({ promociones }) {
 
 /* ---------- Secciones ---------- */
 
-function Titulo({ titulo, subtitulo, enlace, texto = 'Ver todo', children }) {
+function Titulo({ titulo, subtitulo, enlace, texto = 'Ver todo', icono: Icono, children }) {
     return (
         <div className="mb-8 flex items-end justify-between gap-4">
             <div className="min-w-0">
-                <h2 className="font-display text-[1.75rem] uppercase leading-none sm:text-4xl">{titulo}</h2>
+                <div className="flex items-center gap-3">
+                    {Icono && (
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-light text-brand sm:h-11 sm:w-11">
+                            <Icono className="h-5 w-5" strokeWidth={2.25} />
+                        </span>
+                    )}
+                    <h2 className="font-display text-[1.75rem] uppercase leading-none sm:text-4xl">{titulo}</h2>
+                </div>
                 {subtitulo && <p className="mt-2 text-neutral-500">{subtitulo}</p>}
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -175,12 +182,14 @@ const ESTILO_CATEGORIA = {
     ofertas: 'from-brand via-orange-500 to-orange-400 text-white',
 };
 
-function CarruselProductos({ titulo, subtitulo, enlace, productos }) {
+const ICONO_CATEGORIA = { dama: Venus, caballero: Mars, nino: Footprints, infante: Baby, ofertas: Percent };
+
+function CarruselProductos({ titulo, subtitulo, enlace, productos, icono }) {
     if (!productos.length) return null;
     return (
         <section className={cn(contenedor, 'mt-20')}>
             <Carousel opts={{ align: 'start', dragFree: true }}>
-                <Titulo titulo={titulo} subtitulo={subtitulo} enlace={enlace}>
+                <Titulo titulo={titulo} subtitulo={subtitulo} enlace={enlace} icono={icono}>
                     <CarouselPrevious className="static hidden h-10 w-10 translate-y-0 border-neutral-200 sm:flex" />
                     <CarouselNext className="static hidden h-10 w-10 translate-y-0 border-neutral-200 sm:flex" />
                 </Titulo>
@@ -199,29 +208,33 @@ function CarruselProductos({ titulo, subtitulo, enlace, productos }) {
 export default function Inicio({ promociones = [], categorias = [], marcas = [], ofertas = [], novedades = [], destacados = [] }) {
     return (
         <Layout>
-            <Head title="Inicio" />
 
             {promociones.length ? <CarruselPromociones promociones={promociones} /> : <Portada destacados={destacados} />}
 
             {/* Categorías */}
             <section className={cn(contenedor, 'pt-16')}>
-                <Titulo titulo="Compra por categoría" />
+                <Titulo titulo="Compra por categoría" icono={Store} />
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
                     {categorias.map((c, n) => (
                         <Link key={c.clave} href={`/catalogo?categoria=${c.clave}`}
                             className={cn(
-                                'group relative flex aspect-[4/3] animate-fade-up flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-5 ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl md:aspect-[3/4] lg:p-6',
+                                'group relative flex aspect-[4/3] animate-fade-up flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-5 ring-1 ring-black/5 transition-[transform,box-shadow] duration-300 will-change-transform hover:-translate-y-1 hover:shadow-xl md:aspect-[3/4] lg:p-6',
                                 ESTILO_CATEGORIA[c.clave] ?? 'from-neutral-100 to-white',
                                 n === categorias.length - 1 && categorias.length % 2 === 1 && 'col-span-2 aspect-[8/3] md:col-span-1 md:aspect-[3/4]',
                             )}
                             style={{ animationDelay: `${n * 60}ms` }}>
                             <div className="flex items-start justify-between">
-                                <span className="text-sm font-semibold opacity-70">{c.modelos} modelos</span>
+                                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70 text-ink backdrop-blur">
+                                    {(() => { const Icono = ICONO_CATEGORIA[c.clave] ?? Tag; return <Icono className="h-5 w-5" strokeWidth={2} />; })()}
+                                </span>
                                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-ink backdrop-blur transition-transform duration-300 group-hover:rotate-45">
                                     <ArrowUpRight className="h-4 w-4" />
                                 </span>
                             </div>
-                            <h3 className="font-display text-xl uppercase leading-none sm:text-2xl md:text-lg lg:text-2xl xl:text-[1.75rem]">{c.label}</h3>
+                            <div>
+                                <span className="text-xs font-semibold opacity-70">{c.modelos} modelos</span>
+                                <h3 className="font-display text-xl uppercase leading-none sm:text-2xl md:text-lg lg:text-2xl xl:text-[1.75rem]">{c.label}</h3>
+                            </div>
                         </Link>
                     ))}
                 </div>
@@ -230,7 +243,7 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
             {/* Recién publicados (con foto) */}
             {destacados.length > 0 && (
                 <section className={cn(contenedor, 'mt-20')}>
-                    <Titulo titulo="Recién publicados" subtitulo="Los últimos modelos con foto en nuestras tiendas" enlace="/catalogo" />
+                    <Titulo icono={Sparkles} titulo="Recién publicados" subtitulo="Los últimos modelos con foto en nuestras tiendas" enlace="/catalogo" />
                     <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
                         {destacados.map((p, n) => <ProductoCard key={p.id} producto={p} indice={n} />)}
                     </div>
@@ -240,14 +253,14 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
             {/* Marcas */}
             {marcas.length > 0 && (
                 <section className="mt-20 border-y bg-neutral-50 py-12">
-                    <div className={contenedor}><Titulo titulo="Nuestras marcas" enlace="/marcas" /></div>
+                    <div className={contenedor}><Titulo titulo="Nuestras marcas" enlace="/marcas" icono={Crown} /></div>
                     <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
-                        <div className="flex w-max animate-marquee py-2 hover:[animation-play-state:paused]">
+                        <div className="marquee-track flex w-max py-2" style={{ animationDuration: `${Math.max(marcas.length * 3, 30)}s` }}>
                             {[0, 1].map((copia) => (
                                 <div key={copia} className="flex shrink-0 gap-4 pr-4" aria-hidden={copia === 1}>
                                     {marcas.map((m) => (
                                         <Link key={m.marca} href={`/catalogo?marca=${encodeURIComponent(m.marca)}`} tabIndex={copia ? -1 : 0}
-                                            className="group flex h-24 w-44 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-neutral-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-ink">
+                                            className="group flex h-24 w-44 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-neutral-200 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-ink">
                                             <LogoMarca marca={m.marca} logo={m.logo} carga="eager" />
                                         </Link>
                                     ))}
@@ -258,8 +271,8 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
                 </section>
             )}
 
-            <CarruselProductos titulo="Ofertas" subtitulo="Precios especiales por tiempo limitado" enlace="/catalogo?categoria=ofertas" productos={ofertas} />
-            <CarruselProductos titulo="Lo más nuevo" subtitulo="Recién llegados a nuestras tiendas" enlace="/catalogo" productos={novedades} />
+            <CarruselProductos titulo="Ofertas" subtitulo="Precios especiales por tiempo limitado" enlace="/catalogo?categoria=ofertas" productos={ofertas} icono={Flame} />
+            <CarruselProductos titulo="Lo más nuevo" subtitulo="Recién llegados a nuestras tiendas" enlace="/catalogo" productos={novedades} icono={Zap} />
 
             {/* Cómo comprar */}
             <section className={cn(contenedor, 'mt-24')}>

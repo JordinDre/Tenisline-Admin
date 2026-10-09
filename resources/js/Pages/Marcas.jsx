@@ -1,13 +1,12 @@
 import LogoMarca from '@/Components/tienda/LogoMarca';
 import Layout from '@/Layouts/Layout';
 import { capitalizar } from '@/lib/tienda';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 
 export default function Marcas({ marcas = [] }) {
     return (
         <Layout>
-            <Head title="Marcas" />
             <section className="relative overflow-hidden border-b bg-neutral-50">
                 <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />
                 <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">

@@ -12,7 +12,7 @@ import { Switch } from '@/Components/ui/switch';
 import Layout from '@/Layouts/Layout';
 import { capitalizar } from '@/lib/tienda';
 import { cn } from '@/lib/utils';
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ArrowUpDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -189,7 +189,6 @@ export default function Catalogo({ productos, filtros = {}, marcas = [], categor
 
     return (
         <Layout>
-            <Head title={titulo} />
 
             <section className="relative overflow-hidden border-b bg-neutral-50">
                 <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />

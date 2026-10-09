@@ -3,7 +3,7 @@ import * as inertiaHelpers from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} · Tenisline` : 'Tenisline'),
+    title: (title) => title || 'Tenisline',
     resolve: (name) =>
         inertiaHelpers.resolvePageComponent(
             `./Pages/${name}.jsx`,

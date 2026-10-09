@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Support\Seo;
 
 class TiendaController extends Controller
 {
@@ -44,14 +45,25 @@ class TiendaController extends Controller
             ->filter(fn ($p) => $p['imagen'] || $p['titulo'])
             ->values();
 
+        $destacados = CatalogoTienda::modelos(CatalogoTienda::consulta(['con_imagen' => true]), 'recientes', 0, 8);
+
         return Inertia::render('Inicio', [
+            'seo' => Seo::make(
+                'Tenisline | Tenis de marca en Zacapa, Chiquimula y Esquipulas',
+                'Nike, adidas, Puma, New Balance, On, Hoka y más a precios bajos. No box, sí precio. Compra por WhatsApp en Zacapa, Chiquimula y Esquipulas, Guatemala.',
+                $destacados[0]['imagen'] ?? null,
+                url('/'),
+                'website',
+                true,
+                Seo::negocio(),
+            ),
             'promociones' => $promociones,
             'categorias' => CatalogoTienda::categorias(),
             'marcas' => CatalogoTienda::marcas(),
             'ofertas' => CatalogoTienda::modelos(CatalogoTienda::consulta(['ofertas' => true]), 'recientes', 0, 12),
             'novedades' => CatalogoTienda::modelos(CatalogoTienda::consulta(), 'recientes', 0, 12),
             // Modelos con foto real, para la portada y la sección destacada
-            'destacados' => CatalogoTienda::modelos(CatalogoTienda::consulta(['con_imagen' => true]), 'recientes', 0, 8),
+            'destacados' => $destacados,
         ]);
     }
 
@@ -121,7 +133,21 @@ class TiendaController extends Controller
         $filtros = $request->only(['search', 'marca', 'categoria', 'genero', 'bodega', 'tallas', 'precioMin', 'precioMax', 'ofertas', 'marchamo']);
         $orden = $request->input('orden', 'recientes');
 
+        $categorias = config('tienda.categorias');
+        $etiqueta = $categorias[$filtros['categoria'] ?? '']['label'] ?? null;
+        $marca = $filtros['marca'] ?? null;
+        $titulo = trim('Tenis '.($etiqueta ? 'de '.$etiqueta.' ' : '').($marca ? $marca.' ' : '')).' en Guatemala';
+        $titulo = ($etiqueta === 'Ofertas' ? 'Ofertas en tenis' : $titulo).' | Tenisline';
+        // Las búsquedas y los filtros sueltos no se indexan; la categoría y la marca sí
+        $soloCategoria = collect($filtros)->except(['categoria', 'marca'])->filter()->isEmpty();
+        $canonical = url('/catalogo').($soloCategoria && ($etiqueta || $marca) ? '?'.http_build_query(array_filter(['categoria' => $filtros['categoria'] ?? null, 'marca' => $marca])) : '');
+
         return Inertia::render('Catalogo', [
+            'seo' => Seo::make(
+                $titulo,
+                'Catálogo de tenis '.($marca ? $marca.' ' : '').($etiqueta ? 'para '.strtolower($etiqueta).' ' : '').'en Zacapa, Chiquimula y Esquipulas. Modelos originales sin caja a precios que no encuentras en otro lado.',
+                null, $canonical, 'website', $soloCategoria,
+            ),
             'productos' => CatalogoTienda::modelos(CatalogoTienda::consulta($filtros), $orden),
             'filtros' => [...$filtros, 'orden' => $orden, 'tallas' => array_values((array) ($filtros['tallas'] ?? []))],
             'marcas' => CatalogoTienda::marcas(),
@@ -132,9 +158,34 @@ class TiendaController extends Controller
         ]);
     }
 
+    /** Mapa del sitio para Google: páginas fijas, categorías, marcas y cada modelo con existencia. */
+    public function sitemap()
+    {
+        $xml = \Illuminate\Support\Facades\Cache::remember('tienda:sitemap', 3600, function () {
+            $urls = collect(['/', '/catalogo', '/marcas'])
+                ->merge(collect(array_keys(config('tienda.categorias')))->map(fn ($c) => '/catalogo?categoria='.$c))
+                ->merge(CatalogoTienda::marcas()->map(fn ($m) => '/catalogo?marca='.rawurlencode($m['marca'])))
+                ->map(fn ($u) => ['loc' => url($u), 'prio' => $u === '/' ? '1.0' : '0.7', 'mod' => null, 'img' => null]);
+
+            $modelos = CatalogoTienda::modelos(CatalogoTienda::consulta(), 'recientes', 0, 5000)
+                ->filter(fn ($m) => ! empty($m['slug']))
+                ->map(fn ($m) => ['loc' => url('/producto/'.$m['slug']), 'prio' => '0.8', 'mod' => null, 'img' => ($m['imagen'] ?? null) && ! str_contains($m['imagen'], '/local/') ? $m['imagen'] : null]);
+
+            $filas = $urls->merge($modelos)->map(fn ($u) => '<url><loc>'.e($u['loc']).'</loc><priority>'.$u['prio'].'</priority>'
+                .($u['img'] ? '<image:image><image:loc>'.e($u['img']).'</image:loc></image:image>' : '').'</url>')->implode('');
+
+            return '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">'.$filas.'</urlset>';
+        });
+
+        return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+    }
+
     public function marcas()
     {
-        return Inertia::render('Marcas', ['marcas' => CatalogoTienda::marcas()]);
+        return Inertia::render('Marcas', [
+            'seo' => Seo::make('Marcas de tenis | Tenisline', 'Nike, adidas, Puma, New Balance, On, Hoka, Saucony, Skechers, Reebok y más marcas en Tenisline, con envío y entrega en Zacapa, Chiquimula y Esquipulas.'),
+            'marcas' => CatalogoTienda::marcas(),
+        ]);
     }
 
     public function producto($slug)
@@ -174,7 +225,36 @@ class TiendaController extends Controller
             $imagenes = $variantes->pluck('imagen')->filter()->unique()->values();
         }
 
+        $nombre = trim(($producto->marca?->marca ? ucfirst(strtolower($producto->marca->marca)).' ' : '').ucwords(strtolower(trim($producto->descripcion))).($producto->color ? ' '.ucfirst(strtolower($producto->color)) : ''));
+        $precios = $variantes->map(fn ($v) => $v['precio_oferta'] ?? $v['precio'])->filter();
+        $precio = $precios->min();
+        $enlace = url('/producto/'.$producto->slug);
+        // Las fotos perdidas (carpeta local/) no sirven para vistas previas ni buscadores
+        $fotosSeo = $imagenes->reject(fn ($i) => str_contains($i, '/local/'))->values();
+        $foto = $fotosSeo->first();
+
         return Inertia::render('Producto', [
+            'seo' => Seo::make(
+                $nombre.' | Tenisline',
+                $nombre.($precio ? ' desde Q'.number_format($precio, 2) : '').'. Tallas disponibles en Zacapa, Chiquimula y Esquipulas. No box, sí precio. Pide por WhatsApp.',
+                $foto, $enlace, 'product', true,
+                array_values(array_filter([
+                    $precio ? [
+                        '@context' => 'https://schema.org', '@type' => 'Product',
+                        'name' => $nombre, 'sku' => $producto->codigo,
+                        'image' => $fotosSeo->isNotEmpty() ? $fotosSeo->all() : [url('/images/logo.png')], 'color' => $producto->color,
+                        'brand' => ['@type' => 'Brand', 'name' => $producto->marca?->marca],
+                        'description' => $nombre.'. Tenis disponibles en tiendas Tenisline.',
+                        'offers' => [
+                            '@type' => 'AggregateOffer', 'priceCurrency' => 'GTQ',
+                            'lowPrice' => $precio, 'highPrice' => $precios->max(), 'offerCount' => $variantes->count(),
+                            'availability' => $variantes->isNotEmpty() ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                            'url' => $enlace, 'itemCondition' => 'https://schema.org/NewCondition',
+                        ],
+                    ] : null,
+                    Seo::migas([['Inicio', url('/')], ['Catálogo', url('/catalogo')], [$nombre, $enlace]]),
+                ])),
+            ),
             'producto' => [
                 'id' => $producto->id,
                 'slug' => $producto->slug,

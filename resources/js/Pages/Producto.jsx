@@ -7,7 +7,7 @@ import { useCarrito } from '@/Contexts/CarritoContext';
 import Layout from '@/Layouts/Layout';
 import { capitalizar, descuento, enlaceWhatsApp, quetzales } from '@/lib/tienda';
 import { cn } from '@/lib/utils';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Check, MapPin, MessageCircle, ShoppingBag, Store, Tag } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
@@ -208,7 +208,6 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
 export default function Producto(props) {
     return (
         <Layout>
-            <Head title={`${capitalizar(props.producto.marca ?? '')} ${capitalizar(props.producto.descripcion)}`} />
             <Contenido key={props.producto.slug} {...props} variantes={props.variantes ?? []} relacionados={props.relacionados ?? []} />
         </Layout>
     );

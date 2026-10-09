@@ -66,3 +66,32 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Cintas que se desplazan: capa propia en la GPU, sin saltos al reiniciar y con pausa suave al pasar el mouse */
+@layer components {
+  .marquee-track {
+    animation: marquee 40s linear infinite;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+  }
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Quien tiene activado "reducir movimiento" en su teléfono o computadora no ve animaciones */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track,
+  .animate-flotar,
+  .animate-fade-up {
+    animation: none !important;
+  }
+}

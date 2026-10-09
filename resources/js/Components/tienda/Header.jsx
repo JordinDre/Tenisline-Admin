@@ -3,38 +3,53 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useCarrito } from '@/Contexts/CarritoContext';
 import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
-import { ChevronRight, Menu, Search, ShoppingBag, X } from 'lucide-react';
+import { ChevronRight, Flame, House, Mars, Menu, MessageCircle, Percent, Search, ShoppingBag, Sparkles, Store, Tag, Truck, Venus, Baby, Crown, MapPin, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export const NAV = [
-    { label: 'Inicio', href: '/' },
-    { label: 'Catálogo', href: '/catalogo' },
-    { label: 'Dama', href: '/catalogo?categoria=dama' },
-    { label: 'Caballero', href: '/catalogo?categoria=caballero' },
-    { label: 'Niños', href: '/catalogo?categoria=nino' },
-    { label: 'Marcas', href: '/marcas' },
-    { label: 'Ofertas', href: '/catalogo?categoria=ofertas', destacado: true },
+    { label: 'Inicio', href: '/', icono: House },
+    { label: 'Catálogo', href: '/catalogo', icono: Store },
+    { label: 'Dama', href: '/catalogo?categoria=dama', icono: Venus },
+    { label: 'Caballero', href: '/catalogo?categoria=caballero', icono: Mars },
+    { label: 'Niños', href: '/catalogo?categoria=nino', icono: Baby },
+    { label: 'Marcas', href: '/marcas', icono: Crown },
+    { label: 'Ofertas', href: '/catalogo?categoria=ofertas', icono: Flame, destacado: true },
 ];
 
 // Textos por defecto de la cinta superior; se reemplazan con los avisos de Filament > Promociones web
 const AVISOS_BASE = ['No box, sí precio', 'Zacapa · Chiquimula · Esquipulas', 'Pide por WhatsApp', 'Nuevos modelos cada semana'];
 
+// Ícono según de qué habla el aviso
+function iconoAviso(texto = '') {
+    const t = texto.toLowerCase();
+    if (/whatsapp|pide|escrib/.test(t)) return MessageCircle;
+    if (/zacapa|chiquimula|esquipulas|tienda|sucursal/.test(t)) return MapPin;
+    if (/env[ií]o|entrega/.test(t)) return Truck;
+    if (/oferta|descuento|%|precio/.test(t)) return Tag;
+    return Sparkles;
+}
+
 function Cinta({ avisos }) {
-    const textos = avisos?.length ? avisos.map((a) => a.texto) : AVISOS_BASE;
-    // Se repite para que el desplazamiento sea continuo sin saltos
-    const fila = [...textos, ...textos, ...textos, ...textos];
+    const lista = avisos?.length ? avisos.map((a) => a.texto) : AVISOS_BASE;
+    // Una copia debe ser más ancha que la pantalla para que el desplazamiento no deje huecos
+    const fila = [...lista, ...lista];
+    // ~7 s por aviso mantiene una velocidad cómoda (unos 50 px/s) sin importar cuántos haya
+    const duracion = `${fila.length * 7}s`;
 
     return (
-        <div className="relative overflow-hidden bg-ink text-white">
-            <div className="flex h-9 w-max animate-marquee items-center hover:[animation-play-state:paused]">
+        <div className="relative overflow-hidden bg-ink text-white" role="marquee" aria-label="Avisos de la tienda">
+            <div className="marquee-track flex h-9 w-max items-center" style={{ animationDuration: duracion }}>
                 {[0, 1].map((copia) => (
                     <div key={copia} className="flex shrink-0 items-center" aria-hidden={copia === 1}>
-                        {fila.map((t, n) => (
-                            <span key={n} className="flex items-center whitespace-nowrap px-6 text-[11px] font-semibold uppercase tracking-[0.2em]">
-                                {t}
-                                <span className="ml-12 text-brand">✦</span>
-                            </span>
-                        ))}
+                        {fila.map((t, n) => {
+                            const Icono = iconoAviso(t);
+                            return (
+                                <span key={n} className="flex items-center gap-2 whitespace-nowrap pl-10 text-[11px] font-semibold uppercase tracking-[0.2em]">
+                                    <Icono className="h-3.5 w-3.5 shrink-0 text-brand" strokeWidth={2.25} />
+                                    {t}
+                                </span>
+                            );
+                        })}
                     </div>
                 ))}
             </div>
@@ -74,7 +89,7 @@ export default function Header() {
         <>
             <Cinta avisos={props.tienda?.avisos} />
 
-            <header className={cn('sticky top-0 z-40 border-b bg-white/85 backdrop-blur-xl transition-[box-shadow,border-color] duration-300', sombra ? 'border-neutral-200 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)]' : 'border-transparent')}>
+            <header className={cn('sticky top-0 z-40 border-b bg-white/95 backdrop-blur-md transition-[box-shadow,border-color] duration-300 supports-[backdrop-filter]:bg-white/80', sombra ? 'border-neutral-200 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)]' : 'border-transparent')}>
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:h-20 lg:px-8">
                     <Sheet open={menu} onOpenChange={setMenu}>
                         <SheetTrigger asChild>
@@ -92,7 +107,13 @@ export default function Header() {
                                     <Link key={n.href} href={n.href}
                                         className={cn('flex animate-fade-up items-center justify-between rounded-xl px-4 py-3.5 text-lg font-semibold transition-colors hover:bg-neutral-100', n.destacado ? 'text-brand' : 'text-neutral-900', activo(n.href) && 'bg-neutral-100')}
                                         style={{ animationDelay: `${i * 35}ms` }}>
-                                        {n.label} <ChevronRight className="h-5 w-5 text-neutral-400" />
+                                        <span className="flex items-center gap-3">
+                                            <span className={cn('flex h-9 w-9 items-center justify-center rounded-full', n.destacado ? 'bg-brand-light text-brand' : 'bg-neutral-100 text-neutral-600')}>
+                                                <n.icono className="h-[18px] w-[18px]" strokeWidth={2} />
+                                            </span>
+                                            {n.label}
+                                        </span>
+                                        <ChevronRight className="h-5 w-5 text-neutral-400" />
                                     </Link>
                                 ))}
                             </nav>
@@ -119,6 +140,7 @@ export default function Header() {
                             <Link key={n.href} href={n.href}
                                 className={cn('rounded-full px-3.5 py-2 text-sm font-semibold transition-colors xl:px-4',
                                     n.destacado ? 'text-brand hover:bg-brand-light' : activo(n.href) ? 'bg-ink text-white' : 'text-neutral-700 hover:bg-neutral-100 hover:text-ink')}>
+                                {n.destacado && <n.icono className="mr-1 inline h-4 w-4 -translate-y-px" strokeWidth={2.25} />}
                                 {n.label}
                             </Link>
                         ))}
@@ -133,8 +155,8 @@ export default function Header() {
                         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full md:hidden" onClick={() => setBuscando(true)} aria-label="Buscar">
                             <Search className="h-5 w-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full" onClick={() => setAbierto(true)} aria-label="Abrir carrito">
-                            <ShoppingBag className="h-[22px] w-[22px]" />
+                        <Button variant="ghost" size="icon" className="group/bolsa relative h-10 w-10 rounded-full" onClick={() => setAbierto(true)} aria-label="Abrir carrito">
+                            <ShoppingBag className="h-[22px] w-[22px] transition-transform duration-300 group-hover/bolsa:-rotate-6 group-hover/bolsa:scale-110" strokeWidth={1.9} />
                             {cantidad > 0 && (
                                 <span key={cantidad} className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white ring-2 ring-white zoom-in-50">
                                     {cantidad}

@@ -11,6 +11,7 @@ Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
 Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto');
 Route::get('/marcas', [TiendaController::class, 'marcas'])->name('marcas');
+Route::get('/sitemap.xml', [TiendaController::class, 'sitemap'])->name('sitemap');
 /* Route::get('/login', function () {
     return redirect('/admin');
 }); */
