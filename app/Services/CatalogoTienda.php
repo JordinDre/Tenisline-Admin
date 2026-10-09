@@ -93,7 +93,7 @@ class CatalogoTienda
             $q->where('precio_venta', '<=', (float) $f['precioMax']);
         }
 
-        if ($esAdmin && ! empty($f['marchamo']) && in_array($f['marchamo'], ['rojo', 'naranja', 'celeste', 'amarillo'], true)) {
+        if ($esAdmin && ! empty($f['marchamo']) && in_array($f['marchamo'], ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'], true)) {
             $q->where('marchamo', $f['marchamo']);
         }
 

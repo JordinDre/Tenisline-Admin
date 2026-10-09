@@ -32,7 +32,7 @@ const RANGOS = [
     { label: 'Más de Q1,200', min: 1200, max: null },
 ];
 
-const MARCHAMOS = ['rojo', 'naranja', 'celeste', 'amarillo'];
+const MARCHAMOS = ['rojo', 'naranja', 'celeste', 'amarillo', 'blanco'];
 
 const limpiar = (obj) =>
     Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && !v.length)));

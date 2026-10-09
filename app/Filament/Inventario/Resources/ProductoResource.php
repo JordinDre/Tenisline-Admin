@@ -85,6 +85,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                                 'amarillo' => 'AMARILLO',
                                 'naranja' => 'NARANJA',
                                 'verde' => 'VERDE',
+                                'blanco' => 'BLANCO',
                             ])
                             ->native(false)
                             ->required(),
@@ -522,6 +523,7 @@ class ProductoResource extends Resource implements HasShieldPermissions
                         'amarillo' => 'AMARILLO',
                         'naranja' => 'NARANJA',
                         'verde' => 'VERDE',
+                        'blanco' => 'BLANCO',
                     ])
                     ->multiple(),
 
