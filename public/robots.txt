@@ -1,8 +1,11 @@
 User-agent: *
 Disallow: /admin
+Disallow: /ventas
+Disallow: /inventario
 Disallow: /livewire
 Disallow: /reporte
 Disallow: /pdf
+Disallow: /profile
 Allow: /
 
 Sitemap: https://tenisline.com/sitemap.xml
