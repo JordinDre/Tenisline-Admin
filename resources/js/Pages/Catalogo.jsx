@@ -40,8 +40,8 @@ const limpiar = (obj) =>
 const mismo = (a, b) => String(a ?? '') === String(b ?? '');
 
 const pastilla = (activa) =>
-    cn('inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium transition-all duration-200 active:scale-95',
-        activa ? 'border-ink bg-ink text-white shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-400');
+    cn('inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium transition-all duration-300 active:scale-95',
+        activa ? 'border-ink bg-ink text-white ' : 'border-neutral-200 bg-white hover:border-neutral-400');
 
 function Grupo({ titulo, children }) {
     return (
@@ -88,7 +88,7 @@ function Filtros({ f, set, marcas, categorias, bodegas, tallas, puedeVerMarchamo
                         const activa = (f.tallas ?? []).includes(t);
                         return (
                             <button key={t} onClick={() => set({ tallas: activa ? f.tallas.filter((x) => x !== t) : [...(f.tallas ?? []), t] })}
-                                className={cn('h-9 rounded-lg border text-sm font-medium tabular-nums transition-all duration-200 active:scale-95',
+                                className={cn('h-9 rounded-lg border text-sm font-medium tabular-nums transition-all duration-300 active:scale-95',
                                     activa ? 'border-ink bg-ink text-white' : 'border-neutral-200 hover:border-neutral-500')}>
                                 {t}
                             </button>
@@ -220,7 +220,7 @@ export default function Catalogo({ productos, filtros = {}, marcas = [], categor
                             <div className="order-last flex w-full flex-wrap gap-2 sm:order-none sm:w-auto sm:flex-1">
                                 {chips.map((c, n) => (
                                     <button key={n} onClick={() => quitarChip(c)}
-                                        className="inline-flex h-8 animate-in items-center gap-1.5 rounded-full bg-brand-light px-3 text-sm font-medium text-brand-dark transition-colors duration-200 zoom-in-95 hover:bg-brand hover:text-white">
+                                        className="inline-flex h-8 animate-in items-center gap-1.5 rounded-full bg-brand-light px-3 text-sm font-medium text-brand-dark transition-colors duration-300 zoom-in-95 hover:bg-brand hover:text-white">
                                         {c.t} <X className="h-3.5 w-3.5" />
                                     </button>
                                 ))}
@@ -246,7 +246,7 @@ export default function Catalogo({ productos, filtros = {}, marcas = [], categor
                             </DropdownMenu>
                         </div>
 
-                        <div className={cn('transition-opacity duration-300', cargando && 'pointer-events-none opacity-50')}>
+                        <div className={cn('transition-opacity duration-500', cargando && 'pointer-events-none opacity-50')}>
                             {productos.data.length === 0 ? (
                                 <div className="flex flex-col items-center rounded-3xl bg-neutral-50 px-6 py-20 text-center">
                                     <img src="/images/logo.png" alt="" className="w-36 opacity-20 mix-blend-multiply" />

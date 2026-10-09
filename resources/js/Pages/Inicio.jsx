@@ -19,7 +19,7 @@ function FotoFlotante({ producto, className, giro, retraso }) {
     if (!producto) return null;
     return (
         <Link href={route('producto', producto.slug)}
-            className={cn('group absolute animate-flotar transform-gpu overflow-hidden rounded-3xl bg-white shadow-2xl shadow-black/40 ring-1 ring-white/10', className)}
+            className={cn('group absolute animate-flotar transform-gpu overflow-hidden rounded-3xl bg-white   ring-1 ring-white/10', className)}
             style={{ '--giro': `${giro}deg`, animationDelay: `${retraso}s` }}>
             <ImagenProducto src={producto.imagen} alt={producto.descripcion} sizes="280px" prioridad className="h-full w-full transition-transform duration-700 group-hover:scale-105" />
             <span className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-2xl bg-white/90 px-3 py-2 text-ink backdrop-blur">
@@ -43,14 +43,14 @@ function Portada({ destacados }) {
                     <span className="inline-flex animate-fade-up items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] backdrop-blur">
                         <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-70" /><span className="relative inline-flex h-2 w-2 rounded-full bg-brand" /></span> Nuevos modelos cada semana
                     </span>
-                    <h1 className="mt-6 animate-fade-up font-display text-[2.75rem] uppercase leading-[0.95] sm:text-6xl xl:text-7xl" style={{ animationDelay: '80ms' }}>
+                    <h1 className="mt-6 animate-fade-up font-display text-[2.75rem] uppercase leading-[0.95] sm:text-6xl xl:text-7xl" style={{ animationDelay: '140ms' }}>
                         No box,<br /><span className="text-brand">sí precio.</span>
                     </h1>
-                    <p className="mt-6 max-w-md animate-fade-up text-lg leading-relaxed text-neutral-300" style={{ animationDelay: '160ms' }}>
+                    <p className="mt-6 max-w-md animate-fade-up text-lg leading-relaxed text-neutral-300" style={{ animationDelay: '280ms' }}>
                         Nike, adidas, Puma, New Balance, On, Hoka y más, a precios que no vas a encontrar en otro lado.
                     </p>
-                    <div className="mt-8 flex animate-fade-up flex-wrap gap-3" style={{ animationDelay: '240ms' }}>
-                        <Button asChild className="h-12 rounded-full bg-brand px-7 text-[15px] font-semibold shadow-lg shadow-brand/30 hover:bg-brand-dark">
+                    <div className="mt-8 flex animate-fade-up flex-wrap gap-3" style={{ animationDelay: '420ms' }}>
+                        <Button asChild className="h-12 rounded-full bg-brand px-7 text-[15px] font-semibold hover:bg-brand-dark">
                             <Link href="/catalogo">Ver catálogo <ArrowRight className="h-4 w-4" /></Link>
                         </Button>
                         <Button asChild variant="outline" className="h-12 rounded-full border-white/30 bg-transparent px-7 text-[15px] font-semibold text-white hover:bg-white hover:text-ink">
@@ -60,7 +60,7 @@ function Portada({ destacados }) {
 
                     {/* Fotos en celular */}
                     {a && (
-                        <div className="mt-10 grid animate-fade-up grid-cols-3 gap-3 lg:hidden" style={{ animationDelay: '320ms' }}>
+                        <div className="mt-10 grid animate-fade-up grid-cols-3 gap-3 lg:hidden" style={{ animationDelay: '560ms' }}>
                             {[a, b, c].filter(Boolean).map((p) => (
                                 <Link key={p.id} href={route('producto', p.slug)} className="aspect-square overflow-hidden rounded-2xl bg-white">
                                     <ImagenProducto src={p.imagen} alt={p.descripcion} sizes="33vw" prioridad className="h-full w-full" />
@@ -84,7 +84,7 @@ function Portada({ destacados }) {
 }
 
 function CarruselPromociones({ promociones }) {
-    const autoplay = useRef(Autoplay({ delay: 6000, stopOnInteraction: true }));
+    const autoplay = useRef(Autoplay({ delay: 8000, stopOnInteraction: true }));
     const [api, setApi] = useState(null);
     const [actual, setActual] = useState(0);
 
@@ -138,7 +138,7 @@ function CarruselPromociones({ promociones }) {
                 <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
                     {promociones.map((_, n) => (
                         <button key={n} onClick={() => api?.scrollTo(n)} aria-label={`Promoción ${n + 1}`}
-                            className={cn('h-1.5 rounded-full transition-all duration-300', n === actual ? 'w-8 bg-brand' : 'w-3 bg-white/60 hover:bg-white')} />
+                            className={cn('h-1.5 rounded-full transition-all duration-500', n === actual ? 'w-8 bg-brand' : 'w-3 bg-white/60 hover:bg-white')} />
                     ))}
                 </div>
             )}
@@ -218,16 +218,16 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
                     {categorias.map((c, n) => (
                         <Link key={c.clave} href={`/catalogo?categoria=${c.clave}`}
                             className={cn(
-                                'group relative flex aspect-[4/3] animate-fade-up flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-5 ring-1 ring-black/5 transition-[transform,box-shadow] duration-300 will-change-transform hover:-translate-y-1 hover:shadow-xl md:aspect-[3/4] lg:p-6',
+                                'group relative flex aspect-[4/3] animate-fade-up flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br p-5 ring-1 ring-black/5 transition-transform duration-500 will-change-transform hover:-translate-y-1  md:aspect-[3/4] lg:p-6',
                                 ESTILO_CATEGORIA[c.clave] ?? 'from-neutral-100 to-white',
                                 n === categorias.length - 1 && categorias.length % 2 === 1 && 'col-span-2 aspect-[8/3] md:col-span-1 md:aspect-[3/4]',
                             )}
-                            style={{ animationDelay: `${n * 60}ms` }}>
+                            style={{ animationDelay: `${n * 100}ms` }}>
                             <div className="flex items-start justify-between">
                                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70 text-ink backdrop-blur">
                                     {(() => { const Icono = ICONO_CATEGORIA[c.clave] ?? Tag; return <Icono className="h-5 w-5" strokeWidth={2} />; })()}
                                 </span>
-                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-ink backdrop-blur transition-transform duration-300 group-hover:rotate-45">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-ink backdrop-blur transition-transform duration-500 group-hover:rotate-45">
                                     <ArrowUpRight className="h-4 w-4" />
                                 </span>
                             </div>
@@ -255,12 +255,12 @@ export default function Inicio({ promociones = [], categorias = [], marcas = [],
                 <section className="mt-20 border-y bg-neutral-50 py-12">
                     <div className={contenedor}><Titulo titulo="Nuestras marcas" enlace="/marcas" icono={BadgeCheck} /></div>
                     <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
-                        <div className="marquee-track flex w-max py-2" style={{ animationDuration: `${Math.max(marcas.length * 3, 30)}s` }}>
+                        <div className="marquee-track flex w-max py-2" style={{ animationDuration: `${Math.max(marcas.length * 7, 80)}s` }}>
                             {[0, 1].map((copia) => (
                                 <div key={copia} className="flex shrink-0 gap-4 pr-4" aria-hidden={copia === 1}>
                                     {marcas.map((m) => (
                                         <Link key={m.marca} href={`/catalogo?marca=${encodeURIComponent(m.marca)}`} tabIndex={copia ? -1 : 0}
-                                            className="group flex h-24 w-44 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-neutral-200 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-ink">
+                                            className="group flex h-24 w-44 items-center justify-center rounded-2xl bg-white ring-1 ring-neutral-200 transition-transform duration-500 hover:-translate-y-1 hover:ring-ink">
                                             <LogoMarca marca={m.marca} logo={m.logo} carga="eager" />
                                         </Link>
                                     ))}

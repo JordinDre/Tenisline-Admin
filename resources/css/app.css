@@ -95,3 +95,36 @@ html {
     animation: none !important;
   }
 }
+
+/* Cursor de mano en todo lo que se puede presionar */
+@layer base {
+  a[href],
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'],
+  [role='switch'],
+  [role='checkbox'],
+  summary,
+  select,
+  label[for],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='range'] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+  /* Carruseles: se arrastran */
+  [data-embla-carousel],
+  .embla {
+    cursor: grab;
+  }
+  [data-embla-carousel]:active,
+  .embla:active {
+    cursor: grabbing;
+  }
+}

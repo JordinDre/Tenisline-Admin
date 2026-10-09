@@ -94,7 +94,7 @@ export default function CarritoDrawer() {
                                 <span className="text-neutral-600">Total aproximado</span>
                                 <span className="text-xl font-bold tabular-nums">{quetzales(total)}</span>
                             </div>
-                            <Button onClick={enviar} className="h-14 w-full rounded-full bg-[#25D366] text-base font-bold text-white shadow-lg shadow-[#25D366]/25 hover:bg-[#1fbd59]">
+                            <Button onClick={enviar} className="h-14 w-full rounded-full bg-[#25D366] text-base font-bold text-white hover:bg-[#1fbd59]">
                                 <IconoWhatsApp className="h-5 w-5" /> Enviar pedido por WhatsApp
                             </Button>
                             <p className="text-center text-xs text-neutral-500">Sin pagos en línea: confirmamos disponibilidad y forma de pago por WhatsApp.</p>

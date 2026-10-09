@@ -10,7 +10,7 @@ export default function ProductoCard({ producto, indice = 0 }) {
         <Link
             href={route('producto', producto.slug)}
             className="group flex h-full animate-fade-up flex-col"
-            style={{ animationDelay: `${Math.min(indice, 11) * 45}ms` }}
+            style={{ animationDelay: `${Math.min(indice, 11) * 80}ms` }}
         >
             <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-neutral-100">
                 <ImagenProducto
@@ -21,7 +21,7 @@ export default function ProductoCard({ producto, indice = 0 }) {
 
                 <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
                     {pct > 0 ? (
-                        <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-bold leading-none text-white shadow-sm">-{pct}%</span>
+                        <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-bold leading-none text-white ">-{pct}%</span>
                     ) : (
                         <span />
                     )}
@@ -32,7 +32,7 @@ export default function ProductoCard({ producto, indice = 0 }) {
                     )}
                 </div>
 
-                <span className="pointer-events-none absolute inset-x-3 bottom-3 hidden translate-y-3 rounded-full bg-ink py-2.5 text-center text-sm font-semibold text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:block">
+                <span className="pointer-events-none absolute inset-x-3 bottom-3 hidden translate-y-3 rounded-full bg-ink py-2.5 text-center text-sm font-semibold text-white opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 md:block">
                     Ver tallas
                 </span>
             </div>

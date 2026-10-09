@@ -33,8 +33,8 @@ function Cinta({ avisos }) {
     const lista = avisos?.length ? avisos.map((a) => a.texto) : AVISOS_BASE;
     // Una copia debe ser más ancha que la pantalla para que el desplazamiento no deje huecos
     const fila = [...lista, ...lista];
-    // ~7 s por aviso mantiene una velocidad cómoda (unos 50 px/s) sin importar cuántos haya
-    const duracion = `${fila.length * 7}s`;
+    // ~9 s por aviso = unos 28 px/s, lenta y legible, sin importar cuántos avisos haya
+    const duracion = `${fila.length * 9}s`;
 
     return (
         <div className="relative overflow-hidden bg-ink text-white" role="marquee" aria-label="Avisos de la tienda">
@@ -89,7 +89,7 @@ export default function Header() {
         <>
             <Cinta avisos={props.tienda?.avisos} />
 
-            <header className={cn('sticky top-0 z-40 border-b bg-white/95 backdrop-blur-md transition-[box-shadow,border-color] duration-300 supports-[backdrop-filter]:bg-white/80', sombra ? 'border-neutral-200 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)]' : 'border-transparent')}>
+            <header className={cn('sticky top-0 z-40 border-b bg-white/95 backdrop-blur-md transition-[border-color] duration-500 supports-[backdrop-filter]:bg-white/80', sombra ? 'border-neutral-200 ' : 'border-transparent')}>
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:h-20 lg:px-8">
                     <Sheet open={menu} onOpenChange={setMenu}>
                         <SheetTrigger asChild>
@@ -132,7 +132,7 @@ export default function Header() {
                     </Sheet>
 
                     <Link href="/" className="flex shrink-0 items-center" aria-label="Tenisline, inicio">
-                        <img src="/images/logo.png" alt="Tenisline" className="h-11 w-auto mix-blend-multiply transition-transform duration-300 hover:scale-105 lg:h-14" />
+                        <img src="/images/logo.png" alt="Tenisline" className="h-11 w-auto mix-blend-multiply transition-transform duration-500 hover:scale-105 lg:h-14" />
                     </Link>
 
                     <nav className="ml-4 hidden items-center gap-0.5 lg:flex xl:ml-8">
@@ -156,7 +156,7 @@ export default function Header() {
                             <Search className="h-5 w-5" />
                         </Button>
                         <Button variant="ghost" size="icon" className="group/bolsa relative h-10 w-10 rounded-full" onClick={() => setAbierto(true)} aria-label="Abrir carrito">
-                            <ShoppingBag className="h-[22px] w-[22px] transition-transform duration-300 group-hover/bolsa:-rotate-6 group-hover/bolsa:scale-110" strokeWidth={1.9} />
+                            <ShoppingBag className="h-[22px] w-[22px] transition-transform duration-500 group-hover/bolsa:-rotate-6 group-hover/bolsa:scale-110" strokeWidth={1.9} />
                             {cantidad > 0 && (
                                 <span key={cantidad} className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white ring-2 ring-white zoom-in-50">
                                     {cantidad}
@@ -167,7 +167,7 @@ export default function Header() {
                 </div>
 
                 {buscando && (
-                    <div className="absolute inset-0 z-10 flex animate-in items-center gap-2 bg-white px-4 duration-200 fade-in md:hidden">
+                    <div className="absolute inset-0 z-10 flex animate-in items-center gap-2 bg-white px-4 duration-300 fade-in md:hidden">
                         <form onSubmit={buscar} className="flex h-11 flex-1 items-center rounded-full bg-neutral-100 px-4">
                             <Search className="h-4 w-4 text-neutral-500" />
                             <input autoFocus value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar modelo, marca o código"

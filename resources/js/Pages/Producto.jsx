@@ -81,8 +81,8 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                             </CarouselContent>
                             {imagenes.length > 1 && (
                                 <>
-                                    <CarouselPrevious className="left-3 border-0 bg-white/90 shadow" />
-                                    <CarouselNext className="right-3 border-0 bg-white/90 shadow" />
+                                    <CarouselPrevious className="left-3 border-0 bg-white/90 " />
+                                    <CarouselNext className="right-3 border-0 bg-white/90 " />
                                 </>
                             )}
                         </Carousel>
@@ -93,7 +93,7 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                             ) : (
                                 <ImagenProducto src={null} alt={producto.descripcion} className="h-full w-full" />
                             )}
-                            {pct > 0 && <span className="absolute left-5 top-5 rounded-full bg-brand px-3 py-1.5 text-sm font-bold leading-none text-white shadow">-{pct}%</span>}
+                            {pct > 0 && <span className="absolute left-5 top-5 rounded-full bg-brand px-3 py-1.5 text-sm font-bold leading-none text-white ">-{pct}%</span>}
                         </div>
                         {imagenes.length > 1 && (
                             <div className="mt-3 hidden gap-3 lg:flex">
@@ -136,8 +136,8 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                             <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                                 {variantes.map((v) => (
                                     <button key={v.id} onClick={() => setSeleccion(v.id)}
-                                        className={cn('h-12 rounded-xl border-2 text-[15px] font-semibold tabular-nums transition-all duration-200 active:scale-95',
-                                            v.id === seleccion ? 'border-ink bg-ink text-white shadow-md' : 'border-neutral-200 hover:border-neutral-500')}>
+                                        className={cn('h-12 rounded-xl border-2 text-[15px] font-semibold tabular-nums transition-all duration-300 active:scale-95',
+                                            v.id === seleccion ? 'border-ink bg-ink text-white ' : 'border-neutral-200 hover:border-neutral-500')}>
                                         {v.talla}
                                     </button>
                                 ))}

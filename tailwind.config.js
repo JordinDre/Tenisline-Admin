@@ -74,9 +74,9 @@ export default {
     			}
     		},
     		animation: {
-    			marquee: 'marquee 40s linear infinite',
-    			'fade-up': 'fade-up .6s cubic-bezier(.22,1,.36,1) both',
-    			flotar: 'flotar 7s cubic-bezier(.45,.05,.55,.95) infinite',
+    			marquee: 'marquee 80s linear infinite',
+    			'fade-up': 'fade-up 1s cubic-bezier(.25,.8,.25,1) both',
+    			flotar: 'flotar 12s cubic-bezier(.45,.05,.55,.95) infinite',
     			'accordion-down': 'accordion-down 0.2s ease-out',
     			'accordion-up': 'accordion-up 0.2s ease-out'
     		},

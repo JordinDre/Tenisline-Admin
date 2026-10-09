@@ -14,7 +14,7 @@ export default function LogoMarca({ marca, logo, className = '', carga = 'lazy' 
                     alt={marca}
                     loading={carga}
                     decoding="async"
-                    className="max-h-full max-w-full object-contain brightness-0 transition-[filter] duration-300 group-hover:brightness-100"
+                    className="max-h-full max-w-full object-contain brightness-0 transition-[filter] duration-500 group-hover:brightness-100"
                 />
             ) : (
                 <span className="truncate font-display text-lg uppercase tracking-tight">{marca}</span>
