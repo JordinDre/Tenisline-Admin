@@ -10,10 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [TiendaController::class, 'index'])->name('inicio');
 Route::get('/catalogo', [TiendaController::class, 'catalogo'])->name('catalogo');
 Route::get('/producto/{slug}', [TiendaController::class, 'producto'])->name('producto');
-
-Route::get('/', function () {
-    return redirect('/catalogo');
-});
+Route::get('/marcas', [TiendaController::class, 'marcas'])->name('marcas');
 /* Route::get('/login', function () {
     return redirect('/admin');
 }); */

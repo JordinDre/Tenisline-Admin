@@ -1,237 +1,178 @@
+import ImagenProducto from '@/Components/tienda/ImagenProducto';
+import ProductoCard from '@/Components/tienda/ProductoCard';
+import { useCarrito } from '@/Contexts/CarritoContext';
 import Layout from '@/Layouts/Layout';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { capitalizar, descuento, enlaceWhatsApp, quetzales } from '@/lib/tienda';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Check, MapPin, MessageCircle, ShieldCheck, ShoppingBag, Store } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
 
-export default function Producto({ producto, marcas }) {
-    const user = usePage().props.auth.user;
-    const [isModalOpen, setIsModalOpen] = useState(false);
+function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
+    const { agregar } = useCarrito();
+    const sucursales = usePage().props.tienda?.sucursales ?? [];
+    const inicial = variantes.find((v) => v.slug === producto.slug) ?? variantes[0];
+    const [seleccion, setSeleccion] = useState(inicial?.id ?? null);
+    const [foto, setFoto] = useState(0);
+    const [agregado, setAgregado] = useState(false);
 
-    // Función para volver al catálogo preservando los filtros
-    const handleVolverCatalogo = () => {
-        const filtrosGuardados = sessionStorage.getItem('catalogo_filtros');
-        if (filtrosGuardados) {
-            const filtros = JSON.parse(filtrosGuardados);
-            // Construir la URL con los parámetros de filtros
-            const params = new URLSearchParams();
-            if (filtros.search) params.append('search', filtros.search);
-            if (filtros.bodega) params.append('bodega', filtros.bodega);
-            if (filtros.marca) params.append('marca', filtros.marca);
-            if (filtros.genero) params.append('genero', filtros.genero);
-            if (filtros.tallas && filtros.tallas.length > 0) {
-                filtros.tallas.forEach((talla) =>
-                    params.append('tallas[]', talla),
-                );
-            }
+    const variante = variantes.find((v) => v.id === seleccion) ?? inicial;
+    const imagenes = producto.imagenes?.length ? producto.imagenes : [null];
+    const pct = descuento(variante);
 
-            const queryString = params.toString();
-            const url = queryString
-                ? `${route('catalogo')}?${queryString}`
-                : route('catalogo');
-            router.visit(url);
-        } else {
-            router.visit(route('catalogo'));
-        }
+    const item = useMemo(
+        () =>
+            variante && {
+                id: variante.id,
+                slug: variante.slug,
+                codigo: variante.codigo,
+                talla: variante.talla,
+                precio: variante.precio,
+                precio_oferta: variante.precio_oferta,
+                descripcion: producto.descripcion,
+                marca: producto.marca,
+                color: producto.color,
+                imagen: producto.imagenes?.[0] ?? null,
+            },
+        [variante, producto],
+    );
+
+    const alAgregar = () => {
+        if (!item) return;
+        agregar(item);
+        setAgregado(true);
+        setTimeout(() => setAgregado(false), 1800);
     };
 
     return (
-        <Layout>
-            <Head>
-                <title>
-                    {producto.codigo +
-                        ', ' +
-                        producto.descripcion +
-                        ', ' +
-                        producto.marca +
-                        ', ' +
-                        producto.talla +
-                        ', ' +
-                        producto.genero}
-                </title>
-                <meta
-                    name={producto.slug}
-                    content="Producto - Tienda en línea"
-                />
-                <link
-                    rel="icon"
-                    type="image/svg+xml"
-                    href="/images/icono.png"
-                />
-            </Head>
+        <>
+            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+                <nav className="text-sm text-neutral-500">
+                    <Link href="/" className="hover:text-ink">Inicio</Link> /{' '}
+                    <Link href="/catalogo" className="hover:text-ink">Catálogo</Link> /{' '}
+                    {producto.marca && (
+                        <>
+                            <Link href={`/catalogo?marca=${encodeURIComponent(producto.marca)}`} className="hover:text-ink">{capitalizar(producto.marca)}</Link> /{' '}
+                        </>
+                    )}
+                    <span className="text-neutral-800">{capitalizar(producto.descripcion)}</span>
+                </nav>
 
-            <section className="bg-white py-10 md:py-16">
-                <div className="mx-auto max-w-screen-xl px-4 md:px-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="grid gap-8 md:grid-cols-2 md:items-start"
-                    >
-                        {/* Imagen con click para abrir modal */}
-                        <div className="space-y-4">
-                            <div
-                                className="cursor-zoom-in rounded-xl bg-zinc-50 p-4 shadow-md"
-                                onClick={() => setIsModalOpen(true)}
-                            >
-                                <img
-                                    className="max-h-[400px] w-full object-contain"
-                                    src={producto.imagen}
-                                    alt={producto.descripcion}
-                                />
-                                <p className="mt-2 text-center text-xs text-zinc-500">
-                                    Haz clic para ampliar
-                                </p>
-                            </div>
-
-                            {/* Precio debajo de la imagen */}
-                            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
-                                {producto.precio_oferta ? (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span className="text-xl text-gray-500 line-through">
-                                            Q
-                                            {parseFloat(
-                                                producto.precio,
-                                            ).toFixed(2)}
-                                        </span>
-                                        <span className="text-3xl font-extrabold text-red-600">
-                                            Q
-                                            {parseFloat(
-                                                producto.precio_oferta,
-                                            ).toFixed(2)}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="text-3xl font-extrabold text-green-600">
-                                        Q
-                                        {parseFloat(producto.precio).toFixed(2)}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Existencia destacada debajo del precio */}
-                            {producto.bodega_destacada && (
-                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                                    <p className="mb-2 text-sm font-semibold text-blue-700">
-                                        📦 Existencia:
-                                    </p>
-                                    <div className="inline-block rounded-md bg-white px-3 py-1 shadow-sm ring-1 ring-blue-300">
-                                        <strong className="text-blue-800">
-                                            {producto.bodega_destacada.bodega}
-                                        </strong>
-                                    </div>
-                                </div>
+                <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-16">
+                    {/* Galería */}
+                    <div className="lg:sticky lg:top-28 lg:self-start">
+                        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-100">
+                            {imagenes[foto] ? (
+                                <Zoom>
+                                    <ImagenProducto src={imagenes[foto]} alt={producto.descripcion} className="h-full w-full" />
+                                </Zoom>
+                            ) : (
+                                <ImagenProducto src={null} alt={producto.descripcion} className="h-full w-full" />
                             )}
-
-                            {/* Bodegas disponibles debajo del precio */}
-                            {user &&
-                                producto.bodegas &&
-                                producto.bodegas.length > 0 && (
-                                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                                        <p className="mb-3 text-sm font-semibold text-zinc-700">
-                                            🏬 Disponible en:
-                                        </p>
-                                        <div className="space-y-2">
-                                            {producto.bodegas.map(
-                                                (bodega, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="flex justify-between rounded-md bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-300"
-                                                    >
-                                                        <span className="font-medium text-zinc-800">
-                                                            {bodega.bodega}
-                                                        </span>
-                                                        <span className="text-sm text-zinc-600">
-                                                            {bodega.existencia}{' '}
-                                                            unidades
-                                                        </span>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                            {pct > 0 && (
+                                <span className="absolute left-4 top-4 rounded-full bg-brand px-3 py-1 text-sm font-bold text-white">-{pct}%</span>
+                            )}
                         </div>
-
-                        {/* Información del producto */}
-                        <div>
-                            <motion.h1
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="text-2xl font-bold text-zinc-800"
-                            >
-                                {producto.descripcion}
-                            </motion.h1>
-
-                            <div className="mt-5 space-y-2 text-sm text-zinc-700">
-                                <p>
-                                    <strong>Código:</strong> {producto.codigo}
-                                </p>
-                                <p>
-                                    <strong>Marca:</strong> {producto.marca}
-                                </p>
-                                <p>
-                                    <strong>Talla:</strong> US {producto.talla}{' '}
-                                    ({producto.genero})
-                                </p>
-                            </div>
-
-                            <div className="mt-8">
-                                <h2 className="mb-2 text-sm font-semibold text-zinc-500">
-                                    Otras marcas:
-                                </h2>
-                                <div className="flex flex-wrap gap-2">
-                                    {marcas.map((marca, index) => (
-                                        <Link
-                                            key={index}
-                                            href={route('catalogo', { marca })}
-                                            className="rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-800 shadow hover:bg-zinc-200"
-                                        >
-                                            {marca}
-                                        </Link>
-                                    ))}
-                                </div>
-                                <div className="mt-4">
-                                    <button
-                                        onClick={handleVolverCatalogo}
-                                        className="inline-block text-sm font-medium text-blue-600 hover:underline"
-                                    >
-                                        ← Volver al catálogo
+                        {imagenes.length > 1 && (
+                            <div className="mt-3 flex gap-3 overflow-x-auto">
+                                {imagenes.map((img, n) => (
+                                    <button key={n} onClick={() => setFoto(n)}
+                                        className={`h-20 w-16 shrink-0 overflow-hidden rounded-xl ring-2 transition ${foto === n ? 'ring-ink' : 'ring-transparent opacity-70 hover:opacity-100'}`}>
+                                        <ImagenProducto src={img} alt="" className="h-full w-full" />
                                     </button>
-                                </div>
+                                ))}
                             </div>
+                        )}
+                    </div>
 
-                            <hr className="my-6 border-zinc-200" />
-
-                            <div
-                                className="prose-sm prose max-w-none text-zinc-700"
-                                dangerouslySetInnerHTML={{
-                                    __html: producto.detalle,
-                                }}
-                            />
+                    {/* Información */}
+                    <div>
+                        <p className="text-sm font-bold uppercase tracking-widest text-neutral-500">{producto.marca}</p>
+                        <h1 className="mt-1 font-display text-3xl uppercase leading-tight sm:text-4xl">{producto.descripcion}</h1>
+                        <div className="mt-2 flex flex-wrap gap-2 text-sm text-neutral-600">
+                            {producto.color && <span className="rounded-full bg-neutral-100 px-3 py-1">{capitalizar(producto.color)}</span>}
+                            {producto.genero && <span className="rounded-full bg-neutral-100 px-3 py-1">{capitalizar(producto.genero)}</span>}
                         </div>
-                    </motion.div>
-                </div>
-            </section>
 
-            {/* Modal con efecto zoom */}
-            {isModalOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
-                    onClick={() => setIsModalOpen(false)}
-                >
-                    <Zoom>
-                        <img
-                            src={producto.imagen}
-                            alt={producto.descripcion}
-                            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-                            onClick={(e) => e.stopPropagation()} // evita cerrar modal al hacer zoom
-                        />
-                    </Zoom>
+                        {variante && (
+                            <div className="mt-6 flex items-baseline gap-3">
+                                <span className={`text-3xl font-bold ${pct ? 'text-brand' : ''}`}>{quetzales(variante.precio_oferta || variante.precio)}</span>
+                                {pct > 0 && <span className="text-lg text-neutral-400 line-through">{quetzales(variante.precio)}</span>}
+                            </div>
+                        )}
+
+                        <div className="mt-8">
+                            <div className="mb-3 flex items-center justify-between">
+                                <h2 className="font-semibold">Elige tu talla (US)</h2>
+                                {variante && <span className="text-sm text-neutral-500">Código {variante.codigo}</span>}
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                                {variantes.map((v) => (
+                                    <button key={v.id} onClick={() => setSeleccion(v.id)}
+                                        className={`rounded-xl border-2 py-3 text-sm font-semibold transition ${v.id === seleccion ? 'border-ink bg-ink text-white' : 'border-neutral-200 hover:border-neutral-500'}`}>
+                                        {v.talla}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {variante && (
+                            <p className="mt-4 flex items-center gap-2 text-sm font-medium text-emerald-700">
+                                <Check className="h-4 w-4" /> Disponible en tienda
+                            </p>
+                        )}
+
+                        {mostrarExistencia && variante?.sucursales?.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {variante.sucursales.map((s) => (
+                                    <span key={s.sucursal} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-800">
+                                        <MapPin className="h-3.5 w-3.5" /> {s.sucursal}: {s.existencia}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                            <button onClick={alAgregar} disabled={!variante}
+                                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-ink py-4 font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-40">
+                                {agregado ? <><Check className="h-5 w-5" /> Agregado</> : <><ShoppingBag className="h-5 w-5" /> Agregar al carrito</>}
+                            </button>
+                            {item && sucursales[0] && (
+                                <a href={enlaceWhatsApp(sucursales[0].telefono, [{ ...item, cantidad: 1 }], sucursales[0].nombre)}
+                                    target="_blank" rel="noopener noreferrer"
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#25D366] py-4 font-semibold text-[#128C7E] transition hover:bg-[#25D366] hover:text-white">
+                                    <MessageCircle className="h-5 w-5" /> Preguntar por WhatsApp
+                                </a>
+                            )}
+                        </div>
+
+                        <ul className="mt-10 space-y-4 rounded-3xl bg-neutral-50 p-6 text-sm">
+                            <li className="flex gap-3"><ShieldCheck className="h-5 w-5 shrink-0 text-brand" /><span><b>Producto original.</b> Todos nuestros tenis son 100% originales.</span></li>
+                            <li className="flex gap-3"><Store className="h-5 w-5 shrink-0 text-brand" /><span><b>Visítanos</b> en Zacapa, Chiquimula y Esquipulas, o pide por WhatsApp.</span></li>
+                            <li className="flex gap-3"><MessageCircle className="h-5 w-5 shrink-0 text-brand" /><span><b>Sin pagos en línea.</b> Confirmamos disponibilidad y forma de pago por WhatsApp.</span></li>
+                        </ul>
+                    </div>
                 </div>
+            </div>
+
+            {relacionados.length > 0 && (
+                <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
+                    <h2 className="mb-8 font-display text-3xl uppercase">También de {capitalizar(producto.marca)}</h2>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
+                        {relacionados.map((p, n) => <ProductoCard key={p.id} producto={p} indice={n} />)}
+                    </div>
+                </section>
             )}
+        </>
+    );
+}
+
+export default function Producto(props) {
+    return (
+        <Layout>
+            <Head title={`${capitalizar(props.producto.marca ?? '')} ${capitalizar(props.producto.descripcion)}`} />
+            <Contenido key={props.producto.slug} {...props} variantes={props.variantes ?? []} relacionados={props.relacionados ?? []} />
         </Layout>
     );
 }

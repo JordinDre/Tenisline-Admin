@@ -5,11 +5,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title inertia>Tenisline Encontrados</title>
+    <title inertia>Tenisline</title>
+    <meta name="description" content="Tenisline: tenis originales de las mejores marcas en Zacapa, Chiquimula y Esquipulas. No box, sí precio.">
+    <meta name="theme-color" content="#0a0a0a">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700|archivo-black:400&display=swap" rel="stylesheet" />
     <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/png">
 
@@ -20,7 +22,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 
-<body class="font-sans antialiased">
+<body class="bg-white font-sans text-neutral-900 antialiased">
     @inertia
 </body>
 

@@ -42,6 +42,11 @@ class HandleInertiaRequests extends Middleware
                 'envio_gratis' => Guia::ENVIO_GRATIS,
                 'envio' => Guia::ENVIO,
             ],
+            'tienda' => [
+                'nombre' => config('tienda.nombre'),
+                'eslogan' => config('tienda.eslogan'),
+                'sucursales' => config('tienda.sucursales'),
+            ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),

@@ -26,9 +26,14 @@ export default {
     			sans: [
     				'Figtree',
                     ...defaultTheme.fontFamily.sans
-                ]
+                ],
+    			display: ['"Archivo Black"', 'Figtree', ...defaultTheme.fontFamily.sans]
     		},
     		keyframes: {
+    			'fade-up': {
+    				'0%': { opacity: '0', transform: 'translateY(16px)' },
+    				'100%': { opacity: '1', transform: 'translateY(0)' }
+    			},
     			marquee: {
     				'0%': {
     					transform: 'translateX(0)'
@@ -39,7 +44,8 @@ export default {
     			}
     		},
     		animation: {
-    			marquee: 'marquee 40s linear infinite'
+    			marquee: 'marquee 40s linear infinite',
+    			'fade-up': 'fade-up .6s ease-out both'
     		},
     		borderRadius: {
     			lg: 'var(--radius)',
@@ -47,6 +53,12 @@ export default {
     			sm: 'calc(var(--radius) - 4px)'
     		},
     		colors: {
+    			brand: {
+    				DEFAULT: '#ff4f17',
+    				dark: '#e03e0a',
+    				light: '#fff1eb'
+    			},
+    			ink: '#0a0a0a',
     			background: 'hsl(var(--background))',
     			foreground: 'hsl(var(--foreground))',
     			card: {
