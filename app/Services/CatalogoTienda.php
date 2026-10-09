@@ -61,6 +61,10 @@ class CatalogoTienda
             }
         }
 
+        if (! empty($f['con_imagen'])) {
+            $q->whereNotNull('productos.imagenes')->whereNotIn('productos.imagenes', ['[]', 'null', '']);
+        }
+
         if (! empty($f['marca'])) {
             $q->whereHas('marca', fn ($m) => $m->where('marca', $f['marca']));
         }

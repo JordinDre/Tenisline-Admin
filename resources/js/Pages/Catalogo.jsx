@@ -1,7 +1,5 @@
 import ProductoCard from '@/Components/tienda/ProductoCard';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/Components/ui/accordion';
 import { Button } from '@/Components/ui/button';
-import { Checkbox } from '@/Components/ui/checkbox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,8 +13,10 @@ import Layout from '@/Layouts/Layout';
 import { capitalizar } from '@/lib/tienda';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
 
 const ORDENES = {
     recientes: 'Más recientes',
@@ -39,134 +39,141 @@ const limpiar = (obj) =>
 
 const mismo = (a, b) => String(a ?? '') === String(b ?? '');
 
-function Opcion({ activo, onClick, children, contador }) {
+const pastilla = (activa) =>
+    cn('inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium transition-all duration-200 active:scale-95',
+        activa ? 'border-ink bg-ink text-white shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-400');
+
+function Grupo({ titulo, children }) {
     return (
-        <button onClick={onClick} className="flex w-full items-center gap-3 py-1.5 text-left text-[15px] hover:text-neutral-500">
-            <Checkbox checked={activo} className="pointer-events-none h-5 w-5 rounded-[4px] border-neutral-400 data-[state=checked]:border-black" tabIndex={-1} />
-            <span className="flex-1">{children}</span>
-            {contador !== undefined && <span className="text-sm text-neutral-400">{contador}</span>}
-        </button>
+        <div className="border-b border-neutral-200 py-6 first:pt-0 last:border-0">
+            <h3 className="mb-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-500">{titulo}</h3>
+            {children}
+        </div>
     );
 }
 
 function Filtros({ f, set, marcas, categorias, bodegas, tallas, puedeVerMarchamo }) {
+    const [precio, setPrecio] = useState({ min: f.precioMin ?? '', max: f.precioMax ?? '' });
+    useEffect(() => setPrecio({ min: f.precioMin ?? '', max: f.precioMax ?? '' }), [f.precioMin, f.precioMax]);
+
     return (
         <div>
-            <nav className="mb-4 space-y-1">
-                <Link href="/catalogo" className={cn('block py-1.5 text-[15px] font-medium hover:text-neutral-500', !f.categoria && 'underline underline-offset-4')}>Todos</Link>
-                {categorias.map((c) => (
-                    <button key={c.clave} onClick={() => set({ categoria: f.categoria === c.clave ? null : c.clave })}
-                        className={cn('block py-1.5 text-left text-[15px] font-medium hover:text-neutral-500', f.categoria === c.clave && 'underline underline-offset-4', c.clave === 'ofertas' && 'text-red-600')}>
-                        {c.label}
-                    </button>
-                ))}
-            </nav>
+            <Grupo titulo="Categoría">
+                <div className="flex flex-wrap gap-2">
+                    {categorias.map((c) => (
+                        <button key={c.clave} onClick={() => set({ categoria: f.categoria === c.clave ? null : c.clave })}
+                            className={cn(pastilla(f.categoria === c.clave), c.clave === 'ofertas' && f.categoria !== c.clave && 'text-brand')}>
+                            {c.label}
+                        </button>
+                    ))}
+                </div>
+            </Grupo>
 
-            <Accordion type="multiple" defaultValue={['marca', 'talla', 'precio']} className="border-t">
-                <AccordionItem value="marca">
-                    <AccordionTrigger className="text-[15px] font-medium hover:no-underline">
-                        Marca{f.marca ? ' (1)' : ''}
-                    </AccordionTrigger>
-                    <AccordionContent className="max-h-72 overflow-y-auto pr-1">
-                        {marcas.map((m) => (
-                            <Opcion key={m.marca} activo={f.marca === m.marca} contador={m.modelos} onClick={() => set({ marca: f.marca === m.marca ? null : m.marca })}>
-                                {capitalizar(m.marca)}
-                            </Opcion>
+            <Grupo titulo="Marca">
+                <div className="grid max-h-[17rem] grid-cols-2 gap-1.5 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                    {marcas.map((m) => (
+                        <button key={m.marca} onClick={() => set({ marca: f.marca === m.marca ? null : m.marca })}
+                            className={cn('flex h-9 items-center justify-between gap-1 rounded-lg px-3 text-left text-sm transition-colors',
+                                f.marca === m.marca ? 'bg-ink text-white' : 'bg-neutral-100 hover:bg-neutral-200')}>
+                            <span className="truncate font-medium">{capitalizar(m.marca)}</span>
+                            <span className="shrink-0 text-xs tabular-nums opacity-60">{m.modelos}</span>
+                        </button>
+                    ))}
+                </div>
+            </Grupo>
+
+            <Grupo titulo="Talla (US)">
+                <div className="grid grid-cols-5 gap-1.5">
+                    {tallas.map((t) => {
+                        const activa = (f.tallas ?? []).includes(t);
+                        return (
+                            <button key={t} onClick={() => set({ tallas: activa ? f.tallas.filter((x) => x !== t) : [...(f.tallas ?? []), t] })}
+                                className={cn('h-9 rounded-lg border text-sm font-medium tabular-nums transition-all duration-200 active:scale-95',
+                                    activa ? 'border-ink bg-ink text-white' : 'border-neutral-200 hover:border-neutral-500')}>
+                                {t}
+                            </button>
+                        );
+                    })}
+                </div>
+            </Grupo>
+
+            <Grupo titulo="Precio">
+                <div className="flex flex-wrap gap-2">
+                    {RANGOS.map((r) => {
+                        const activo = mismo(f.precioMin, r.min) && mismo(f.precioMax, r.max);
+                        return (
+                            <button key={r.label} onClick={() => set(activo ? { precioMin: null, precioMax: null } : { precioMin: r.min, precioMax: r.max })} className={pastilla(activo)}>
+                                {r.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); set({ precioMin: precio.min || null, precioMax: precio.max || null }); }}
+                    className="mt-3 flex items-center gap-2">
+                    <input type="number" min="0" inputMode="numeric" placeholder="Mín" value={precio.min} onChange={(e) => setPrecio((p) => ({ ...p, min: e.target.value }))}
+                        className="h-9 w-full min-w-0 rounded-lg border-neutral-200 text-sm focus:border-ink focus:ring-ink" />
+                    <span className="text-neutral-400">–</span>
+                    <input type="number" min="0" inputMode="numeric" placeholder="Máx" value={precio.max} onChange={(e) => setPrecio((p) => ({ ...p, max: e.target.value }))}
+                        className="h-9 w-full min-w-0 rounded-lg border-neutral-200 text-sm focus:border-ink focus:ring-ink" />
+                    <Button type="submit" size="sm" className="h-9 shrink-0 rounded-lg bg-ink px-3">Ir</Button>
+                </form>
+            </Grupo>
+
+            {bodegas.length > 0 && (
+                <Grupo titulo="Disponible en">
+                    <div className="flex flex-wrap gap-2">
+                        {bodegas.map((b) => (
+                            <button key={b.id} onClick={() => set({ bodega: mismo(f.bodega, b.id) ? null : b.id })} className={pastilla(mismo(f.bodega, b.id))}>
+                                {b.bodega}
+                            </button>
                         ))}
-                    </AccordionContent>
-                </AccordionItem>
+                    </div>
+                </Grupo>
+            )}
 
-                <AccordionItem value="talla">
-                    <AccordionTrigger className="text-[15px] font-medium hover:no-underline">
-                        Talla (US){f.tallas?.length ? ` (${f.tallas.length})` : ''}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="grid grid-cols-4 gap-1.5 pt-1">
-                            {tallas.map((t) => {
-                                const activa = (f.tallas ?? []).includes(t);
-                                return (
-                                    <button key={t}
-                                        onClick={() => set({ tallas: activa ? f.tallas.filter((x) => x !== t) : [...(f.tallas ?? []), t] })}
-                                        className={cn('h-10 rounded-md border text-sm transition-colors', activa ? 'border-black ring-1 ring-black' : 'border-neutral-300 hover:border-black')}>
-                                        {t}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
+            <Grupo titulo="Ofertas">
+                <label className="flex cursor-pointer items-center justify-between gap-4">
+                    <span className="text-sm font-medium">Solo productos en oferta</span>
+                    <Switch checked={!!f.ofertas} onCheckedChange={(v) => set({ ofertas: v ? 1 : null })} className="data-[state=checked]:bg-brand" />
+                </label>
+            </Grupo>
 
-                <AccordionItem value="precio">
-                    <AccordionTrigger className="text-[15px] font-medium hover:no-underline">Comprar por precio</AccordionTrigger>
-                    <AccordionContent>
-                        {RANGOS.map((r) => {
-                            const activo = mismo(f.precioMin, r.min) && mismo(f.precioMax, r.max);
-                            return (
-                                <Opcion key={r.label} activo={activo} onClick={() => set(activo ? { precioMin: null, precioMax: null } : { precioMin: r.min, precioMax: r.max })}>
-                                    {r.label}
-                                </Opcion>
-                            );
-                        })}
-                    </AccordionContent>
-                </AccordionItem>
-
-                {bodegas.length > 0 && (
-                    <AccordionItem value="tienda">
-                        <AccordionTrigger className="text-[15px] font-medium hover:no-underline">Disponible en tienda</AccordionTrigger>
-                        <AccordionContent>
-                            {bodegas.map((b) => (
-                                <Opcion key={b.id} activo={mismo(f.bodega, b.id)} onClick={() => set({ bodega: mismo(f.bodega, b.id) ? null : b.id })}>
-                                    {b.bodega}
-                                </Opcion>
-                            ))}
-                        </AccordionContent>
-                    </AccordionItem>
-                )}
-
-                <AccordionItem value="ofertas">
-                    <AccordionTrigger className="text-[15px] font-medium hover:no-underline">Descuentos y ofertas</AccordionTrigger>
-                    <AccordionContent>
-                        <label className="flex cursor-pointer items-center justify-between py-1.5 text-[15px]">
-                            Solo productos en oferta
-                            <Switch checked={!!f.ofertas} onCheckedChange={(v) => set({ ofertas: v ? 1 : null })} />
-                        </label>
-                    </AccordionContent>
-                </AccordionItem>
-
-                {puedeVerMarchamo && (
-                    <AccordionItem value="marchamo">
-                        <AccordionTrigger className="text-[15px] font-medium hover:no-underline">Marchamo (administradores)</AccordionTrigger>
-                        <AccordionContent>
-                            {MARCHAMOS.map((m) => (
-                                <Opcion key={m} activo={f.marchamo === m} onClick={() => set({ marchamo: f.marchamo === m ? null : m })}>
-                                    {capitalizar(m)}
-                                </Opcion>
-                            ))}
-                        </AccordionContent>
-                    </AccordionItem>
-                )}
-            </Accordion>
+            {puedeVerMarchamo && (
+                <Grupo titulo="Marchamo (administradores)">
+                    <div className="flex flex-wrap gap-2">
+                        {MARCHAMOS.map((m) => (
+                            <button key={m} onClick={() => set({ marchamo: f.marchamo === m ? null : m })} className={cn(pastilla(f.marchamo === m), 'capitalize')}>{m}</button>
+                        ))}
+                    </div>
+                </Grupo>
+            )}
         </div>
     );
 }
 
 export default function Catalogo({ productos, filtros = {}, marcas = [], categorias = [], bodegas = [], tallas = [], puedeVerMarchamo = false }) {
-    const [mostrarFiltros, setMostrarFiltros] = useState(true);
     const [panel, setPanel] = useState(false);
+    const [cargando, setCargando] = useState(false);
     const f = filtros;
+
+    useEffect(() => {
+        const inicio = router.on('start', () => setCargando(true));
+        const fin = router.on('finish', () => setCargando(false));
+        return () => { inicio(); fin(); };
+    }, []);
 
     const aplicar = (cambios) =>
         router.get('/catalogo', limpiar({ ...f, ...cambios, page: null }), { preserveState: true, preserveScroll: true, replace: true });
 
     const categoria = categorias.find((c) => c.clave === f.categoria);
-    const titulo = f.search
-        ? `Resultados para “${f.search}”`
-        : [categoria && (categoria.clave === 'ofertas' ? 'Ofertas' : `Tenis para ${categoria.label.toLowerCase()}`), f.marca && capitalizar(f.marca)].filter(Boolean).join(' · ') || 'Todos los tenis';
+    const titulo = f.search ? `“${f.search}”` : f.marca ? capitalizar(f.marca) : categoria ? categoria.label : 'Catálogo';
 
     const chips = [
+        f.search && { k: 'search', t: `Búsqueda: ${f.search}` },
+        categoria && { k: 'categoria', t: categoria.label },
         f.marca && { k: 'marca', t: capitalizar(f.marca) },
         ...(f.tallas ?? []).map((t) => ({ k: 'tallas', v: t, t: `Talla ${t}` })),
-        (f.precioMin || f.precioMax) && { k: 'precio', t: RANGOS.find((r) => mismo(r.min, f.precioMin) && mismo(r.max, f.precioMax))?.label ?? 'Precio' },
+        (f.precioMin || f.precioMax) && { k: 'precio', t: RANGOS.find((r) => mismo(r.min, f.precioMin) && mismo(r.max, f.precioMax))?.label ?? `Q${f.precioMin || 0} – Q${f.precioMax || '∞'}` },
         f.bodega && { k: 'bodega', t: bodegas.find((b) => mismo(b.id, f.bodega))?.bodega ?? 'Tienda' },
         f.ofertas && { k: 'ofertas', t: 'En oferta' },
         f.marchamo && { k: 'marchamo', t: `Marchamo ${f.marchamo}` },
@@ -184,82 +191,91 @@ export default function Catalogo({ productos, filtros = {}, marcas = [], categor
         <Layout>
             <Head title={titulo} />
 
-            {/* Barra de título, como en Nike: queda fija bajo el header */}
-            <div className="bg-white">
-                <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:py-5">
-                    <h1 className="truncate text-xl font-medium tracking-tight sm:text-2xl">
-                        {titulo} <span className="text-neutral-500">({productos.total})</span>
-                    </h1>
-                    <div className="flex shrink-0 items-center gap-1 sm:gap-5">
-                        <button onClick={() => setMostrarFiltros((v) => !v)} className="hidden items-center gap-2 text-[15px] lg:flex">
-                            {mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros'} <SlidersHorizontal className="h-4 w-4" />
-                        </button>
-                        <Button variant="outline" onClick={() => setPanel(true)} className="rounded-full lg:hidden">
-                            Filtros{chips.length ? ` (${chips.length})` : ''} <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger className="hidden items-center gap-1.5 text-[15px] outline-none sm:flex">
-                                <span>Ordenar por<span className="hidden text-neutral-500 xl:inline">: {ORDENES[f.orden ?? 'recientes']}</span></span>
-                                <ChevronDown className="h-4 w-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuRadioGroup value={f.orden ?? 'recientes'} onValueChange={(v) => aplicar({ orden: v === 'recientes' ? null : v })}>
-                                    {Object.entries(ORDENES).map(([v, t]) => <DropdownMenuRadioItem key={v} value={v}>{t}</DropdownMenuRadioItem>)}
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+            <section className="relative overflow-hidden border-b bg-neutral-50">
+                <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />
+                <div className={cn(contenedor, 'relative py-10 sm:py-12')}>
+                    <nav className="text-sm text-neutral-500">
+                        <Link href="/" className="transition-colors hover:text-ink">Inicio</Link>
+                        <span className="mx-2">/</span>
+                        <span className="text-neutral-800">Catálogo</span>
+                    </nav>
+                    <h1 className="mt-3 animate-fade-up font-display text-4xl uppercase leading-none sm:text-5xl">{titulo}</h1>
+                    <p className="mt-3 text-neutral-500"><span className="font-semibold text-ink">{productos.total}</span> {productos.total === 1 ? 'modelo disponible' : 'modelos disponibles'}</p>
                 </div>
-            </div>
+            </section>
 
-            <div className="mx-auto max-w-[1600px] px-4 sm:px-6">
-                <div className="flex gap-10">
-                    <aside className={cn('hidden shrink-0 transition-all duration-300 lg:block', mostrarFiltros ? 'w-60 opacity-100' : 'w-0 overflow-hidden opacity-0')}>
-                        <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-10 pr-3 [scrollbar-width:thin]">
+            <div className={cn(contenedor, 'py-8')}>
+                <div className="flex gap-10 xl:gap-12">
+                    <aside className="hidden w-64 shrink-0 lg:block">
+                        <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pb-6 pr-2 [scrollbar-width:thin]">
                             <Filtros {...props} />
                         </div>
                     </aside>
 
-                    <div className="min-w-0 flex-1 pb-10">
-                        {chips.length > 0 && (
-                            <div className="mb-5 flex flex-wrap items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                        <div className="mb-6 flex flex-wrap items-center gap-2">
+                            <Button variant="outline" onClick={() => setPanel(true)} className="h-10 rounded-full border-neutral-200 px-4 font-semibold lg:hidden">
+                                <SlidersHorizontal className="h-4 w-4" /> Filtros
+                                {chips.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white">{chips.length}</span>}
+                            </Button>
+                            <div className="order-last flex w-full flex-wrap gap-2 sm:order-none sm:w-auto sm:flex-1">
                                 {chips.map((c, n) => (
-                                    <button key={n} onClick={() => quitarChip(c)} className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm hover:border-black">
+                                    <button key={n} onClick={() => quitarChip(c)}
+                                        className="inline-flex h-8 animate-in items-center gap-1.5 rounded-full bg-brand-light px-3 text-sm font-medium text-brand-dark transition-colors duration-200 zoom-in-95 hover:bg-brand hover:text-white">
                                         {c.t} <X className="h-3.5 w-3.5" />
                                     </button>
                                 ))}
-                                <button onClick={() => router.get('/catalogo', limpiar({ categoria: f.categoria, search: f.search }))} className="px-2 text-sm underline underline-offset-4">Borrar filtros</button>
+                                {chips.length > 1 && (
+                                    <button onClick={() => router.get('/catalogo')} className="h-8 px-2 text-sm font-semibold underline underline-offset-4 hover:text-brand">Limpiar todo</button>
+                                )}
                             </div>
-                        )}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="ml-auto h-10 rounded-full border-neutral-200 px-4 font-semibold">
+                                        <ArrowUpDown className="h-4 w-4" />
+                                        <span className="hidden sm:inline">{ORDENES[f.orden ?? 'recientes']}</span>
+                                        <span className="sm:hidden">Ordenar</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
+                                    <DropdownMenuRadioGroup value={f.orden ?? 'recientes'} onValueChange={(v) => aplicar({ orden: v === 'recientes' ? null : v })}>
+                                        {Object.entries(ORDENES).map(([v, t]) => (
+                                            <DropdownMenuRadioItem key={v} value={v} className="rounded-lg py-2">{t}</DropdownMenuRadioItem>
+                                        ))}
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
 
-                        {productos.data.length === 0 ? (
-                            <div className="flex flex-col items-center bg-neutral-50 px-6 py-24 text-center">
-                                <h2 className="text-xl font-medium">No encontramos modelos con esos filtros</h2>
-                                <p className="mt-2 text-neutral-500">Prueba quitando algún filtro o escríbenos por WhatsApp y te ayudamos.</p>
-                                <Button onClick={() => router.get('/catalogo')} className="mt-6 rounded-full px-7">Ver todo el catálogo</Button>
-                            </div>
-                        ) : (
-                            <div className={cn('grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-4', mostrarFiltros ? 'md:grid-cols-3' : 'md:grid-cols-3 xl:grid-cols-4')}>
-                                {productos.data.map((p, n) => <ProductoCard key={p.id} producto={p} indice={n} />)}
-                            </div>
-                        )}
+                        <div className={cn('transition-opacity duration-300', cargando && 'pointer-events-none opacity-50')}>
+                            {productos.data.length === 0 ? (
+                                <div className="flex flex-col items-center rounded-3xl bg-neutral-50 px-6 py-20 text-center">
+                                    <img src="/images/logo.png" alt="" className="w-36 opacity-20 mix-blend-multiply" />
+                                    <h2 className="mt-6 text-xl font-bold">No encontramos modelos con esos filtros</h2>
+                                    <p className="mt-2 max-w-sm text-neutral-500">Prueba quitando algún filtro o escríbenos por WhatsApp y te ayudamos.</p>
+                                    <Button onClick={() => router.get('/catalogo')} className="mt-6 h-11 rounded-full bg-ink px-7">Ver todo el catálogo</Button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3">
+                                    {productos.data.map((p, n) => <ProductoCard key={p.id} producto={p} indice={n} />)}
+                                </div>
+                            )}
+                        </div>
 
                         {productos.last_page > 1 && (
                             <nav className="mt-14 flex items-center justify-center gap-1" aria-label="Paginación">
                                 {productos.links.map((l, n) => {
                                     const extremo = n === 0 || n === productos.links.length - 1;
                                     const contenido = n === 0 ? <ChevronLeft className="h-4 w-4" /> : extremo ? <ChevronRight className="h-4 w-4" /> : l.label;
-                                    const clase = cn('flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-[15px]', !extremo && 'hidden sm:flex');
+                                    const clase = cn('h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-semibold tabular-nums', extremo ? 'flex' : 'hidden sm:flex');
                                     return l.url ? (
-                                        <Link key={n} href={l.url} className={cn(clase, l.active ? 'bg-black text-white' : 'hover:bg-neutral-100')}>{contenido}</Link>
+                                        <Link key={n} href={l.url} className={cn(clase, 'transition-colors', l.active ? 'bg-ink text-white' : 'hover:bg-neutral-100')}>{contenido}</Link>
                                     ) : (
                                         <span key={n} className={cn(clase, 'text-neutral-300')}>{contenido}</span>
                                     );
                                 })}
+                                <span className="px-3 text-sm text-neutral-500 sm:hidden">{productos.current_page} / {productos.last_page}</span>
                             </nav>
-                        )}
-                        {productos.last_page > 1 && (
-                            <p className="mt-3 text-center text-sm text-neutral-500 sm:hidden">Página {productos.current_page} de {productos.last_page}</p>
                         )}
                     </div>
                 </div>
@@ -267,23 +283,15 @@ export default function Catalogo({ productos, filtros = {}, marcas = [], categor
 
             {/* Filtros en celular */}
             <Sheet open={panel} onOpenChange={setPanel}>
-                <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
-                    <SheetHeader className="border-b px-6 py-5 text-left">
-                        <SheetTitle className="text-xl font-medium">Filtrar</SheetTitle>
+                <SheetContent side="bottom" className="flex max-h-[88vh] flex-col rounded-t-3xl p-0">
+                    <SheetHeader className="border-b px-5 py-4 text-left">
+                        <SheetTitle className="font-display text-xl uppercase">Filtros</SheetTitle>
                         <SheetDescription className="sr-only">Filtra el catálogo por categoría, marca, talla y precio</SheetDescription>
                     </SheetHeader>
-                    <div className="flex-1 overflow-y-auto px-6 py-5">
-                        <div className="mb-5 sm:hidden">
-                            <p className="mb-2 text-[15px] font-medium">Ordenar por</p>
-                            {Object.entries(ORDENES).map(([v, t]) => (
-                                <Opcion key={v} activo={(f.orden ?? 'recientes') === v} onClick={() => aplicar({ orden: v === 'recientes' ? null : v })}>{t}</Opcion>
-                            ))}
-                        </div>
-                        <Filtros {...props} />
-                    </div>
-                    <SheetFooter className="grid grid-cols-2 gap-3 border-t px-6 py-4">
-                        <Button variant="outline" className="h-12 rounded-full" onClick={() => router.get('/catalogo')}>Borrar</Button>
-                        <Button className="h-12 rounded-full" onClick={() => setPanel(false)}>Aplicar ({productos.total})</Button>
+                    <div className="flex-1 overflow-y-auto px-5 py-6"><Filtros {...props} /></div>
+                    <SheetFooter className="grid grid-cols-[auto_1fr] gap-3 border-t p-4">
+                        <Button variant="outline" className="h-12 rounded-full px-6" onClick={() => router.get('/catalogo')}>Limpiar</Button>
+                        <Button className="h-12 rounded-full bg-ink" onClick={() => setPanel(false)}>Ver {productos.total} modelos</Button>
                     </SheetFooter>
                 </SheetContent>
             </Sheet>

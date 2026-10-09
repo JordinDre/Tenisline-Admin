@@ -24,12 +24,12 @@ export default {
     	extend: {
     		fontFamily: {
     			sans: [
-    				'Inter',
+    				'Figtree',
                     ...defaultTheme.fontFamily.sans
                 ],
     			display: [
-    				'"Inter Tight"',
-    				'Inter',
+    				'"Archivo Black"',
+    				'Figtree',
                     ...defaultTheme.fontFamily.sans
                 ]
     		},
@@ -43,6 +43,10 @@ export default {
     					opacity: '1',
     					transform: 'translateY(0)'
     				}
+    			},
+    			flotar: {
+    				'0%, 100%': { transform: 'translateY(0) rotate(var(--giro, 0deg))' },
+    				'50%': { transform: 'translateY(-12px) rotate(var(--giro, 0deg))' }
     			},
     			marquee: {
     				'0%': {
@@ -71,7 +75,8 @@ export default {
     		},
     		animation: {
     			marquee: 'marquee 40s linear infinite',
-    			'fade-up': 'fade-up .6s ease-out both',
+    			'fade-up': 'fade-up .6s cubic-bezier(.22,1,.36,1) both',
+    			flotar: 'flotar 6s ease-in-out infinite',
     			'accordion-down': 'accordion-down 0.2s ease-out',
     			'accordion-up': 'accordion-up 0.2s ease-out'
     		},

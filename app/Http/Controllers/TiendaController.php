@@ -50,6 +50,8 @@ class TiendaController extends Controller
             'marcas' => CatalogoTienda::marcas(),
             'ofertas' => CatalogoTienda::modelos(CatalogoTienda::consulta(['ofertas' => true]), 'recientes', 0, 12),
             'novedades' => CatalogoTienda::modelos(CatalogoTienda::consulta(), 'recientes', 0, 12),
+            // Modelos con foto real, para la portada y la sección destacada
+            'destacados' => CatalogoTienda::modelos(CatalogoTienda::consulta(['con_imagen' => true]), 'recientes', 0, 8),
         ]);
     }
 
