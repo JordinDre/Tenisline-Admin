@@ -128,3 +128,11 @@ html {
     cursor: grabbing;
   }
 }
+
+/* Ampliar foto: el contenedor de react-medium-image-zoom ocupa todo el marco de la foto */
+[data-rmiz],
+[data-rmiz-content='found'] {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
