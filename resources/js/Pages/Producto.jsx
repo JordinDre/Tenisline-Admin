@@ -1,5 +1,6 @@
 import { IconoWhatsApp } from '@/Components/tienda/CarritoDrawer';
 import ImagenProducto from '@/Components/tienda/ImagenProducto';
+import MuestraColor from '@/Components/tienda/MuestraColor';
 import ProductoCard from '@/Components/tienda/ProductoCard';
 import { Button } from '@/Components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/Components/ui/carousel';
@@ -16,7 +17,7 @@ import 'react-medium-image-zoom/dist/styles.css';
 const contenedor = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
 
 function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
-    const { agregar } = useCarrito();
+    const { agregar, items } = useCarrito();
     const sucursales = usePage().props.tienda?.sucursales ?? [];
     const inicial = variantes.find((v) => v.slug === producto.slug) ?? variantes[0];
     const [seleccion, setSeleccion] = useState(inicial?.id ?? null);
@@ -43,6 +44,8 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
             },
         [variante, producto],
     );
+
+    const enCarrito = items.some((i) => i.id === variante?.id);
 
     const alAgregar = () => {
         if (!item) return;
@@ -112,8 +115,13 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand">{producto.marca}</p>
                         <h1 className="mt-2 font-display text-3xl uppercase leading-[1.05] sm:text-4xl">{producto.descripcion}</h1>
                         <div className="mt-4 flex flex-wrap gap-2">
-                            {producto.color && <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700">{capitalizar(producto.color)}</span>}
-                            {producto.genero && <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700">{capitalizar(producto.genero)}</span>}
+                            {producto.color && (
+                                <span className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800">
+                                    <MuestraColor color={producto.color} className="h-4 w-4" /> Color: {capitalizar(producto.color)}
+                                </span>
+                            )}
+                            {variante && <span className="rounded-full bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800">Talla {variante.talla}</span>}
+                            {producto.genero && <span className="rounded-full bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800">{capitalizar(producto.genero)}</span>}
                         </div>
 
                         {variante && (
@@ -129,20 +137,22 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                         )}
 
                         <div className="mt-8">
-                            <div className="mb-3 flex items-center justify-between">
-                                <h2 className="font-semibold">Elige tu talla (US)</h2>
-                                {variante && <span className="text-sm text-neutral-500">Código <span className="font-semibold text-ink">{variante.codigo}</span></span>}
-                            </div>
-                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                                {variantes.map((v) => (
-                                    <button key={v.id} onClick={() => setSeleccion(v.id)}
-                                        className={cn('h-12 rounded-xl border-2 text-[15px] font-semibold tabular-nums transition-all duration-300 active:scale-95',
-                                            v.id === seleccion ? 'border-ink bg-ink text-white ' : 'border-neutral-200 hover:border-neutral-500')}>
-                                        {v.talla}
-                                    </button>
-                                ))}
-                            </div>
-                            <p className="mt-4 flex items-center gap-2 text-sm font-medium text-emerald-700">
+                            {variante && <p className="text-sm text-neutral-500">Código <span className="font-semibold text-ink">{variante.codigo}</span></p>}
+                            {variantes.length > 1 && (
+                                <div className="mt-4">
+                                    <h2 className="mb-2 text-sm font-semibold">Este modelo también está en</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {variantes.map((v) => (
+                                            <button key={v.id} onClick={() => setSeleccion(v.id)}
+                                                className={cn('h-10 min-w-12 rounded-xl border-2 px-3 text-sm font-semibold tabular-nums transition-colors duration-300',
+                                                    v.id === seleccion ? 'border-ink bg-ink text-white' : 'border-neutral-200 hover:border-neutral-500')}>
+                                                {v.talla}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <p className="mt-5 flex items-center gap-2 text-sm font-medium text-emerald-700">
                                 <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" /></span>
                                 Disponible en tienda
                             </p>
@@ -158,9 +168,9 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                         </div>
 
                         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                            <Button onClick={alAgregar} disabled={!variante}
-                                className={cn('h-14 rounded-full text-base font-semibold transition-colors', agregado ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-ink hover:bg-brand')}>
-                                {agregado ? <><Check className="h-5 w-5" /> Agregado</> : <><ShoppingBag className="h-5 w-5" /> Agregar al carrito</>}
+                            <Button onClick={alAgregar} disabled={!variante || enCarrito}
+                                className={cn('h-14 rounded-full text-base font-semibold transition-colors', agregado || enCarrito ? 'bg-emerald-600 hover:bg-emerald-600 disabled:opacity-100' : 'bg-ink hover:bg-brand')}>
+                                {agregado || enCarrito ? <><Check className="h-5 w-5" /> {agregado ? 'Agregado' : 'En tu carrito'}</> : <><ShoppingBag className="h-5 w-5" /> Agregar al carrito</>}
                             </Button>
                             {sucursales[0] && (
                                 <Button asChild variant="outline" className="h-14 rounded-full border-2 border-[#25D366] text-base font-semibold text-[#128C7E] hover:bg-[#25D366] hover:text-white">
@@ -175,7 +185,7 @@ function Contenido({ producto, variantes, mostrarExistencia, relacionados }) {
                         <ul className="mt-10 divide-y rounded-3xl bg-neutral-50 px-6 text-sm">
                             <li className="flex gap-3 py-4"><Store className="h-5 w-5 shrink-0 text-brand" /><span><b>Visítanos</b> en Zacapa, Chiquimula y Esquipulas, o pide por WhatsApp.</span></li>
                             <li className="flex gap-3 py-4"><MessageCircle className="h-5 w-5 shrink-0 text-brand" /><span><b>Sin pagos en línea.</b> Confirmamos disponibilidad y forma de pago por WhatsApp.</span></li>
-                            <li className="flex gap-3 py-4"><Tag className="h-5 w-5 shrink-0 text-brand" /><span><b>Tallas disponibles:</b> {variantes.map((v) => v.talla).join(' · ')}</span></li>
+                            <li className="flex gap-3 py-4"><Tag className="h-5 w-5 shrink-0 text-brand" /><span><b>Par único:</b> cada tenis es una sola pieza. Agrégalo y confirma por WhatsApp antes de que se venda.</span></li>
                         </ul>
                     </div>
                 </div>

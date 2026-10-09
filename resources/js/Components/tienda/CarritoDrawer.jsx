@@ -1,4 +1,5 @@
 import ImagenProducto from '@/Components/tienda/ImagenProducto';
+import MuestraColor from '@/Components/tienda/MuestraColor';
 import { Button } from '@/Components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/Components/ui/sheet';
 import { useCarrito } from '@/Contexts/CarritoContext';
@@ -59,18 +60,14 @@ export default function CarritoDrawer() {
                                             <div className="min-w-0">
                                                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">{i.marca}</p>
                                                 <p className="truncate font-semibold leading-5">{capitalizar(i.descripcion)}</p>
-                                                <p className="text-sm text-neutral-500">Talla {i.talla}{i.color ? ` · ${capitalizar(i.color)}` : ''}</p>
+                                                <p className="flex items-center gap-1.5 text-sm text-neutral-500">Talla {i.talla}{i.color && <><span>·</span><MuestraColor color={i.color} className="h-3 w-3" />{capitalizar(i.color)}</>}</p>
                                             </div>
                                             <button onClick={() => quitar(i.id)} className="-mr-1 rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500" aria-label="Eliminar">
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
                                         <div className="mt-auto flex items-center justify-between pt-3">
-                                            <div className="flex h-9 items-center rounded-full border">
-                                                <button onClick={() => cambiarCantidad(i.id, i.cantidad - 1)} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100" aria-label="Quitar uno"><Minus className="h-3.5 w-3.5" /></button>
-                                                <span className="w-6 text-center text-sm font-semibold tabular-nums">{i.cantidad}</span>
-                                                <button onClick={() => cambiarCantidad(i.id, i.cantidad + 1)} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100" aria-label="Agregar uno"><Plus className="h-3.5 w-3.5" /></button>
-                                            </div>
+                                            <span className="text-sm font-medium text-neutral-500">Par único</span>
                                             <span className="font-bold tabular-nums">{quetzales(precioFinal(i) * i.cantidad)}</span>
                                         </div>
                                     </div>

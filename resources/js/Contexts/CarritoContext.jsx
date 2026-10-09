@@ -35,14 +35,9 @@ export function CarritoProvider({ children }) {
     const agregar = (producto, cantidad = 1) => {
         setItems((actual) => {
             const existe = actual.find((i) => i.id === producto.id);
-            if (existe) {
-                return actual.map((i) =>
-                    i.id === producto.id
-                        ? { ...i, cantidad: Math.min(i.cantidad + cantidad, 10) }
-                        : i,
-                );
-            }
-            return [...actual, { ...producto, cantidad }];
+            // Cada par es único: si ya está en el carrito, no se repite
+            if (existe) return actual;
+            return [...actual, { ...producto, cantidad: 1 }];
         });
         setAbierto(true);
     };

@@ -105,6 +105,7 @@ class CatalogoTienda
     {
         $q->select(DB::raw("
                 MIN(productos.id) AS id,
+                MIN(productos.codigo) AS codigo,
                 productos.marca_id, productos.descripcion, productos.color, productos.genero,
                 MIN(productos.precio_venta) AS precio,
                 MIN(NULLIF(productos.precio_oferta, 0)) AS precio_oferta,
@@ -140,6 +141,7 @@ class CatalogoTienda
         return $filas->map(fn ($p) => [
             'id' => $p->id,
             'slug' => $slugs[$p->id] ?? null,
+            'codigo' => $p->codigo,
             'descripcion' => trim($p->descripcion),
             'color' => $p->color,
             'genero' => $p->genero,
