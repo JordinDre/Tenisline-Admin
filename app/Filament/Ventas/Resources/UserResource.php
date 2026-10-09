@@ -285,6 +285,8 @@ class UserResource extends Resource implements HasShieldPermissions
                 /* FileUpload::make('imagenes')
                     ->label('Imágenes')
                     ->image()
+                    // 'android/allowCamera' hace que Chrome en Android 14+ muestre la opción de cámara.
+                    ->acceptedFileTypes(['image/*', 'android/allowCamera'])
                     ->downloadable()
                     ->imageEditor()
                     ->multiple()

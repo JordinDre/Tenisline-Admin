@@ -333,6 +333,8 @@ class VentaResource extends Resource implements HasShieldPermissions
                                     FileUpload::make('imagen')
                                         ->required()
                                         ->image()
+                                        // 'android/allowCamera' hace que Chrome en Android 14+ muestre la opción de cámara.
+                                        ->acceptedFileTypes(['image/*', 'android/allowCamera'])
                                         ->downloadable()
                                         ->label('Imágen')
                                         ->imageEditor()
@@ -634,6 +636,8 @@ class VentaResource extends Resource implements HasShieldPermissions
                                 ->label('Foto de evidencia')
                                 ->required()
                                 ->image()
+                                // 'android/allowCamera' hace que Chrome en Android 14+ muestre la opción de cámara.
+                                ->acceptedFileTypes(['image/*', 'android/allowCamera'])
                                 ->disk(config('filesystems.disks.s3.driver'))
                                 ->directory(config('filesystems.upload_directory'))
                                 ->visibility('public')

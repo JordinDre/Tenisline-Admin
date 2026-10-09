@@ -63,6 +63,8 @@ class TiendaResource extends Resource implements HasShieldPermissions
                                     ->label('Imagen (computadora)')
                                     ->helperText('Horizontal, idealmente 1920 × 720 px.')
                                     ->image()
+                                    // 'android/allowCamera' hace que Chrome en Android 14+ muestre la opción de cámara.
+                                    ->acceptedFileTypes(['image/*', 'android/allowCamera'])
                                     ->imageEditor()
                                     ->disk(config('filesystems.disks.s3.driver'))
                                     ->directory(config('filesystems.upload_directory').'/promociones')
@@ -74,6 +76,8 @@ class TiendaResource extends Resource implements HasShieldPermissions
                                     ->label('Imagen (celular, opcional)')
                                     ->helperText('Vertical, idealmente 1080 × 1350 px. Si no se sube, se usa la de computadora.')
                                     ->image()
+                                    // 'android/allowCamera' hace que Chrome en Android 14+ muestre la opción de cámara.
+                                    ->acceptedFileTypes(['image/*', 'android/allowCamera'])
                                     ->imageEditor()
                                     ->disk(config('filesystems.disks.s3.driver'))
                                     ->directory(config('filesystems.upload_directory').'/promociones')

@@ -321,6 +321,8 @@ class ProductoResource extends Resource implements HasShieldPermissions
                     }),
                 FileUpload::make('imagenes')
                     ->image()
+                    // 'android/allowCamera' hace que Chrome en Android 14+ muestre la opción de cámara.
+                    ->acceptedFileTypes(['image/*', 'android/allowCamera'])
                     ->label('Imágenes')
                     ->imageEditor()
                     ->multiple()
