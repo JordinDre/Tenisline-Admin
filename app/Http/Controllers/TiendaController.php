@@ -209,7 +209,7 @@ class TiendaController extends Controller
                 'id' => $v->id,
                 'slug' => $v->slug,
                 'codigo' => $v->codigo,
-                'talla' => rtrim(rtrim((string) $v->talla, '0'), '.') ?: $v->talla,
+                'talla' => CatalogoTienda::talla($v->talla) ?: $v->talla,
                 'precio' => (float) $v->precio_venta,
                 'precio_oferta' => $v->precio_oferta > 0 ? (float) $v->precio_oferta : null,
                 'imagen' => CatalogoTienda::urlImagen($v->imagenes),
@@ -428,13 +428,13 @@ class TiendaController extends Controller
         if (! empty($tallas)) {
             // Normaliza las tallas ingresadas (ej. "8.0" → "8")
             $tallasNormalizadas = collect($tallas)
-                ->map(fn ($t) => rtrim(rtrim($t, '0'), '.')) // elimina .0 o .00
+                ->map(fn ($t) => CatalogoTienda::talla($t)) // elimina .0 o .00
                 ->unique()
                 ->toArray();
 
             // Aplica comparación también normalizada en SQL
             $productos->whereIn(
-                DB::raw("REPLACE(REPLACE(productos.talla, '.0', ''), '.00', '')"),
+                DB::raw("REPLACE(REPLACE(productos.talla, '.00', ''), '.0', '')"),
                 $tallasNormalizadas
             );
         }
@@ -533,13 +533,13 @@ class TiendaController extends Controller
         /* 🔍 TALLAS */
         if (! empty($tallas)) {
             $tallasNormalizadas = collect($tallas)
-                ->map(fn ($t) => rtrim(rtrim($t, '0'), '.'))
+                ->map(fn ($t) => CatalogoTienda::talla($t))
                 ->unique()
                 ->toArray();
 
             $vendidos->whereHas('producto', function ($q) use ($tallasNormalizadas) {
                 $q->whereIn(
-                    DB::raw("REPLACE(REPLACE(talla, '.0', ''), '.00', '')"),
+                    DB::raw("REPLACE(REPLACE(talla, '.00', ''), '.0', '')"),
                     $tallasNormalizadas
                 );
             });

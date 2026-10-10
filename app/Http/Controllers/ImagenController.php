@@ -15,13 +15,19 @@ class ImagenController extends Controller
 {
     private const ANCHOS = [240, 480, 800, 1200];
 
-    private const CARPETAS = ['tenisline-produccion', 'local', 'production'];
+    private const CARPETAS = ['tenisline-produccion', 'tenisline', 'local', 'production'];
+
+    /** Carpetas válidas, incluida la configurada para las subidas (UPLOAD_DIRECTORY). */
+    private static function carpetas(): array
+    {
+        return [...self::CARPETAS, config('filesystems.upload_directory')];
+    }
 
     /** Vista previa para compartir: 1200x630 JPG con el tenis centrado sobre fondo claro (menos de ~100 KB). */
     public function og(string $ruta): Response
     {
         abort_unless(
-            in_array(strtok($ruta, '/'), self::CARPETAS, true)
+            in_array(strtok($ruta, '/'), self::carpetas(), true)
             && preg_match('#^[A-Za-z0-9_\-]+/[A-Za-z0-9_\-]+\.(webp|jpe?g|png)$#i', $ruta),
             404
         );
@@ -51,7 +57,7 @@ class ImagenController extends Controller
 
         abort_unless(
             in_array($ancho, self::ANCHOS, true)
-            && in_array($carpeta, self::CARPETAS, true)
+            && in_array($carpeta, self::carpetas(), true)
             && preg_match('#^[A-Za-z0-9_\-]+/[A-Za-z0-9_\-]+\.(webp|jpe?g|png)$#i', $ruta),
             404
         );
