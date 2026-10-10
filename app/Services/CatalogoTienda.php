@@ -82,7 +82,7 @@ class CatalogoTienda
         }
 
         if (! empty($f['tallas'])) {
-            $tallas = collect((array) $f['tallas'])->map(fn ($t) => rtrim(rtrim((string) $t, '0'), '.'))->unique()->values()->all();
+            $tallas = collect((array) $f['tallas'])->map(fn ($t) => self::talla($t))->unique()->values()->all();
             $q->whereIn(DB::raw("REPLACE(REPLACE(productos.talla, '.00', ''), '.0', '')"), $tallas);
         }
 
@@ -216,6 +216,14 @@ class CatalogoTienda
             ->select(DB::raw("DISTINCT REPLACE(REPLACE(productos.talla, '.00', ''), '.0', '') AS t"))
             ->pluck('t')
             ->pipe(fn ($t) => self::normalizarTallas($t->all())));
+    }
+
+    /** Quita solo los ceros decimales: "8.50" → "8.5", "8.0" → "8", "10" se queda "10". */
+    public static function talla($talla): string
+    {
+        $t = trim((string) $talla);
+
+        return str_contains($t, '.') ? rtrim(rtrim($t, '0'), '.') : $t;
     }
 
     /** "7.0", " 7" y "7" son la misma talla; descarta valores que no son tallas (ej. "650ML"). */

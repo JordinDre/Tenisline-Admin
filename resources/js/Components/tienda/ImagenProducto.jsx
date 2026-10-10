@@ -19,6 +19,7 @@ const ANCHOS = [240, 480, 800, 1200];
  */
 export default function ImagenProducto({ src, alt, className = '', sizes = '(min-width: 1024px) 25vw, 50vw', prioridad = false, ancho = 800, zoom = false }) {
     const [estado, setEstado] = useState('cargando'); // cargando | listo | error
+    const [original, setOriginal] = useState(false); // la versión reducida falló: se usa la foto original
     const listo = estado === 'listo';
 
     // Si la imagen ya estaba en la caché del navegador, no hay que esperar al evento load
@@ -34,9 +35,11 @@ export default function ImagenProducto({ src, alt, className = '', sizes = '(min
         );
     }
 
-    const delS3 = imagenAncho(src, 240) !== src;
+    // Si la versión reducida (/img/...) falla, se usa la foto original de S3 antes de mostrar el logo
+    const delS3 = imagenAncho(src, 240) !== src && !original;
+    const fallo = () => (delS3 ? setOriginal(true) : setEstado('error'));
     const comun = {
-        src: imagenAncho(src, ancho),
+        src: delS3 ? imagenAncho(src, ancho) : src,
         srcSet: delS3 ? ANCHOS.map((w) => `${imagenAncho(src, w)} ${w}w`).join(', ') : undefined,
         sizes: delS3 ? sizes : undefined,
         decoding: 'async',
@@ -44,6 +47,7 @@ export default function ImagenProducto({ src, alt, className = '', sizes = '(min
 
     const frente = (
         <img
+            key={delS3 ? 'reducida' : 'original'}
             ref={ref}
             {...comun}
             alt={alt}
@@ -52,7 +56,7 @@ export default function ImagenProducto({ src, alt, className = '', sizes = '(min
             loading={prioridad ? 'eager' : 'lazy'}
             fetchPriority={prioridad ? 'high' : 'auto'}
             onLoad={() => setEstado('listo')}
-            onError={() => setEstado('error')}
+            onError={fallo}
             className={cn('relative h-full w-full object-contain transition-opacity duration-700', listo ? 'opacity-100' : 'opacity-0')}
         />
     );
@@ -63,7 +67,7 @@ export default function ImagenProducto({ src, alt, className = '', sizes = '(min
             {/* Relleno: la misma foto, ampliada y difuminada (el navegador no la vuelve a descargar) */}
             <img aria-hidden="true" alt="" {...comun} loading="lazy"
                 className={cn('absolute inset-0 h-full w-full scale-125 object-cover blur-2xl transition-opacity duration-700', listo ? 'opacity-70' : 'opacity-0')} />
-            {zoom ? <Zoom zoomImg={{ src: imagenAncho(src, 1200) }}>{frente}</Zoom> : frente}
+            {zoom ? <Zoom zoomImg={{ src: delS3 ? imagenAncho(src, 1200) : src }}>{frente}</Zoom> : frente}
         </div>
     );
 }
